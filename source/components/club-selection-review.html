@@ -1,0 +1,1517 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Club selection · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; /* bordered section container */ --surface: #1C2129; /* cards, controls, tab bar */ --sunken: #13171E; /* inner panels, dark pills */ --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); /* hero */ --hero-a: #0D3617; --hero-b: #17481C; /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* ---- crest plate ------------------------------------------ Not new colour: a fixed white scrim and a black hairline, the same construction as --line. See the spec block below. */ --plate: rgba(255,255,255,.94); --plate-edge: rgba(0,0,0,.13);}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk [hidden]{display:none!important}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+.mk .frame{position:relative;min-height:812px;padding-bottom:24px}
+.mk .eyebrow{margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .pill-btn{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:12.5px;font-weight:500;cursor:pointer; transition:background .18s var(--ease);}
+.mk .pill-btn:hover{background:#222833}
+.mk .icon-btn{display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease);}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn svg{width:18px;height:18px}
+.mk .status-pill{display:inline-flex;align-items:center;gap:7px; height:32px;padding:0 14px;border-radius:var(--r-pill); background:var(--acid-wash); font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--acid);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.mk .status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mk .spacer{flex:1}
+.mk .bar{display:flex;align-items:center;height:44px;padding:0 var(--gutter)}
+.mk .title{margin:14px var(--gutter) 0; font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1; text-transform:uppercase;}
+.mk .intro{margin:11px var(--gutter) 0;max-width:31ch;font-size:13px;color:var(--muted)}
+.mk .cascade{list-style:none;margin:24px 0 0;padding:0}
+.mk .step{position:relative;margin-bottom:20px; padding:0 var(--gutter) 0 calc(var(--gutter) + 38px);}
+.mk .step:last-child{margin-bottom:0}
+.mk .step::before{content:"";position:absolute;left:calc(var(--gutter) + 12px); top:30px;bottom:-20px;width:2px;border-radius:1px;background:var(--line);}
+.mk .step:last-child::before{display:none}
+.mk .step.is-done::before{background:var(--acid);opacity:.5}
+.mk .step__mark{position:absolute;left:var(--gutter);top:1px; width:26px;height:26px;border-radius:50%; display:flex;align-items:center;justify-content:center; background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line); font-size:12px;font-weight:800;color:var(--dim); font-variant-numeric:tabular-nums; transition:background .2s var(--ease),color .2s var(--ease);}
+.mk .step__mark svg{width:13px;height:13px;display:none}
+.mk .step.is-active .step__mark{color:var(--acid);box-shadow:inset 0 0 0 1.5px var(--acid)}
+.mk .step.is-done  .step__mark{background:var(--acid);color:var(--acid-ink);box-shadow:none}
+.mk .step.is-done  .step__mark b{display:none}
+.mk .step.is-done  .step__mark svg{display:block}
+.mk .step.is-locked .step__mark{opacity:.5}
+.mk .step__label{display:flex;align-items:center;gap:8px; margin:3px 0 9px;font-size:15px;font-weight:600;letter-spacing:-.01em;}
+.mk .step.is-locked .step__label{color:var(--muted)}
+.mk .step__lock{width:13px;height:13px;color:var(--dim);flex:0 0 auto}
+.mk .step:not(.is-locked) .step__lock{display:none}
+.mk .hint{margin:8px 0 0;font-size:12px;color:var(--dim)}
+.mk .field{display:flex;align-items:center;gap:10px;width:100%; min-height:52px;padding:8px 14px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--surface);color:var(--text); font:inherit;text-align:left;cursor:pointer; transition:border-color .18s var(--ease),background .18s var(--ease);}
+.mk .field:hover{background:#20262F}
+.mk .field__val{flex:1;min-width:0;font-size:15px;font-weight:600;letter-spacing:-.01em; white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .field--empty .field__val{font-weight:400;color:var(--muted)}
+.mk .field__chev{width:18px;height:18px;flex:0 0 auto;color:var(--muted); transition:transform .2s var(--ease)}
+.mk .field[aria-expanded="true"]{border-color:rgba(155,226,34,.45)}
+.mk .field[aria-expanded="true"] .field__chev{transform:rotate(180deg)}
+.mk .field__lock{width:16px;height:16px;flex:0 0 auto;color:var(--dim);display:none}
+.mk .field[aria-disabled="true"]{background:var(--sunken);border-color:var(--line-soft);cursor:not-allowed;}
+.mk .field[aria-disabled="true"]:hover{background:var(--sunken)}
+.mk .field[aria-disabled="true"] .field__val{font-weight:400;color:var(--dim)}
+.mk .field[aria-disabled="true"] .field__chev{display:none}
+.mk .field[aria-disabled="true"] .field__lock{display:block}
+.mk .opts{list-style:none;margin:8px 0 0;padding:6px; border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);}
+.mk .opts li{display:flex;align-items:center;gap:9px; padding:10px 11px;border-radius:8px;font-size:14px;cursor:pointer;}
+.mk .opts li:hover{background:rgba(255,255,255,.05)}
+.mk .opts li[aria-selected="true"]{color:var(--acid);font-weight:600}
+.mk .opts svg{width:14px;height:14px;flex:0 0 auto;opacity:0}
+.mk .opts li[aria-selected="true"] svg{opacity:1}
+.mk .panel{padding:12px;border:1px solid var(--line);border-radius:var(--r-card); background:var(--section);}
+.mk .panel--locked{padding:14px 14px 15px}
+.mk .panel--locked .hint{margin:0}
+.mk .limit__bar{display:flex;align-items:center;gap:10px}
+.mk .limit__ticks{display:flex;gap:5px;margin-top:11px}
+.mk .limit__ticks i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.14)}
+.mk .limit__ticks i.on{background:var(--acid)}
+.mk .limit__ticks i.pending{background:var(--acid);opacity:.45}
+.mk .limit--full .status-pill{background:rgba(255,255,255,.06);color:var(--muted)}
+.mk .limit--full .limit__ticks i.on{background:var(--muted)}
+.mk .limit__note{margin:9px 0 0;font-size:12.5px;color:var(--muted)}
+.mk .limit__used{display:flex;align-items:center;gap:8px;flex-wrap:wrap; margin-top:11px;padding-top:11px;border-top:1px solid var(--line-soft);}
+.mk .limit__used>span:first-child{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);margin-right:2px;}
+.mk .used{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted)}
+.mk .search{position:relative;margin-top:12px}
+.mk .search input{width:100%;height:44px;padding:0 14px 0 40px; border:1px solid var(--line);border-radius:var(--r-pill); background:var(--sunken);color:var(--text);font:inherit;font-size:14px;}
+.mk .search input::placeholder{color:var(--dim)}
+.mk .search input:focus{outline:none;border-color:rgba(155,226,34,.45)}
+.mk .search svg{position:absolute;left:14px;top:13.5px;width:17px;height:17px;color:var(--dim)}
+.mk .clist{list-style:none;margin:10px 0 0;padding:0; border-radius:var(--r-panel);background:var(--surface);overflow:hidden;}
+.mk .crow{display:flex;align-items:center;gap:11px;padding:9px 12px; border-top:1px solid var(--line-soft);cursor:pointer; transition:background .16s var(--ease);}
+.mk .crow:first-child{border-top:0}
+.mk .crow:hover{background:rgba(255,255,255,.035)}
+.mk .crow__id{flex:1;min-width:0}
+.mk .crow__name{display:block;font-size:14px;font-weight:600;letter-spacing:-.01em; white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk .crow__sub{display:block;margin-top:2px;font-size:11.5px;color:var(--muted); white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk .crow__end{flex:0 0 auto;display:inline-flex;align-items:center; font-size:10.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--dim)}
+.mk .crow__end svg{width:18px;height:18px;color:var(--acid)}
+.mk .crow__end svg.crow__locked{width:16px;height:16px;color:var(--dim)}
+.mk .crow[aria-selected="true"]{background:var(--acid-wash);box-shadow:inset 3px 0 0 var(--acid)}
+.mk .crow[aria-selected="true"]:hover{background:var(--acid-wash)}
+.mk .crow[aria-selected="true"] .crow__sub{color:var(--acid)}
+.mk .crow[aria-disabled="true"]{cursor:not-allowed}
+.mk .crow[aria-disabled="true"]:hover{background:transparent}
+.mk .crow[aria-disabled="true"] .plate,.mk .crow[aria-disabled="true"] .crow__id{opacity:.38}
+.mk .clist__none{padding:22px 12px;text-align:center;font-size:13px;color:var(--dim)}
+.mk .pick{display:flex;align-items:center;gap:13px; margin:20px var(--gutter) 0;padding:16px; border-radius:var(--r-card);background:var(--surface);}
+.mk .pick__id{flex:1;min-width:0}
+.mk .pick__id h3{margin:0;font-size:17px;font-weight:600;letter-spacing:-.015em; white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk .pick__sub{margin:3px 0 0;font-size:12px;color:var(--muted)}
+.mk .plate{--plate-size:40px; display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto; width:var(--plate-size);height:var(--plate-size); padding:calc(var(--plate-size) * .125); border-radius:calc(var(--plate-size) * .28); background:var(--plate); box-shadow:inset 0 0 0 1px var(--plate-edge); overflow:hidden; font-size:calc(var(--plate-size) * .30); font-weight:800;letter-spacing:-.03em;line-height:1; color:var(--acid-ink);text-transform:uppercase; -webkit-user-select:none;user-select:none;}
+.mk .plate--sm{--plate-size:28px}
+.mk .plate--md{--plate-size:40px}
+.mk .plate--lg{--plate-size:64px}
+.mk .plate__art{width:100%;height:100%;object-fit:contain;display:block}
+.mk .art--stripe-light{background:repeating-linear-gradient(90deg,#FDE100 0 22%,#141414 22% 33%);border-radius:14%}
+.mk .art--stripe-dark{background:repeating-linear-gradient(90deg,#A50044 0 25%,#004D98 25% 50%);border-radius:14%}
+.mk .art--shield-light{background:#F2F4F7;box-shadow:inset 0 0 0 1.5px #16202B; clip-path:polygon(10% 0,90% 0,90% 52%,50% 100%,10% 52%);}
+.mk .art--roundel-dark{background:#0B1E3A;box-shadow:inset 0 0 0 1.5px #2E4666;border-radius:50%}
+.mk .dock{position:fixed;left:0;right:0;bottom:0;max-width:420px;margin:0 auto; padding:13px var(--gutter) calc(14px + env(safe-area-inset-bottom,0px)); background:var(--bg);border-top:1px solid var(--line); pointer-events:none;}
+.mk .dock>*{pointer-events:auto}
+.mk .dock__note{margin:0 0 10px;font-size:12px;color:var(--muted);text-align:center}
+.mk .cta{display:flex;align-items:center;justify-content:center;gap:8px; width:100%;height:52px; border:1px solid var(--acid);border-radius:var(--r-panel); background:var(--acid);color:var(--acid-ink); font:inherit;font-size:15px;font-weight:700;letter-spacing:-.01em; cursor:pointer;transition:opacity .18s var(--ease);}
+.mk .cta[disabled]{opacity:.38;cursor:not-allowed}
+.mk .specs{margin:30px var(--gutter) 24px;padding-top:6px;border-top:1px solid var(--line)}
+.mk .caption{margin:22px 0 10px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .specs__strip{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap; padding:15px;border-radius:var(--r-panel);background:var(--surface);}
+.mk .specs__strip+.specs__strip{margin-top:8px;background:var(--sunken)}
+.mk .demo{display:flex;flex-direction:column;align-items:center;gap:8px}
+.mk .demo span{font-size:9.5px;letter-spacing:.06em;color:var(--dim);text-align:center}
+.mk .specs__ctas{display:flex;gap:10px}
+.mk .specs__ctas>div{flex:1;min-width:0}
+.mk .specs__ctas p{margin:0 0 7px;font-size:9.5px;letter-spacing:.06em;color:var(--dim);text-align:center}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Club selection</h1>
+    <p class="dek">The screen where a member picks the club they follow — the one choice that determines
+their War Room, their Backchat and their standings. Four dependent steps on one rail, ending in a
+league's club list with a hard three-club limit.</p>
+    <div class="meta">
+      <span><b>Component</b> club-selection</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 2</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">Choose your club<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Crest plate specimens<span class="side__tag">02</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><span class="side__item" aria-current="page">Club selection<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">A cascade rebuilt so the dependencies show</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">2 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>Choose your club</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <!-- ================= HEADER ================= -->
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+  </div>
+
+  <h1 class="title">Club selection</h1>
+  <p class="intro">Pick the club you follow. It becomes your war room, your Backchat and your standings.</p>
+
+  <!-- ================= CASCADE ================= -->
+  <ol class="cascade" id="cascade">
+
+    <!-- step 1 · Sport -->
+    <li class="step is-done" id="st1">
+      <span class="step__mark"><b>1</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__label" id="lb1">Sport</span>
+      <button class="field" type="button" id="f1" aria-expanded="false">
+        <span class="field__val" id="v1">Football</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+        <svg class="field__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </button>
+      <ul class="opts" id="o1" hidden></ul>
+      <p class="hint" id="h1" hidden></p>
+    </li>
+
+    <!-- step 2 · Competition level -->
+    <li class="step is-done" id="st2">
+      <span class="step__mark"><b>2</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__label" id="lb2">Competition level
+        <svg class="step__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </span>
+      <button class="field" type="button" id="f2" aria-expanded="false">
+        <span class="field__val" id="v2">International</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+        <svg class="field__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </button>
+      <ul class="opts" id="o2" hidden></ul>
+      <p class="hint" id="h2" hidden></p>
+    </li>
+
+    <!-- step 3 · League -->
+    <li class="step is-done" id="st3">
+      <span class="step__mark"><b>3</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__label" id="lb3">League
+        <svg class="step__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </span>
+      <button class="field" type="button" id="f3" aria-expanded="false">
+        <span class="plate plate--sm" id="p3" aria-hidden="true">CL</span>
+        <span class="field__val" id="v3">Champions League</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+        <svg class="field__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </button>
+      <ul class="opts" id="o3" hidden></ul>
+      <p class="hint" id="h3" hidden></p>
+    </li>
+
+    <!-- step 4 · Club -->
+    <li class="step is-active" id="st4">
+      <span class="step__mark"><b>4</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__label" id="lb4">Club
+        <svg class="step__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </span>
+
+      <!-- locked render -->
+      <div class="panel panel--locked" id="panelLocked" hidden>
+        <p class="hint" id="h4">Choose a league first — clubs are listed by league.</p>
+      </div>
+
+      <!-- live render -->
+      <div class="panel" id="panelLive">
+
+        <!-- the limit, above the control it constrains -->
+        <div class="limit" id="limit">
+          <div class="limit__bar">
+            <span class="status-pill" id="limitPill" role="status" aria-live="polite">2 of 3 used in this league</span>
+          </div>
+          <div class="limit__ticks" id="limitTicks" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i></div>
+          <p class="limit__note" id="limitNote">You can follow up to 3 clubs in any one league. This pick counts, even if you leave mid-season.</p>
+          <div class="limit__used" id="limitUsed">
+            <span>Already following</span>
+            <span class="used"><span class="plate plate--sm"><span class="plate__art art--stripe-light"></span></span>Borussia Dortmund</span>
+            <span class="used"><span class="plate plate--sm">MUN</span>Manchester United</span>
+          </div>
+        </div>
+
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+          <input id="q" type="search" autocomplete="off" placeholder="Search Champions League clubs" aria-label="Search clubs">
+        </div>
+
+        <ul class="clist" id="clist" role="listbox" aria-label="Clubs"></ul>
+      </div>
+    </li>
+  </ol>
+
+  <!-- ================= YOUR PICK ================= -->
+  <section class="pick" id="pick" hidden aria-label="Your pick">
+    <span class="plate plate--lg" id="pickPlate" aria-hidden="true">BAR</span>
+    <div class="pick__id">
+      <p class="eyebrow">Your pick</p>
+      <h3 id="pickName">Barcelona</h3>
+      <p class="pick__sub" id="pickSub">Champions League · Football</p>
+    </div>
+    <button class="pill-btn" type="button" id="pickClear">Change</button>
+  </section>
+
+</div><!-- ================= DOCK (outside main) ================= -->
+<div class="dock">
+  <p class="dock__note" id="dockNote">Choose a club to continue.</p>
+  <button class="cta" type="button" id="cta" disabled>Continue</button>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Crest plate specimens</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="bar"></div>
+  <h1 class="title">Crest plate</h1>
+  <p class="intro">One plate, every crest. The plate is measured against the surface, never the artwork.</p>
+
+  <section class="specs" aria-label="Specimens">
+
+    <p class="caption">Crest plate · size steps</p>
+    <div class="specs__strip">
+      <span class="demo"><span class="plate plate--sm"><span class="plate__art art--stripe-dark"></span></span><span>sm 28<br>rows</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--stripe-dark"></span></span><span>md 40<br>selects, list</span></span>
+      <span class="demo"><span class="plate plate--lg"><span class="plate__art art--stripe-dark"></span></span><span>lg 64<br>headers</span></span>
+      <span class="demo"><span class="plate plate--lg">BAR</span><span>lg 64<br>code fallback</span></span>
+    </div>
+
+    <p class="caption">Crest plate · any artwork, one optical weight</p>
+    <div class="specs__strip">
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--stripe-light"></span></span><span>high-key<br>stripes</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--stripe-dark"></span></span><span>low-key<br>stripes</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--shield-light"></span></span><span>pale<br>shield</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--roundel-dark"></span></span><span>dark<br>roundel</span></span>
+      <span class="demo"><span class="plate plate--md">FCB</span><span>code<br>fallback</span></span>
+    </div>
+    <div class="specs__strip">
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--stripe-light"></span></span><span>on --sunken</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--stripe-dark"></span></span><span>on --sunken</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--shield-light"></span></span><span>on --sunken</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--roundel-dark"></span></span><span>on --sunken</span></span>
+      <span class="demo"><span class="plate plate--md">RMA</span><span>on --sunken</span></span>
+    </div>
+
+    <p class="caption">Select field · filled, empty, locked</p>
+    <div class="specs__strip" style="display:block">
+      <button class="field" type="button" aria-expanded="false" aria-disabled="false" onclick="return false">
+        <span class="plate plate--sm">LL</span>
+        <span class="field__val">La Liga</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+      </button>
+      <button class="field field--empty" type="button" style="margin-top:10px" aria-expanded="false" onclick="return false">
+        <span class="field__val">Choose a league</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+      </button>
+      <button class="field" type="button" style="margin-top:10px" aria-disabled="true" tabindex="-1">
+        <span class="field__val">Choose a sport first</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+        <svg class="field__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </button>
+    </div>
+
+    <p class="caption">Primary action · one shape, two opacities</p>
+    <div class="specs__ctas">
+      <div><p>disabled</p><button class="cta" type="button" disabled>Continue</button></div>
+      <div><p>enabled</p><button class="cta" type="button" onclick="return false">Continue</button></div>
+    </div>
+  </section>
+
+</div><!-- ================= DOCK (outside main) ================= -->
+<div class="dock">
+  <p class="dock__note" id="dockNote">Choose a club to continue.</p>
+  <button class="cta" type="button" id="cta" disabled>Continue</button>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>A cascade rebuilt so the dependencies show</h2>
+  <p>
+    Club selection exists in the current product as a stack of four dropdowns: sport, then competition
+    level, then league, then club. Each one only works once the one above it is answered, but nothing on
+    screen says so — a member taps a dead control and nothing happens. This build is new in the dark
+    language and it fixes that by numbering the steps and railing them together: the rail above a step
+    is accent once that step is satisfied and a hairline while it is not, and a step that cannot yet be
+    answered carries a padlock and says what it is waiting for.
+  </p>
+  <p>
+    The second problem this screen solves is crests. Club artwork is authored for light grounds — kit,
+    print, letterhead — and dropping it on a near-black card produced a tenfold contrast spread inside a
+    single container in the current build: one club's yellow measured about <code>15:1</code> while
+    another club's blue measured about <code>1.4:1</code> and effectively disappeared. Rather than
+    measure each crest against our surface, every crest sits on an app-owned plate and we measure the
+    plate. That number is then a constant for every club in the catalogue.
+  </p>
+  <p>
+    The third is the limit. A member may follow three clubs in any one league, and the limit is placed
+    <em>above</em> the control it constrains rather than surfacing as an error after the tap.
+  </p>
+  <p>
+    Two devices sit above. The first is the screen itself: the cascade, the club list and the confirmed
+    pick are one screen, because the list is revealed inside step 4 rather than navigated to. The second
+    is the crest-plate specimen sheet — reference material, not a screen a member ever reaches, and now
+    on its own device rather than trailing the product screen in one long scroll.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Header</td><td>Back control</td>
+          <td class="t-note"><code>38&nbsp;px</code> circle on <code>#1C2129</code> with an 18&nbsp;px
+            1.9-stroke chevron, in a <code>44&nbsp;px</code> bar at the gutter.</td>
+        </tr>
+        <tr>
+          <td>Header</td><td>Title and intro</td>
+          <td class="t-note"><code>Club selection</code> at 34/800, uppercase, tracking
+            <code>-.025em</code>, left aligned — the system's one screen-title treatment, replacing the
+            centred app-bar title of the old build. Below it a <code>31ch</code> line at 13&nbsp;px in
+            <code>#99A0AE</code> stating what the choice does.</td>
+        </tr>
+        <tr>
+          <td>Cascade</td><td>Step rail</td>
+          <td class="t-note">A <code>2&nbsp;px</code> vertical rail running from each step marker to the
+            next, <code>12&nbsp;px</code> in from the gutter. It is <code>--line</code> while the step is
+            unanswered and accent at 50% opacity once it is done, so the dependency chain is readable
+            without interacting.</td>
+        </tr>
+        <tr>
+          <td>Cascade</td><td>Step marker</td>
+          <td class="t-note"><code>26&nbsp;px</code> circle on <code>#13171E</code> with a 1&nbsp;px
+            inset hairline, carrying the step number at 12/800 in <code>#5B606B</code>. Active gains a
+            1.5&nbsp;px accent ring and accent numeral; done fills accent with an
+            <code>#0B0E06</code> tick replacing the numeral; locked drops to <code>opacity:.5</code>.</td>
+        </tr>
+        <tr>
+          <td>Cascade</td><td>Step label</td>
+          <td class="t-note">15/600 at <code>-.01em</code>. A locked step's label goes
+            <code>#99A0AE</code> and reveals a 13&nbsp;px <code>#5B606B</code> padlock beside it.</td>
+        </tr>
+        <tr>
+          <td>Steps 1–3</td><td>Select field</td>
+          <td class="t-note">Full width, <code>52&nbsp;px</code> minimum height, padding
+            <code>8px 14px</code>, <code>R12</code>, fill <code>#1C2129</code>, 1&nbsp;px
+            <code>--line</code> border. Value at 15/600 truncating; 18&nbsp;px muted chevron that rotates
+            180° when open. Open state brings the border to
+            <code>rgba(155,226,34,.45)</code>.</td>
+        </tr>
+        <tr>
+          <td>Steps 1–3</td><td>Empty and locked fields</td>
+          <td class="t-note">Empty drops the value to 400 weight in <code>#99A0AE</code> and reads
+            <code>Choose a league</code>. Locked swaps the fill to <code>#13171E</code>, softens the
+            border to <code>--line-soft</code>, drops the text to <code>#5B606B</code>, replaces the
+            chevron with a 16&nbsp;px padlock, and reads what it is waiting for —
+            <code>Choose a sport first</code>.</td>
+        </tr>
+        <tr>
+          <td>Steps 1–3</td><td>Option list</td>
+          <td class="t-note">Inline below the field rather than a modal: <code>R12</code> list on
+            <code>#13171E</code> with a 1&nbsp;px border and <code>6&nbsp;px</code> padding. Options are
+            <code>10px 11px</code> at 14&nbsp;px on an <code>R8</code> row, hovering to white 5%. The
+            selected option goes accent at 600 and reveals a 14&nbsp;px tick.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Panel</td>
+          <td class="t-note">The section-container pattern: <code>#080A0C</code> fill, 1&nbsp;px
+            <code>--line</code>, <code>R16</code>, <code>12&nbsp;px</code> padding. When no league is
+            chosen it collapses to a single hint line instead —
+            <code>Choose a league first — clubs are listed by league.</code></td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Limit pill</td>
+          <td class="t-note">The status pill in its full <code>32&nbsp;px</code> form on
+            <code>rgba(155,226,34,.12)</code>, accent at 11/700 tracking <code>.11em</code>, reading
+            <code>2 of 3 used in this league</code>. It is a live region, so the count is announced as
+            it changes.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Limit ticks</td>
+          <td class="t-note">Three <code>4&nbsp;px</code> bars <code>5&nbsp;px</code> apart at
+            <code>rgba(255,255,255,.14)</code>. Used slots fill accent; the pending slot — the club being
+            chosen right now — fills accent at 45% opacity, so the pick is visibly provisional.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Already following</td>
+          <td class="t-note">Below a 1&nbsp;px <code>--line-soft</code> rule: a tracked
+            <code>ALREADY FOLLOWING</code> label at 10.5/700 then the clubs already held in this league,
+            each a <code>28&nbsp;px</code> plate and its name at 11.5&nbsp;px in
+            <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Search</td>
+          <td class="t-note"><code>44&nbsp;px</code> field, fully rounded, fill <code>#13171E</code>,
+            1&nbsp;px <code>--line</code>, <code>40&nbsp;px</code> left padding for a 17&nbsp;px
+            <code>#5B606B</code> magnifier. Placeholder names the league —
+            <code>Search Champions League clubs</code>. Focus takes the accent border. Matching ignores
+            spaces and also matches the short code.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Club row</td>
+          <td class="t-note"><code>9px 12px</code>, <code>11&nbsp;px</code> gap, 1&nbsp;px
+            <code>--line-soft</code> top border with none on the first, inside an <code>R12</code> list on
+            <code>#1C2129</code>. A <code>40&nbsp;px</code> plate, then the club name at 14/600 with the
+            league beneath at 11.5&nbsp;px in <code>#99A0AE</code>, then the end slot.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Row end slot</td>
+          <td class="t-note">Selected shows an 18&nbsp;px accent tick. Already-followed shows the word
+            <code>FOLLOWING</code> at 10.5/700 tracking <code>.11em</code> in <code>#5B606B</code>.
+            Blocked by the limit shows a 16&nbsp;px <code>#5B606B</code> padlock — the pill above already
+            states <em>why</em>, so the row does not repeat the sentence.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Selected row</td>
+          <td class="t-note">Accent wash fill with a <code>3&nbsp;px</code> accent edge inset on the left
+            and the sub-line switching to accent and the word <code>Selected</code> — the same
+            viewer's-row emphasis used on the Merits leaderboard.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>No matches</td>
+          <td class="t-note"><code>22px 12px</code> centred line at 13&nbsp;px in <code>#5B606B</code>
+            naming the league: <code>No club in Champions League matches that.</code></td>
+        </tr>
+        <tr>
+          <td>Crest plate</td><td>Construction</td>
+          <td class="t-note">Ground is a fixed <code>rgba(255,255,255,.94)</code> — never per-club — with
+            a <code>rgba(0,0,0,.13)</code> inner hairline that reads as a bevel and stops pale artwork
+            bleeding into the plate edge. Radius is <code>28%</code> of the plate, padding
+            <code>12.5%</code>, and artwork is <code>object-fit:contain</code> into the padded square
+            rather than height-fitted, so a wide roundel and a tall shield occupy the same bounding box.
+            No shadow, no glow, no per-club tint, no accent ring.</td>
+        </tr>
+        <tr>
+          <td>Crest plate</td><td>Measured contrast</td>
+          <td class="t-note">The plate against each surface: <code>~14.4:1</code> on
+            <code>#1C2129</code>, <code>~15.6:1</code> on <code>#13171E</code>,
+            <code>~17.5:1</code> on <code>#080A0C</code>, <code>~18.3:1</code> on
+            <code>#030401</code>. Because the plate is app-owned, that is a constant for every club.</td>
+        </tr>
+        <tr>
+          <td>Crest plate</td><td>Size steps</td>
+          <td class="t-note">Three, and only three. <code>28&nbsp;px</code> for dense rows and meta
+            lines, <code>40&nbsp;px</code> for select values and club rows — the primary tap target —
+            and <code>64&nbsp;px</code> for headers and confirmation lockups. Radius, padding and code
+            type derive from the size: <code>8/3.5/8.4</code>, <code>11.2/5/12</code>,
+            <code>17.9/8/19.2&nbsp;px</code>.</td>
+        </tr>
+        <tr>
+          <td>Crest plate</td><td>Code fallback</td>
+          <td class="t-note">2–4 characters, uppercase, 800 weight, tracking <code>-.03em</code>, in
+            <code>#0B0E06</code> — the existing ink-on-a-light-ground token — at 30% of the plate size.
+            Used when no artwork exists, when artwork fails ingest, and while artwork loads, so the row
+            never reflows and never flashes an empty box.</td>
+        </tr>
+        <tr>
+          <td>Your pick</td><td>Confirmation card</td>
+          <td class="t-note"><code>R16</code> card on <code>#1C2129</code>, <code>16&nbsp;px</code>
+            padding, holding a <code>64&nbsp;px</code> plate, a tracked <code>YOUR PICK</code> eyebrow,
+            the club at 17/600 truncating, the league and sport at 12&nbsp;px in <code>#99A0AE</code>,
+            and a <code>34&nbsp;px</code> <code>Change</code> pill.</td>
+        </tr>
+        <tr>
+          <td>Dock</td><td>Primary action</td>
+          <td class="t-note">Fixed outside the scroll: <code>#030401</code> bar with a 1&nbsp;px
+            <code>--line</code> top edge, a centred 12&nbsp;px note in <code>#99A0AE</code> that reports
+            exactly what is missing, and a <code>52&nbsp;px</code> <code>R12</code> accent button at
+            15/700. Disabled and enabled differ by <code>opacity:.38</code> only — same fill, same
+            1&nbsp;px accent border, same radius, same height. The old build swapped the fill and dropped
+            the border.</td>
+        </tr>
+        <tr>
+          <td>Specimens</td><td>Second device</td>
+          <td class="t-note">A reference sheet on its own device, not part of the product: the plate at
+            its three size steps and with its code fallback; the same plate holding four kinds of artwork
+            on <code>#1C2129</code> and again on <code>#13171E</code>; the select field filled, empty and
+            locked; and the primary action in both opacities.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Step locked</td><td class="t-note">Marker at 50% opacity, label muted with a padlock, field on <code>#13171E</code> with a padlock and a sentence naming what it is waiting for. Not focusable.</td></tr>
+        <tr><td>Step active</td><td class="t-note">Marker ringed 1.5&nbsp;px in accent with an accent numeral; the field is live.</td></tr>
+        <tr><td>Step done</td><td class="t-note">Marker fills accent with a tick, and the rail above the next step turns accent at 50%.</td></tr>
+        <tr><td>Field open</td><td class="t-note">Border to <code>rgba(155,226,34,.45)</code>, chevron rotated, inline option list below. Tapping anywhere outside closes it.</td></tr>
+        <tr><td>Changing an earlier step</td><td class="t-note">Answering step 1 clears the level, league and club; answering step 2 clears the league and club. The cascade re-locks and the dock note changes with it — a stale answer is never left standing.</td></tr>
+        <tr><td>League chosen</td><td class="t-note">A <code>28&nbsp;px</code> plate carrying the league's code appears inside the step-3 field, and step 4 opens with the search placeholder naming that league.</td></tr>
+        <tr><td>Limit under</td><td class="t-note">Accent pill counting used slots, accent ticks, and the note explaining that the pick counts even if you leave mid-season.</td></tr>
+        <tr><td>Limit reached</td><td class="t-note">Pill drops to white 6% with muted text and reads <code>Limit reached · 3 of 3</code>, the filled ticks go muted, the note tells you to leave a club first, and every unselected row locks.</td></tr>
+        <tr><td>Row already followed</td><td class="t-note">Plate and text at 38% opacity, end slot reads <code>FOLLOWING</code>, not tappable, no hover.</td></tr>
+        <tr><td>Row blocked by the limit</td><td class="t-note">Same dimming with a padlock in the end slot. The reason lives once, in the pill.</td></tr>
+        <tr><td>Row selected</td><td class="t-note">Accent wash, <code>3&nbsp;px</code> accent edge, sub-line reads <code>Selected</code>, tick in the end slot. Tapping again deselects.</td></tr>
+        <tr><td>Search with no match</td><td class="t-note">The list is replaced by one centred line naming the league searched.</td></tr>
+        <tr><td>Pick made</td><td class="t-note">The confirmation card appears, the dock note becomes <code>Barcelona · Champions League</code>, and Continue enables.</td></tr>
+        <tr><td>Artwork missing or reversed</td><td class="t-note">Falls back to the code plate. Artwork whose mean luminance over its alpha-covered pixels exceeds <code>0.82</code> is rejected at ingest, because a plate cannot outline a white-on-transparent mark. A second dark-plate variant is deliberately not offered.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Tokens</b> — surfaces, hairlines, accent, acid-ink, radii and the type scale, copied verbatim from the sampled set</li>
+        <li><b>Screen title</b> — 34/800 uppercase at <code>-.025em</code>, left aligned</li>
+        <li><b>Section container</b> — <code>#080A0C</code>, 1&nbsp;px <code>--line</code>, <code>R16</code>, <code>12&nbsp;px</code> padding, used for the club panel</li>
+        <li><b>Status pill</b> — the <code>LIVE NOW</code> geometry, type and dot, carrying the limit count</li>
+        <li><b>Icon button and pill button</b> — <code>38&nbsp;px</code> circle, <code>34&nbsp;px</code> dark pill</li>
+        <li><b>Card and row</b> — <code>R16</code> card on <code>#1C2129</code>, rows with a <code>--line-soft</code> top border and none on the first</li>
+        <li><b>Selected-row emphasis</b> — accent wash plus a <code>3&nbsp;px</code> edge, from the Merits leaderboard</li>
+        <li><b>Eyebrow</b> — 10.5/700 tracked micro-label in <code>#5B606B</code></li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The whole screen</b> — the current build is four unrelated dropdowns; there is no designed frame in this brand</li>
+        <li><b>Numbered, railed cascade</b> — the dependency between the four steps is drawn, not implied</li>
+        <li><b>Locked-step language</b> — padlock plus a sentence naming the blocker, on both the marker and the field</li>
+        <li><b>Crest plate</b> — the ground, the bevel hairline, the <code>28%</code> radius and <code>12.5%</code> padding rule, the contain-fit, the three size steps and the derived radius/padding/type at each</li>
+        <li><b>Plate-not-crest contrast strategy</b> — measuring an app-owned constant instead of third-party artwork</li>
+        <li><b>Ingest rule</b> — reject artwork above <code>0.82</code> mean luminance over its alpha coverage and fall back to the code plate, rather than shipping a second plate tone</li>
+        <li><b>Code fallback</b> — the short code as placeholder, error state and loading state in one</li>
+        <li><b>Inline option list</b> — replaces the modal picker, so the answer lands next to the question</li>
+        <li><b>Three-club limit, promoted</b> — pill, ticks, note and the already-following strip, all above the control they constrain</li>
+        <li><b>Pending tick</b> — the provisional third slot at 45% accent, so a pick reads as not yet committed</li>
+        <li><b>Search across name and code</b> — space-insensitive matching</li>
+        <li><b>Confirmation card</b> — the pick restated with a <code>64&nbsp;px</code> plate and a <code>Change</code> escape</li>
+        <li><b>Docked action with a live note</b> — the note always names the next missing answer, and disabled differs from enabled by opacity alone</li>
+        <li><b>Artwork stand-ins</b> — four CSS blocks representing high-key stripes, low-key stripes, a pale keylined shield and a dark roundel. They are the only non-token colours in the file and they stand for artwork the app does not own; nothing in the product may reuse them</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Where does crest artwork come from, and who checks it?</h3>
+      <p>No crest image assets exist. Every crest on this screen is either a
+      <span class="flag">code plate</span> or one of four CSS stand-ins built to prove the plate contains
+      real artwork. Before build we need a licensed source, a delivery format, and agreement that the
+      ingest rule applies — reversed white-on-transparent marks get rejected and fall back to the code,
+      because a light plate cannot hold an edge against them.</p>
+    </li>
+    <li>
+      <h3>Is a light plate acceptable in a dark app?</h3>
+      <p>It is the one place the product shows a light ground, and that is deliberate: crests are authored
+      for light, so compositing them on light preserves the internal contrast their own designers signed
+      off, and the app then takes responsibility only for plate-versus-surface, which it fully controls.
+      The alternative is a tenfold contrast spread inside a single list, which is what the current build
+      has. We need this agreed as a rule, not per screen.</p>
+    </li>
+    <li>
+      <h3>Are the three-letter codes ours to invent?</h3>
+      <p>Codes like <code>BAR</code>, <code>RMA</code>, <code>BVB</code>, <code>SU58</code> and
+      <code>WI</code> were written for this build. Some are conventional, some are guesses, and the plate
+      allows <span class="flag">2–4 characters</span>. They need to come from the catalogue rather than
+      from us, because they appear wherever artwork is missing — which, today, is everywhere.</p>
+    </li>
+    <li>
+      <h3>Is the limit three per league, and what does "counts" mean?</h3>
+      <p>The build enforces <span class="flag">three clubs in any one league</span> and warns that the
+      pick counts even if you leave mid-season. Both came from the spec and both need confirming. In
+      particular: does leaving a club free the slot immediately, at the end of the season, or never? The
+      note currently implies never, which is the strictest reading and the one that most needs to be
+      right.</p>
+    </li>
+    <li>
+      <h3>Is the catalogue really this shape?</h3>
+      <p>Sport → competition level → league → club is four decisions to follow one team, and the
+      International level puts the same clubs in more than one league — Real Madrid appears in the
+      Champions League, the Club World Cup, La Liga <em>and</em> EuroLeague basketball. If a member
+      following Barcelona in La Liga should automatically see them in Europe, the cascade is measuring
+      competitions when the member is choosing a club, and step 2 may not need to exist.</p>
+    </li>
+    <li>
+      <h3>Can a member follow more than one club at all?</h3>
+      <p>The screen supports it — the limit, the already-following strip and the per-league counting all
+      assume multiple clubs. But the intro says the pick becomes "your war room, your Backchat and your
+      standings", singular. If following several clubs is real, every one of those surfaces needs a club
+      switcher, and that is not designed.</p>
+    </li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  var LIMIT = 3;
+
+  var SPORTS = ['Football','Basketball','Cricket'];
+  var LEVELS = ['International','National','Regional'];
+
+  var LEAGUES = {
+    'Football|International'  : [['Champions League','CL'],['Europa League','UEL'],['FIFA Club World Cup','CWC']],
+    'Football|National'       : [['English Premier League','EPL'],['La Liga','LL'],['Bundesliga','BUN']],
+    'Football|Regional'       : [['National Premier Leagues NSW','NSW'],['Northern Premier League','NPL']],
+    'Basketball|International': [['EuroLeague','EL'],['Basketball Champions League','BCL']],
+    'Basketball|National'     : [['NBA','NBA'],['WNBA','WNBA']],
+    'Basketball|Regional'     : [['NBL Australia','NBL']],
+    'Cricket|International'   : [['ICC Cricket World Cup','CWC'],['ICC T20 World Cup','T20']],
+    'Cricket|National'        : [['Indian Premier League','IPL'],['Big Bash League','BBL']],
+    'Cricket|Regional'        : [['Sheffield Shield','SHD']]
+  };
+
+  /* n = name, c = short code, a = stand-in artwork class */
+  var CLUBS = {
+    'Champions League': [
+      {n:'Ajax',                c:'AJA'},
+      {n:'Barcelona',           c:'BAR', a:'art--stripe-dark'},
+      {n:'Bayern Munich',       c:'FCB'},
+      {n:'Borussia Dortmund',   c:'BVB', a:'art--stripe-light'},
+      {n:'Inter Milan',         c:'INT', a:'art--roundel-dark'},
+      {n:'Liverpool',           c:'LIV', a:'art--shield-light'},
+      {n:'Manchester United',   c:'MUN'},
+      {n:'Paris Saint-Germain', c:'PSG'},
+      {n:'Real Madrid',         c:'RMA'}
+    ],
+    'Europa League': [
+      {n:'Ajax',c:'AJA'},{n:'AS Roma',c:'ROM'},{n:'Rangers',c:'RAN'},{n:'Villarreal',c:'VIL'}
+    ],
+    'FIFA Club World Cup': [
+      {n:'Al Hilal',c:'HIL'},{n:'Palmeiras',c:'PAL'},{n:'Real Madrid',c:'RMA'},{n:'Seattle Sounders',c:'SEA'}
+    ],
+    'English Premier League': [
+      {n:'Arsenal',c:'ARS'},{n:'Chelsea',c:'CHE'},
+      {n:'Liverpool',c:'LIV',a:'art--shield-light'},
+      {n:'Manchester City',c:'MCI'},{n:'Manchester United',c:'MUN'},
+      {n:'Newcastle United',c:'NEW'},{n:'Tottenham Hotspur',c:'TOT'}
+    ],
+    'La Liga': [
+      {n:'Atlético Madrid',c:'ATM'},
+      {n:'Barcelona',c:'BAR',a:'art--stripe-dark'},
+      {n:'Real Betis',c:'BET'},{n:'Real Madrid',c:'RMA'},{n:'Sevilla',c:'SEV'}
+    ],
+    'Bundesliga': [
+      {n:'Bayer Leverkusen',c:'B04'},{n:'Bayern Munich',c:'FCB'},
+      {n:'Borussia Dortmund',c:'BVB',a:'art--stripe-light'},
+      {n:'RB Leipzig',c:'RBL'}
+    ],
+    'National Premier Leagues NSW': [
+      {n:'APIA Leichhardt',c:'APA'},{n:'Marconi Stallions',c:'MAR'},{n:'Sydney United 58',c:'SU58'}
+    ],
+    'Northern Premier League': [
+      {n:'Chorley',c:'CHO'},{n:'Scarborough Athletic',c:'SCA'},{n:'Whitby Town',c:'WHI'}
+    ],
+    'EuroLeague': [
+      {n:'Fenerbahçe',c:'FEN'},{n:'Olympiacos',c:'OLY'},{n:'Panathinaikos',c:'PAO'},{n:'Real Madrid',c:'RMA'}
+    ],
+    'Basketball Champions League': [
+      {n:'Hapoel Jerusalem',c:'JER'},{n:'La Laguna Tenerife',c:'TEN'},{n:'Unicaja',c:'UNI'}
+    ],
+    'NBA': [
+      {n:'Boston Celtics',c:'BOS'},{n:'Chicago Bulls',c:'CHI'},
+      {n:'Golden State Warriors',c:'GSW'},{n:'Los Angeles Lakers',c:'LAL'},{n:'Miami Heat',c:'MIA'}
+    ],
+    'WNBA': [
+      {n:'Las Vegas Aces',c:'LVA'},{n:'New York Liberty',c:'NYL'},{n:'Seattle Storm',c:'SEA'}
+    ],
+    'NBL Australia': [
+      {n:'Melbourne United',c:'MEL'},{n:'Perth Wildcats',c:'PER'},{n:'Sydney Kings',c:'SYD'}
+    ],
+    'ICC Cricket World Cup': [
+      {n:'Australia',c:'AUS'},{n:'England',c:'ENG'},{n:'India',c:'IND'},{n:'South Africa',c:'RSA'}
+    ],
+    'ICC T20 World Cup': [
+      {n:'Australia',c:'AUS'},{n:'India',c:'IND'},{n:'West Indies',c:'WI'}
+    ],
+    'Indian Premier League': [
+      {n:'Chennai Super Kings',c:'CSK'},{n:'Mumbai Indians',c:'MI'},{n:'Royal Challengers Bengaluru',c:'RCB'}
+    ],
+    'Big Bash League': [
+      {n:'Melbourne Stars',c:'STA'},{n:'Perth Scorchers',c:'SCO'},{n:'Sydney Sixers',c:'SIX'}
+    ],
+    'Sheffield Shield': [
+      {n:'New South Wales',c:'NSW'},{n:'Queensland',c:'QLD'},{n:'Victoria',c:'VIC'}
+    ]
+  };
+
+  /* clubs the account already follows, per league */
+  var FOLLOWED = {
+    'Champions League'      : ['Borussia Dortmund','Manchester United'],
+    'English Premier League': ['Liverpool']
+  };
+
+  var state = {
+    sport : 'Football',
+    level : 'International',
+    league: 'Champions League',
+    code  : 'CL',
+    club  : null,
+    q     : ''
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var open = null;
+
+  function leagues(){
+    if (!state.sport || !state.level) return [];
+    return LEAGUES[state.sport + '|' + state.level] || [];
+  }
+  function clubs(){
+    return (state.league && CLUBS[state.league]) || [];
+  }
+  function followed(){
+    return (state.league && FOLLOWED[state.league]) || [];
+  }
+  function codeOf(name){
+    var l = leagues(), i;
+    for (i = 0; i < l.length; i++) if (l[i][0] === name) return l[i][1];
+    return '';
+  }
+  function tick(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" '
+         + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+         + '<path d="M5 13l4 4 10-10"/></svg>';
+  }
+  function plate(club, size){
+    var inner = club.a ? '<span class="plate__art ' + club.a + '"></span>' : club.c;
+    return '<span class="plate plate--' + size + '" aria-hidden="true">' + inner + '</span>';
+  }
+
+  /* ---------- option lists ---------- */
+  function paintOpts(n){
+    var list = $('o' + n), items, sel, i, out = '';
+    if (n === 1){ items = SPORTS.map(function(s){ return [s,'']; }); sel = state.sport; }
+    else if (n === 2){ items = LEVELS.map(function(s){ return [s,'']; }); sel = state.level; }
+    else { items = leagues(); sel = state.league; }
+    for (i = 0; i < items.length; i++){
+      out += '<li role="option" data-v="' + items[i][0] + '" aria-selected="'
+           + (items[i][0] === sel) + '">' + tick()
+           + '<span>' + items[i][0] + '</span></li>';
+    }
+    list.innerHTML = out;
+  }
+
+  function toggle(n){
+    var f = $('f' + n), list = $('o' + n);
+    if (f.getAttribute('aria-disabled') === 'true') return;
+    if (open === n){ close(); return; }
+    close();
+    paintOpts(n);
+    list.hidden = false;
+    f.setAttribute('aria-expanded','true');
+    open = n;
+  }
+  function close(){
+    if (open === null) return;
+    $('o' + open).hidden = true;
+    $('f' + open).setAttribute('aria-expanded','false');
+    open = null;
+  }
+
+  /* ---------- the club list ---------- */
+  function paintClubs(){
+    var list = $('clist'), all = clubs(), fol = followed(),
+        q = state.q.toLowerCase().replace(/\s+/g,''),
+        full = fol.length + (state.club ? 1 : 0) >= LIMIT,
+        out = '', shown = 0, i, c, isFol, isSel, blocked, end;
+
+    for (i = 0; i < all.length; i++){
+      c = all[i];
+      if (q && c.n.toLowerCase().replace(/\s+/g,'').indexOf(q) === -1
+            && c.c.toLowerCase().indexOf(q) === -1) continue;
+      shown++;
+      isFol   = fol.indexOf(c.n) !== -1;
+      isSel   = state.club === c.n;
+      blocked = !isSel && (isFol || full);
+
+      /* Status lives on the row's second line, so the trailing slot
+         only ever holds a glyph and never competes with the club
+         name for width. The pill states *why* the list is closed, so
+         a blocked row carries a lock rather than repeating it. */
+      if (isSel)      end = tick();
+      else if (isFol) end = '';
+      else if (full)  end = '<svg class="crow__locked" viewBox="0 0 24 24" fill="none" '
+                          + 'stroke="currentColor" stroke-width="1.9" stroke-linecap="round" '
+                          + 'stroke-linejoin="round" aria-hidden="true">'
+                          + '<rect x="5" y="11" width="14" height="9" rx="2.5"/>'
+                          + '<path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>';
+      else            end = '';
+
+      out += '<li class="crow" role="option" data-n="' + c.n + '"'
+           + ' aria-selected="' + isSel + '"'
+           + (blocked ? ' aria-disabled="true"' : '') + '>'
+           + plate(c, 'md')
+           + '<span class="crow__id"><span class="crow__name">' + c.n + '</span>'
+           + '<span class="crow__sub">'
+           + (isSel ? 'Selected' : isFol ? 'Already following' : state.league)
+           + '</span></span>'
+           + '<span class="crow__end">' + end + '</span></li>';
+    }
+    list.innerHTML = shown ? out
+      : '<li class="clist__none">No club in ' + state.league + ' matches that.</li>';
+  }
+
+  /* ---------- the limit ---------- */
+  function paintLimit(){
+    var fol = followed(), used = fol.length, pending = state.club ? 1 : 0,
+        total = used + pending, full = total >= LIMIT, i, t = '', out;
+
+    for (i = 0; i < LIMIT; i++){
+      t += '<i class="' + (i < used ? 'on' : (i < total ? 'pending' : '')) + '"></i>';
+    }
+    $('limitTicks').innerHTML = t;
+    $('limitPill').textContent = full
+      ? 'Limit reached · ' + total + ' of ' + LIMIT
+      : total + ' of ' + LIMIT + ' used in this league';
+    $('limit').className = 'limit' + (full ? ' limit--full' : '');
+    $('limitNote').textContent = full
+      ? 'That is your third club in ' + state.league + '. Leave a club here before adding another.'
+      : 'You can follow up to ' + LIMIT + ' clubs in any one league. This pick counts, even if you leave mid-season.';
+
+    if (!used){
+      $('limitUsed').hidden = true;
+    } else {
+      $('limitUsed').hidden = false;
+      out = '<span>Already following</span>';
+      for (i = 0; i < fol.length; i++){
+        out += '<span class="used">' + plate(find(fol[i]), 'sm') + fol[i] + '</span>';
+      }
+      $('limitUsed').innerHTML = out;
+    }
+  }
+  function find(name){
+    var all = clubs(), i;
+    for (i = 0; i < all.length; i++) if (all[i].n === name) return all[i];
+    return {n:name, c:name.slice(0,3)};
+  }
+
+  /* ---------- steps, dock, pick ---------- */
+  function paintStep(li, s){
+    li.className = 'step ' + s;
+  }
+  function paintField(n, value, placeholder, locked){
+    var f = $('f' + n), v = $('v' + n);
+    f.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    if (locked) f.setAttribute('tabindex','-1'); else f.removeAttribute('tabindex');
+    v.textContent = value || placeholder;
+    f.className = 'field' + (value ? '' : ' field--empty');
+  }
+
+  function paint(){
+    /* step 1 — never locked */
+    paintStep($('st1'), state.sport ? 'is-done' : 'is-active');
+    paintField(1, state.sport, 'Choose a sport', false);
+
+    /* step 2 — needs a sport */
+    paintStep($('st2'), !state.sport ? 'is-locked' : (state.level ? 'is-done' : 'is-active'));
+    paintField(2, state.sport ? state.level : '',
+      state.sport ? 'Choose a competition level' : 'Choose a sport first', !state.sport);
+
+    /* step 3 — needs a competition level */
+    paintStep($('st3'), !state.level ? 'is-locked' : (state.league ? 'is-done' : 'is-active'));
+    paintField(3, state.level ? state.league : '',
+      state.level ? 'Choose a league' : 'Choose a competition level first', !state.level);
+    $('p3').hidden = !state.league;
+    if (state.league){ $('p3').textContent = state.code; }
+
+    /* step 4 — needs a league */
+    if (!state.league){
+      paintStep($('st4'), 'is-locked');
+      $('panelLive').hidden = true;
+      $('panelLocked').hidden = false;
+      $('h4').textContent = state.level
+        ? 'Choose a league first — clubs are listed by league.'
+        : 'Choose a competition level first, then a league.';
+    } else {
+      paintStep($('st4'), state.club ? 'is-done' : 'is-active');
+      $('panelLocked').hidden = true;
+      $('panelLive').hidden = false;
+      $('q').placeholder = 'Search ' + state.league + ' clubs';
+      paintLimit();
+      paintClubs();
+    }
+
+    /* your pick */
+    if (state.club){
+      var c = find(state.club);
+      $('pick').hidden = false;
+      $('pickPlate').innerHTML = c.a ? '<span class="plate__art ' + c.a + '"></span>' : c.c;
+      $('pickName').textContent = c.n;
+      $('pickSub').textContent = state.league + ' · ' + state.sport;
+    } else {
+      $('pick').hidden = true;
+    }
+
+    /* dock */
+    var cta = $('cta'), note = $('dockNote');
+    cta.disabled = !state.club;
+    if (state.club){ note.textContent = state.club + ' · ' + state.league; }
+    else if (!state.sport){ note.textContent = 'Choose a sport to begin.'; }
+    else if (!state.level){ note.textContent = 'Choose a competition level to continue.'; }
+    else if (!state.league){ note.textContent = 'Choose a league to continue.'; }
+    else { note.textContent = 'Choose a club to continue.'; }
+  }
+
+  /* ---------- events ---------- */
+  [1,2,3].forEach(function(n){
+    $('f' + n).addEventListener('click', function(){ toggle(n); });
+    $('o' + n).addEventListener('click', function(e){
+      var li = e.target.closest('li'); if (!li) return;
+      var v = li.getAttribute('data-v');
+      if (n === 1){ state.sport = v;  state.level = null; state.league = null; state.code = ''; }
+      if (n === 2){ state.level = v;  state.league = null; state.code = ''; }
+      if (n === 3){ state.league = v; state.code = codeOf(v); }
+      state.club = null; state.q = ''; $('q').value = '';
+      close(); paint();
+    });
+  });
+
+  $('clist').addEventListener('click', function(e){
+    var li = e.target.closest('.crow'); if (!li) return;
+    if (li.getAttribute('aria-disabled') === 'true') return;
+    var n = li.getAttribute('data-n');
+    state.club = (state.club === n) ? null : n;
+    paint();
+  });
+
+  $('q').addEventListener('input', function(){ state.q = this.value; paintClubs(); });
+  $('pickClear').addEventListener('click', function(){ state.club = null; paint(); });
+
+  document.addEventListener('click', function(e){
+    if (open === null) return;
+    if (e.target.closest('.field') || e.target.closest('.opts')) return;
+    close();
+  });
+
+  paint();
+})();
+</script>

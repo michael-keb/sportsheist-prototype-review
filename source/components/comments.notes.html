@@ -1,0 +1,218 @@
+<p class="dek">The discussion that hangs off a War Room proposal, and the composer that feeds
+it. This is where members argue a case before the ballot settles it — so it carries the debate
+half of the product, and it has to do that without ever looking like the vote itself.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>A debate surface, not a second ballot</h2>
+
+  <p>Every proposal in the War Room gets a thread. Members make a case, answer each other, and
+    signal whether they accept an argument — and then, separately, they vote. The whole design
+    problem on this screen is keeping those two acts visibly apart. If agreeing with a comment
+    looks like voting, members will think they have voted when they haven't, and the count will
+    be wrong for reasons nobody can see.</p>
+
+  <p>We chose <b>agree / disagree</b> over a generic like. SportsHeist is about club decisions,
+    so "I accept that argument" is the useful signal and "I enjoyed reading that" is not. Then we
+    made it structurally impossible to mistake for the ballot: <b>agreement is ink, never a
+    fill.</b> The ballot's signature is a filled accent pill, an accent-wash row with a 3&nbsp;px
+    accent bar, a percentage and a threshold bar. None of those four appear anywhere in the
+    thread. The only accent fill on the entire screen is the 44&nbsp;px send button, and that
+    means <em>post</em>, not <em>support</em>. There is also a plain-English line under the sort
+    bar saying agreeing does not change the ballot, because styling alone should not have to
+    carry a claim that important.</p>
+
+  <p>The composer is a rebuild rather than a restyle. The live build ships a ~41&nbsp;pt pill
+    field with no growth, no counter and a grey send glyph that reads as permanently disabled.
+    Ours starts at <code>44px</code>, grows a line at a time to a <code>112px</code> text cap,
+    shows a character counter only when the member is within 80 characters of the limit, and puts
+    the send button on a real tap target. Because it is pinned, it sits outside
+    <code>&lt;main class="screen"&gt;</code> as the build contract requires.</p>
+
+  <p>Threading, agree/disagree, sorting and all three moderation states are <b>new</b>. The
+    shipped model — <code>MComment</code> in
+    <code>lib/models/src/proposal/comment.dart</code> — is flat: <code>user</code>,
+    <code>proposal</code>, <code>content</code>, <code>created_at</code>,
+    <code>updated_at</code>. No id, no parent, no reaction counts, no moderation flags. Every one
+    of those fields has to be added for this screen to exist.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Header</td><td>Screen title</td><td class="t-note"><code>34/800/-.025em</code> uppercase at the <code>16px</code> gutter, with a <code>13px</code> <code>#99A0AE</code> standfirst.</td></tr>
+        <tr><td>Header</td><td>Rules panel</td><td class="t-note">Section container — <code>#080A0C</code> fill, <code>1px rgba(255,255,255,.075)</code>, <code>16px</code> radius, <code>14px</code> padding. Three definition rows stating the agreement, counts and composer rules.</td></tr>
+
+        <tr><td>Thread</td><td>Proposal subject</td><td class="t-note"><code>#13171E</code> panel, <code>12px</code> radius, hairline inset ring. Tracked eyebrow <code>10.5/700/.14em</code> in <code>#5B606B</code> over a <code>15/600</code> title. Without it a scrolled thread has no subject.</td></tr>
+        <tr><td>Thread</td><td>Section header</td><td class="t-note"><code>Discussion</code> at <code>18/600/-.015em</code> plus a <code>12.5px</code> <code>#99A0AE</code> count with <code>tabular-nums</code>. The live build renders <code>Last comments (0)</code> and then <code>No comments yet</code> directly under it — the count is stated twice.</td></tr>
+        <tr><td>Thread</td><td>Sort control</td><td class="t-note">The <code>.tax</code> segmented control from Results&nbsp;&amp;&nbsp;actions, unchanged: <code>46px</code> track, <code>#13171E</code> fill, pill radius, <code>4px</code> padding, <code>38px</code> buttons at <code>13.5/600</code>. Selected item takes the <code>#9BE222</code> fill with <code>#0B0E06</code> ink at <code>12.31:1</code>.</td></tr>
+        <tr><td>Thread</td><td>Ballot disclaimer</td><td class="t-note"><code>11.5px</code> <code>#99A0AE</code> with a <code>14px</code> info glyph at <code>1.9</code> stroke. States in words that agreeing has no effect on the count, the threshold or the result.</td></tr>
+
+        <tr><td>Thread</td><td>Thread panel</td><td class="t-note"><code>#1C2129</code>, <code>12px</code> radius, <code>14px</code> side padding. Merits' <code>.board</code>. Body copy sits on <code>--surface</code>, which is the surface every measured contrast ratio in the contract is quoted against.</td></tr>
+        <tr><td>Thread</td><td>Comment row</td><td class="t-note"><code>13px</code> vertical padding, <code>1px rgba(255,255,255,.045)</code> top hairline, none on the first child. <code>34px</code> portrait, <code>11px</code> gap, then byline / body / actions.</td></tr>
+        <tr><td>Thread</td><td>Byline</td><td class="t-note">Author <code>13.5/600</code> white at <code>14.5:1</code>; relative time <code>11.5px</code> <code>#99A0AE</code> at <code>5.0:1</code>, preceded by a <code>#5B606B</code> middot. Trailing <code>28px</code> overflow button — the only entry point to <b>Report</b>, so every comment carries one.</td></tr>
+        <tr><td>Thread</td><td>Body</td><td class="t-note"><code>13px/1.46</code> white — the contract's body size. Full white rather than muted: on this screen the argument <em>is</em> the content.</td></tr>
+
+        <tr><td>Thread</td><td>Agree / Disagree</td><td class="t-note"><code>34px</code> inline pill, auto width, transparent at rest, <code>11.5/600</code> <code>#99A0AE</code> label with a <code>14px</code> glyph — a tick for agree, a cross for disagree. Count is a bold <code>tabular-nums</code> integer. A <code>::after</code> inset extends the hit area to <code>44px</code> without inflating the row.</td></tr>
+        <tr><td>Thread</td><td>Reply</td><td class="t-note">Same <code>34px</code> shell, no count, no pressed state. Reply arrow at <code>1.9</code> stroke. Sets the composer's reply strip.</td></tr>
+
+        <tr><td>Thread</td><td>Club comment</td><td class="t-note">Five non-colour markers: the portrait is replaced by the monochrome <code>BAR</code> crest tile; that tile is an <code>8px</code> rounded square, not a circle; a <code>CLUB</code> badge sits beside the name; a shield-and-tick glyph marks it official; and the row drops to the <code>#13171E</code> fill under a <code>Pinned by the club</code> tracked micro-label.</td></tr>
+        <tr><td>Thread</td><td>Viewer's comment</td><td class="t-note">Author reads <code>You · dylan_n</code>; the portrait carries a <code>1.5px</code> <code>#9BE222</code> ring at a <code>2px</code> offset (Merits' plinth device); and the agree/disagree pair is replaced by a read-only tally plus <b>Edit</b>. No fill and no wash — those belong to the ballot.</td></tr>
+
+        <tr><td>Thread</td><td>Nested reply</td><td class="t-note">Indented <code>45px</code> to the parent's text column, portrait down to <code>26px</code>, body to <code>12.5px</code>, with a <code>1px rgba(255,255,255,.075)</code> vertical rule centred under the parent portrait. <b>One level only.</b></td></tr>
+        <tr><td>Thread</td><td>Replies expander</td><td class="t-note"><code>38px</code> text button, <code>12.5/600</code> <code>#99A0AE</code>, chevron at <code>2.0</code> stroke, count in bold <code>tabular-nums</code>. Reveals the remaining replies in place and removes itself.</td></tr>
+
+        <tr><td>Composer</td><td>Field</td><td class="t-note">Forms' field construction: <code>#1C2129</code> fill, <code>1px</code> hairline, <code>12px</code> radius, <code>16px</code> value text (below <code>16px</code> iOS zooms the page on focus). Minimum <code>44px</code>, grows to a <code>112px</code> text cap, then scrolls. Focus is the system's accent border plus a <code>3px</code> <code>rgba(155,226,34,.12)</code> ring.</td></tr>
+        <tr><td>Composer</td><td>Counter</td><td class="t-note">Hidden until 80 characters remain, then <code>11/600</code> <code>#99A0AE</code> reading <code>80 left</code>. Over the limit it becomes <code>−24 over</code> with a minus sign and a warning triangle, the field border goes <code>#E2564A</code> and send disables.</td></tr>
+        <tr><td>Composer</td><td>Send</td><td class="t-note"><code>44px</code> circle, <code>#9BE222</code> fill, <code>#0B0E06</code> paper-plane at <code>1.9</code> stroke — <code>12.31:1</code>. Disabled drops to <code>#13171E</code> with a <code>#5B606B</code> glyph. Posting swaps the glyph for a spinning arc and sets <code>aria-busy</code>.</td></tr>
+        <tr><td>Composer</td><td>Reply strip</td><td class="t-note"><code>11.5px</code> <code>Replying to <b>name</b></code> with a reply glyph and a <code>30px</code> dismiss button, above the field.</td></tr>
+        <tr><td>Composer</td><td>Band</td><td class="t-note">Pinned, full width, <code>rgba(3,4,1,.93)</code> with a <code>14px</code> backdrop blur and a <code>1px</code> top hairline. Lives <b>outside</b> <code>&lt;main class="screen"&gt;</code> per the contract, so it stays put inside the review page's device frame.</td></tr>
+
+        <tr><td>Empty</td><td>Empty panel</td><td class="t-note">Section container, centred. <code>56px</code> speech-bubble at <code>1.5</code> stroke in <code>#9BE222</code> at <code>.92</code> opacity, a <code>16/600</code> headline and <code>13px</code> muted copy. The call to action is the <b>secondary</b> <code>52px</code> pill — a full-width accent pill in a thread would read as the ballot's <em>Vote</em> button.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Comment states, then composer states.</caption>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Comment · default</td><td class="t-note">Portrait, author, relative time, body, then <code>Agree</code> / <code>Disagree</code> / <code>Reply</code>. Counts are raw integers.</td></tr>
+        <tr><td>Comment · you have agreed</td><td class="t-note">Three signals, none of them a fill: label and glyph go <code>#9BE222</code> (<code>9.6:1</code>), weight goes to <code>700</code>, and a <code>1px rgba(155,226,34,.34)</code> hairline ring appears. The count increments by one.</td></tr>
+        <tr><td>Comment · you have disagreed</td><td class="t-note">Label goes white at <code>700</code> with a <code>1px rgba(255,255,255,.22)</code> ring, and the <code>14px</code> cross glyph goes <code>#E2564A</code>. Red is on the glyph only — <code>4.36:1</code> clears the <code>3:1</code> non-text floor but not AA for <code>11.5px</code> copy — and it is always paired with the word <em>Disagree</em>.</td></tr>
+        <tr><td>Comment · exclusive</td><td class="t-note">Agree and disagree are mutually exclusive per comment. Switching decrements the one you leave. Both toggle freely with no confirmation, unlike a submitted ballot.</td></tr>
+        <tr><td>Comment · your own</td><td class="t-note">No agree/disagree buttons at all — a member cannot agree with themselves. A read-only tally (<code>19 agree · 2 disagree</code>) plus <b>Edit</b>.</td></tr>
+        <tr><td>Comment · club / official</td><td class="t-note">Crest tile instead of a portrait, squared rather than round, <code>CLUB</code> badge, official shield glyph, <code>#13171E</code> row fill, <code>Pinned by the club</code> label. Five markers, zero new hues.</td></tr>
+        <tr><td>Reply · collapsed</td><td class="t-note">First reply visible; the rest behind a <code>3 more replies</code> expander at the reply indent.</td></tr>
+        <tr><td>Reply · expanded</td><td class="t-note">Remaining replies appear in place, oldest-first, and the expander removes itself.</td></tr>
+
+        <tr><td><b>Hidden by moderation</b> — everyone else</td><td class="t-note"><b>New.</b> The body is replaced by a <code>#13171E</code> notice with an eye-off glyph, the reason in plain words, and a link to the discussion rules. A <code>Moderated</code> badge sits in the byline; agree and disagree are disabled to <code>#5B606B</code>. Author and time stay, so the thread still reads.</td></tr>
+        <tr><td><b>Hidden by moderation</b> — the author</td><td class="t-note"><b>New.</b> Same notice, different copy: <em>Only you can see this</em>, the date, the rule, and two controls — <b>Show my comment</b> (reveals the original body in place) and <b>Appeal</b>. A member should never be silently muted.</td></tr>
+        <tr><td><b>Deleted by the author</b></td><td class="t-note"><b>New.</b> Author name and body are gone. The row survives as a tombstone — hairline ghost circle, italic <code>Comment removed</code> in <code>#5B606B</code>, and a minus-in-circle notice — so replies underneath stay attached instead of orphaning.</td></tr>
+        <tr><td><b>Flagged, pending review</b></td><td class="t-note"><b>New.</b> The comment stays readable, dropped to <code>#99A0AE</code>, with a <code>Reported</code> badge and a notice carrying a red flag glyph. Agree and disagree <b>freeze</b> into a read-only tally, so a reported argument cannot gather weight while it is in question. Reply stays open.</td></tr>
+
+        <tr><td>Sort · newest</td><td class="t-note">Default. Newest top-level comment first; replies always oldest-first inside their thread so an exchange reads in order.</td></tr>
+        <tr><td>Sort · oldest</td><td class="t-note">The case as it was built — which argument came first and what answered it.</td></tr>
+        <tr><td>Sort · most agreed</td><td class="t-note">Ranked on <b>agrees minus disagrees</b>, not agrees alone, so a comment on 40/60 cannot outrank one on 30/2. Ties fall back to newest. A pinned club comment stays first in all three orders.</td></tr>
+
+        <tr><td>Composer · rest</td><td class="t-note"><code>44px</code>, placeholder <code>Add to the discussion</code> in <code>#5B606B</code>, send disabled on <code>#13171E</code>.</td></tr>
+        <tr><td>Composer · focus</td><td class="t-note">Accent border plus a <code>3px</code> accent-wash ring; send becomes live on the first non-space character.</td></tr>
+        <tr><td>Composer · grown</td><td class="t-note">One <code>23px</code> line box at a time to the <code>112px</code> cap — four full lines — then scrolls. Field tops out at <code>154px</code> with the counter showing.</td></tr>
+        <tr><td>Composer · near the limit</td><td class="t-note">Counter appears at exactly 80 remaining and not before: <code>80 left</code> in <code>#99A0AE</code>, announced with <code>aria-live="polite"</code>.</td></tr>
+        <tr><td>Composer · over the limit</td><td class="t-note">Counter reads <code>−1 over</code>, gains a warning triangle and goes <code>#E2564A</code>; the field border and its ring go red; send disables. Four signals, so the state never rests on the red.</td></tr>
+        <tr><td>Composer · replying</td><td class="t-note">A dismissible <code>Replying to name</code> strip above the field; tapping <b>Reply</b> on any comment fills and focuses it.</td></tr>
+        <tr><td>Composer · posting</td><td class="t-note">Send holds a spinning arc on <code>#13171E</code>, is disabled and carries <code>aria-busy="true"</code>. The animation is dropped under <code>prefers-reduced-motion</code>.</td></tr>
+        <tr><td>Thread · empty</td><td class="t-note">Section-container panel, speech-bubble art, <em>No one has made the case yet</em>, and a secondary pill that focuses the composer.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the system</h3>
+      <ul>
+        <li><b>Token block</b> — copied verbatim from <code>merits.html</code>. No colour, radius or type value on this screen is new.</li>
+        <li><b>Row geometry</b> — Merits' <code>.board</code> / <code>.row</code>: <code>#1C2129</code> panel, <code>13px</code> vertical padding, <code>1px rgba(255,255,255,.045)</code> hairline, none on the first child.</li>
+        <li><b>Avatar</b> — <code>border-radius:50%</code>, <code>background-size:cover</code>, <code>background-position:center 22%</code>. Portraits from <code>_assets/avatars.css</code>.</li>
+        <li><b>Crest tile</b> — Merits' <code>.crest</code> / Forms' <code>.iso</code> monochrome badge, scaled to <code>34px</code> for the club account and <code>16px</code> for the <code>CLUB</code> / <code>Moderated</code> / <code>Reported</code> markers.</li>
+        <li><b>Accent ring on a portrait</b> — Merits' first-place plinth device, reused to mark the viewer's own comment.</li>
+        <li><b>Field, focus ring and counter</b> — Forms' <code>.ctl</code> / <code>.ctl--area</code>: <code>12px</code> radius, <code>1px</code> hairline, accent border plus <code>3px</code> accent wash on focus, red border plus <code>3px</code> red wash on error.</li>
+        <li><b>Buttons</b> — Forms' <code>.btn</code> at <code>52px</code> on the pill radius, secondary variant for the empty state.</li>
+        <li><b>Segmented control</b> — <code>.tax</code> from <code>results-actions.html</code>, unchanged, for the three sort orders.</li>
+        <li><b>Icons</b> — inline SVG, <code>24</code>-box, round caps and joins, weight matched to size: <code>1.5</code> for the empty-state art, <code>1.7</code> for the official shield, <code>1.9</code> for the reply / eye-off / flag / send glyphs, <code>2.2</code> for the tick and cross, <code>2.4</code> for the overflow dots.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Agree / disagree on a comment</b> — no reaction of any kind exists in the build. Built as an ink-only <code>34px</code> inline control so it can never be confused with the ballot. Needs <code>agree_count</code>, <code>disagree_count</code> and the viewer's own position on the model.</li>
+        <li><b>Threaded replies, one level</b> — <code>MComment</code> has no <code>id</code> and no <code>parent_id</code>, so a reply cannot currently be attached to anything. Both fields are required.</li>
+        <li><b>Reply expander</b> — a thread cap, so a 40-reply argument does not bury the next comment. Needs a reply count on the parent.</li>
+        <li><b>Club / official account marker</b> — the build renders every author identically. Five non-colour distinguishers, and an <code>is_official</code> plus <code>is_pinned</code> flag to drive them.</li>
+        <li><b>Sorting</b> — the build sorts newest-first with no control. Three orders, remembered per member.</li>
+        <li><b>Hidden by moderation</b>, with a separate author view — <b>no moderation exists in the build at all</b>. Needs a moderation status, a reason code and a moderator note.</li>
+        <li><b>Deleted tombstone</b> — needs a soft-delete flag rather than a row removal, so replies survive.</li>
+        <li><b>Flagged pending review, counts frozen</b> — needs a report count and a review state, plus the report action itself behind the comment overflow.</li>
+        <li><b>Character limit and counter</b> — the build has neither; <code>content</code> is an unbounded string. Assumed <code>600</code>.</li>
+        <li><b>Growing composer with a 44 px send</b> — the live control is a fixed pill with a tiny grey send button.</li>
+        <li><b>Ballot disclaimer line</b> — a sentence, under the sort bar, doing in words what the styling does visually.</li>
+        <li><b>Proposal subject panel</b> — the thread's subject, so a scrolled discussion still says what it is about.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Is a 44 px send button acceptable when the kit's icon button is 38 px?</h3>
+      <p>The system ships a <code>38px</code> circular icon button for chrome — search, filter,
+        close. <code>38px</code> is below the <span class="flag">44 pt</span> platform minimum
+        tap target, which is tolerable for a button you press occasionally and wrong for the one
+        control on the screen a member presses every time. Send is built at
+        <code>44px</code>. We would rather raise the kit's icon button to <code>44px</code>
+        everywhere than keep two circle sizes, but that is a system-wide change and it is your
+        call.</p></li>
+
+    <li><h3>Is the comment limit 600 characters?</h3>
+      <p><code>content</code> is an unbounded string in the build, so there is nothing to copy.
+        We assumed <span class="flag">600</span> — long enough for a real argument with a
+        statistic in it, short enough that a thread stays scannable — with the counter appearing
+        at <span class="flag">80 remaining</span> and hard input stopping at
+        <span class="flag">700</span> so the over-limit state is reachable and recoverable rather
+        than silently truncating.</p></li>
+
+    <li><h3>How many reports auto-hide a comment before a moderator sees it?</h3>
+      <p>The built default is: a reported comment <b>stays readable</b>, its counts freeze, and a
+        moderator reviews it. For a club with members under 18 that may be too permissive. We
+        propose auto-collapsing behind a one-tap reveal on the
+        <span class="flag">third independent report</span>, with a moderator SLA of
+        <span class="flag">24 hours</span>. Both numbers need your sign-off, and they are a
+        safeguarding decision rather than a design one.</p></li>
+
+    <li><h3>Who moderates, and can a club officer moderate its own critics?</h3>
+      <p>We have drawn the member-facing side of moderation, not the moderator's tools. The open
+        question is governance: if a club officer can hide comments on the club's own proposals,
+        the debate function is compromised. We assumed moderation sits with
+        <span class="flag">SportsHeist platform moderators</span>, with club officers able to
+        <em>report</em> but not <em>hide</em>. If clubs are to self-moderate, the hidden-comment
+        notice must name who hid it.</p></li>
+
+    <li><h3>Is one level of nesting enough?</h3>
+      <p>At <code>375pt</code> a second indent leaves roughly a 40-character measure, which is
+        unreadable, so replies to a reply land flat in the same thread. That is the right call for
+        phone width but it means a long back-and-forth loses its structure. If deeper argument
+        threading matters, the alternative is a full-screen thread view pushed from the expander —
+        more work, and worth deciding before build.</p></li>
+
+    <li><h3>Should disagreeing be visible to everyone, or only its total?</h3>
+      <p>As built, both counts are public and the member's own position is visible only to them.
+        A club could reasonably want the disagree count hidden — it discourages dissent when a
+        thread is one-sided — or shown only to the comment's author. We built the most transparent
+        option: <span class="flag">both counts public</span>. Changing it is a copy and visibility
+        change, not a redesign.</p></li>
+
+    <li><h3>Does a pinned club comment belong in the count?</h3>
+      <p>The header reads <code>8 comments</code> and includes the pinned club statement. If the
+        club's post is an announcement rather than part of the debate, it should sit above the
+        thread as its own component and come out of the count. We assumed
+        <span class="flag">it is part of the discussion</span> and can be replied to and
+        disagreed with, which is the more honest of the two.</p></li>
+  </ol>
+</section>

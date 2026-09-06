@@ -1,0 +1,397 @@
+<p class="dek">Profile is tab 5 of 5 — the account hub. It answers four questions: who you are, which club you
+play for, what you hold, and where every setting that belongs to you lives. Five screens: the two
+states the capture set documents, plus loading, load-failed and a guest reading.</p>
+
+<section class="since-fixed">
+  <p class="rv-eyebrow">Since this was written — 31 July 2026</p>
+  <h2>Four of the defects below have been fixed in the app</h2>
+  <p>These notes argue from the code as it stood when the screens were drawn. Some of that code has
+  since changed, because these findings were acted on. The screens are still the right proposal —
+  but do not read the following as outstanding faults.</p>
+  <ul>
+    <li><b>A failed profile load no longer shimmers forever.</b> <code>profile_body.dart</code> now has a <code>buildErrorState()</code> with a message and a <b>Try again</b> button wired to <code>loadProfile</code>. Frames <b>03</b> and <b>04</b> proposed exactly this; the app has it. Frame <b>04</b> is now that screen, rebuilt with the app's own copy — so this is the one item below that has moved from a gap to a rebrand.</li>
+    <li><b>The leader-status bands now meet.</b> The three tests are <code>&gt;= 0.95</code>, <code>&gt;= 0.85</code> and <code>&gt;= 0.75</code>, so a member sitting exactly on a boundary no longer falls through to <code>MEMBER</code>.</li>
+    <li><b>The dead menu rows are gone.</b> The <code>switch</code> with its bare <code>case 0: break;</code> has been replaced by a <code>profileRows</code> list, so the menu can no longer render a row with nothing behind it.</li>
+    <li><b>Having no club is no longer treated as a failure.</b> The default-club lookup used to throw when it returned <code>-1</code>; it now falls back to the first club, and leaves the current club <code>null</code> when there are none. That is what lets frame <b>04</b> mean a real failure and frame <b>05</b> mean an account with no club — two readings that used to arrive at the same screen.</li>
+  </ul>
+  <p>Everything else in this file was re-checked against the code on the same date and still holds.</p>
+</section>
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Identity, club, credits, settings</h2>
+  <p>The current build opens Profile with a black slab, a centred name in a display face and a
+  third-party club crest sitting loose on the canvas. This proposal keeps all of the same content and
+  routes, and rebuilds it on the dark-mode language: the <code>PROFILE</code> banner is the same
+  construction as the Merits banner, the identity block is a card, and the seven navigation rows
+  become four labelled groups.</p>
+  <p><b>Why five phones.</b> The capture set documents Profile as two screens — <code>PR-01</code> at
+  scroll <code>0</code> and <code>PR-02</code> the same route scrolled about <code>330pt</code> to the
+  menu list. They are one route, but they are two documented states, so each gets its own frame here
+  rather than being stacked in one scroll. Frames <b>03</b>, <b>04</b> and <b>05</b> are states no
+  capture shows: what the screen looks like while it is loading, what it says when the load fails,
+  and what it looks like for someone who has not joined a club yet.</p>
+  <p>The club affiliation is the piece that needed a real decision. Crests are artwork we do not own
+  and cannot restyle — on the shipped club card a yellow crest measures about <code>15:1</code>
+  against the surface while a blue one drops to about <code>1.4:1</code> and dissolves. Every crest
+  on this screen therefore sits on the app's own plate, and we measure the plate rather than the
+  crest. That number is then identical for every club in the catalogue.</p>
+  <p>The settings list carries one rule that the current build does not: a row with a chevron goes
+  somewhere, a row without one never does. That is what tells an editable field apart from a
+  read-only one — today all eight account fields look identical although only three accept input,
+  and two rows that navigate nowhere at all look exactly like the five that do.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Frame 01 unless stated. Order matches the reading order on screen. Values as
+      built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Hero</td><td>Banner</td><td class="t-note"><code>138px</code>, <code>--r-card</code>,
+          gradient <code>--hero-a</code>→<code>--hero-b</code> at <code>112deg</code>; white field
+          triangles at <code>2.4–3%</code>; three acid peaks at <code>54% × 38%</code> bottom-right;
+          knockout athlete in front of the peaks; title <code>PROFILE</code> at
+          <code>34/800/-.025em</code> uppercase, no strapline. Top margin is <code>34px</code>, not
+          <code>0</code>, so the review device's <code>26px</code> island cannot cover it.</td></tr>
+        <tr><td>Identity</td><td>Card</td><td class="t-note"><code>--surface</code>,
+          <code>--r-card</code>, <code>16px</code> padding.</td></tr>
+        <tr><td>Identity</td><td>Avatar + photo edit</td><td class="t-note"><code>64px</code> circle,
+          <code>background-position:center 22%</code>, ring <code>3px rgba(255,255,255,.10)</code>.
+          One <code>26px</code> edit button on the <code>--sunken</code> fill, punched out of the
+          card with a <code>2.5px</code> <code>--surface</code> ring and expanded to a
+          <code>44px</code> hit area with <code>::after{inset:-9px}</code>. It replaces the current
+          build's separate <code>UPDATE</code> text link.</td></tr>
+        <tr><td>Identity</td><td>Name · handle · tier</td><td class="t-note"><code>Dylan Nguyen</code>
+          at <code>20/700/-.025em</code>; <code>@dylan_n</code> at <code>13px</code>
+          <code>--muted</code>; tier as a status pill, <code>--acid-wash</code> fill,
+          <code>28px</code>, accent text <code>10.5/700/.11em</code>.</td></tr>
+        <tr><td>Identity</td><td>Club, inline</td><td class="t-note">Crest plate <code>--sm</code>
+          <code>28px</code> plus the club name at <code>12.5px</code> <code>--muted</code>.</td></tr>
+        <tr><td>Identity</td><td>Stat strip</td><td class="t-note">Two <code>--sunken</code> panels at
+          <code>--r-panel</code>: <code>2,480</code> Merits and season rank <code>12</code>, figures
+          <code>18/700</code> with <code>tabular-nums</code>, captions
+          <code>9.5/700/.14em</code>. Both figures belong to tab 2.</td></tr>
+        <tr><td>Club</td><td>Section header</td><td class="t-note">Label <code>18/600</code> plus a
+          <code>Clubs ↗</code> pill on <code>--surface</code>, <code>34px</code>,
+          <code>--r-pill</code>, expanded to <code>44px</code> with
+          <code>::after{inset:-5px}</code>. It goes to the Clubs component; the lockup below it opens
+          the club switcher.</td></tr>
+        <tr><td>Club</td><td>Section container</td><td class="t-note"><code>--section</code> fill,
+          <code>1px --line</code>, <code>--r-card</code>, <code>12px</code> padding, holding a
+          <code>Current club</code> status pill above its content.</td></tr>
+        <tr><td>Club</td><td>Current-club lockup</td><td class="t-note"><code>--surface</code> panel at
+          <code>--r-panel</code>, <code>12px</code> padding: crest plate <code>--lg</code>
+          <code>64px</code>, club name <code>17/600</code>, sub <code>12px --muted</code>, chevron
+          <code>15px --dim</code>. Opens the club switcher.</td></tr>
+        <tr><td>Club</td><td>Registered clubs</td><td class="t-note">Two rows on
+          <code>--surface</code>, crest plate <code>--md</code> <code>40px</code>, name
+          <code>13.5/600</code>, state <code>10.5/700/.14em</code>, <code>1px --line-soft</code>
+          divider. Informational — no chevron, so they are not tap targets.</td></tr>
+        <tr><td>Credits</td><td>Balance card</td><td class="t-note"><code>--surface</code>,
+          <code>--r-card</code>, <code>16px</code> padding. Available <code>600,611.5</code> at
+          <code>32/800/-.035em</code> tabular under a <code>10.5/700/.14em</code> eyebrow; total
+          beneath at <code>12.5px</code>. Locked <code>250.0</code> sits in a <code>104px</code>
+          <code>--sunken</code> panel with a padlock, keeping one figure dominant.</td></tr>
+        <tr><td>Credits</td><td>Purchase credits</td><td class="t-note">Accent fill
+          <code>--acid</code> with <code>--acid-ink</code> — the only ink allowed on accent —
+          <code>48px</code>, <code>--r-pill</code>, label <code>14.5/700</code>, leading plus at
+          <code>2.4</code> stroke.</td></tr>
+        <tr><td>Frames 02–03</td><td>Compact identity strip</td><td class="t-note">A
+          <code>36px</code> avatar, the micro-label <code>Profile · Tab 5</code> at
+          <code>10.5/700/.14em</code> <code>--dim</code>, the name at <code>15/600</code> and the
+          tier pill, at <code>34px</code> top margin. Not a tap target. It is the redesign's answer
+          to the shipped black header panel, which is opaque, never collapses, and keeps the avatar
+          and crest on screen while the list scrolls behind it at a hard edge.</td></tr>
+        <tr><td>Frame 02</td><td>Group label</td><td class="t-note"><code>10.5/700/.14em</code>
+          uppercase <code>--dim</code>: <code>Your details</code>, <code>Account</code>,
+          <code>Recognition</code>, <code>Session</code>.</td></tr>
+        <tr><td>Frame 02</td><td>Row</td><td class="t-note">One height throughout:
+          <code>56px</code> (<code>10px</code> padding on a <code>36px</code> content box),
+          <code>1px --line-soft</code> top border, first row none. Leading icon <code>19px</code>
+          <code>--muted</code>, label <code>14/600</code>, trailing chevron <code>15px --dim</code>,
+          focus ring <code>2px --acid</code>. The current build uses <code>72pt</code> on Profile and
+          <code>~56pt</code> on Account Setting for the same widget.</td></tr>
+        <tr><td>Frame 02</td><td>Read-only row</td><td class="t-note">Not a button. Key
+          <code>13.5/500 --muted</code>, value <code>13.5/500 --muted</code> right-aligned with
+          single-line ellipsis, <code>12px</code> padlock labelled <code>Read only</code>, no
+          chevron.</td></tr>
+        <tr><td>Frame 02</td><td>Child accounts count</td><td class="t-note"><code>22px</code>
+          <code>--sunken</code> pill holding <code>6</code>, tabular — a badge rather than the
+          current <code>CHILD ACCOUNT (6)</code> string.</td></tr>
+        <tr><td>Frame 02</td><td>Log out</td><td class="t-note">Alone in a <code>Session</code> group
+          whose edge is <code>1px var(--red-line)</code>; label and icon both <code>#E2564A</code>;
+          hover <code>--red-wash</code>; no chevron, because it navigates nowhere.</td></tr>
+        <tr><td>Frame 03</td><td>Skeleton</td><td class="t-note">The bone is white at
+          <code>5.5%</code> with a single <code>6%</code> sheen sweeping every <code>1.5s</code> —
+          <code>states.html</code>'s bone, unchanged. Geometry mirrors frame <b>01</b>: a
+          <code>138px</code> banner block, the identity card with a <code>64px</code> disc and two
+          <code>--sunken</code> panels, the club section, the credits card with its
+          <code>104px</code> panel, a <code>48px</code> pill for the CTA and five
+          <code>56px</code> rows. It covers the whole body because the shipped code swaps the whole
+          body, not just the list.</td></tr>
+        <tr><td>Frame 05</td><td>Guest identity</td><td class="t-note">Same card. Avatar falls back to
+          a person glyph on <code>--sunken</code> with a <code>--line</code> ring, and the edit
+          button's pencil becomes a plus. Standing reads <code>Guest</code> in a quiet pill —
+          <code>--sunken</code> fill, <code>--muted</code> ink at about <code>5.0:1</code>, a
+          <code>--line</code> ring. Both stat figures drop to <code>--muted</code>:
+          <code>0</code> Merits and <code>—</code> for rank.</td></tr>
+        <tr><td>Frame 05</td><td>No-club state</td><td class="t-note">The section container keeps its
+          shell and its pill (<code>No club</code>, quiet variant) and holds a
+          <code>--surface</code> panel: a <code>44px</code> shield glyph at <code>1.5</code> stroke
+          in <code>--muted</code>, a <code>15/600</code> line and two sentences at
+          <code>12.5px</code> saying that registration happens on the website.</td></tr>
+        <tr><td>Frame 05</td><td>Unavailable row</td><td class="t-note">Not a button, no chevron,
+          label at <code>14/500</code> <code>--muted</code>, icon <code>--dim</code>, and a
+          <code>10.5/700/.14em</code> reason on the right — <code>Join a club first</code>. State
+          never rests on colour alone, so the words carry it.</td></tr>
+        <tr><td>Frame 04</td><td>Error panel</td><td class="t-note">The States kit's state panel,
+          unchanged: <code>--section</code> fill, <code>1px --line</code>, <code>--r-card</code>,
+          <code>24/20/22px</code> padding, centred. A <code>52px</code> icon tile at
+          <code>R14</code> on <code>rgba(226,86,74,.12)</code> with a
+          <code>rgba(226,86,74,.28)</code> ring and a <code>1.7</code>-stroke alert glyph in
+          <code>#E2564A</code>; heading <code>17/600/-.015em</code>; body <code>12.5px</code>
+          <code>--muted</code> capped at <code>31ch</code>. The banner above it is unchanged,
+          because only the body is swapped in code.</td></tr>
+        <tr><td>Frame 04</td><td>Retry</td><td class="t-note"><code>46px</code> accent pill,
+          <code>0 22px</code> padding, label <code>14.5/700</code> in <code>--acid-ink</code>
+          (<code>12.31:1</code>). Pressing it sets <code>aria-busy</code> and overlays a spinner on
+          the label without changing the button's width, so a second press cannot fire. The shipped
+          button is <code>#E70A0A</code> carrying white at <code>4.1:1</code>.</td></tr>
+        <tr><td>Overlay</td><td>Log out confirm</td><td class="t-note">Canonical dialog shell:
+          scrim <code>rgba(3,4,1,.72)</code> with <code>10px</code> blur, <code>.dlg</code> at
+          <code>340px</code> max and <code>20px</code> padding, <code>44px</code> red icon tile,
+          then <code>Stay signed in</code> (ghost) and <code>Log out</code>
+          (<code>#E2564A</code> fill, <code>--acid-ink</code> label) at <code>46px</code>. The
+          <code>30px</code> close disc takes a <code>44px</code> hit area with
+          <code>::after{inset:-7px}</code>.</td></tr>
+        <tr><td>Bottom</td><td>Tab bar</td><td class="t-note">Floating <code>--surface</code> pill,
+          <code>58px</code>, <code>10px</code> inner padding, five tabs, each <code>38px</code> tall
+          with a <code>44px</code> hit area; Profile active as an accent pill with icon <em>and</em>
+          label, the other four outline icons only. It lives outside the scrolling area and is
+          replayed into all five frames.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Default (frame 01)</td><td class="t-note">Banner, identity, club, credits and the
+          purchase control — the landing state, <code>PR-01</code>.</td></tr>
+        <tr><td>Scrolled to the menu (frame 02)</td><td class="t-note">The same route,
+          <code>PR-02</code>. The compact identity strip keeps the person on screen; below it are the
+          four labelled groups.</td></tr>
+        <tr><td>Loading (frame 03)</td><td class="t-note"><b>New.</b> Dark bone skeleton over the
+          whole body. The shipped skeleton is <code>Colors.grey.shade300 → shade100</code> on
+          <code>#FAFAFA</code> cards with <code>#DFDFDF</code> borders — a light-theme skeleton on a
+          dark screen.</td></tr>
+        <tr><td>Load failed (frame 04)</td><td class="t-note"><b>New here, and now real in the
+          app.</b> The banner stays — only the body is swapped — and the panel below it carries a red
+          icon tile, <code>We couldn't load your profile</code>, the reason line and a
+          <code>Try again</code> button. Both sentences are the app's own strings; the panel, the
+          tile and the in-button spinner are the States kit's error treatment. Pressing
+          <code>Try again</code> shows the second attempt in the button rather than redrawing the
+          panel.</td></tr>
+        <tr><td>Guest, no club (frame 05)</td><td class="t-note"><b>New.</b> Quiet
+          <code>Guest</code> pill, no-photo avatar, an explained empty club section, every figure at
+          <code>0.0</code> or <code>—</code>, and the two club-scoped rows unavailable with a stated
+          reason. The shipped tier string for this reading is the lowercase word
+          <code>guest</code> sitting among uppercase siblings; we render it as
+          <code>Guest</code>.</td></tr>
+        <tr><td>No photo set</td><td class="t-note">Person glyph on <code>--sunken</code> inside the
+          same circle, and the edit control becomes a plus. Drawn on frame 05. The shipped
+          <code>Avatar</code> falls back to a default asset and shows a grey shimmer
+          <em>rectangle</em> while the URL is validated, so the shape changes mid-load.</td></tr>
+        <tr><td>Row pressed</td><td class="t-note">Fill lifts to
+          <code>rgba(255,255,255,.035)</code>; keyboard focus draws a <code>2px --acid</code> ring
+          inset. The current build has no press treatment at all.</td></tr>
+        <tr><td>Editable value</td><td class="t-note">White value, chevron, whole row is a
+          button.</td></tr>
+        <tr><td>Read-only value</td><td class="t-note">Muted value, padlock, no chevron, no tap
+          target. Applied to the three fields the code renders as static text.</td></tr>
+        <tr><td>Log out tapped</td><td class="t-note">Confirm dialog; focus moves to the dialog, not
+          to an action. <code>Escape</code>, the scrim and the close button all cancel. The current
+          build fires <code>logoutCustom()</code> on tap with no confirmation and no
+          spinner.</td></tr>
+        <tr><td>No crest artwork</td><td class="t-note">The plate holds the club's 2–4 character code
+          at <code>calc(size * .30)</code>, <code>800</code>, <code>--acid-ink</code>. Every crest on
+          this screen is in that state — there are no crest assets in the snapshot.</td></tr>
+        <tr><td>Crest loading</td><td class="t-note">Same code placeholder, so the row never reflows
+          and never flashes an empty box.</td></tr>
+        <tr><td>Zero credits</td><td class="t-note">Available reads <code>0.0</code>; the card and the
+          purchase button stay, since buying is the action a zero balance needs. Drawn on frame
+          05.</td></tr>
+        <tr><td>Locked = 0</td><td class="t-note">The <code>--sunken</code> panel reads
+          <code>0.0</code>; no suppression, so the balance stays two-part and the number never
+          moves.</td></tr>
+        <tr><td>Long value</td><td class="t-note">Single line, ellipsis. At <code>375px</code> the
+          longest real value (<code>dylan.n@sportsheist.app</code>) fits without
+          truncating.</td></tr>
+        <tr><td>Hall of Fame</td><td class="t-note">Drawn as an ordinary destination on frame 02.
+          In the code snapshot it has no page, no route constant and an empty handler, so it is the
+          one row on the screen with nothing behind it at all.</td></tr>
+        <tr><td>Achievements</td><td class="t-note">Also drawn as an ordinary destination. Unlike
+          Hall of Fame it has both a screen and a registered route — only the push is commented
+          out.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Token block</b> — copied verbatim from Merits, which sampled it from the War Room and
+          Backchat dark-mode exports.</li>
+        <li><b>Hero banner</b> — same gradient, field triangles, acid peaks and knockout athlete as
+          the Merits banner.</li>
+        <li><b>Section container and section header</b> — the bordered Backchat wrapper holding a
+          status pill, and the Merits label-plus-pill header.</li>
+        <li><b>Status pill, card, row, tab bar, avatar</b> — the established patterns, unchanged.</li>
+        <li><b>Crest plate</b> — the canonical light plate settled in Club selection: three sizes
+          only, <code>28 / 40 / 64px</code>.</li>
+        <li><b>Confirm dialog</b> — the canonical dialog shell, red icon tile and ghost/danger action
+          pair from the Dialogs kit.</li>
+        <li><b>Read-only field</b> — the muted value plus padlock idiom from Account settings.</li>
+        <li><b>Skeleton bone</b> — the States kit's bone and single sheen, as used in Ideas
+          list.</li>
+        <li><b>Portrait</b> — <code>--av-08</code>, the same face Merits uses for the signed-in
+          user.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Identity card</b> — avatar, name, handle, tier and club in one <code>--surface</code>
+          card, replacing the black slab, the centred display-face name and the violet glow
+          rule.</li>
+        <li><b>One photo-edit control</b> — a <code>26px</code> button on the avatar, replacing the
+          <code>UPDATE</code> text link that currently has an empty handler. It opens a working
+          photo sheet: pick a portrait and the avatar on that frame changes, or remove the photo
+          and it falls back to the no-photo placeholder.</li>
+        <li><b>Compact identity strip</b> — frames <b>02</b> and <b>03</b> open below the banner, so
+          they carry a <code>36px</code> avatar, name and tier instead. It replaces the fixed black
+          header panel that content currently disappears behind.</li>
+        <li><b>Stat strip</b> — Merits total and season rank as two <code>--sunken</code> panels;
+          the current build shows <code>2545 REPUTATION POINTS</code> as a centred line.</li>
+        <li><b>Club section</b> — the current club as a lockup on a plate, the other registered
+          clubs beneath it, and a <code>Clubs ↗</code> header pill. The current build shows one
+          crest, uncontained, and puts the club behind a <code>CURRENT TEAM</code> row.</li>
+        <li><b>Credits card</b> — available dominant, locked recessed in a panel, replacing the
+          two-equal-halves split card.</li>
+        <li><b>Grouped settings at one height</b> — four labelled groups at <code>56px</code>,
+          replacing seven ungrouped <code>72pt</code> cards.</li>
+        <li><b>Chevron rule</b> — chevron means it navigates; padlock means it cannot change. The new
+          part is that the two now look different.</li>
+        <li><b>Destructive log out</b> — its own group, semantic red, and a confirmation step that
+          does not exist today.</li>
+        <li><b>Count badge</b> — <code>6</code> in a pill rather than concatenated into the
+          label.</li>
+        <li><b>Loading frame</b> — a dark skeleton covering the whole body, replacing a light-theme
+          grey shimmer on a dark screen.</li>
+        <li><b>Load-failed frame</b> — new <em>drawing</em> only. The state itself now exists in the
+          app and both sentences are its own strings; what is new is the panel, the red icon tile,
+          the accent retry with <code>--acid-ink</code> in place of white on <code>#E70A0A</code>,
+          and the in-button spinner.</li>
+        <li><b>Guest reading</b> — a whole screen the shipped code cannot produce: quiet standing
+          pill, no-photo avatar, explained empty club state, zeroed figures.</li>
+        <li><b>Unavailable row</b> — a row that says why it cannot be used instead of looking
+          identical to a live one.</li>
+        <li><b>Notifications and Security on Profile</b> — both sit one level down, inside Account
+          settings, in the current build. Surfacing them here is a flattening proposal, not a
+          transcription.</li>
+        <li><b>44px hit areas</b> — the invisible <code>::after</code> expansion on every sub-44
+          control (tab, header pill, photo edit, dialog close), keeping the sampled visual
+          size.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Should a failed load tell apart no connection from a server fault?</h3><p>This was the
+      most urgent question on the page and the app has answered it: a failure now shows a message
+      and a retry, and frame <b>04</b> is that screen, built with the app's own words. What is left
+      is that there is only one of it. The detail line reads <code>Check your connection and try
+      again</code>, which is the right sentence when the phone is offline and the wrong one when the
+      server returned an error the member cannot do anything about. The States kit draws these as
+      two panels — <code>You're offline</code> and <code>Request failed</code> — and we have drawn
+      <span class="flag">the single combined one</span> here, because the app has no connectivity
+      handling anywhere to branch on. If the offline case is worth telling apart, it needs a
+      connectivity check first; otherwise this one panel is the honest answer and the copy should
+      stop naming the connection.</p></li>
+    <li><h3>Who is a guest, and what may they do?</h3><p>The tier function returns a
+      <code>guest</code> value, but it decides by comparing the user's role code against a
+      translated display string, so it only ever fires if the API's role code is literally the
+      English word <code>guest</code> — the one value the translation file happens to hold in lower
+      case. Standing is decided by a string comparison against copy, which will break the first time
+      that copy is edited. We drew
+      <span class="flag">a guest who can hold credits, buy credits and manage child accounts, but
+      whose Hall of Fame and Achievements rows are unavailable until they join a club</span>. Confirm
+      the role code and the permissions.</p></li>
+    <li><h3>Where does a user join a club?</h3><p>There is no add-club form in the app — the flow
+      ends on a message telling the user to log in on desktop. We drew
+      <span class="flag">an empty state that says registration happens on the website, with no
+      button</span>, because a button that opens a browser is a decision we cannot make for you. Same
+      question applies to child accounts, which are also web-only.</p></li>
+    <li><h3>Do Hall of Fame and Achievements ship in this release?</h3><p>They are not in the same
+      position. Achievements has a screen and a registered route; only the navigation call is
+      commented out, so it is a one-line fix. Hall of Fame has no screen, no route and an empty
+      handler — there is nothing behind it anywhere in the snapshot. We drew
+      <span class="flag">both as ordinary live destinations</span> on frame 02. If Hall of Fame is
+      not ready, it needs the unavailable treatment shown on frame 05.</p></li>
+    <li><h3>Are membership tiers a ladder the user should see?</h3><p>The code returns one of
+      <code>MEMBER</code>, <code>EARLY INFLUENCER</code>, <code>EMERGING INFLUENCER</code> or
+      <code>LEADING INFLUENCER</code> from a points ratio, but no thresholds are documented and the
+      bands do not quite meet — a user sitting exactly on <code>0.75</code>, <code>0.85</code> or
+      <code>0.95</code> falls through every branch and reads as <code>MEMBER</code>. We drew
+      <span class="flag">a plain Member pill with no progress and no next-tier hint</span>. If the
+      ladder is a product feature, this pill becomes a progress component and the thresholds need
+      writing down.</p></li>
+    <li><h3>What locks a credit, and when does it release?</h3><p>Nothing in the build explains
+      <code>Locked</code> — no tooltip, no link, no copy. We drew
+      <span class="flag">a labelled figure with a padlock and no explanation</span>. One sentence
+      from you turns it into something a user can act on.</p></li>
+    <li><h3>Can support change a locked field, and how does the user ask?</h3><p>Several account
+      fields are read-only in code. We drew <span class="flag">a padlock with no route out</span>. If
+      support can edit them, the row needs a destination; if nobody can, the padlock should say
+      so.</p></li>
+    <li><h3>Should Notifications and Security sit on Profile or inside Account settings?</h3><p>In
+      the build they are inside Account settings, and Security's navigation call is commented out
+      there. We drew <span class="flag">both on Profile, in the Account group</span>, on the grounds
+      that burying notification settings two levels down is why nobody finds them. Say the word and
+      they go back one level.</p></li>
+    <li><h3>Should Profile repeat the season rank?</h3><p>Rank <code>12</code> and the merits total
+      both belong to tab 2. We drew <span class="flag">both, as a summary that links there</span>,
+      because the current screen already shows reputation points on Profile. Say the word and the
+      strip drops to Merits only.</p></li>
+    <li><h3>Is a three-club account the normal case?</h3><p>The clubs list shows Barcelona, Dortmund
+      and Man United for this user, and a three-club limit is referenced but not implemented. We drew
+      <span class="flag">one current club and two registrations, with no limit stated</span>.</p></li>
+    <li><h3>Does tab 5 need its own hero prop?</h3><p>Profile reuses the Merits athlete, the only
+      knockout prop in the asset set. Reviewed side by side the deck repeats it. If Profile should
+      carry a different figure, we need one cut-out — we will not draw a stand-in.</p></li>
+    <li><h3>Which name and which numbers are real?</h3><p>The account values match the Account
+      settings screen so the deck shows one person; the credit balances are the build's seed data
+      (<code>600,611.5</code> and <code>250.0</code>). Confirm the currency name
+      <span class="flag">participation credits</span> and whether reputation points are now
+      <span class="flag">Merits</span> everywhere.</p></li>
+  </ol>
+</section>

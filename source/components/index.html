@@ -1,0 +1,450 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — component library</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+.ix{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:22px 22px;align-items:start;padding:36px 0 80px}
+.ix__group h2{margin:0 0 4px;font-size:17px;letter-spacing:-.015em}
+.ix__note{margin:0 0 10px;font-size:13px;color:var(--ink-3);min-height:1.35em}
+.ix__list{list-style:none;margin:0;padding:0;border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.ix__list li + li .ix__row{border-top:1px solid var(--rule-soft)}
+.ix__row{display:flex;align-items:center;gap:10px;padding:11px 14px;text-decoration:none;color:var(--ink);font-size:14px}
+.ix__row:hover{background:var(--paper)}
+.ix__row--todo{color:var(--ink-3)}
+.ix__row--todo:hover{background:transparent}
+.ix__name{flex:1;min-width:0}
+.ix__tag{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Component library</h1>
+    <p class="dek">Dark-mode rebrand · component library. Every screen below is a live, interactive build in
+    the new dark-mode language, with colours and geometry sampled from the Figma exports rather than
+    approximated. 42 of 42 built.</p>
+    <div class="meta">
+      <span><b>Source</b> SportHeist (Copy) · dark mode exports</span>
+      <span><b>Built</b> 42 of 42</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><span class="side__item" aria-current="page">Overview<span class="side__tag side__tag--new">This page</span></span></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+</nav>
+    <div class="ix"><section class="ix__group"><h2>App tabs</h2><p class="ix__note">The five navigation destinations.</p><ul class="ix__list"><li><a class="ix__row" href="war-room-review.html"><span class="ix__name">War Room</span><span class="ix__tag">In Figma</span></a></li><li><a class="ix__row" href="merits-review.html"><span class="ix__name">Merits</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="backchat-review.html"><span class="ix__name">Backchat</span><span class="ix__tag">In Figma</span></a></li><li><a class="ix__row" href="alerts-review.html"><span class="ix__name">Alerts</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="profile-review.html"><span class="ix__name">Profile</span><span class="ix__tag">New</span></a></li></ul></section><section class="ix__group"><h2>War Room</h2><p class="ix__note">Propose, vote, resolve.</p><ul class="ix__list"><li><a class="ix__row" href="idea-card-review.html"><span class="ix__name">Idea card</span><span class="ix__tag">In Figma</span></a></li><li><a class="ix__row" href="voting-card-review.html"><span class="ix__name">Voting card</span><span class="ix__tag">In Figma</span></a></li><li><a class="ix__row" href="results-actions-review.html"><span class="ix__name">Results &amp; actions</span><span class="ix__tag">In Figma</span></a></li><li><a class="ix__row" href="idea-gate-review.html"><span class="ix__name">Idea gate</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="create-idea-review.html"><span class="ix__name">Create idea</span><span class="ix__tag">In Figma</span></a></li><li><a class="ix__row" href="veto-review.html"><span class="ix__name">Veto</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="action-detail-review.html"><span class="ix__name">Action detail</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="ideas-list-review.html"><span class="ix__name">Ideas list</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="voting-list-review.html"><span class="ix__name">Voting list</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="idea-detail-review.html"><span class="ix__name">Idea detail</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="proposal-detail-review.html"><span class="ix__name">Proposal detail</span><span class="ix__tag">New</span></a></li></ul></section><section class="ix__group"><h2>Backchat</h2><p class="ix__note">Live rooms.</p><ul class="ix__list"><li><a class="ix__row" href="locker-room-review.html"><span class="ix__name">Locker room</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="all-locker-rooms-review.html"><span class="ix__name">All locker rooms</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="locker-room-editor-review.html"><span class="ix__name">Schedule a room</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="chat-review.html"><span class="ix__name">Text chat</span><span class="ix__tag">New</span></a></li></ul></section><section class="ix__group"><h2>Membership</h2><p class="ix__note"></p><ul class="ix__list"><li><a class="ix__row" href="auth-review.html"><span class="ix__name">Log in</span><span class="ix__tag">Part in Figma</span></a></li><li><a class="ix__row" href="onboarding-review.html"><span class="ix__name">Onboarding</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="club-selection-review.html"><span class="ix__name">Club selection</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="linked-member-review.html"><span class="ix__name">Linked member</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="launch-review.html"><span class="ix__name">Splash &amp; entry</span><span class="ix__tag">Part in Figma</span></a></li></ul></section><section class="ix__group"><h2>Account</h2><p class="ix__note"></p><ul class="ix__list"><li><a class="ix__row" href="account-settings-review.html"><span class="ix__name">Account settings</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="wallet-review.html"><span class="ix__name">Wallet</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="merit-detail-review.html"><span class="ix__name">Merit detail</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="hall-of-fame-review.html"><span class="ix__name">Hall of Fame</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="clubs-review.html"><span class="ix__name">Clubs</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="child-account-review.html"><span class="ix__name">Child accounts</span><span class="ix__tag">New</span></a></li></ul></section><section class="ix__group"><h2>Elsewhere</h2><p class="ix__note"></p><ul class="ix__list"><li><a class="ix__row" href="matches-review.html"><span class="ix__name">Matches</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="desktop-shell-review.html"><span class="ix__name">Desktop shell</span><span class="ix__tag">In Figma</span></a></li></ul></section><section class="ix__group"><h2>System</h2><p class="ix__note">Cross-cutting kits.</p><ul class="ix__list"><li><a class="ix__row" href="foundations-review.html"><span class="ix__name">Foundations</span><span class="ix__tag">Sampled</span></a></li><li><a class="ix__row" href="forms-review.html"><span class="ix__name">Forms</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="dialogs-review.html"><span class="ix__name">Dialogs</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="sheets-review.html"><span class="ix__name">Sheets</span><span class="ix__tag">In Figma</span></a></li><li><a class="ix__row" href="states-review.html"><span class="ix__name">States</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="comments-review.html"><span class="ix__name">Comments</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="media-review.html"><span class="ix__name">Image viewer</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="upload-review.html"><span class="ix__name">Upload &amp; pickers</span><span class="ix__tag">New</span></a></li><li><a class="ix__row" href="filters-pickers-review.html"><span class="ix__name">Filters &amp; pickers</span><span class="ix__tag">New</span></a></li></ul></section></div>
+  </div>
+</div>

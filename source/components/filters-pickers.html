@@ -1,0 +1,2119 @@
+<!DOCTYPE html>
+<html lang="en" data-component="filters-pickers">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Filters &amp; pickers</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — FILTERS & PICKERS
+
+   The last imperative surfaces in the app that nothing else in
+   the library covers: the per-screen filter sheets on Results
+   and Actions, the state a member sees when a filter is on, the
+   nothing-matched result, the two date pickers, the date range,
+   and the `?` explainer popover.
+
+   Sourced from:
+     lib/pages/result/widget/show_filter.dart      (the Results sheet)
+     lib/pages/action/widget/show_filter.dart      (the Actions sheet)
+     lib/pages/result/result_screen.dart           (trigger :151, chips, `?` discs)
+     lib/pages/action/action_screen.dart           (trigger :158)
+     lib/cubit/proposal/result.dart                (ResultC.getFilterListIdea)
+     lib/cubit/proposal/action.dart                (ActionC.getFilterListIdea)
+     lib/widgets/src/filter/on_tap.dart            (dialog / dateRange / selectDate)
+     lib/widgets/src/select_date/index.dart        (showDatePicker ×2)
+     lib/widgets/src/tool_tip.dart                 (just_the_tooltip)
+     lib/constants/src/list_string.dart            (CLString)
+     lib/widgets/empty_data.dart                   (EmptyContainer)
+
+   Nothing here is in the Figma. Every construction is borrowed
+   from a component that is:
+     · the sheet shell, option row, indicators, calendar grid and
+       range fill are sheets.html, unchanged
+     · the screen top — title, taxonomy, chip strip, cards, verdict
+       plates — is results-actions.html, unchanged
+     · the nothing-matched panel is ideas-list.html's `.nohit`
+     · the 38 px disc with the create-idea.html ::after expansion
+       to a 44 px hit area
+   The hero banner is deliberately not repeated here: it belongs to
+   results-actions.html and carries a 113 KB asset. These frames
+   start at the screen title so the surface under test is the
+   filter, not the banner.
+
+   Three faults in the shipped code are corrected rather than
+   reproduced, and each is recorded in the notes:
+     · both sort sheets' rows carry `onPress: () {}` — the sheet
+       cannot sort (show_filter.dart:53 in each file)
+     · neither list has an empty state, so filtering to zero
+       leaves a blank scroll area
+     · the date surfaces are hardcoded to the Vietnamese locale
+       and carry Vietnamese labels
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;
+  --surface:       #1C2129;
+  --sunken:        #13171E;
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+  --acid-line:     rgba(155,226,34,.30);   /* derived, as sheets.html */
+
+  /* semantic red — the only other hue */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.14);
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  /* the sheet shell — sheets.html values, unchanged */
+  --r-sheet:       18px;
+  --sheet-max:     560px;
+  --sheet-vh:      88vh;
+  --grab-w:        40px;
+  --grab-h:        4px;
+  --h-field:       52px;
+  --h-row:         48px;
+  --scrim:         rgba(3,4,1,.72);
+  --scrim-blur:    10px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* portraits — the same four faces the Ideas and Results lists give
+     these authors, so an idea reads as the same idea everywhere */
+  --av-c7:url(data:image/jpeg;base64,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);
+  --av-fp:url(data:image/jpeg;base64,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);
+  --av-sm:url(data:image/jpeg;base64,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);
+  --av-tt:url(data:image/jpeg;base64,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);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+/* every author display below would otherwise beat the UA rule for the
+   hidden attribute, and hidden is how the popover and the counts leave */
+[hidden]{display:none!important}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+/* bottom breathing room has to live on an element INSIDE the frame: the
+   builder emits each frame's children and drops both <main class="screen">
+   and the .frame wrapper, so padding declared on either is lost */
+.frame__pad{height:96px}
+
+/* ============================================================
+   PAGE FURNITURE
+   34 px of top clearance: on device the app bar sits under the
+   status bar, and in the review shell the phone's 26 px island is
+   inset 8 px from the top.
+   ============================================================ */
+.bar{display:flex;align-items:center;gap:11px;margin:34px var(--gutter) 14px}
+.bar__eyebrow{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);
+}
+.bar .spacer{flex:1}
+.title{
+  margin:0 var(--gutter) 12px;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+
+/* the caption under each frame — the same device-frame footnote the
+   Ideas and Voting lists use */
+.cap{
+  display:flex;gap:9px;margin:16px var(--gutter) 0;
+  font-size:11.5px;line-height:1.5;color:var(--dim);
+}
+.cap svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:var(--dim)}
+.cap b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   CONTROLS
+   38 px discs keep the sampled size and take create-idea.html's
+   ::after expansion to a 44 px hit area.
+   ============================================================ */
+.icon-btn{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease),box-shadow .18s var(--ease);
+}
+.icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.pill-btn{
+  display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 18px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.pill-btn svg{width:15px;height:15px;flex:0 0 auto}
+.pill-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.btn{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em;
+  cursor:pointer;white-space:nowrap;transition:background .18s var(--ease);
+}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.btn--ghost:hover{background:#181D25}
+.btn--wide{width:100%}
+.btn__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
+  background:rgba(11,14,6,.16);font-size:12px;font-variant-numeric:tabular-nums;
+}
+.btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   TAXONOMY — Decisions / Positions
+   CLString.listFilterPri, sent as `type=decisions|position`.
+   results-actions.html's control, with the `?` disc the shipped
+   screen draws inside each half kept and enlarged: 16 px in the
+   build, 24 px here, on a 44 px hit area.
+   ============================================================ */
+.taxrow{display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 12px}
+.tax{
+  flex:1;display:flex;gap:4px;height:46px;padding:4px;
+  border-radius:var(--r-pill);background:var(--sunken);
+}
+/* the half is the plate; the label and the `?` are two separate controls
+   sitting on it, because an explainer trigger nested inside the tab
+   button — which is what the build ships — is a button inside a button */
+.tax__half{
+  flex:1 1 0;min-width:0;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  height:38px;border-radius:var(--r-pill);background:transparent;
+  transition:background .18s var(--ease);
+}
+.tax__half[data-on="true"]{background:var(--acid)}
+.tax__btn{
+  flex:0 1 auto;min-width:0;height:38px;padding:0 2px;
+  border:0;border-radius:var(--r-pill);background:transparent;color:var(--muted);
+  font:inherit;font-size:13.5px;font-weight:600;letter-spacing:-.005em;
+  white-space:nowrap;cursor:pointer;transition:color .18s var(--ease);
+}
+.tax__btn:hover{color:var(--text)}
+.tax__half[data-on="true"] .tax__btn{color:var(--acid-ink);font-weight:700}
+.tax__btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.tax__q{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.tax__q::after{content:"";position:absolute;inset:-10px;border-radius:inherit}
+.tax__q svg{width:14px;height:14px}
+.tax__q:hover{color:var(--text)}
+.tax__half[data-on="true"] .tax__q{background:rgba(11,14,6,.14);color:var(--acid-ink)}
+.tax__q[aria-expanded="true"]{background:var(--acid);color:var(--acid-ink)}
+.tax__half[data-on="true"] .tax__q[aria-expanded="true"]{background:var(--acid-ink);color:var(--acid)}
+.tax__q:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   FILTER BAR — the circular sheet trigger followed by the
+   category chips. CLString.listFilterSup with index 0 dropped,
+   because index 0 IS the trigger in the shipped ListView.
+   ============================================================ */
+.fbar{
+  display:flex;align-items:center;gap:8px;
+  margin:0 0 12px;padding:0 var(--gutter) 2px;
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
+}
+.fbar::-webkit-scrollbar{height:0}
+.fbar__t{position:relative;flex:0 0 auto}
+.fbar__t.is-on{box-shadow:inset 0 0 0 1px var(--acid-line)}
+.fbar__t.is-on svg{color:var(--acid)}
+/* the count rides the disc so "a filter is on" is a numeral, not a hue */
+.fbar__n{
+  position:absolute;top:-3px;right:-3px;z-index:1;
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-pill);
+  background:var(--acid);color:var(--acid-ink);
+  font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;
+  box-shadow:0 0 0 2px var(--bg);
+}
+.fchip{
+  display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;flex:0 0 auto;
+  border:1px solid transparent;border-radius:var(--r-pill);
+  background:var(--surface);color:var(--muted);
+  font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  cursor:pointer;transition:background .18s var(--ease),color .18s var(--ease);
+}
+.fchip:hover{color:var(--text)}
+.fchip[aria-pressed="true"]{
+  background:var(--acid-wash);border-color:var(--acid-line);color:var(--acid);
+}
+.fchip[aria-pressed="true"] svg{width:12px;height:12px}
+.fchip:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   FILTER SUMMARY — new. The one line that says a filter is on,
+   what it costs you, and how to undo it.
+   ============================================================ */
+.tally{
+  display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 4px;
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--dim);
+}
+.tally b{color:var(--text);font-variant-numeric:tabular-nums}
+.tally em{font-style:normal;color:var(--acid)}
+.tally .spacer{flex:1}
+.tally__x{
+  display:inline-flex;align-items:center;gap:5px;
+  border:0;background:transparent;padding:6px 2px;margin:0;
+  color:var(--acid);font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;cursor:pointer;
+}
+.tally__x svg{width:12px;height:12px}
+.tally__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   THE SHEET SHELL — sheets.html, unchanged
+   ============================================================ */
+.dock{margin-top:20px}
+.dock .sheet{max-height:none}
+.dock[hidden]{display:none}
+
+/* ------------------------------------------------------------
+   THE SCREEN BEHIND AN OPEN SHEET — .behind
+   Dimmed AND inert while the sheet is up: desaturated, faded, and
+   nothing inside it takes a pointer, so nothing behind the sheet
+   reads as a control. The screen itself does take the pointer — it
+   is the scrim, and clicking it closes the sheet — but it keeps
+   the default cursor, so it never advertises itself as a target.
+   Closing the sheet takes the dimming off and the screen goes
+   live, which is how the trigger that reopens the sheet becomes
+   reachable. Before this it was a dead `aria-hidden`
+   picture of a screen, with a calendar glyph and a filter glyph
+   drawn as spans behind an already-open sheet.
+   ------------------------------------------------------------ */
+.behind{transition:opacity .18s var(--ease),filter .18s var(--ease)}
+.behind.is-dim{opacity:.34;filter:saturate(.55);cursor:default}
+.behind.is-dim > *{pointer-events:none}
+
+.sheet{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;
+  width:100%;max-height:min(var(--sheet-vh),var(--sheet-max));
+  border:1px solid var(--line);border-bottom:0;
+  border-radius:var(--r-sheet) var(--r-sheet) 0 0;
+  background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%);
+  box-shadow:0 -20px 50px rgba(0,0,0,.6);
+  overflow:hidden;
+}
+.sheet__grab{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  height:26px;width:100%;
+}
+.sheet__grab::before{
+  content:"";width:var(--grab-w);height:var(--grab-h);border-radius:var(--r-pill);
+  background:rgba(255,255,255,.18);
+}
+.sheet__head{
+  flex:0 0 auto;display:flex;align-items:center;gap:9px;
+  padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);
+}
+.sheet__title{
+  margin:0;flex:1;min-width:0;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--text);
+}
+.sheet__n{
+  flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px;
+  border-radius:var(--r-pill);background:var(--acid-wash);color:var(--acid);
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;
+}
+.sheet__clear{
+  flex:0 0 auto;border:0;background:transparent;padding:6px 2px;margin:0;
+  color:var(--muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:color .16s var(--ease);
+}
+.sheet__clear:hover{color:var(--text)}
+.sheet__clear[disabled]{color:var(--dim);cursor:default}
+.sheet__x{
+  position:relative;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-4px;
+  border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.sheet__x::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.sheet__x:hover{background:rgba(255,255,255,.11);color:var(--text)}
+.sheet__x svg{width:16px;height:16px}
+.sheet__x:focus-visible,.sheet__clear:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.sheet__body::-webkit-scrollbar{width:0;height:0}
+.sheet__body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:12px var(--gutter);
+}
+.sheet__lede{margin:0 0 12px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.sheet__grp{
+  margin:16px 0 8px;font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.sheet__body > .sheet__grp:first-child{margin-top:0}
+.sheet__foot{
+  flex:0 0 auto;padding:12px var(--gutter);
+  padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);background:var(--sunken);
+}
+.sheet__foot--pair{display:flex;gap:10px}
+.sheet__body--last{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+
+/* ============================================================
+   OPTION ROW + INDICATORS — sheets.html, unchanged
+   ============================================================ */
+.opt{
+  display:flex;align-items:center;gap:12px;width:100%;
+  min-height:var(--h-row);padding:11px 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background-color:var(--sunken);background-image:none;
+  color:var(--text);font:inherit;font-size:13.5px;font-weight:500;
+  text-align:left;cursor:pointer;
+  transition:background-color .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);
+}
+.opt + .opt{margin-top:8px}
+.opt:hover{border-color:rgba(255,255,255,.14)}
+.opt__text{flex:1;min-width:0}
+.opt__text small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.opt[aria-checked="true"]{
+  background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash));
+  border-color:var(--acid-line);color:var(--acid);font-weight:600;
+}
+.opt[aria-checked="true"] .opt__text small{color:rgba(155,226,34,.72)}
+.opt:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.check,.radio{
+  position:relative;flex:0 0 auto;width:20px;height:20px;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);
+  transition:background .16s var(--ease),box-shadow .16s var(--ease);
+}
+.check{border-radius:6px}
+.radio{border-radius:50%}
+.check svg,.radio svg{
+  position:absolute;inset:0;width:20px;height:20px;opacity:0;
+  transition:opacity .14s var(--ease);
+}
+.check svg{color:var(--acid-ink)}
+.radio svg{color:var(--acid)}
+.opt[aria-checked="true"] .check{background:var(--acid);box-shadow:none}
+.opt[aria-checked="true"] .radio{box-shadow:inset 0 0 0 1.7px var(--acid);background:transparent}
+.opt[aria-checked="true"] .check svg,.opt[aria-checked="true"] .radio svg{opacity:1}
+
+/* ============================================================
+   CALENDAR — sheets.html, unchanged
+   ============================================================ */
+.cal__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.cal__mon{
+  flex:1;min-width:0;text-align:center;
+  font-size:14.5px;font-weight:700;letter-spacing:-.01em;
+}
+.cal__nav{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--sunken);color:var(--text);
+  cursor:pointer;transition:background .16s var(--ease);
+}
+.cal__nav::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.cal__nav:hover{background:#181D25}
+.cal__nav[disabled]{color:var(--dim);cursor:default}
+.cal__nav:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.cal__nav svg{width:16px;height:16px}
+.cal__dow,.cal__grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal__dow{margin-bottom:4px}
+.cal__dow span{
+  text-align:center;font-size:9.5px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim);
+}
+.cal__grid{row-gap:2px}
+.cal__d{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  height:44px;border:0;background:transparent;color:var(--text);
+  font:inherit;font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums;
+  cursor:pointer;
+}
+.cal__d span{
+  position:relative;z-index:1;display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:50%;
+}
+.cal__d--out{color:var(--dim);cursor:default}
+.cal__d--off{color:var(--dim);cursor:not-allowed;text-decoration:line-through;text-decoration-color:rgba(91,96,107,.6)}
+.cal__d--today span{box-shadow:inset 0 0 0 1px var(--acid-line);color:var(--acid)}
+.cal__d[aria-selected="true"] span,.cal__d--sel span{
+  background:var(--acid);color:var(--acid-ink);font-weight:700;box-shadow:none;
+}
+.cal__d:focus-visible span{outline:2px solid var(--acid);outline-offset:2px}
+.cal__d--in::before,.cal__d--edge::before{
+  content:"";position:absolute;top:5px;bottom:5px;left:0;right:0;
+  background:var(--acid-wash);
+}
+.cal__d--from::before{left:50%;border-radius:var(--r-pill) 0 0 var(--r-pill)}
+.cal__d--to::before{right:50%;border-radius:0 var(--r-pill) var(--r-pill) 0}
+.cal__d--in{color:var(--acid)}
+.cal__sum{
+  display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:11px 14px;
+  border-radius:var(--r-panel);background:var(--sunken);
+  font-size:12.5px;color:var(--muted);
+}
+.cal__sum b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.cal__sum em{margin-left:auto;font-style:normal;color:var(--acid);font-weight:600}
+
+/* the two read-only date fields at the head of the range sheet —
+   forms.html's control shell, so the range keeps one surface
+   instead of the build's dialog-inside-a-dialog */
+.pair{display:flex;gap:10px;margin:0 0 14px}
+.dfield{flex:1 1 0;min-width:0}
+.dfield__l{
+  display:block;margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.dfield__b{
+  display:flex;align-items:center;gap:9px;width:100%;height:var(--h-field);padding:0 13px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  font:inherit;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;
+  text-align:left;cursor:pointer;transition:border-color .16s var(--ease);
+}
+.dfield__b span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dfield__b svg{width:17px;height:17px;flex:0 0 auto;color:var(--muted)}
+.dfield__b:hover{border-color:rgba(255,255,255,.14)}
+.dfield__b.is-active{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.dfield__b.is-active svg{color:var(--acid)}
+.dfield__b.is-empty{color:var(--dim);font-weight:500}
+.dfield__b:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   THE EXPLAINER POPOVER
+   tool_tip.dart is just_the_tooltip: a dark plate with a tail,
+   a 500-weight title, a 300-weight body, 3 px radius and no
+   dismiss control. Rebuilt on our own surfaces at --r-panel,
+   with a close control and a stated width.
+   ============================================================ */
+.tipwrap{position:relative;margin:0 var(--gutter) 12px}
+.tip{
+  position:relative;
+  padding:14px 15px 15px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);
+  box-shadow:0 16px 38px rgba(0,0,0,.55);
+}
+/* the tail — a rotated square clipped by the plate's own edge, so the
+   popover reads as belonging to the disc that opened it */
+.tip::before{
+  content:"";position:absolute;top:-6px;left:24%;
+  width:12px;height:12px;transform:rotate(45deg);
+  background:var(--surface);
+  border-left:1px solid var(--line);border-top:1px solid var(--line);
+}
+.tip__head{display:flex;align-items:flex-start;gap:10px;margin:0 0 8px}
+.tip__t{
+  flex:1;min-width:0;margin:0;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--acid);
+}
+.tip__x{
+  position:relative;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;margin:-5px -4px 0 0;
+  border:0;border-radius:50%;background:transparent;color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.tip__x::after{content:"";position:absolute;inset:-9px;border-radius:inherit}
+.tip__x:hover{background:rgba(255,255,255,.07);color:var(--text)}
+.tip__x svg{width:15px;height:15px}
+.tip__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.tip p{margin:0;font-size:13px;line-height:1.5;color:var(--muted)}
+.tip p + p{margin-top:9px}
+.tip p b{color:var(--text);font-weight:600}
+.tip__more{
+  display:inline-flex;align-items:center;gap:6px;height:38px;margin-top:12px;
+  padding:0 14px;border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--text);
+  font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+}
+.tip__more svg{width:13px;height:13px}
+.tip__more:hover{border-color:rgba(255,255,255,.14)}
+.tip__more:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   RESULT CARD — results-actions.html, unchanged
+   ============================================================ */
+.rcard{
+  margin:12px var(--gutter) 0;padding:16px;
+  border-radius:var(--r-card);background:var(--surface);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+}
+.rcard__author{display:flex;align-items:center;gap:9px;margin-bottom:13px}
+.avatars{display:flex;flex:0 0 auto}
+.avatar{
+  border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+.avatars > .avatar + .avatar{margin-left:-9px}
+.avatars .avatar{width:22px;height:22px;border:1.5px solid var(--surface)}
+.byline{
+  min-width:0;font-size:12.5px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.rcard__title{margin:0 0 7px;font-size:17px;font-weight:600;line-height:1.2;letter-spacing:-.015em}
+.rcard__body{margin:0;font-size:13px;line-height:1.35;color:var(--muted)}
+.cardmeta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:13px 0 10px}
+.when{
+  display:inline-flex;align-items:center;gap:6px;min-width:0;
+  font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums;
+}
+.when svg{width:13px;height:13px;flex:0 0 auto}
+.typechip{
+  flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px;
+  border-radius:var(--r-pill);background:var(--sunken);color:var(--muted);
+  font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  white-space:nowrap;
+}
+.verdict{display:flex;align-items:center;gap:11px;min-height:56px;padding:11px 13px;border-radius:var(--r-panel)}
+.verdict__badge{
+  width:28px;height:28px;flex:0 0 auto;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.verdict__badge svg{width:16px;height:16px;display:block}
+.verdict__body{min-width:0}
+.verdict__word{
+  display:block;font-size:13.5px;font-weight:700;letter-spacing:.07em;
+  line-height:1.1;text-transform:uppercase;
+}
+.verdict__sub{
+  display:block;margin-top:3px;font-size:11.5px;line-height:1.25;
+  color:var(--muted);font-variant-numeric:tabular-nums;
+}
+.verdict--pos{background:var(--acid-wash);box-shadow:inset 0 0 0 1px rgba(155,226,34,.22)}
+.verdict--pos .verdict__badge{background:var(--acid);color:var(--acid-ink)}
+.verdict--pos .verdict__word{color:var(--acid)}
+.verdict--neg{background:var(--red-wash);box-shadow:inset 0 0 0 1px rgba(226,86,74,.24)}
+.verdict--neg .verdict__badge{background:var(--red);color:var(--acid-ink)}
+.verdict--neg .verdict__word{color:var(--red)}
+.viewbtn{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  width:100%;height:44px;margin-top:10px;
+  border:0;border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--text);
+  font:inherit;font-size:13.5px;font-weight:600;
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.viewbtn svg{width:13px;height:13px;flex:0 0 auto}
+.viewbtn:hover{background:#1A1F27}
+.viewbtn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+
+/* ============================================================
+   NOTHING MATCHED — ideas-list.html's panel, unchanged.
+   Deliberately NOT the stage-empty panel: "no results yet" and
+   "no result matches your filter" are different sentences and
+   only one of them has a fix the member can act on.
+   ============================================================ */
+.nohit{
+  margin:12px var(--gutter) 0;padding:30px 20px;text-align:center;
+  border:1px dashed var(--line);border-radius:var(--r-card);background:var(--section);
+}
+.nohit svg.nohit__art{width:44px;height:44px;color:var(--acid);opacity:.85;margin-bottom:12px}
+.nohit h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.nohit p{margin:7px auto 0;max-width:32ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.nohit p b{color:var(--text);font-weight:600}
+.nohit .pill-btn{margin-top:16px}
+/* the alternative names an action, so it is a button, not a caption.
+   --dim is decorative-only per the contrast table, so as a live
+   control it sits at --muted and the two named filters go to white. */
+.nohit__alt{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  margin:12px auto 0;padding:8px 10px;border:0;background:none;
+  font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--muted);cursor:pointer;
+  border-radius:var(--r-pill);transition:color .16s var(--ease),background .16s var(--ease);
+}
+.nohit__alt b{color:var(--text);font-weight:800}
+.nohit__alt:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.nohit__alt:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.nohit--inline{padding:18px 20px;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.nohit--inline b{color:var(--text);font-weight:600}
+
+.end{
+  display:flex;align-items:center;gap:10px;margin:20px var(--gutter) 0;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.end::before,.end::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+<!-- ============================================================
+     FRAME 1 — SORT RESULTS
+     lib/pages/result/widget/show_filter.dart, opened from
+     result_screen.dart:151. Three rows, single-select, applied
+     on tap. In the build every row's onPress is empty.
+     ============================================================ -->
+<section class="frame" data-title="Sort results">
+
+  <div class="behind is-dim" data-behind>
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Back to the War Room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <span class="bar__eyebrow">War Room</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Results</h1>
+    <div class="taxrow">
+      <div class="tax" role="tablist" aria-label="Proposal taxonomy">
+        <span class="tax__half" data-on="true"><button class="tax__btn" type="button" role="tab" aria-selected="true">Decisions</button></span>
+        <span class="tax__half"><button class="tax__btn" type="button" role="tab" aria-selected="false">Positions</button></span>
+      </div>
+    </div>
+    <div class="fbar" role="group" aria-label="Filter results" data-chipbar data-chips-only>
+      <button class="icon-btn fbar__t" type="button" data-open aria-haspopup="dialog" aria-expanded="true" aria-label="Sort results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+      </button>
+      <button class="fchip" type="button" aria-pressed="true" data-chip="all">All</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="on-field">On-field</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="management">Management</button>
+    </div>
+    <p class="tally" data-sortline hidden>
+      <span>Sorted by <b data-sortname>Most recent</b></span>
+    </p>
+  </div>
+
+  <div class="dock" data-dock>
+    <section class="sheet" aria-label="Sort results" data-sheet data-applies-on-tap>
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Sort results</h3>
+        <button class="sheet__x" type="button" aria-label="Close sort">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body sheet__body--last" role="radiogroup" aria-label="Sort order">
+        <button class="opt" type="button" role="radio" aria-checked="true">
+          <span class="opt__text">Most recent<small>Latest verdict first · <code>ordering=recent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="opt__text">Most urgent<small>Nearest to its action deadline · <code>ordering=urgent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="opt__text">Most popular<small>Most votes cast first · <code>ordering=popular</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>In the build this sheet does nothing.</b> Every row is a
+    <code>BodyProfileItem</code> with <code>onPress: () {}</code> —
+    <code>result/widget/show_filter.dart:53</code> — so the tick can be looked at but the sort
+    never changes and the sheet never closes. The three orders are
+    <code>CLString.listSortProposal</code> → <code>["recent","urgent","popular"]</code>. Radio,
+    not checkbox: one order at a time. Applies on tap, so no Apply button.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 2 — SORT ACTIONS
+     lib/pages/action/widget/show_filter.dart, opened from
+     action_screen.dart:158. Same three rows, and the same dead
+     onPress — but drawn at a different row height.
+     ============================================================ -->
+<section class="frame" data-title="Sort actions">
+
+  <div class="behind is-dim" data-behind>
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Back to the War Room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <span class="bar__eyebrow">War Room</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Actions</h1>
+    <div class="taxrow">
+      <div class="tax" role="tablist" aria-label="Proposal taxonomy">
+        <span class="tax__half" data-on="true"><button class="tax__btn" type="button" role="tab" aria-selected="true">Decisions</button></span>
+        <span class="tax__half"><button class="tax__btn" type="button" role="tab" aria-selected="false">Positions</button></span>
+      </div>
+    </div>
+    <div class="fbar" role="group" aria-label="Filter actions" data-chipbar data-chips-only>
+      <button class="icon-btn fbar__t" type="button" data-open aria-haspopup="dialog" aria-expanded="true" aria-label="Sort actions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+      </button>
+      <button class="fchip" type="button" aria-pressed="true" data-chip="all">All</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="on-field">On-field</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="management">Management</button>
+    </div>
+    <p class="tally" data-sortline hidden>
+      <span>Sorted by <b data-sortname>Most urgent</b></span>
+    </p>
+  </div>
+
+  <div class="dock" data-dock>
+    <section class="sheet" aria-label="Sort actions" data-sheet data-applies-on-tap>
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Sort actions</h3>
+        <button class="sheet__x" type="button" aria-label="Close sort">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body sheet__body--last" role="radiogroup" aria-label="Sort order">
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="opt__text">Most recent<small>Newest instruction first · <code>ordering=recent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="true">
+          <span class="opt__text">Most urgent<small>Closest to kick-off first · <code>ordering=urgent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="opt__text">Most popular<small>Most votes cast first · <code>ordering=popular</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The two sheets are the same sheet, built twice, at two different row heights.</b>
+    Actions sets <code>height: CSpace.height * 0.08</code> on each row —
+    <code>action/widget/show_filter.dart:49</code> — which is <code>65 pt</code> on a 812 pt
+    screen, while Results leaves the height unset and lands near <code>48</code>. Same three
+    labels, same dead <code>onPress</code>, two geometries. One row: <code>48</code> minimum.
+    The only honest difference is the title, which is
+    <code>'SORT {}'.tr(args: ['ACTIONS'])</code>.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 3 — FILTER RESULTS  (new)
+     The chip strip and the taxonomy are two filter axes that the
+     request cannot carry at the same time. This sheet is the one
+     place both are set, and the only place a verdict can be
+     filtered at all.
+     ============================================================ -->
+<section class="frame" data-title="Filter results">
+
+  <div class="behind is-dim" data-behind>
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Back to the War Room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <span class="bar__eyebrow">War Room</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Results</h1>
+    <div class="fbar" role="group" aria-label="Filter results" data-chipbar data-chips-only>
+      <button class="icon-btn fbar__t is-on" type="button" data-open aria-haspopup="dialog" aria-expanded="true" aria-label="Filter results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+        <span class="fbar__n" data-trigger-n aria-hidden="true">2</span>
+      </button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="all">All</button>
+      <button class="fchip" type="button" aria-pressed="true" data-chip="on-field">On-field</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+    </div>
+    <p class="tally" data-applied hidden>
+      <span><b data-applied-n>2</b> filters applied from the sheet</span>
+    </p>
+  </div>
+
+  <div class="dock" data-dock>
+    <section class="sheet" aria-label="Filter results" data-count data-sheet>
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Filter results</h3>
+        <span class="sheet__n" data-n>2 on</span>
+        <button class="sheet__clear" type="button" data-clear>Clear all</button>
+        <button class="sheet__x" type="button" aria-label="Close filter">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body">
+        <p class="sheet__grp">Kind</p>
+        <button class="opt" type="button" role="checkbox" aria-checked="true">
+          <span class="opt__text">On-field decisions<small><code>category=on_field_decisions</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Off-field decisions<small><code>category=off_field_decisions</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Management decisions<small><code>category=management_decisions</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Positions<small>Opinion proposals · <code>type=position</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+
+        <p class="sheet__grp">Verdict</p>
+        <button class="opt" type="button" role="checkbox" aria-checked="true">
+          <span class="opt__text">Approved<small><code>MProposal.status = approved</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Rejected<small><code>MProposal.status = rejected</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Vetoed<small><code>MProposal.status = vetoed</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Cancelled by management<small><code>MProposal.status = cancelled</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+
+        <p class="sheet__grp">Mine</p>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Ideas I proposed<small><code>category=my_idea</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Ideas I voted on<small><code>MProposal.isVote</code> · in memory</small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+      </div>
+      <div class="sheet__foot">
+        <button class="btn btn--acid btn--wide" type="button" data-apply>Apply <span class="btn__n" data-btn-n>2</span></button>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>This sheet is new — the shipped app has no filter sheet.</b> The trigger draws a
+    filter glyph and opens a sort list. Worse, the two axes it replaces cannot be combined today:
+    in <code>ResultC.getFilterListIdea</code> (<code>cubit/proposal/result.dart:52–61</code>) a
+    category is sent <em>as</em> <code>type</code> with <code>category: null</code>, so picking
+    <b>On-field</b> silently discards the Decisions / Positions choice. Multi-select, so checkbox
+    and Apply are honest, and nothing behind the sheet moves until Apply is pressed.
+    <b>Lapsed</b> is deliberately absent: <code>getListResult</code> strips lapsed proposals
+    client-side (<code>result.dart:186</code>), so a Lapsed filter could never return a row.
+    <b>Kind</b> is server-side — <code>getListIdea</code> carries <code>type</code> and
+    <code>category</code>. <b>Verdict</b> and <b>Mine</b> are not: the endpoint sends five
+    parameters and none of them is a status (<code>service/src/proposal.dart:52–59</code>), so
+    those two groups filter the single capped page of 50 already in memory.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 4 — FILTERS ON
+     Three signals, none of them colour alone: the accent chip
+     carries a tick, the trigger carries a count, and the summary
+     line spells it out in words with the undo beside it.
+     ============================================================ -->
+<section class="frame" data-title="Filters on">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Results</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Proposal taxonomy">
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Decisions</button>
+      </span>
+      <span class="tax__half">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Positions</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="fbar" role="group" aria-label="Filter results" data-chipbar>
+    <button class="icon-btn fbar__t is-on" type="button" aria-label="Filter results, 2 filters on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+      <span class="fbar__n" data-trigger-n aria-hidden="true">2</span>
+    </button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="all">All</button>
+    <button class="fchip" type="button" aria-pressed="true" data-chip="on-field">
+      On-field
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg>
+    </button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="management">Management</button>
+    <button class="fchip" type="button" aria-pressed="true" data-chip="mine">
+      My ideas
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg>
+    </button>
+  </div>
+
+  <p class="tally" data-tally>
+    <span><b data-tally-n>2</b> filters on · <b data-tally-hit>2</b> of <b>14</b></span>
+    <span class="spacer"></span>
+    <button class="tally__x" type="button" data-clear-chips>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      Clear all
+    </button>
+  </p>
+
+  <article class="rcard" data-row data-cat="on-field" data-mine="true">
+    <div class="rcard__author">
+      <span class="avatars">
+        <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+        <span class="avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+      </span>
+      <span class="byline">by capitan_7 &amp; scout_mode</span>
+    </div>
+    <h2 class="rcard__title">Start Lamine Yamal against Girona</h2>
+    <p class="rcard__body">Name him in the starting eleven rather than holding him on the bench.</p>
+    <div class="cardmeta">
+      <span class="when">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        Settled 12 Jul, 20:45
+      </span>
+      <span class="typechip">On-field</span>
+    </div>
+    <div class="verdict verdict--pos">
+      <span class="verdict__badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4.5 4.5L19 7"/></svg>
+      </span>
+      <span class="verdict__body">
+        <span class="verdict__word">Approved</span>
+        <span class="verdict__sub">84% support · 70% needed · 1,079 votes</span>
+      </span>
+    </div>
+    <button class="viewbtn" type="button">
+      View details
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </button>
+  </article>
+
+  <article class="rcard" data-row data-cat="on-field" data-mine="true">
+    <div class="rcard__author">
+      <span class="avatars">
+        <span class="avatar" style="background-image:var(--av-tt)" role="img" aria-label="taythaytu"></span>
+      </span>
+      <span class="byline">by taythaytu</span>
+    </div>
+    <h2 class="rcard__title">Rest Pedri against Getafe</h2>
+    <p class="rcard__body">Hold him out of the squad entirely with the Champions League tie four days later.</p>
+    <div class="cardmeta">
+      <span class="when">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        Settled 10 Jul, 19:15
+      </span>
+      <span class="typechip">On-field</span>
+    </div>
+    <div class="verdict verdict--neg">
+      <span class="verdict__badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </span>
+      <span class="verdict__body">
+        <span class="verdict__word">Rejected</span>
+        <span class="verdict__sub">41% support · 70% needed · 1,204 votes</span>
+      </span>
+    </div>
+    <button class="viewbtn" type="button">
+      View details
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </button>
+  </article>
+
+  <p class="end" data-endline>End of 2 matching results</p>
+  <p class="nohit nohit--inline" data-none hidden>
+    <b>Nothing on this page matches.</b> Drop a filter and the results come back.
+  </p>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The summary line and the trigger count are new.</b> Today the only sign a filter is
+    on is that one chip turns green — <code>result_screen.dart:166–171</code> — with no count, no
+    "2 of 14" and no way to clear anything except tapping the chip you happen to remember
+    pressing. Three signals here, and none of them is colour on its own: a tick inside the chip,
+    a numeral on the trigger, and the sentence with <b>Clear all</b> beside it.
+    <b>The filter also does not survive leaving the screen:</b> <code>initState</code> calls
+    <code>getListResult</code>, which re-requests the unfiltered default list
+    (<code>result.dart:172–178</code>) without resetting <code>currentFilterPri</code>,
+    <code>currentFilterSup</code> or <code>currentSortResult</code> — so you come back to green
+    chips over unfiltered results.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 5 — NOTHING MATCHES
+     The state the build has no answer for at all: filtered to
+     zero rows, ListView.builder with itemCount 0, blank screen.
+     ============================================================ -->
+<section class="frame" data-title="Nothing matches">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Results</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Proposal taxonomy">
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Decisions</button>
+      </span>
+      <span class="tax__half">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Positions</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="fbar" role="group" aria-label="Filter results" data-chipbar>
+    <button class="icon-btn fbar__t is-on" type="button" aria-label="Filter results, 2 filters on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+      <span class="fbar__n" data-trigger-n aria-hidden="true">2</span>
+    </button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="all">All</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="on-field">On-field</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+    <button class="fchip" type="button" aria-pressed="true" data-chip="management">
+      Management
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg>
+    </button>
+    <button class="fchip" type="button" aria-pressed="true" data-chip="mine">
+      My ideas
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg>
+    </button>
+  </div>
+
+  <p class="tally" data-tally>
+    <span><b data-tally-n>2</b> filters on · <b data-tally-hit>0</b> of <b>14</b></span>
+    <span class="spacer"></span>
+    <button class="tally__x" type="button" data-clear-chips>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      Clear all
+    </button>
+  </p>
+
+  <div class="nohit" data-nohit>
+    <svg class="nohit__art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M3.5 5.5h17l-6.6 7.6v5.6l-3.8 1.8v-7.4z"/>
+      <path d="M16.5 16.5l5 5M21.5 16.5l-5 5"/>
+    </svg>
+    <h3 data-nohit-h>No management idea of yours has settled yet</h3>
+    <p data-nohit-p><b>There are 14 results here</b> — none of them match <b>Management</b> and
+    <b>My ideas</b> together. Drop one filter and the rest come back.</p>
+    <button class="pill-btn" type="button" data-clear-chips>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      Clear filters
+    </button>
+    <!-- the alternative was a sentence; it names an action, so it is a
+         button — dropping the second filter is one tap from here -->
+    <button class="nohit__alt" type="button" data-drop-chip="mine">or keep <b>Management</b> only · <b data-alt-n>4</b> results</button>
+  </div>
+
+  <p class="end" data-hits hidden><b data-hits-n>14</b> results match</p>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The build shows nothing at all here.</b> <code>buildResult</code> is a
+    <code>ListView.builder</code> over <code>state.listResultData?.length</code>
+    (<code>result_screen.dart:372–376</code>) with no zero branch, so a filter that matches
+    nothing leaves an empty scroll area under the chips — and the same is true of
+    <code>buildAction</code> (<code>action_screen.dart:379–383</code>). The app already owns an
+    empty panel, <code>EmptyContainer</code> in <code>lib/widgets/empty_data.dart</code>, and uses
+    it on the War Room rails and in Credit history, but never on these two screens.
+    <b>This panel is deliberately not that one:</b> <code>No results yet</code> is a stage that
+    has not happened, this is a filter the member can undo, and only one of those has a button.
+    The dashed edge is the states.html filtered-out treatment, not the solid section edge used for
+    a genuinely empty stage.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 6 — THE EXPLAINER
+     lib/widgets/src/tool_tip.dart. Reachable, but only through a
+     16 pt disc, and every one of the four call sites passes lorem
+     ipsum as the body.
+     ============================================================ -->
+<section class="frame" data-title="The explainer">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Results</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Proposal taxonomy">
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Decisions</button>
+        <button class="tax__q" type="button" aria-expanded="true" aria-label="What Decisions means" data-tip="tip-dec">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.4 9.2a2.7 2.7 0 1 1 3.7 2.5c-.8.3-1.1 1-1.1 1.8v.4"/><path d="M12 17.4h.01"/></svg>
+        </button>
+      </span>
+      <!-- Positions has NO explainer copy anywhere in the codebase —
+           CLString.listExplainTitleIDea[1] is lorem ipsum — so it
+           carries no `?` disc. A disc that opens nothing is the exact
+           fault this pass exists to remove. -->
+      <span class="tax__half">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Positions</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="tipwrap">
+    <div class="tip" id="tip-dec" role="dialog" aria-label="What Decisions means">
+      <div class="tip__head">
+        <h3 class="tip__t">Decisions</h3>
+        <button class="tip__x" type="button" aria-label="Close explainer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <p>On-field Decisions are instructions executable by the manager or coach during a match.
+      These may be <b>Vetoed</b> or <b>Ruled Out</b>, and the deposit forfeited, when the
+      instruction is not executable.</p>
+      <button class="tip__more" type="button">
+        How a verdict is reached
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="fbar" role="group" aria-label="Filter results" data-chipbar>
+    <button class="icon-btn fbar__t" type="button" aria-label="Filter results">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+      <span class="fbar__n" data-trigger-n aria-hidden="true" hidden>0</span>
+    </button>
+    <button class="fchip" type="button" aria-pressed="true" data-chip="all">All</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="on-field">On-field</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="management">Management</button>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The explainer is reachable — but only just, and it has no copy.</b> The trigger is a
+    <code>16 × 16</code> circle inside the segment label
+    (<code>result_screen.dart:255–277</code>, and the same block in <code>action_screen.dart</code>,
+    <code>voting_screen.dart</code> and <code>ideas_screen.dart</code>), against the
+    <code>44</code> platform minimum; it is enlarged to <code>24</code> here with the
+    <code>::after</code> expansion to <code>44</code>. All four call sites pass the same
+    <b>lorem ipsum</b> as <code>detail:</code> — <code>result_screen.dart:222</code> and
+    <code>:289</code>. The real sentence used above is the app's own
+    <code>CLString.listExplainTitleIDea[0]</code>, which is only ever read by
+    <code>ideas/drop_down/title.dart:58</code>. Its sibling, <code>[1]</code>, for Positions, is
+    lorem ipsum too — so <b>Positions has no explainer copy anywhere in the codebase</b> and its
+    popover is left unbuilt rather than filled with filler.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 7 — DATE PICKER (single)
+     lib/widgets/src/select_date/index.dart:98 and :130 — two raw
+     showDatePicker calls, both pinned to Locale('vi'), in an app
+     whose supportedLocales is [en].
+
+     The grid is BUILT, not drawn. It was 42 hand-written cells
+     pinned to July 2026 with Next month permanently disabled and
+     nothing behind Previous month — the same fault as an
+     aria-hidden calendar glyph, one level in. The layout, the
+     modifiers and the copy are unchanged; only the cells are now
+     generated, by the one calendar implementation in this file.
+     ============================================================ -->
+<section class="frame" data-title="Date picker">
+
+  <div class="behind is-dim" data-behind>
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Back to the War Room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <span class="bar__eyebrow">Results</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Filter by date</h1>
+    <div class="pair" style="margin:0 var(--gutter) 14px">
+      <span class="dfield">
+        <span class="dfield__l" id="dp1-from-l">From</span>
+        <button class="dfield__b is-active" type="button" data-open data-end="from"
+                aria-haspopup="dialog" aria-expanded="true" aria-labelledby="dp1-from-l dp1-from-v">
+          <span id="dp1-from-v" data-field="from">12 Jul 2026</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3"/><path d="M8 3.4v3.2M16 3.4v3.2M3.6 10h16.8"/></svg>
+        </button>
+      </span>
+      <span class="dfield">
+        <span class="dfield__l" id="dp1-to-l">To</span>
+        <button class="dfield__b is-empty" type="button" data-open data-end="to"
+                aria-haspopup="dialog" aria-expanded="false" aria-labelledby="dp1-to-l dp1-to-v">
+          <span id="dp1-to-v" data-field="to">Choose a date</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3"/><path d="M8 3.4v3.2M16 3.4v3.2M3.6 10h16.8"/></svg>
+        </button>
+      </span>
+    </div>
+  </div>
+
+  <div class="dock" data-dock>
+    <section class="sheet" aria-label="Choose the from date" data-sheet
+             data-cal data-mode="single"
+             data-min="2022-01-01" data-max="2026-07-30"
+             data-from="2026-07-12" data-end="from">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title" data-cal-title>From date</h3>
+        <button class="sheet__x" type="button" data-close aria-label="Close date picker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body">
+        <p class="cal__sum" data-cal-sum><b></b><em></em></p>
+        <div class="cal__bar">
+          <button class="cal__nav" type="button" data-go="-1" aria-label="Previous month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+          </button>
+          <p class="cal__mon" aria-live="polite" data-cal-mon>July 2026</p>
+          <button class="cal__nav" type="button" data-go="1" aria-label="Next month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </button>
+        </div>
+        <div class="cal__dow" aria-hidden="true">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        </div>
+        <div class="cal__grid" role="grid" data-cal-grid aria-label="July 2026"></div>
+      </div>
+      <div class="sheet__foot sheet__foot--pair">
+        <button class="btn btn--ghost" type="button" data-cancel>Cancel</button>
+        <button class="btn btn--acid" type="button" data-commit>Set <span data-commit-end>from</span> date</button>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>The build calls <code>showDatePicker</code> raw — the stock light Material calendar over
+    the app, twice, at <code>select_date/index.dart:98</code> and <code>:130</code>. Both pass
+    <code>locale: const Locale('vi')</code>, and <code>main.dart:53–58</code> declares
+    <code>supportedLocales: [Locale("en")]</code> with an English fallback, so
+    <b>the picker is explicitly asked to render in a language the app does not support</b>.
+    The window is faithful: <code>firstDate: DateTime(2022)</code>,
+    <code>lastDate: DateTime.now()</code> — a settled result cannot be in the future, so future
+    days are struck through and inert and <b>Next month</b> is disabled at the far edge rather
+    than hidden. Today, 30 July, keeps the 1 px accent ring. Weeks start on <b>Monday</b>, the
+    library-wide answer settled in <code>_assets/date-picker.md</code>.
+    <b>The reference date is fixed at 30 July 2026, never <code>new Date()</code></b> — a frame
+    that renders "today" drifts between the screenshot and the review, and the review pages are
+    the record.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 8 — DATE RANGE
+     OnTapFilter.dateRange (on_tap.dart:160) is a dialog holding
+     two fields, each opening a second dialog holding a calendar,
+     and it closes with three stacked context.pop() calls. One
+     sheet here: both ends, one grid, one Apply.
+     ============================================================ -->
+<section class="frame" data-title="Date range">
+
+  <div class="behind is-dim" data-behind>
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Back to the War Room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <span class="bar__eyebrow">Results</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Filter by date</h1>
+    <div class="pair" style="margin:0 var(--gutter) 14px">
+      <span class="dfield">
+        <span class="dfield__l" id="dp2-l">Settled between</span>
+        <button class="dfield__b is-active" type="button" data-open
+                aria-haspopup="dialog" aria-expanded="true" aria-labelledby="dp2-l dp2-v">
+          <span id="dp2-v" data-field="range">12 Jul → 30 Jul 2026</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3"/><path d="M8 3.4v3.2M16 3.4v3.2M3.6 10h16.8"/></svg>
+        </button>
+      </span>
+    </div>
+  </div>
+
+  <div class="dock" data-dock>
+    <section class="sheet" aria-label="Choose a date range" data-sheet
+             data-cal data-mode="range"
+             data-min="2022-01-01" data-max="2026-07-30"
+             data-from="2026-07-12" data-to="2026-07-30" data-end="from">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Settled between</h3>
+        <span class="sheet__n" data-cal-n>19 days</span>
+        <button class="sheet__clear" type="button" data-cal-reset>Reset</button>
+        <button class="sheet__x" type="button" data-close aria-label="Close range picker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body">
+        <div class="pair">
+          <span class="dfield">
+            <span class="dfield__l" id="dp2-from-l">From</span>
+            <button class="dfield__b is-active" type="button" data-end="from"
+                    aria-pressed="true" aria-labelledby="dp2-from-l dp2-from-v">
+              <span id="dp2-from-v" data-field="from">12 Jul 2026</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3"/><path d="M8 3.4v3.2M16 3.4v3.2M3.6 10h16.8"/></svg>
+            </button>
+          </span>
+          <span class="dfield">
+            <span class="dfield__l" id="dp2-to-l">To</span>
+            <button class="dfield__b" type="button" data-end="to"
+                    aria-pressed="false" aria-labelledby="dp2-to-l dp2-to-v">
+              <span id="dp2-to-v" data-field="to">30 Jul 2026</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3"/><path d="M8 3.4v3.2M16 3.4v3.2M3.6 10h16.8"/></svg>
+            </button>
+          </span>
+        </div>
+        <p class="cal__sum" data-cal-sum><b></b><em></em></p>
+        <div class="cal__bar">
+          <button class="cal__nav" type="button" data-go="-1" aria-label="Previous month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+          </button>
+          <p class="cal__mon" aria-live="polite" data-cal-mon>July 2026</p>
+          <button class="cal__nav" type="button" data-go="1" aria-label="Next month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </button>
+        </div>
+        <div class="cal__dow" aria-hidden="true">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        </div>
+        <div class="cal__grid" role="grid" data-cal-grid aria-label="July 2026"></div>
+      </div>
+      <div class="sheet__foot sheet__foot--pair">
+        <button class="btn btn--ghost" type="button" data-cal-clear>Reset filter</button>
+        <button class="btn btn--acid" type="button" data-commit>Apply range</button>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>Both ends on one surface. The build stacks a dialog inside a dialog: two read-only
+    fields, each opening a second <code>AlertDialog</code> holding a
+    <code>SfDateRangePicker</code> in a <code>250 px</code> box
+    (<code>on_tap.dart:340–366</code>), and dismissing it fires <b>three</b> stacked
+    <code>context.pop()</code> calls (<code>:287–289</code> and <code>:303–305</code>) — one for
+    each dialog it believes is open. <b>The whole dialog is in Vietnamese:</b>
+    <code>'Xác nhận'</code> as the confirm label (<code>:163</code>),
+    <code>'Đặt lại bộ lọc'</code> as reset (<code>:149</code> and <code>:293</code>),
+    <code>'Ngày bắt đầu'</code> / <code>'Ngày kết thúc'</code> as the two field labels
+    (<code>:233</code>, <code>:252</code>), and both fields format with
+    <code>DateFormat('dd MMMM, yyyy', 'vi')</code> (<code>:392</code>, <code>:405</code>).
+    Both ends are accent discs, the days between carry the 12% wash edge to edge, and the range
+    cannot cross today. <b>From</b> and <b>To</b> select which end the next tap sets, and setting
+    <b>From</b> hands the next tap to <b>To</b> on its own — one grid, no second dialog, and no
+    stack of pops to unwind.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ------------------------------------------------------------
+     FRAME SCOPING
+     Eight frames, and every one of them holds a sheet, a chip
+     strip and a calendar with the same class names. document.
+     querySelector wires the first frame and leaves seven dead, so
+     nothing below reaches past its own frame. The wrapper differs
+     by build target: <section class="frame"> survives in the raw
+     component and in the prototype iframe, while build-reviews.py
+     drops it and emits each frame into its own .mk__scroll.
+     ------------------------------------------------------------ */
+  function frameOf(el){
+    return el.closest('section.frame') || el.closest('.mk__scroll') ||
+           el.closest('.mk') || document;
+  }
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+
+  /* The reference date is FIXED. Never new Date(): a frame that
+     renders "today" drifts between the screenshot and the review,
+     and the review pages are the record. 30 July 2026 is the date
+     every other frame in this component is written against. */
+  var TODAY = new Date(2026, 6, 30);
+  var MON  = ['January','February','March','April','May','June','July',
+              'August','September','October','November','December'];
+  var MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var DOW  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  function iso(s){
+    if(!s) return null;
+    var p = s.split('-');
+    return new Date(+p[0], +p[1]-1, +p[2]);
+  }
+  function same(a,b){
+    return !!a && !!b && a.getFullYear()===b.getFullYear() &&
+           a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  }
+  function dayNo(d){ return Math.round(d.getTime()/86400000); }
+  function shortF(d){ return d.getDate() + ' ' + MON3[d.getMonth()] + ' ' + d.getFullYear(); }
+  function longF(d){ return DOW[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()] + ' ' + d.getFullYear(); }
+  /* one range label, so the sheet summary and the field behind it
+     cannot disagree — the shared year is written once, at the end */
+  function rangeText(a,b){
+    if(!a) return 'Choose a range';
+    if(!b) return shortF(a) + ' → …';
+    var left = a.getFullYear() === b.getFullYear()
+      ? a.getDate() + ' ' + MON3[a.getMonth()]
+      : shortF(a);
+    return left + ' → ' + shortF(b);
+  }
+  function ago(d){
+    var n = dayNo(TODAY) - dayNo(d);
+    if(n === 0) return 'Today';
+    if(n === 1) return 'Yesterday';
+    if(n < 0)   return 'In ' + (-n) + ' days';
+    return n + ' days ago';
+  }
+
+  /* ============================================================
+     THE CALENDAR — one implementation, single and range
+     ------------------------------------------------------------
+     The month grid follows _assets/date-picker.md exactly: seeded
+     from the field rather than from the clock, Monday-first via
+     (first.getDay()+6)%7, days from new Date(y,m+1,0).getDate().
+     The only extension is the range: a second end, the wash
+     between the two, and an active end that the next tap sets.
+     Do not write a second calendar.
+     ============================================================ */
+  each(document.querySelectorAll('[data-cal]'), function(sheet){
+    if(sheet.__cal) return;
+    sheet.__cal = true;
+
+    var grid   = sheet.querySelector('[data-cal-grid]');
+    var monEl  = sheet.querySelector('[data-cal-mon]');
+    var sumEl  = sheet.querySelector('[data-cal-sum]');
+    var nEl    = sheet.querySelector('[data-cal-n]');
+    var titleEl= sheet.querySelector('[data-cal-title]');
+    var endEl  = sheet.querySelector('[data-commit-end]');
+    var resetB = sheet.querySelector('[data-cal-reset]');
+    var frame  = frameOf(sheet);
+    if(!grid) return;
+
+    var range = sheet.getAttribute('data-mode') === 'range';
+    var MIN = iso(sheet.getAttribute('data-min'));
+    var MAX = iso(sheet.getAttribute('data-max')) || TODAY;
+
+    /* the committed value the screen behind is showing, and the
+       working copy the sheet is editing — Cancel is the difference */
+    var saved = { from: iso(sheet.getAttribute('data-from')),
+                  to:   iso(sheet.getAttribute('data-to')) };
+    var work  = { from: saved.from, to: saved.to };
+    var end   = sheet.getAttribute('data-end') || 'from';
+    var view  = new Date((work.from || work.to || MAX).getTime());
+    view.setDate(1);
+
+    function setEnd(which){
+      end = which;
+      each(sheet.querySelectorAll('.dfield__b[data-end]'), function(b){
+        var on = b.getAttribute('data-end') === which;
+        b.classList.toggle('is-active', on);
+        if(b.hasAttribute('aria-pressed')) b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      if(titleEl) titleEl.textContent = which === 'to' ? 'To date' : 'From date';
+      if(endEl)   endEl.textContent   = which;
+      sheet.setAttribute('aria-label',
+        range ? 'Choose a date range' : 'Choose the ' + which + ' date');
+    }
+
+    function writeFields(){
+      each(sheet.querySelectorAll('[data-field]'), function(el){
+        var k = el.getAttribute('data-field');
+        var btn = el.closest('.dfield__b');
+        if(k === 'range'){
+          el.textContent = rangeText(work.from, work.to);
+        } else {
+          el.textContent = work[k] ? shortF(work[k]) : 'Choose a date';
+        }
+        if(btn) btn.classList.toggle('is-empty',
+          k === 'range' ? !work.from : !work[k]);
+      });
+    }
+
+    function summary(){
+      if(!sumEl) return;
+      var b = sumEl.querySelector('b'), e = sumEl.querySelector('em');
+      if(!range){
+        var d = work[end];
+        b.textContent = d ? longF(d) : 'No date chosen';
+        e.textContent = d ? ago(d) : 'Pick a day';
+        return;
+      }
+      if(work.from && work.to){
+        b.textContent = rangeText(work.from, work.to);
+        var days = dayNo(work.to) - dayNo(work.from) + 1;
+        e.textContent = same(work.to, TODAY) ? 'Ends today' : days + ' days';
+        if(nEl){ nEl.textContent = days + (days === 1 ? ' day' : ' days'); nEl.hidden = false; }
+      } else if(work.from){
+        b.textContent = rangeText(work.from, null);
+        e.textContent = 'Pick the end';
+        if(nEl){ nEl.hidden = true; }
+      } else {
+        b.textContent = 'No range set';
+        e.textContent = 'Pick a start';
+        if(nEl){ nEl.hidden = true; }
+      }
+      if(resetB) resetB.disabled = !work.from && !work.to;
+    }
+
+    function cell(tag, cls, n){
+      var el = document.createElement(tag);
+      el.className = cls;
+      if(tag === 'button') el.type = 'button';
+      var s = document.createElement('span');
+      s.textContent = n;
+      el.appendChild(s);
+      return el;
+    }
+
+    function draw(){
+      var y = view.getFullYear(), m = view.getMonth();
+      var label = MON[m] + ' ' + y;
+      if(monEl) monEl.textContent = label;
+      grid.setAttribute('aria-label', label);
+      grid.innerHTML = '';
+
+      var first = new Date(y, m, 1);
+      var lead  = (first.getDay() + 6) % 7;            /* Monday-first */
+      var days  = new Date(y, m + 1, 0).getDate();
+      var prev  = new Date(y, m, 0).getDate();
+
+      for(var i = lead; i > 0; i--){
+        grid.appendChild(cell('span', 'cal__d cal__d--out', prev - i + 1));
+      }
+
+      for(var n = 1; n <= days; n++){
+        var d = new Date(y, m, n);
+        var out = (MIN && d < MIN) || (MAX && d > MAX);
+        var cls = 'cal__d';
+        if(same(d, TODAY)) cls += ' cal__d--today';
+        if(range && work.from && work.to){
+          if(same(d, work.from) && same(d, work.to)) { /* one-day range: a disc, no bar */ }
+          else if(same(d, work.from)) cls += ' cal__d--edge cal__d--from';
+          else if(same(d, work.to))   cls += ' cal__d--edge cal__d--to';
+          else if(d > work.from && d < work.to) cls += ' cal__d--in';
+        }
+        var isFrom = range ? same(d, work.from) : same(d, work[end]);
+        var isTo   = range && same(d, work.to);
+        if(isTo && !isFrom) cls += ' cal__d--sel';
+
+        var el;
+        if(out){
+          el = cell('span', cls + ' cal__d--off', n);
+          el.setAttribute('aria-disabled', 'true');
+        } else {
+          el = cell('button', cls, n);
+          if(isFrom) el.setAttribute('aria-selected', 'true');
+          el.setAttribute('data-day', n);
+        }
+        grid.appendChild(el);
+      }
+
+      var trail = (7 - ((lead + days) % 7)) % 7;
+      for(var t = 1; t <= trail; t++){
+        grid.appendChild(cell('span', 'cal__d cal__d--out cal__d--off', t));
+      }
+
+      each(sheet.querySelectorAll('.cal__nav[data-go]'), function(b){
+        var go = +b.getAttribute('data-go');
+        var probe = new Date(y, m + go, 1);
+        b.disabled = go < 0
+          ? (!!MIN && probe < new Date(MIN.getFullYear(), MIN.getMonth(), 1))
+          : (!!MAX && probe > new Date(MAX.getFullYear(), MAX.getMonth(), 1));
+      });
+
+      summary();
+      writeFields();
+    }
+
+    function pick(n){
+      var d = new Date(view.getFullYear(), view.getMonth(), n);
+      if(!range){
+        work[end] = d;
+      } else if(end === 'from'){
+        work.from = d;
+        if(work.to && work.to < d) work.to = null;
+        setEnd('to');                     /* hand the next tap to the other end */
+      } else {
+        if(work.from && d < work.from){ work.to = work.from; work.from = d; }
+        else work.to = d;
+      }
+      draw();
+    }
+
+    grid.addEventListener('click', function(ev){
+      var b = ev.target.closest('button[data-day]');
+      if(b && grid.contains(b)) pick(+b.getAttribute('data-day'));
+    });
+
+    each(sheet.querySelectorAll('.cal__nav[data-go]'), function(b){
+      b.addEventListener('click', function(){
+        view = new Date(view.getFullYear(), view.getMonth() + (+b.getAttribute('data-go')), 1);
+        draw();
+      });
+    });
+
+    each(sheet.querySelectorAll('.dfield__b[data-end]'), function(b){
+      b.addEventListener('click', function(){
+        setEnd(b.getAttribute('data-end'));
+        var d = work[b.getAttribute('data-end')];
+        if(d){ view = new Date(d.getFullYear(), d.getMonth(), 1); }
+        draw();
+      });
+    });
+
+    if(resetB) resetB.addEventListener('click', function(){
+      work.from = null; work.to = null; setEnd('from'); draw();
+    });
+    var clearB = sheet.querySelector('[data-cal-clear]');
+    if(clearB) clearB.addEventListener('click', function(){
+      work.from = null; work.to = null; setEnd('from'); draw(); commit(); sheet.__close();
+    });
+
+    function commit(){
+      saved.from = work.from; saved.to = work.to;
+      each(frame.querySelectorAll('[data-behind] [data-field]'), function(el){
+        var k = el.getAttribute('data-field');
+        var btn = el.closest('.dfield__b');
+        if(k === 'range'){
+          el.textContent = rangeText(saved.from, saved.to);
+        } else {
+          el.textContent = saved[k] ? shortF(saved[k]) : 'Choose a date';
+        }
+        if(btn) btn.classList.toggle('is-empty',
+          k === 'range' ? !saved.from : !saved[k]);
+      });
+    }
+
+    /* re-seed the working copy from the committed value; used by
+       Cancel and by every reopen, so an abandoned edit never sticks */
+    sheet.__reseed = function(which){
+      work.from = saved.from; work.to = saved.to;
+      setEnd(which || (range ? 'from' : (sheet.getAttribute('data-end') || 'from')));
+      var d = work[end] || work.from || MAX;
+      view = new Date(d.getFullYear(), d.getMonth(), 1);
+      draw();
+    };
+    sheet.__commit = commit;
+
+    var commitB = sheet.querySelector('[data-commit]');
+    if(commitB) commitB.addEventListener('click', function(){ commit(); sheet.__close(); });
+    var cancelB = sheet.querySelector('[data-cancel]');
+    if(cancelB) cancelB.addEventListener('click', function(){ sheet.__reseed(); sheet.__close(); });
+
+    setEnd(end);
+    draw();
+  });
+
+  /* ============================================================
+     THE SHEET — open, close, focus return
+     Nothing here auto-dismisses. Escape and the screen behind both
+     close it, and focus goes back to whatever opened it.
+     ============================================================ */
+  each(document.querySelectorAll('[data-dock]'), function(dock){
+    var frame  = frameOf(dock);
+    var behind = frame.querySelector('[data-behind]');
+    var sheet  = dock.querySelector('[data-sheet]');
+    if(!sheet) return;
+    var opener = null;
+
+    function open(trigger){
+      opener = trigger || opener;
+      dock.hidden = false;
+      if(behind){ behind.classList.add('is-dim'); behind.setAttribute('aria-hidden','true'); }
+      each(frame.querySelectorAll('[data-open]'), function(b){
+        b.setAttribute('aria-expanded', b === opener ? 'true' : 'false');
+        /* the field that opened the sheet is the one being edited */
+        if(b.classList.contains('dfield__b')) b.classList.toggle('is-active', b === opener);
+      });
+      if(sheet.__reseed && trigger && trigger.getAttribute('data-end')){
+        sheet.__reseed(trigger.getAttribute('data-end'));
+      }
+      var first = sheet.querySelector('.sheet__x');
+      if(first) first.focus();
+    }
+    function close(){
+      dock.hidden = true;
+      if(behind){ behind.classList.remove('is-dim'); behind.removeAttribute('aria-hidden'); }
+      each(frame.querySelectorAll('[data-open]'), function(b){
+        b.setAttribute('aria-expanded','false');
+      });
+      if(opener) opener.focus();
+    }
+    sheet.__close = close;
+    sheet.__open  = open;
+
+    each(frame.querySelectorAll('[data-open]'), function(b){
+      b.addEventListener('click', function(){ open(b); });
+    });
+    each(sheet.querySelectorAll('[data-close], .sheet__x'), function(b){
+      b.addEventListener('click', function(){
+        if(sheet.__reseed) sheet.__reseed();
+        close();
+      });
+    });
+    /* The screen behind is the scrim. Only a click that lands on the
+       screen ITSELF closes — while it is dimmed its children are
+       pointer-events:none, so the target is the screen; once it is
+       live, a click on a control inside it is that control's, and
+       must not be swallowed by the scrim it has stopped being. */
+    if(behind) behind.addEventListener('click', function(ev){
+      if(ev.target !== behind) return;
+      if(behind.classList.contains('is-dim') && !dock.hidden){
+        ev.preventDefault();
+        if(sheet.__reseed) sheet.__reseed();
+        close();
+      }
+    });
+    frame.addEventListener('keydown', function(ev){
+      if(ev.key === 'Escape' && !dock.hidden){
+        ev.stopPropagation();
+        if(sheet.__reseed) sheet.__reseed();
+        close();
+      }
+    });
+
+    /* the sheet is up when the frame loads — that is the specimen */
+    var firstOpen = frame.querySelector('[data-open][aria-expanded="true"]') ||
+                    frame.querySelector('[data-open]');
+    opener = firstOpen;
+  });
+
+  /* ============================================================
+     OPTION ROWS
+     Radio applies on tap and closes the sheet — the sort sheets
+     have no Apply button, so the tap has to be the apply.
+     Checkbox is multi-select and waits for Apply.
+     ============================================================ */
+  function recount(sheet){
+    if(!sheet) return;
+    var on = sheet.querySelectorAll('.opt[role="checkbox"][aria-checked="true"]').length;
+    var n = sheet.querySelector('[data-n]');
+    var b = sheet.querySelector('[data-btn-n]');
+    var clear = sheet.querySelector('[data-clear]');
+    if(n){ n.textContent = on + ' on'; n.hidden = on === 0; }
+    if(b){ b.textContent = on; b.hidden = on === 0; }
+    if(clear){ clear.disabled = on === 0; }
+  }
+
+  each(document.querySelectorAll('.opt'), function(opt){
+    opt.addEventListener('click', function(){
+      var sheet = opt.closest('.sheet');
+      if(opt.getAttribute('role') === 'radio'){
+        var g = opt.closest('[role="radiogroup"]');
+        if(g) each(g.querySelectorAll('.opt[role="radio"]'), function(o){
+          o.setAttribute('aria-checked', o === opt ? 'true' : 'false');
+        });
+        if(sheet && sheet.hasAttribute('data-applies-on-tap')){
+          var frame = frameOf(sheet);
+          var line  = frame.querySelector('[data-sortline]');
+          var name  = frame.querySelector('[data-sortname]');
+          var label = opt.querySelector('.opt__text').firstChild.textContent.trim();
+          if(name){ name.textContent = label; }
+          if(line){ line.hidden = false; }
+          if(sheet.__close) sheet.__close();
+        }
+      } else if(opt.getAttribute('role') === 'checkbox'){
+        opt.setAttribute('aria-checked', opt.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+        recount(sheet);
+      }
+    });
+  });
+
+  each(document.querySelectorAll('[data-clear]'), function(btn){
+    btn.addEventListener('click', function(){
+      var sheet = btn.closest('.sheet');
+      each(sheet.querySelectorAll('.opt[role="checkbox"]'), function(o){
+        o.setAttribute('aria-checked','false');
+      });
+      recount(sheet);
+    });
+  });
+
+  each(document.querySelectorAll('[data-apply]'), function(btn){
+    btn.addEventListener('click', function(){
+      var sheet = btn.closest('.sheet');
+      var frame = frameOf(sheet);
+      var on = sheet.querySelectorAll('.opt[role="checkbox"][aria-checked="true"]').length;
+      var line = frame.querySelector('[data-applied]');
+      var n    = frame.querySelector('[data-applied-n]');
+      var trig = frame.querySelector('[data-trigger-n]');
+      var tbtn = frame.querySelector('.fbar__t');
+      if(n) n.textContent = on;
+      if(line) line.hidden = on === 0;
+      if(trig){ trig.textContent = on; trig.hidden = on === 0; }
+      if(tbtn) tbtn.classList.toggle('is-on', on > 0);
+      if(sheet.__close) sheet.__close();
+    });
+  });
+
+  /* ============================================================
+     THE CHIP STRIP
+     ------------------------------------------------------------
+     14 settled results, so "x of 14" is counted rather than
+     asserted. All is exclusive; the three categories are an OR;
+     My ideas is a second axis ANDed on top. Management + My ideas
+     really is 0 — which is what the nothing-matched frame is for.
+     ============================================================ */
+  var ROWS = [
+    /* the two on-field rows this screen actually renders are the two
+       marked mine, so the card list and the count cannot disagree */
+    {c:'on-field',  mine:true }, {c:'on-field',  mine:true },
+    {c:'on-field',  mine:false}, {c:'on-field',  mine:false},
+    {c:'on-field',  mine:false}, {c:'on-field',  mine:false},
+    {c:'off-field', mine:true }, {c:'off-field', mine:false},
+    {c:'off-field', mine:false}, {c:'off-field', mine:false},
+    {c:'management',mine:false}, {c:'management',mine:false},
+    {c:'management',mine:false}, {c:'management',mine:false}
+  ];
+  var CATS = ['on-field','off-field','management'];
+
+  function countFor(cats, mine){
+    return ROWS.filter(function(r){
+      if(cats.length && cats.indexOf(r.c) === -1) return false;
+      if(mine && !r.mine) return false;
+      return true;
+    }).length;
+  }
+  function nameOf(k){
+    return k === 'on-field' ? 'On-field' : k === 'off-field' ? 'Off-field' :
+           k === 'management' ? 'Management' : 'My ideas';
+  }
+
+  each(document.querySelectorAll('[data-chipbar]'), function(bar){
+    var frame = frameOf(bar);
+    /* on the sheet frames the trigger belongs to the sheet, not to the
+       chips — the chips there only carry their own pressed state */
+    var chipsOnly = bar.hasAttribute('data-chips-only');
+    var chips = bar.querySelectorAll('.fchip[data-chip]');
+    var TICK  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" ' +
+                'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                '<path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg>';
+
+    function state(){
+      var cats = [], mine = false;
+      each(chips, function(c){
+        if(c.getAttribute('aria-pressed') !== 'true') return;
+        var k = c.getAttribute('data-chip');
+        if(k === 'mine') mine = true;
+        else if(k !== 'all') cats.push(k);
+      });
+      return { cats: cats, mine: mine };
+    }
+
+    function render(){
+      var s = state();
+      var n = s.cats.length + (s.mine ? 1 : 0);
+      var hit = countFor(s.cats, s.mine);
+
+      /* All is on only when nothing else is */
+      each(chips, function(c){
+        var k = c.getAttribute('data-chip');
+        var on = k === 'all' ? n === 0 : c.getAttribute('aria-pressed') === 'true';
+        c.setAttribute('aria-pressed', on ? 'true' : 'false');
+        /* the tick is the non-colour half of the pressed signal */
+        var svg = c.querySelector('svg');
+        if(on && k !== 'all' && !svg) c.insertAdjacentHTML('beforeend', TICK);
+        if((!on || k === 'all') && svg) svg.remove();
+      });
+
+      if(chipsOnly) return;
+
+      var trig = frame.querySelector('[data-trigger-n]');
+      var tbtn = bar.querySelector('.fbar__t');
+      if(trig){ trig.textContent = n; trig.hidden = n === 0; }
+      if(tbtn){
+        tbtn.classList.toggle('is-on', n > 0);
+        tbtn.setAttribute('aria-label', n === 0 ? 'Filter results'
+          : 'Filter results, ' + n + (n === 1 ? ' filter on' : ' filters on'));
+      }
+
+      var tn = frame.querySelector('[data-tally-n]');
+      var th = frame.querySelector('[data-tally-hit]');
+      if(tn) tn.textContent = n;
+      if(th) th.textContent = hit;
+      var tx = frame.querySelector('[data-clear-chips]');
+      if(tx && tx.classList.contains('tally__x')) tx.disabled = n === 0;
+
+      /* frame 4 — the result cards on the page */
+      var rows = frame.querySelectorAll('[data-row]');
+      if(rows.length){
+        var shown = 0;
+        each(rows, function(r){
+          var okC = !s.cats.length || s.cats.indexOf(r.getAttribute('data-cat')) > -1;
+          var okM = !s.mine || r.getAttribute('data-mine') === 'true';
+          r.hidden = !(okC && okM);
+          if(!r.hidden) shown++;
+        });
+        var end = frame.querySelector('[data-endline]');
+        var none = frame.querySelector('[data-none]');
+        if(end){ end.hidden = shown === 0; end.textContent = 'End of ' + shown + ' matching result' + (shown === 1 ? '' : 's'); }
+        if(none) none.hidden = shown > 0;
+      }
+
+      /* frame 5 — the nothing-matched panel */
+      var nohit = frame.querySelector('[data-nohit]');
+      if(nohit){
+        var hits = frame.querySelector('[data-hits]');
+        nohit.hidden = hit > 0;
+        if(hits){
+          hits.hidden = hit === 0;
+          var hn = frame.querySelector('[data-hits-n]');
+          if(hn) hn.textContent = hit;
+        }
+        if(hit === 0 && n > 0){
+          var names = s.cats.map(nameOf); if(s.mine) names.push('My ideas');
+          var h = frame.querySelector('[data-nohit-h]');
+          var p = frame.querySelector('[data-nohit-p]');
+          if(h) h.textContent = names.length > 1
+            ? 'Nothing matches ' + names.join(' and ')
+            : 'Nothing matches ' + names[0];
+          if(p) p.innerHTML = '<b>There are 14 results here</b> — none of them match <b>' +
+            names.join('</b> and <b>') + '</b> together. Drop one filter and the rest come back.';
+        }
+        /* the "or keep X only" shortcut, recounted */
+        var alt = frame.querySelector('[data-drop-chip]');
+        if(alt){
+          var drop = alt.getAttribute('data-drop-chip');
+          var kept = s.cats.slice(), keptMine = s.mine;
+          if(drop === 'mine') keptMine = false; else kept = kept.filter(function(k){ return k !== drop; });
+          var altN = countFor(kept, keptMine);
+          var altName = kept.length ? kept.map(nameOf).join(' + ') : (keptMine ? 'My ideas' : 'everything');
+          alt.hidden = (hit > 0) || altN === 0 || altN === hit;
+          alt.innerHTML = 'or keep <b>' + altName + '</b> only · <b>' + altN + '</b> results';
+        }
+      }
+    }
+
+    each(chips, function(c){
+      c.addEventListener('click', function(){
+        var k = c.getAttribute('data-chip');
+        if(k === 'all'){
+          each(chips, function(x){ x.setAttribute('aria-pressed', x === c ? 'true' : 'false'); });
+        } else {
+          c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+        }
+        render();
+      });
+    });
+
+    each(frame.querySelectorAll('[data-clear-chips]'), function(b){
+      b.addEventListener('click', function(){
+        each(chips, function(x){
+          x.setAttribute('aria-pressed', x.getAttribute('data-chip') === 'all' ? 'true' : 'false');
+        });
+        render();
+      });
+    });
+
+    each(frame.querySelectorAll('[data-drop-chip]'), function(b){
+      b.addEventListener('click', function(){
+        var k = b.getAttribute('data-drop-chip');
+        each(chips, function(x){
+          if(x.getAttribute('data-chip') === k) x.setAttribute('aria-pressed','false');
+        });
+        render();
+      });
+    });
+
+    render();
+  });
+
+  /* ============================================================
+     THE TAXONOMY SEGMENT AND THE EXPLAINER
+     ============================================================ */
+  each(document.querySelectorAll('.tax'), function(tax){
+    each(tax.querySelectorAll('.tax__btn'), function(btn){
+      btn.addEventListener('click', function(){
+        each(tax.querySelectorAll('.tax__half'), function(half){
+          var on = half.contains(btn);
+          if(on) half.setAttribute('data-on','true'); else half.removeAttribute('data-on');
+          var b = half.querySelector('.tax__btn');
+          if(b) b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      });
+    });
+  });
+
+  each(document.querySelectorAll('.tax__q[data-tip]'), function(q){
+    var tip = document.getElementById(q.getAttribute('data-tip'));
+    if(!tip) return;
+    q.addEventListener('click', function(){
+      var open = q.getAttribute('aria-expanded') === 'true';
+      q.setAttribute('aria-expanded', open ? 'false' : 'true');
+      tip.hidden = open;
+      if(!open){ var x = tip.querySelector('.tip__x'); if(x) x.focus(); }
+    });
+    var x = tip.querySelector('.tip__x');
+    if(x) x.addEventListener('click', function(){
+      tip.hidden = true;
+      q.setAttribute('aria-expanded','false');
+      q.focus();
+    });
+    frameOf(q).addEventListener('keydown', function(ev){
+      if(ev.key === 'Escape' && !tip.hidden){
+        tip.hidden = true; q.setAttribute('aria-expanded','false'); q.focus();
+      }
+    });
+    tip.hidden = q.getAttribute('aria-expanded') !== 'true';
+  });
+})();
+</script>
+</body>
+</html>

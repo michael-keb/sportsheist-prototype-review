@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en" data-component="account-settings">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Account settings</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — ACCOUNT SETTINGS
+   Four pushed sub-pages of Profile, rebuilt in the dark brand
+   language: Account details, Change password, Security, and
+   Notification settings.
+
+   Token block copied verbatim from merits.html. Content and
+   behaviour come from Screen-Specs/06-profile/01-account
+   (PA-01 … PA-04); every colour, radius and type value below is
+   from the sampled token set.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls, tab bar        */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* hero */
+  --hero-a:        #0D3617;
+  --hero-b:        #17481C;
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* semantic red — destructive / downward only */
+  --red:           #E2564A;
+  --red-line:      rgba(226,86,74,.38);
+  --red-wash:      rgba(226,86,74,.10);
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* photography extracted from the Figma exports */
+  --av-you:url(data:image/jpeg;base64,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);
+  --av-02:url(data:image/jpeg;base64,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);
+  --av-03:url(data:image/jpeg;base64,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);
+  --av-04:url(data:image/jpeg;base64,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);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:0 0 40px}
+
+/* ============================================================
+   FRAME — one screen, one device in the review page
+   ============================================================ */
+.frame{position:relative;padding-bottom:26px}
+
+/* ---------- app bar: back control + screen title ---------- */
+.nav{display:flex;align-items:center;gap:8px;padding:14px var(--gutter) 0}
+.nav__spacer{flex:1}
+.title{
+  margin:12px var(--gutter) 4px;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.intro{
+  margin:8px var(--gutter) 0;
+  font-size:13px;color:var(--muted);
+}
+
+/* ---------- shared bits (from merits.html) ---------- */
+.label{
+  margin:22px var(--gutter) 10px;
+  font-size:18px;font-weight:600;letter-spacing:-.015em;
+}
+.head{display:flex;align-items:center;gap:8px;margin:22px var(--gutter) 10px}
+.head h2{flex:1;margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.note{margin:8px var(--gutter) 0;font-size:12px;color:var(--dim)}
+.note--wash{
+  margin:10px var(--gutter) 0;padding:9px 12px;
+  border-radius:var(--r-panel);background:var(--acid-wash);
+  font-size:12px;color:var(--acid);
+}
+
+.eyebrow{
+  margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.pill-btn{
+  display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.pill-btn svg{width:14px;height:14px}
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:17px;height:17px}
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  height:32px;padding:0 14px;border-radius:var(--r-pill);
+  background:var(--acid-wash);
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;
+}
+.status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.avatar{
+  border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+
+/* group tag — sits in the section header, says whether the group is editable */
+.tag{
+  display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;
+  border-radius:var(--r-pill);background:var(--sunken);
+  font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);white-space:nowrap;
+}
+.tag svg{width:11px;height:11px}
+.tag--live{background:var(--acid-wash);color:var(--acid)}
+
+/* ============================================================
+   IDENTITY CARD
+   ============================================================ */
+.ident{
+  display:flex;align-items:center;gap:13px;
+  margin:16px var(--gutter) 0;padding:16px;
+  border-radius:var(--r-card);background:var(--surface);
+}
+.ident__av{width:60px;height:60px;box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--acid)}
+.ident__main{flex:1;min-width:0}
+.ident__name{display:block;font-size:17px;font-weight:600;letter-spacing:-.015em}
+.ident__handle{display:block;margin-top:2px;font-size:12.5px;color:var(--muted)}
+
+/* ============================================================
+   FIELD — ONE anatomy, three trailing affordances
+   64 px tall · label above value · trailing glyph
+   ============================================================ */
+.fields{margin:0 var(--gutter);display:flex;flex-direction:column;gap:8px}
+.field{
+  position:relative;display:flex;align-items:center;gap:12px;
+  min-height:64px;padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);
+  transition:border-color .18s var(--ease);
+}
+.field__main{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:11px 0}
+.field__label{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);
+}
+.field__value{
+  display:block;width:100%;
+  font:inherit;font-size:15px;font-weight:600;letter-spacing:-.01em;line-height:1.25;
+  color:var(--text);
+  background:none;border:0;padding:0;margin:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.field__value::placeholder{color:var(--dim);font-weight:500}
+.field__value:focus{outline:none}
+.field__mask{letter-spacing:.16em;font-size:15px}
+.field__aff{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;color:var(--dim)}
+.field__aff svg{width:16px;height:16px}
+
+/* locked / read-only — recessed fill, muted value, lock glyph */
+.field--locked{background:var(--sunken);border-color:var(--line-soft)}
+.field--locked .field__value{color:var(--muted);font-weight:500}
+
+/* editable — surface fill, white value, pencil glyph, live focus ring */
+.field--edit .field__aff{color:var(--muted)}
+.field--edit:focus-within{border-color:var(--acid)}
+.field--edit:focus-within .field__label{color:var(--acid)}
+
+/* select — same anatomy, chevron affordance */
+select.field__value{
+  appearance:none;-webkit-appearance:none;cursor:pointer;
+  text-overflow:ellipsis;
+}
+select.field__value option{background:#1C2129;color:#FFF}
+
+/* Branded select menu — the OS popup is the one piece of system chrome the
+   native <select> can't restyle, so the select becomes a hidden state holder
+   and this popover does the showing. Same panel recipe as the library date
+   picker: surface, 1px line, r-panel, the 18/44 shadow. */
+select.field__value--bh{
+  position:absolute;width:1px;height:1px;opacity:0;
+  pointer-events:none;overflow:hidden;
+}
+button.field__value{text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none}
+.field__aff svg{transition:transform .16s var(--ease),color .16s var(--ease)}
+.field.is-open{border-color:var(--acid)}
+.field.is-open .field__label{color:var(--acid)}
+.field.is-open .field__aff{color:var(--text)}
+.field.is-open .field__aff svg{transform:rotate(180deg)}
+.dd{
+  position:absolute;top:calc(100% + 8px);left:0;z-index:80;
+  min-width:100%;width:max-content;max-width:276px;
+  max-height:288px;overflow:auto;padding:6px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-panel);
+  box-shadow:0 18px 44px rgba(0,0,0,.55);
+}
+.dd[hidden]{display:none}
+.dd__opt{
+  display:flex;align-items:center;gap:10px;width:100%;min-height:44px;
+  padding:5px 10px;border:0;border-radius:8px;background:none;color:var(--text);
+  font:inherit;font-size:15px;line-height:1.3;text-align:left;cursor:pointer;
+}
+.dd__opt:hover{background:var(--sunken)}
+.dd__opt:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.dd__opt[aria-selected="true"]{font-weight:650}
+.dd__t{flex:1;min-width:0}
+.dd__tick{visibility:hidden;flex:0 0 auto;width:17px;height:17px;color:var(--acid)}
+.dd__opt[aria-selected="true"] .dd__tick{visibility:visible}
+
+/* invalid */
+.field--bad{border-color:var(--red)}
+.field--bad .field__label{color:var(--red)}
+.field__err{
+  display:flex;align-items:center;gap:6px;
+  min-height:18px;margin:6px 2px 0;
+  font-size:11.5px;font-weight:500;color:var(--red);
+}
+.field__err svg{width:12px;height:12px;flex:0 0 auto}
+.field__err[hidden]{display:flex;visibility:hidden}
+
+/* trailing action inside a field (the CHANGE link, the reveal eye) */
+.field__act{
+  flex:0 0 auto;height:30px;padding:0 12px;
+  border:0;border-radius:var(--r-pill);background:#242A34;color:var(--text);
+  font:inherit;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.field__act:hover{background:#2C333E}
+.field__eye{
+  flex:0 0 auto;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+  border:0;border-radius:50%;background:none;color:var(--muted);cursor:pointer;
+}
+.field__eye:hover{color:var(--text)}
+.field__eye svg{width:17px;height:17px}
+
+/* ============================================================
+   CARD + ROW — ONE row height (56 px) everywhere
+   ============================================================ */
+.card{
+  margin:0 var(--gutter);
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);overflow:hidden;
+}
+.card--surface{background:var(--surface);border-color:transparent}
+.rows{list-style:none;margin:0;padding:0}
+.row{
+  display:flex;align-items:center;gap:12px;
+  min-height:64px;padding:8px 14px;
+  border-top:1px solid var(--line-soft);
+  background:none;border-left:0;border-right:0;border-bottom:0;
+  width:100%;color:inherit;font:inherit;text-align:left;
+}
+.row:first-child{border-top:0}
+button.row{cursor:pointer;transition:background .18s var(--ease)}
+button.row:hover{background:rgba(255,255,255,.03)}
+.row__ico{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;color:var(--muted);
+}
+.row__ico svg{width:20px;height:20px}
+.row__main{flex:1;min-width:0}
+.row__name{display:block;font-size:14.5px;font-weight:600;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row__sub{display:block;margin-top:2px;font-size:11.5px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.row__end{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;color:var(--dim)}
+.row__end svg{width:16px;height:16px}
+.row__time{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* destructive row */
+.row--kill .row__name,.row--kill .row__ico,.row--kill .row__end{color:var(--red)}
+.card--kill{border-color:var(--red-line);background:var(--red-wash)}
+button.row--kill:hover{background:rgba(226,86,74,.10)}
+
+/* ============================================================
+   DEVICE-TYPE ICON — 38 px sunken square, 20 px glyph
+   ============================================================ */
+.dtype{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;border-radius:11px;
+  background:var(--sunken);color:var(--muted);
+}
+.dtype svg{width:20px;height:20px}
+.dtype--now{background:var(--acid-wash);color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.30)}
+.dtype--warn{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+/* device rows carry a 38 px glyph + two lines — still the 64 px row */
+.sess .row__sub{font-variant-numeric:tabular-nums}
+
+.mini-btn{
+  flex:0 0 auto;height:30px;padding:0 12px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:transparent;color:var(--text);
+  font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease),border-color .18s var(--ease),color .18s var(--ease);
+}
+.mini-btn:hover{background:rgba(255,255,255,.05)}
+.mini-btn[disabled]{color:var(--dim);border-color:var(--line-soft);cursor:default}
+.here{
+  flex:0 0 auto;height:26px;padding:0 10px;border-radius:var(--r-pill);
+  display:inline-flex;align-items:center;
+  background:var(--acid-wash);color:var(--acid);
+  font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;
+}
+
+/* ============================================================
+   TOGGLE — accent on the TRACK, never on the knob
+   ============================================================ */
+.sw{
+  position:relative;flex:0 0 auto;
+  width:46px;height:28px;padding:0;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);cursor:pointer;
+  transition:background .18s var(--ease),border-color .18s var(--ease);
+}
+.sw::after{
+  content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+  background:var(--dim);
+  transition:transform .18s var(--ease),background .18s var(--ease);
+}
+.sw[aria-checked="true"]{background:var(--acid);border-color:var(--acid)}
+.sw[aria-checked="true"]::after{transform:translateX(18px);background:var(--acid-ink)}
+.sw:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.sw[disabled]{cursor:not-allowed}
+
+/* ============================================================
+   SETTING CARD — a card that holds a label, sub-copy and a control
+   (2FA, and the notifications master switch)
+   ============================================================ */
+.setting{
+  display:flex;align-items:flex-start;gap:13px;
+  margin:0 var(--gutter);padding:15px 15px 16px;
+  border-radius:var(--r-card);background:var(--surface);
+  transition:background .2s var(--ease),box-shadow .2s var(--ease);
+}
+.setting__ico{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;border-radius:11px;background:var(--sunken);color:var(--muted);
+}
+.setting__ico svg{width:19px;height:19px}
+.setting__main{flex:1;min-width:0;padding-top:1px}
+.setting__name{display:block;font-size:15px;font-weight:600;letter-spacing:-.015em}
+.setting__sub{display:block;margin-top:5px;font-size:12.5px;color:var(--muted)}
+.setting .sw{margin-top:4px}
+
+/* master switch, engaged */
+.setting--on{background:var(--acid-wash);box-shadow:inset 3px 0 0 var(--acid)}
+.setting--on .setting__ico{background:rgba(155,226,34,.16);color:var(--acid)}
+
+/* the two dependent groups, wrapped so the dependency is visible */
+.deps{position:relative;transition:opacity .2s var(--ease)}
+.deps__bar{
+  display:none;align-items:center;gap:8px;
+  margin:12px var(--gutter) 0;padding:9px 12px;
+  border-radius:var(--r-panel);background:var(--acid-wash);
+  font-size:12px;font-weight:600;color:var(--acid);
+}
+.deps__bar svg{width:14px;height:14px;flex:0 0 auto}
+.deps__count{
+  margin:10px var(--gutter) 0;font-size:12px;color:var(--dim);
+  font-variant-numeric:tabular-nums;
+}
+.deps.is-paused .deps__bar{display:flex}
+.deps.is-paused .deps__body{opacity:.38;pointer-events:none}
+.deps.is-paused .deps__count{color:var(--dim)}
+
+/* ============================================================
+   STRENGTH METER
+   ============================================================ */
+.pw{margin:14px var(--gutter) 0}
+.pw__bar{display:flex;gap:5px}
+.pw__seg{flex:1;height:4px;border-radius:var(--r-pill);background:var(--sunken)}
+.pw__seg.is-on{background:var(--acid)}
+.pw__seg.is-bad{background:var(--red)}
+.pw__row{display:flex;align-items:baseline;gap:6px;margin-top:9px}
+.pw__lab{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acid)}
+.pw__lab.is-bad{color:var(--red)}
+.pw__hint{flex:1;font-size:11.5px;color:var(--dim);text-align:right}
+.reqs{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
+.reqs li{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim)}
+.reqs li svg{width:14px;height:14px;flex:0 0 auto}
+.reqs li.is-met{color:var(--muted)}
+.reqs li.is-met svg{color:var(--acid)}
+.link{
+  display:inline-block;margin:14px var(--gutter) 0;padding:0;
+  border:0;background:none;color:var(--acid);
+  font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px;
+  text-decoration-color:rgba(155,226,34,.4);
+}
+
+/* ============================================================
+   COMMIT BAR — pinned above the safe area, never clipped
+   ============================================================ */
+.commit{
+  position:sticky;bottom:0;z-index:5;
+  margin-top:22px;padding:14px var(--gutter) calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--bg);border-top:1px solid var(--line);
+}
+.commit::before{
+  content:"";position:absolute;left:0;right:0;bottom:100%;height:26px;
+  pointer-events:none;
+  background:linear-gradient(to top,var(--bg),rgba(3,4,1,0));
+}
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;height:52px;
+  border:0;border-radius:var(--r-pill);background:var(--acid);color:var(--acid-ink);
+  font:inherit;font-size:15px;font-weight:700;letter-spacing:-.01em;cursor:pointer;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.btn svg{width:17px;height:17px}
+.btn[disabled]{background:var(--surface);color:var(--dim);cursor:not-allowed}
+.btn--ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+.btn--ghost:hover{background:rgba(255,255,255,.04)}
+.btn--kill{background:transparent;border:1px solid var(--red-line);color:var(--red)}
+.btn--kill:hover{background:var(--red-wash)}
+.commit__note{margin:9px 0 0;font-size:11.5px;color:var(--dim);text-align:center}
+
+.stack{margin:14px var(--gutter) 0}
+.stack .btn{margin-top:0}
+
+/* ---- anchored popover (photo menu) ---- */
+.anch{position:relative}
+.pop{
+  position:absolute;top:calc(100% + 8px);right:0;z-index:80;width:236px;padding:10px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);
+  box-shadow:0 18px 44px rgba(0,0,0,.55);
+}
+.pop[hidden]{display:none}
+.pop__t{margin:0 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim)}
+.avgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:9px}
+.avgrid button{
+  width:100%;aspect-ratio:1;padding:0;border:0;border-radius:var(--r-pill);cursor:pointer;
+  background-size:cover;background-position:center 22%;box-shadow:0 0 0 1px var(--line)
+}
+.avgrid button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--acid)}
+.avgrid button:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.pop__i{
+  display:flex;align-items:center;gap:8px;width:100%;height:36px;padding:0 10px;border:0;
+  border-radius:9px;background:none;color:var(--text);font:inherit;font-size:13px;
+  text-align:left;cursor:pointer
+}
+.pop__i:hover{background:var(--sunken)}
+.pop__i:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.pop__i--kill{color:var(--red)}
+
+/* ---- modal confirm ---- */
+/* absolute, not fixed: inside the review device the nearest positioned ancestor is `.mk`,
+   which is the phone — `fixed` escapes it and covers the whole review page instead. */
+.modal{position:absolute;inset:0;z-index:120;display:grid;place-items:center;padding:20px}
+.modal[hidden]{display:none}
+.modal__scrim{position:absolute;inset:0;background:rgba(3,4,1,.72)}
+.modal__box{
+  position:relative;width:100%;max-width:320px;padding:18px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-card);box-shadow:0 24px 60px rgba(0,0,0,.6)
+}
+.modal__box h3{margin:0 0 8px;font-size:17px;font-weight:600;letter-spacing:-.015em}
+.modal__box p{margin:0 0 14px;font-size:13px;line-height:1.5;color:var(--muted)}
+.modal__acts{display:flex;gap:8px}
+.modal__acts .btn{flex:1;margin:0}
+
+/* ---- inline reset panel ---- */
+.reset{margin:10px var(--gutter) 0;padding:12px;background:var(--sunken);
+  border:1px solid var(--line);border-radius:var(--r-panel)}
+.reset[hidden]{display:none}
+.reset p{margin:0 0 10px;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.reset .btn{margin:0;height:40px}
+.commit__note.is-ok{color:var(--acid)}
+.ident__av--none{
+  display:grid;place-items:center;background:var(--sunken);
+  box-shadow:inset 0 0 0 1px var(--line);
+  font-size:15px;font-weight:700;letter-spacing:-.02em;color:var(--muted)
+}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+<!-- ============================================================
+     FRAME 1 — ACCOUNT DETAILS
+     ============================================================ -->
+<section class="frame" id="f-details" data-title="Account details" aria-label="Account details">
+
+  <div class="nav">
+    <button class="icon-btn" type="button" aria-label="Back to profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="nav__spacer"></span>
+  </div>
+  <h1 class="title">Account details</h1>
+  <p class="intro">Five of these fields are managed by SportsHeist and can’t be edited here. The three address fields are yours to change.</p>
+
+  <!-- identity -->
+  <div class="ident">
+    <div class="avatar ident__av" style="background-image:var(--av-you)" role="img" aria-label="Your profile photo"></div>
+    <div class="ident__main">
+      <span class="ident__name">Dylan Nguyen</span>
+      <span class="ident__handle">dylan_n · Barcelona</span>
+    </div>
+    <span class="anch">
+      <button class="pill-btn" type="button" id="av-btn" aria-expanded="false" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2l1.1-2h6.4l1.1 2h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-8Z"/><circle cx="12" cy="12.4" r="3.2"/></svg>
+        Change
+      </button>
+      <div class="pop" id="av-pop" role="dialog" aria-label="Change your profile photo" hidden>
+        <p class="pop__t">Pick a photo</p>
+        <div class="avgrid" id="av-grid">
+          <button type="button" aria-label="Photo 1" aria-pressed="true"  data-av="var(--av-you)" style="background-image:var(--av-you)"></button>
+          <button type="button" aria-label="Photo 2" aria-pressed="false" data-av="var(--av-02)"  style="background-image:var(--av-02)"></button>
+          <button type="button" aria-label="Photo 3" aria-pressed="false" data-av="var(--av-03)"  style="background-image:var(--av-03)"></button>
+          <button type="button" aria-label="Photo 4" aria-pressed="false" data-av="var(--av-04)"  style="background-image:var(--av-04)"></button>
+        </div>
+        <button class="pop__i pop__i--kill" type="button" id="av-clear">Remove the photo</button>
+      </div>
+    </span>
+  </div>
+
+  <!-- identity fields — locked -->
+  <div class="head">
+    <h2>Identity</h2>
+    <span class="tag">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      Locked
+    </span>
+  </div>
+  <div class="fields">
+    <div class="field field--locked">
+      <span class="field__main">
+        <span class="field__label">Name</span>
+        <span class="field__value">Dylan Nguyen</span>
+      </span>
+      <span class="field__aff" aria-label="Read only" title="Managed by SportsHeist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      </span>
+    </div>
+    <div class="field field--locked">
+      <span class="field__main">
+        <span class="field__label">Username</span>
+        <span class="field__value">dylan_n</span>
+      </span>
+      <span class="field__aff" aria-label="Read only" title="Managed by SportsHeist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      </span>
+    </div>
+    <div class="field field--locked">
+      <span class="field__main">
+        <span class="field__label">Date of birth</span>
+        <span class="field__value">1 February 2000</span>
+      </span>
+      <span class="field__aff" aria-label="Read only" title="Managed by SportsHeist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      </span>
+    </div>
+  </div>
+  <p class="note">Ask support to change a locked field — it appears on your membership record.</p>
+
+  <!-- contact fields — locked -->
+  <div class="head">
+    <h2>Contact</h2>
+    <span class="tag">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      Locked
+    </span>
+  </div>
+  <div class="fields">
+    <div class="field field--locked">
+      <span class="field__main">
+        <span class="field__label">Account email</span>
+        <span class="field__value">dylan.n@sportsheist.app</span>
+      </span>
+      <span class="field__aff" aria-label="Read only" title="Managed by SportsHeist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      </span>
+    </div>
+    <div class="field field--locked">
+      <span class="field__main">
+        <span class="field__label">Mobile number</span>
+        <span class="field__value">+61 412 034 918</span>
+      </span>
+      <span class="field__aff" aria-label="Read only" title="Managed by SportsHeist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- address fields — editable -->
+  <div class="head">
+    <h2>Address</h2>
+    <span class="tag tag--live">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19.2 8.8a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0L4 16v4Z"/></svg>
+      You can edit
+    </span>
+  </div>
+  <div class="fields" data-dirty-scope>
+    <label class="field field--edit">
+      <span class="field__main">
+        <span class="field__label">Residential address</span>
+        <input class="field__value" type="text" value="214 Lygon Street, Carlton" autocomplete="street-address">
+      </span>
+      <span class="field__aff" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19.2 8.8a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0L4 16v4Z"/></svg>
+      </span>
+    </label>
+    <label class="field field--edit">
+      <span class="field__main">
+        <span class="field__label">Province / state</span>
+        <select class="field__value">
+          <option selected>Victoria</option>
+          <option>New South Wales</option>
+          <option>Queensland</option>
+          <option>South Australia</option>
+          <option>Western Australia</option>
+          <option>Tasmania</option>
+        </select>
+      </span>
+      <span class="field__aff" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </span>
+    </label>
+    <label class="field field--edit">
+      <span class="field__main">
+        <span class="field__label">Country</span>
+        <select class="field__value">
+          <option selected>Australia</option>
+          <option>New Zealand</option>
+          <option>Spain</option>
+          <option>United Kingdom</option>
+          <option>Vietnam</option>
+        </select>
+      </span>
+      <span class="field__aff" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </span>
+    </label>
+  </div>
+
+  <!-- sign-in + sub-pages -->
+  <h2 class="label">Sign-in and security</h2>
+  <div class="fields">
+    <div class="field">
+      <span class="field__main">
+        <span class="field__label">Password</span>
+        <span class="field__value field__mask">••••••••</span>
+      </span>
+      <button class="field__act" type="button" data-go="f-password">Change</button>
+    </div>
+  </div>
+  <div class="card" style="margin-top:8px">
+    <ul class="rows">
+      <li><button class="row" type="button" data-go="f-security">
+        <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 5.8v5.4c0 4.3 2.9 8.1 7 9.3 4.1-1.2 7-5 7-9.3V5.8L12 3Z"/><path d="m9.2 12.1 2 2 3.6-3.9"/></svg></span>
+        <span class="row__main"><span class="row__name">Security and devices</span></span>
+        <span class="row__end"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></span>
+      </button></li>
+      <li><button class="row" type="button" data-go="f-notify">
+        <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16M10 20.5h4"/></svg></span>
+        <span class="row__main"><span class="row__name">Notification settings</span></span>
+        <span class="row__end"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></span>
+      </button></li>
+    </ul>
+  </div>
+
+  <!-- destructive -->
+  <h2 class="label">Close your account</h2>
+  <div class="card card--kill">
+    <ul class="rows">
+      <li><button class="row row--kill" type="button" id="kill-btn">
+        <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.3A1.8 1.8 0 0 0 9.2 21h5.6a1.8 1.8 0 0 0 1.8-1.7L17.5 7"/><path d="M10.5 11v6M13.5 11v6"/></svg></span>
+        <span class="row__main">
+          <span class="row__name">Delete my account</span>
+          <span class="row__sub">Permanent. Your ideas, votes and merits go with it.</span>
+        </span>
+        <span class="row__end"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></span>
+      </button></li>
+    </ul>
+  </div>
+
+  <footer class="commit">
+    <button class="btn" type="button" id="save-details" disabled>Save changes</button>
+    <p class="commit__note" id="save-details-note">Nothing changed yet</p>
+  </footer>
+
+  <!-- confirm before the destructive row does anything -->
+  <div class="modal" id="kill-modal" hidden>
+    <div class="modal__scrim" data-close></div>
+    <div class="modal__box" role="dialog" aria-modal="true" aria-labelledby="kill-t">
+      <h3 id="kill-t">Delete your account?</h3>
+      <p>Your ideas, votes and merits go with it, and 1,240.0 credits are forfeited. This can’t be
+         undone — support can’t restore it.</p>
+      <div class="modal__acts">
+        <button class="btn btn--ghost" type="button" data-close>Keep it</button>
+        <button class="btn btn--kill" type="button" id="kill-go">Delete</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     FRAME 2 — CHANGE PASSWORD
+     ============================================================ -->
+<section class="frame" id="f-password" data-title="Change password" aria-label="Change password">
+
+  <div class="nav">
+    <button class="icon-btn" type="button" aria-label="Back to account details">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="nav__spacer"></span>
+  </div>
+  <h1 class="title">Change password</h1>
+  <p class="intro">Pick something you don’t use anywhere else. You’ll stay signed in on this device; every other device is signed out.</p>
+
+  <div class="fields" style="margin-top:18px">
+    <div>
+      <label class="field field--edit" id="pw-cur-field">
+        <span class="field__main">
+          <span class="field__label">Current password</span>
+          <input class="field__value" type="password" id="pw-cur" value="Ferrymead-88" autocomplete="current-password">
+        </span>
+        <button class="field__eye" type="button" data-eye="pw-cur" aria-label="Show current password" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/></svg>
+        </button>
+      </label>
+      <p class="field__err" id="pw-cur-err" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4h.01"/></svg>
+        That isn’t your current password.
+      </p>
+    </div>
+
+    <div>
+      <label class="field field--edit" id="pw-new-field">
+        <span class="field__main">
+          <span class="field__label">New password</span>
+          <input class="field__value" type="password" id="pw-new" value="Kestrels19" autocomplete="new-password">
+        </span>
+        <button class="field__eye" type="button" data-eye="pw-new" aria-label="Show new password" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/></svg>
+        </button>
+      </label>
+    </div>
+  </div>
+
+  <!-- strength -->
+  <div class="pw">
+    <div class="pw__bar" id="pw-bar" role="img" aria-label="Password strength: strong">
+      <span class="pw__seg"></span><span class="pw__seg"></span><span class="pw__seg"></span><span class="pw__seg"></span>
+    </div>
+    <div class="pw__row">
+      <span class="pw__lab" id="pw-lab">Strong</span>
+      <span class="pw__hint" id="pw-hint">Add a symbol to reach very strong</span>
+    </div>
+    <ul class="reqs" id="pw-reqs">
+      <li data-req="len"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>At least 10 characters</li>
+      <li data-req="case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>An upper and a lower case letter</li>
+      <li data-req="num"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>A number</li>
+      <li data-req="sym"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>A symbol, for extra strength</li>
+    </ul>
+  </div>
+
+  <div class="fields" style="margin-top:16px">
+    <div>
+      <label class="field field--edit field--bad" id="pw-cfm-field">
+        <span class="field__main">
+          <span class="field__label">Confirm new password</span>
+          <input class="field__value" type="password" id="pw-cfm" value="Kestrels1" autocomplete="new-password">
+        </span>
+        <button class="field__eye" type="button" data-eye="pw-cfm" aria-label="Show confirmation" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/></svg>
+        </button>
+      </label>
+      <p class="field__err" id="pw-cfm-err">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4h.01"/></svg>
+        Both new-password fields must match.
+      </p>
+    </div>
+  </div>
+
+  <button class="link" type="button" id="forgot-btn" aria-expanded="false" aria-controls="forgot">I don’t remember my current password</button>
+  <div class="reset" id="forgot" hidden>
+    <p id="forgot-copy">We’ll email a reset link to <b>dylan.n@sportsheist.app</b>. It lasts an hour, and
+       your current password keeps working until you use it.</p>
+    <button class="btn btn--ghost" type="button" id="forgot-send">Email me a reset link</button>
+  </div>
+
+  <footer class="commit">
+    <button class="btn" type="button" id="save-pw" disabled>Update password</button>
+    <p class="commit__note" id="save-pw-note">Fix the confirmation to continue</p>
+  </footer>
+</section>
+
+
+<!-- ============================================================
+     FRAME 3 — SECURITY / DEVICES
+     ============================================================ -->
+<section class="frame" id="f-security" data-title="Security and devices" aria-label="Security and devices">
+
+  <div class="nav">
+    <button class="icon-btn" type="button" aria-label="Back to account details">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="nav__spacer"></span>
+  </div>
+  <h1 class="title">Security</h1>
+  <p class="intro">Everything on this screen takes effect the moment you tap it. There is nothing to save.</p>
+
+  <!-- 2FA -->
+  <div class="setting" id="tfa-card" style="margin-top:18px">
+    <span class="setting__ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 5.8v5.4c0 4.3 2.9 8.1 7 9.3 4.1-1.2 7-5 7-9.3V5.8L12 3Z"/><path d="m9.2 12.1 2 2 3.6-3.9"/></svg>
+    </span>
+    <span class="setting__main">
+      <span class="setting__name">Two-factor authentication</span>
+      <span class="setting__sub">Signing in from a new device will need a one-time pin, sent to +61 412 034 918. Turning this on starts the check straight away.</span>
+    </span>
+    <button class="sw" type="button" role="switch" aria-checked="false" aria-label="Two-factor authentication" id="tfa-sw"></button>
+  </div>
+
+  <!-- devices -->
+  <div class="head">
+    <h2>Where you’re signed in</h2>
+    <span class="status-pill" id="sess-count">6 sessions</span>
+  </div>
+  <p class="note" style="margin-top:-4px">Six devices hold a session. Signing one out ends it immediately.</p>
+
+  <div class="card" style="margin-top:10px">
+    <ul class="rows" id="sess-list">
+      <li class="row sess">
+        <span class="dtype dtype--now">
+          <!-- phone -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.6"/><path d="M10.6 5.4h2.8"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">iPhone 17 Pro</span>
+          <span class="row__sub">Melbourne · Active now</span>
+        </span>
+        <span class="here">This device</span>
+      </li>
+
+      <li class="row sess">
+        <span class="dtype">
+          <!-- laptop -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4.5" width="16" height="11" rx="2"/><path d="M2 18.7h20"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">MacBook Pro 14″</span>
+          <span class="row__sub">Melbourne · 2 hours ago</span>
+        </span>
+        <button class="mini-btn" type="button">Sign out</button>
+      </li>
+
+      <li class="row sess">
+        <span class="dtype">
+          <!-- tablet -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="2.5" width="15" height="19" rx="2.4"/><path d="M10.4 18.6h3.2"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">iPad Air</span>
+          <span class="row__sub">Melbourne · Yesterday</span>
+        </span>
+        <button class="mini-btn" type="button">Sign out</button>
+      </li>
+
+      <li class="row sess">
+        <span class="dtype">
+          <!-- desktop / browser -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="19" height="12.6" rx="2.2"/><path d="M2.5 8.1h19"/><path d="M12 16.6v4M9 20.6h6"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">Chrome on Windows</span>
+          <span class="row__sub">Sydney · 3 Jul</span>
+        </span>
+        <button class="mini-btn" type="button">Sign out</button>
+      </li>
+
+      <li class="row sess">
+        <span class="dtype">
+          <!-- tv -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6.2" width="19" height="11.6" rx="2.2"/><path d="M8.2 2.8 12 6.2l3.8-3.4"/><path d="M7.6 21h8.8"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">Apple TV</span>
+          <span class="row__sub">Melbourne · 28 Jun</span>
+        </span>
+        <button class="mini-btn" type="button">Sign out</button>
+      </li>
+
+      <li class="row sess">
+        <span class="dtype">
+          <!-- watch -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.6" y="6.6" width="10.8" height="10.8" rx="3.2"/><path d="M9.4 6.6 8.9 3h6.2l-.5 3.6M9.4 17.4l-.5 3.6h6.2l-.5-3.6"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">Apple Watch</span>
+          <span class="row__sub">Melbourne · 21 Jun</span>
+        </span>
+        <button class="mini-btn" type="button">Sign out</button>
+      </li>
+    </ul>
+  </div>
+
+  <div class="stack">
+    <button class="btn btn--kill" type="button" id="sess-killall">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5.5H18A2.5 2.5 0 0 1 20.5 8v8a2.5 2.5 0 0 1-2.5 2.5h-3"/><path d="M10 8.5 6.5 12l3.5 3.5M6.5 12H15"/></svg>
+      Sign out everywhere else
+    </button>
+    <p class="commit__note" id="sess-killall-note">Ends the five other sessions. This device stays signed in.</p>
+  </div>
+
+  <!-- recent sign-ins -->
+  <div class="head">
+    <h2>Recent sign-ins</h2>
+  </div>
+  <div class="card">
+    <ul class="rows">
+      <li class="row sess">
+        <span class="dtype">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.6"/><path d="M10.6 5.4h2.8"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">iPhone 17 Pro</span>
+          <span class="row__sub">Melbourne, Australia</span>
+        </span>
+        <span class="row__time">Today, 8:57 pm</span>
+      </li>
+      <li class="row sess">
+        <span class="dtype">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4.5" width="16" height="11" rx="2"/><path d="M2 18.7h20"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">MacBook Pro 14″</span>
+          <span class="row__sub">Melbourne, Australia</span>
+        </span>
+        <span class="row__time">Today, 11:02 am</span>
+      </li>
+      <li class="row sess">
+        <span class="dtype dtype--warn">
+          <!-- unknown device — the designed fallback -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.6" y="3" width="14.8" height="18" rx="2.6"/><path d="M9.8 9.4a2.3 2.3 0 1 1 3.2 2.2c-.6.2-.9.7-.9 1.3v.5"/><path d="M12.1 16.6h.01"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">Unrecognised device</span>
+          <span class="row__sub">Ho Chi Minh City · Not you?</span>
+        </span>
+        <span class="row__time">2 Apr, 8:54 pm</span>
+      </li>
+    </ul>
+  </div>
+  <p class="note">Only the last 30 days are kept.</p>
+</section>
+
+
+<!-- ============================================================
+     FRAME 4 — NOTIFICATION SETTINGS
+     ============================================================ -->
+<section class="frame" id="f-notify" data-title="Notifications" aria-label="Notification settings">
+
+  <div class="nav">
+    <button class="icon-btn" type="button" aria-label="Back to account details">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="nav__spacer"></span>
+  </div>
+  <h1 class="title">Notifications</h1>
+
+  <!-- master -->
+  <div class="setting" id="pause-card" style="margin-top:16px">
+    <span class="setting__ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 0 1 8.4-5.5M18 11v6M4 17h16M10 20.5h4"/><path d="M4 4l16 16"/></svg>
+    </span>
+    <span class="setting__main">
+      <span class="setting__name">Pause everything</span>
+      <span class="setting__sub">A master switch. While it’s on, nothing below is sent — and nothing below is forgotten.</span>
+    </span>
+    <button class="sw" type="button" role="switch" aria-checked="false" aria-label="Pause everything" id="pause-sw"></button>
+  </div>
+
+  <!-- dependents -->
+  <div class="deps" id="deps">
+    <p class="deps__bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="5" width="3.4" height="14" rx="1.2"/><rect x="13.6" y="5" width="3.4" height="14" rx="1.2"/></svg>
+      Paused — all 9 settings below are held, none are sent
+    </p>
+    <p class="deps__count" id="deps-count">7 of 9 on</p>
+
+    <div class="deps__body">
+
+      <!-- WHAT -->
+      <div class="head">
+        <h2>What you’re told about</h2>
+      </div>
+      <div class="card">
+        <ul class="rows">
+          <li class="row">
+            <span class="row__main"><span class="row__name">My ideas and proposals</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="My ideas and proposals"></button>
+          </li>
+          <li class="row">
+            <span class="row__main"><span class="row__name">Management responses</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Management responses"></button>
+          </li>
+          <li class="row">
+            <span class="row__main"><span class="row__name">New ideas in my club</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="false" aria-label="New ideas in my club"></button>
+          </li>
+          <li class="row">
+            <span class="row__main"><span class="row__name">Ideas I’ve backed</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Ideas I’ve backed"></button>
+          </li>
+          <li class="row">
+            <span class="row__main"><span class="row__name">Member of the Match, Week and Season</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Member of the Match, Week and Season"></button>
+          </li>
+          <li class="row">
+            <span class="row__main"><span class="row__name">Match and playoff updates</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Match and playoff updates"></button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- HOW -->
+      <div class="head">
+        <h2>How you’re told</h2>
+      </div>
+      <p class="note" style="margin-top:-4px">Turn a channel off and every topic above stops arriving that way. Your topic choices are kept.</p>
+      <div class="card" style="margin-top:10px">
+        <ul class="rows">
+          <li class="row">
+            <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.6"/><path d="M10.6 5.4h2.8"/></svg></span>
+            <span class="row__main"><span class="row__name">Push on this device</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Push on this device"></button>
+          </li>
+          <li class="row">
+            <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.4"/><path d="m3.8 7 8.2 6 8.2-6"/></svg></span>
+            <span class="row__main"><span class="row__name">Email</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Email"></button>
+          </li>
+          <li class="row">
+            <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h11l5 4v9H4v-13Z"/><path d="M7.5 9.5h5M7.5 13h9"/></svg></span>
+            <span class="row__main"><span class="row__name">Club news and product updates</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="false" aria-label="Club news and product updates"></button>
+          </li>
+        </ul>
+      </div>
+      <p class="note">Support and account email — receipts, password changes, security notices — is always sent. It isn’t a preference.</p>
+
+    </div>
+  </div>
+
+  <footer class="commit">
+    <button class="btn" type="button" id="save-notify" disabled>Save changes</button>
+    <p class="commit__note" id="save-notify-note">Nothing changed yet</p>
+  </footer>
+</section>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  var EYE_OPEN  = '<path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/>';
+  var EYE_SHUT  = '<path d="M3.5 3.5l17 17"/><path d="M9.6 6.2A9.4 9.4 0 0 1 12 5.8c6 0 9.5 6.2 9.5 6.2a17 17 0 0 1-2.6 3.4M6.6 7.9A17 17 0 0 0 2.5 12s3.5 6.2 9.5 6.2c1.1 0 2.1-.2 3-.5"/><path d="M9.9 10a3.1 3.1 0 0 0 4.2 4.3"/>';
+
+  /* ---------- jump between frames ---------- */
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-go]'); if(!b) return;
+    var t = document.getElementById(b.getAttribute('data-go'));
+    if (t) t.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+
+  /* ---------- generic switch ---------- */
+  document.addEventListener('click', function(e){
+    var s = e.target.closest('.sw'); if(!s || s.disabled) return;
+    s.setAttribute('aria-checked', s.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+    s.dispatchEvent(new CustomEvent('sh:switch', {bubbles:true}));
+  });
+
+  /* ---------- FRAME 1 — dirty tracking ---------- */
+  var f1     = document.getElementById('f-details');
+  var f1save = document.getElementById('save-details');
+  var f1note = document.getElementById('save-details-note');
+  var f1base = [];
+  var f1in   = [].slice.call(f1.querySelectorAll('[data-dirty-scope] input, [data-dirty-scope] select'));
+  f1in.forEach(function(el){ f1base.push(el.value); });
+  function f1check(){
+    var n = 0;
+    f1in.forEach(function(el,i){ if (el.value !== f1base[i]) n++; });
+    f1save.disabled = n === 0;
+    f1note.textContent = n === 0 ? 'Nothing changed yet'
+      : (n === 1 ? '1 field changed' : n + ' fields changed');
+  }
+  f1in.forEach(function(el){ el.addEventListener('input', f1check); el.addEventListener('change', f1check); });
+
+  /* ---------- FRAME 2 — strength + validation ---------- */
+  var cur  = document.getElementById('pw-cur');
+  var neu  = document.getElementById('pw-new');
+  var cfm  = document.getElementById('pw-cfm');
+  var bar  = document.getElementById('pw-bar');
+  var segs = [].slice.call(bar.querySelectorAll('.pw__seg'));
+  var lab  = document.getElementById('pw-lab');
+  var hint = document.getElementById('pw-hint');
+  var reqs = document.getElementById('pw-reqs');
+  var cfmF = document.getElementById('pw-cfm-field');
+  var cfmE = document.getElementById('pw-cfm-err');
+  var curF = document.getElementById('pw-cur-field');
+  var curE = document.getElementById('pw-cur-err');
+  var pwBtn  = document.getElementById('save-pw');
+  var pwNote = document.getElementById('save-pw-note');
+
+  var NAMES = ['Too short','Weak','Fair','Strong','Very strong'];
+  var HINTS = ['At least 10 characters','Mix upper and lower case','Add a number',
+               'Add a symbol to reach very strong','Nothing more to add'];
+
+  function score(v){
+    var met = {
+      len:  v.length >= 10,
+      case: /[a-z]/.test(v) && /[A-Z]/.test(v),
+      num:  /[0-9]/.test(v),
+      sym:  /[^A-Za-z0-9]/.test(v)
+    };
+    var s = (met.len?1:0) + (met.case?1:0) + (met.num?1:0) + (met.sym?1:0);
+    if (!met.len) s = Math.min(s, 1);           /* short can never exceed 1 bar */
+    return {s:s, met:met};
+  }
+
+  function pwPaint(){
+    var v = neu.value, r = score(v), s = r.s;
+
+    segs.forEach(function(el,i){
+      el.className = 'pw__seg' + (i < s ? (s <= 1 ? ' is-bad' : ' is-on') : '');
+    });
+    lab.textContent  = v.length ? NAMES[s] : 'Enter a new password';
+    lab.className    = 'pw__lab' + (v.length && s <= 1 ? ' is-bad' : '');
+    hint.textContent = v.length ? HINTS[s] : '';
+    bar.setAttribute('aria-label', 'Password strength: ' + (v.length ? NAMES[s] : 'empty'));
+
+    [].slice.call(reqs.children).forEach(function(li){
+      li.classList.toggle('is-met', !!r.met[li.getAttribute('data-req')]);
+    });
+
+    /* confirm */
+    var mismatch = cfm.value.length > 0 && cfm.value !== v;
+    cfmF.classList.toggle('field--bad', mismatch);
+    cfmE.hidden = !mismatch;
+
+    /* current password — demo rule: must not equal the new one */
+    var reused = cur.value.length > 0 && cur.value === v;
+    curF.classList.toggle('field--bad', reused);
+    curE.hidden = !reused;
+    if (reused) curE.lastChild.textContent = ' Your new password must be different.';
+
+    var ok = cur.value.length > 0 && s >= 2 && cfm.value === v && v.length > 0 && !reused;
+    pwBtn.disabled  = !ok;
+    pwNote.textContent = ok ? 'Every other device will be signed out'
+      : mismatch ? 'Fix the confirmation to continue'
+      : s < 2 && v.length ? 'Choose a stronger password'
+      : 'Fill in all three fields';
+  }
+  [cur,neu,cfm].forEach(function(el){ el.addEventListener('input', pwPaint); });
+  pwPaint();
+
+  /* reveal buttons */
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-eye]'); if(!b) return;
+    var inp = document.getElementById(b.getAttribute('data-eye'));
+    var show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    b.setAttribute('aria-pressed', show ? 'true' : 'false');
+    b.querySelector('svg').innerHTML = show ? EYE_SHUT : EYE_OPEN;
+  });
+
+  /* ---------- FRAME 3 — 2FA applies immediately ---------- */
+  var tfa = document.getElementById('tfa-sw');
+  var tfaCard = document.getElementById('tfa-card');
+  tfa.addEventListener('sh:switch', function(){
+    tfaCard.classList.toggle('setting--on', tfa.getAttribute('aria-checked') === 'true');
+  });
+
+  /* ---------- FRAME 4 — master / dependents ---------- */
+  var pauseSw   = document.getElementById('pause-sw');
+  var pauseCard = document.getElementById('pause-card');
+  var deps      = document.getElementById('deps');
+  var depsCount = document.getElementById('deps-count');
+  var childSw   = [].slice.call(deps.querySelectorAll('.sw'));
+  var f4save    = document.getElementById('save-notify');
+  var f4note    = document.getElementById('save-notify-note');
+  var f4base    = childSw.map(function(s){ return s.getAttribute('aria-checked'); })
+                    .concat([pauseSw.getAttribute('aria-checked')]);
+
+  function f4paint(){
+    var paused = pauseSw.getAttribute('aria-checked') === 'true';
+    pauseCard.classList.toggle('setting--on', paused);
+    deps.classList.toggle('is-paused', paused);
+    childSw.forEach(function(s){ s.disabled = paused; });
+
+    var on = childSw.filter(function(s){ return s.getAttribute('aria-checked') === 'true'; }).length;
+    depsCount.textContent = paused
+      ? on + ' of ' + childSw.length + ' on — held while paused'
+      : on + ' of ' + childSw.length + ' on';
+
+    var now = childSw.map(function(s){ return s.getAttribute('aria-checked'); })
+                .concat([pauseSw.getAttribute('aria-checked')]);
+    var n = 0;
+    now.forEach(function(v,i){ if (v !== f4base[i]) n++; });
+    f4save.disabled = n === 0;
+    f4note.textContent = n === 0 ? 'Nothing changed yet'
+      : (n === 1 ? '1 setting changed' : n + ' settings changed');
+  }
+  deps.addEventListener('sh:switch', f4paint);
+  pauseSw.addEventListener('sh:switch', f4paint);
+  f4paint();
+
+  /* ---------- FRAME 3 — sessions ---------- */
+  var sessList  = document.getElementById('sess-list');
+  var sessCount = document.getElementById('sess-count');
+  var killAll   = document.getElementById('sess-killall');
+
+  function sessPaint(){
+    var live = 1 + [].slice.call(sessList.querySelectorAll('.mini-btn'))
+                     .filter(function(b){ return !b.disabled; }).length;
+    sessCount.textContent = live === 1 ? '1 session' : live + ' sessions';
+    if (killAll){
+      killAll.disabled = live <= 1;
+      document.getElementById('sess-killall-note').textContent = live <= 1
+        ? 'Nothing else is signed in. Only this device holds a session.'
+        : 'Ends the ' + (live - 1) + ' other session' + (live - 1 === 1 ? '' : 's')
+          + '. This device stays signed in.';
+    }
+  }
+  sessList.addEventListener('click', function(e){
+    var b = e.target.closest('.mini-btn'); if(!b || b.disabled) return;
+    b.disabled = true;
+    b.textContent = 'Signed out';
+    sessPaint();
+  });
+  if (killAll) killAll.addEventListener('click', function(){
+    [].slice.call(sessList.querySelectorAll('.mini-btn')).forEach(function(b){
+      if (!b.disabled){ b.disabled = true; b.textContent = 'Signed out'; }
+    });
+    sessPaint();
+  });
+  sessPaint();
+
+  /* ============================================================
+     Everything below closes the dead controls the review found.
+     ============================================================ */
+
+  /* ---------- one popover primitive: outside click, Escape, focus return ---------- */
+  function popover(btn, pop){
+    if (!btn || !pop) return null;
+    function away(e){ if (!btn.parentNode.contains(e.target)) close(false); }
+    function esc(e){ if (e.key === 'Escape'){ e.stopPropagation(); close(true); } }
+    function open(){
+      pop.hidden = false;
+      btn.setAttribute('aria-expanded','true');
+      document.addEventListener('mousedown', away, true);
+      document.addEventListener('keydown', esc, true);
+      var first = pop.querySelector('button'); if (first) first.focus();
+    }
+    function close(focus){
+      pop.hidden = true;
+      btn.setAttribute('aria-expanded','false');
+      document.removeEventListener('mousedown', away, true);
+      document.removeEventListener('keydown', esc, true);
+      if (focus) btn.focus();
+    }
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      pop.hidden ? open() : close(true);
+    });
+    return {open:open, close:close};
+  }
+
+  /* ---------- FRAME 1 — the profile photo actually changes ---------- */
+  var avBtn  = document.getElementById('av-btn');
+  var avPop  = document.getElementById('av-pop');
+  var avImg  = document.querySelector('.ident__av');
+  var avPo   = popover(avBtn, avPop);
+  var avBase = avImg ? avImg.getAttribute('style') : '';
+  var avNow  = avBase;
+
+  if (avPo){
+    document.getElementById('av-grid').addEventListener('click', function(e){
+      var b = e.target.closest('button[data-av]'); if(!b) return;
+      [].slice.call(this.children).forEach(function(x){
+        x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+      });
+      avImg.style.backgroundImage = b.getAttribute('data-av');
+      avImg.classList.remove('ident__av--none');
+      avImg.textContent = '';
+      avNow = b.getAttribute('data-av');
+      f1check();
+      avPo.close(true);
+    });
+    document.getElementById('av-clear').addEventListener('click', function(){
+      avImg.style.backgroundImage = 'none';
+      avImg.classList.add('ident__av--none');
+      avImg.textContent = 'DN';
+      [].slice.call(document.getElementById('av-grid').children).forEach(function(x){
+        x.setAttribute('aria-pressed','false');
+      });
+      avNow = 'none';
+      f1check();
+      avPo.close(true);
+    });
+  }
+
+  /* the photo counts as a change, so fold it into the dirty count */
+  f1check = function(){
+    var n = 0;
+    f1in.forEach(function(el,i){ if (el.value !== f1base[i]) n++; });
+    if (avNow !== avBase) n++;
+    f1save.disabled = n === 0;
+    f1note.classList.remove('is-ok');
+    f1note.textContent = n === 0 ? 'Nothing changed yet'
+      : (n === 1 ? '1 field changed' : n + ' fields changed');
+  };
+  f1in.forEach(function(el){
+    el.addEventListener('input', function(){ f1check(); });
+    el.addEventListener('change', function(){ f1check(); });
+  });
+
+  /* ---------- FRAME 1 — Save commits, so the button stops lying ---------- */
+  f1save.addEventListener('click', function(){
+    f1in.forEach(function(el,i){ f1base[i] = el.value; });
+    avBase = avNow;
+    f1save.disabled = true;
+    f1note.textContent = 'Saved — your address is up to date';
+    f1note.classList.add('is-ok');
+  });
+
+  /* ---------- FRAME 1 — the destructive row asks first ---------- */
+  var killBtn   = document.getElementById('kill-btn');
+  var killModal = document.getElementById('kill-modal');
+  if (killBtn && killModal){
+    var killEsc = function(e){ if (e.key === 'Escape') killClose(); };
+    function killOpen(){
+      killModal.hidden = false;
+      document.addEventListener('keydown', killEsc, true);
+      killModal.querySelector('#kill-go').focus();
+    }
+    function killClose(){
+      killModal.hidden = true;
+      document.removeEventListener('keydown', killEsc, true);
+      killBtn.focus();
+    }
+    killBtn.addEventListener('click', killOpen);
+    killModal.addEventListener('click', function(e){
+      if (e.target.closest('[data-close]')) killClose();
+    });
+    document.getElementById('kill-go').addEventListener('click', function(){
+      killClose();
+      killBtn.disabled = true;
+      killBtn.querySelector('.row__name').textContent = 'Deletion scheduled';
+      killBtn.querySelector('.row__sub').textContent =
+        'Your account closes on 30 August 2026. Sign in before then to stop it.';
+    });
+  }
+
+  /* ---------- FRAME 2 — the forgotten-password link opens something ---------- */
+  var forgotBtn = document.getElementById('forgot-btn');
+  var forgot    = document.getElementById('forgot');
+  if (forgotBtn && forgot){
+    forgotBtn.addEventListener('click', function(){
+      var open = forgot.hidden;
+      forgot.hidden = !open;
+      forgotBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) document.getElementById('forgot-send').focus();
+    });
+    document.getElementById('forgot-send').addEventListener('click', function(){
+      this.disabled = true;
+      this.textContent = 'Reset link sent';
+      document.getElementById('forgot-copy').innerHTML =
+        'Sent to <b>dylan.n@sportsheist.app</b>. It expires in an hour. Nothing has changed yet — '
+        + 'your current password still works until you use the link.';
+    });
+  }
+
+  /* ---------- FRAME 2 — Update password commits ---------- */
+  pwBtn.addEventListener('click', function(){
+    [cur,neu,cfm].forEach(function(el){ el.value = ''; el.disabled = true; });
+    [].slice.call(document.querySelectorAll('[data-eye]')).forEach(function(b){ b.disabled = true; });
+    pwBtn.disabled = true;
+    pwNote.textContent = 'Password updated · 5 other devices signed out';
+    pwNote.classList.add('is-ok');
+  });
+
+  /* ---------- FRAME 4 — Save commits ---------- */
+  f4save.addEventListener('click', function(){
+    f4base = childSw.map(function(s){ return s.getAttribute('aria-checked'); })
+               .concat([pauseSw.getAttribute('aria-checked')]);
+    f4save.disabled = true;
+    f4note.textContent = 'Saved — these choices apply from now';
+    f4note.classList.add('is-ok');
+  });
+
+  /* ---------- the selects: branded menu over a hidden native holder ----------
+     The OS option popup is the one piece of system chrome a <select> can't
+     restyle, so the select stays in the DOM as the state holder and a
+     button + listbox popover does the showing. Same rules as the library
+     date picker: Escape closes, away-click closes, arrows move, choosing
+     fires input + change on the native select. */
+  var DD_UID = 0;
+  var DD_TICK = '<svg class="dd__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>';
+  [].slice.call(document.querySelectorAll('select.field__value')).forEach(function(sel){
+    if (sel.disabled) return;
+    var row = sel.closest('.field');
+    if (!row || row.classList.contains('field--locked')) return;
+    sel.classList.add('field__value--bh');
+    sel.tabIndex = -1;
+    sel.setAttribute('aria-hidden','true');
+
+    var base = sel.id || 'dd' + (++DD_UID);
+    var lbl = null;
+    var wrap = sel.closest('label');
+    if (wrap) lbl = wrap.querySelector('.field__label');
+    if (lbl && !lbl.id) lbl.id = base + '-lbl';
+
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'field__value';
+    btn.id = base + '-face';
+    btn.setAttribute('aria-haspopup','listbox');
+    btn.setAttribute('aria-expanded','false');
+    if (lbl) btn.setAttribute('aria-labelledby', lbl.id + ' ' + btn.id);
+    btn.appendChild(document.createElement('span'));
+    var face = btn.firstChild;
+    sel.parentNode.insertBefore(btn, sel.nextSibling);
+
+    var dd = document.createElement('div');
+    dd.className = 'dd'; dd.hidden = true;
+    dd.setAttribute('role','listbox');
+    if (lbl) dd.setAttribute('aria-labelledby', lbl.id);
+    row.appendChild(dd);
+
+    function paintFace(){
+      var o = sel.options[sel.selectedIndex];
+      face.textContent = o ? o.textContent : '';
+    }
+    function build(){
+      dd.innerHTML = '';
+      [].slice.call(sel.options).forEach(function(o, i){
+        if (o.value === '' && o.hasAttribute('value')) return;
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'dd__opt';
+        b.setAttribute('role','option');
+        b.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
+        if (o.disabled) b.disabled = true;
+        var t = document.createElement('span'); t.className = 'dd__t';
+        t.textContent = o.textContent;
+        b.appendChild(t); b.insertAdjacentHTML('beforeend', DD_TICK);
+        b.addEventListener('click', function(){
+          sel.selectedIndex = i;
+          paintFace();
+          sel.dispatchEvent(new Event('input',  {bubbles:true}));
+          sel.dispatchEvent(new Event('change', {bubbles:true}));
+          shut(); btn.focus();
+        });
+        dd.appendChild(b);
+      });
+    }
+    function opts(){ return [].slice.call(dd.querySelectorAll('.dd__opt:not([disabled])')); }
+    function show(){
+      build(); dd.hidden = false; row.classList.add('is-open');
+      btn.setAttribute('aria-expanded','true');
+      var cur = dd.querySelector('[aria-selected="true"]:not([disabled])') || opts()[0];
+      if (cur){ cur.focus(); cur.scrollIntoView({block:'nearest'}); }
+      document.addEventListener('mousedown', away, true);
+      document.addEventListener('keydown', keys, true);
+    }
+    function shut(){
+      dd.hidden = true; row.classList.remove('is-open');
+      btn.setAttribute('aria-expanded','false');
+      document.removeEventListener('mousedown', away, true);
+      document.removeEventListener('keydown', keys, true);
+    }
+    function away(e){ if (!row.contains(e.target)) shut(); }
+    function keys(e){
+      if (e.key === 'Escape'){ shut(); btn.focus(); return; }
+      if (e.key === 'Tab'){ shut(); return; }
+      var os = opts(), i = os.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+        e.preventDefault();
+        var n = e.key === 'ArrowDown' ? Math.min(i + 1, os.length - 1) : Math.max(i - 1, 0);
+        if (os[n]){ os[n].focus(); os[n].scrollIntoView({block:'nearest'}); }
+      } else if (e.key === 'Home' && os[0]){
+        e.preventDefault(); os[0].focus();
+      } else if (e.key === 'End' && os.length){
+        e.preventDefault(); os[os.length - 1].focus();
+      }
+    }
+    btn.addEventListener('click', function(){ dd.hidden ? show() : shut(); });
+    btn.addEventListener('keydown', function(e){
+      if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && dd.hidden){ e.preventDefault(); show(); }
+    });
+    sel.addEventListener('focus', function(){ btn.focus(); });
+    sel.addEventListener('input',  paintFace);
+    sel.addEventListener('change', paintFace);
+    paintFace();
+  });
+})();
+</script>
+</body>
+</html>

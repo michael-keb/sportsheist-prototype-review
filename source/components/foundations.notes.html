@@ -1,0 +1,357 @@
+<p class="dek">Not a phone screen. This is the reference sheet for the whole rebrand — every surface,
+every hex, the type scale at true size, the measured spacing, all fourteen controls with all their
+states, and the icon set. Two badges run through it: <strong>Sampled</strong> means the value already
+exists in the export, <strong>Proposed</strong> means we made it and it needs your sign-off.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The single source of truth, and its edges</h2>
+  <p>
+    Everything else in this library is a screen. This is the sheet those screens are built from. It is
+    exempt from the <code>375&nbsp;px</code> target — it runs to <code>1180&nbsp;px</code> wide with
+    <code>24&nbsp;px</code> side padding, because side-by-side comparison is the point of it — but it
+    obeys every other rule: sampled tokens only, the system font stack, inline SVG icons, no external
+    requests.
+  </p>
+  <p>
+    Two things make it more than a swatch page. First, the contrast figures are <em>computed</em> from
+    the hex values with the WCAG 2.1 relative-luminance formula rather than eyeballed, and they are
+    stated to two decimal places — so where a pairing fails, the sheet says so plainly, including in
+    places the export already ships. Second, the badges. Six of the fourteen controls come from the
+    export; the other eight were built here from the established language and do not exist yet. The
+    sheet does not blur that line, and neither should the review.
+  </p>
+  <p>
+    The short version of what it establishes: four near-black surfaces, one accent, one semantic red,
+    and nothing else. Every distinction in the product comes from scale, weight, ring opacity or the
+    accent wash — never from a new hue.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>What each section of the sheet holds</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>The seven numbered sections, in page order, and what is inside each. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Section</th><th scope="col">Contents</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Masthead</td><td>Title, scope statement, badge key, jump nav</td>
+          <td class="t-note"><code>Foundations</code> at 34/800 uppercase, a <code>66ch</code> summary,
+            then the two badges explained in words before either is used. Seven pill links at
+            <code>32&nbsp;px</code> on <code>#1C2129</code>.</td>
+        </tr>
+        <tr>
+          <td>01 Surfaces</td><td>Four swatches with measured luminance</td>
+          <td class="t-note">Sampled. <code>#030401</code> at <code>Y 0.108%</code>,
+            <code>#080A0C</code> at <code>0.295%</code>, <code>#1C2129</code> at
+            <code>1.495%</code>, <code>#13171E</code> at <code>0.845%</code>. Four steps, all
+            near-black, the ladder built from luminance rather than hue.</td>
+        </tr>
+        <tr>
+          <td>01 Surfaces</td><td>Nested ladder</td>
+          <td class="t-note">The four surfaces drawn inside one another in the order they actually
+            stack — <code>bg → section → surface → sunken</code> — each labelled with its luminance
+            delta against its parent.</td>
+        </tr>
+        <tr>
+          <td>01 Surfaces</td><td>The recess rule</td>
+          <td class="t-note">A written note that <code>--sunken</code> is <em>darker</em> than
+            <code>--surface</code>, so the nesting order is not the luminance order. A sunken panel only
+            reads as a well inside a <code>--surface</code> card, where it drops
+            <code>0.650&nbsp;pp</code>; on <code>--section</code> or <code>--bg</code> it would read as a
+            raised block and must not be used.</td>
+        </tr>
+        <tr>
+          <td>01 Surfaces</td><td>Separation table</td>
+          <td class="t-note">Every adjacent step with its luminance delta, multiplier, contrast ratio and
+            a verdict: <code>bg → section</code> is <code>+0.187&nbsp;pp</code> at
+            <code>1.04:1</code> and marked <em>edge only — needs the 1&nbsp;px hairline to be
+            visible</em>; <code>section → sunken</code> <code>1.10:1</code>;
+            <code>sunken → surface</code> <code>1.11:1</code>;
+            <code>section → surface</code> <code>1.23:1</code>, the strongest step in the
+            system.</td>
+        </tr>
+        <tr>
+          <td>01 Surfaces</td><td>Hairlines table</td>
+          <td class="t-note"><code>--line</code> and <code>--line-soft</code> with their values, how each
+            renders over <code>--surface</code> and over <code>--section</code>, and where each
+            belongs.</td>
+        </tr>
+        <tr>
+          <td>02 Accent</td><td>Four swatches</td>
+          <td class="t-note">Sampled. <code>#9BE222</code> at <code>Y 61.48%</code>,
+            <code>#0B0E06</code> ink at <code>0.40%</code>, the wash
+            <code>rgba(155,226,34,.12)</code> which composites to <code>#2B3828</code> over
+            <code>--surface</code>, and the hover value <code>#A8EC33</code>.</td>
+        </tr>
+        <tr>
+          <td>02 Accent</td><td>Accent on every surface</td>
+          <td class="t-note">Six live pairings with their computed ratios — <code>13.01:1</code> on
+            <code>--bg</code>, <code>12.55</code> on <code>--section</code>, <code>11.37</code> on
+            <code>--sunken</code>, <code>10.24</code> on <code>--surface</code>, and
+            <code>7.83</code> / <code>10.81</code> on the wash over <code>--surface</code> and
+            <code>--bg</code>. All AAA.</td>
+        </tr>
+        <tr>
+          <td>02 Accent</td><td>Surface on accent</td>
+          <td class="t-note">Four pairings including one deliberate failure:
+            <code>#FFFFFF</code> on <code>#9BE222</code> at <code>1.58:1</code>, labelled
+            <code>Never do this</code>. Accent fills always take <code>#0B0E06</code>, which clears AAA
+            at <code>12.31:1</code>.</td>
+        </tr>
+        <tr>
+          <td>02 Accent</td><td>Hero field</td>
+          <td class="t-note">The gradient rendered at size with its three stops broken out —
+            <code>#0D3617</code> at 0%, <code>#17481C</code> at 58%, <code>#0C3416</code> at 100%,
+            running at <code>112deg</code> — plus the peaks at <code>54% × 38%</code> and the white field
+            triangles held at <code>2.4–3.0%</code>. A table gives white and accent against both hero
+            stops; <code>#9BE222</code> on <code>#17481C</code> at <code>6.71:1</code> is flagged as the
+            lowest accent pairing in the system.</td>
+        </tr>
+        <tr>
+          <td>02 Accent</td><td>Text tokens table</td>
+          <td class="t-note">Each text token against all four surfaces. <code>--text</code>
+            <code>16.17–20.55</code>, <code>--muted</code> <code>6.15–7.82</code>,
+            <code>--acid</code> <code>10.24–13.01</code>, and <code>--dim</code> at
+            <code>2.56–3.26</code> — failing AA for body copy on every surface, with a written rule
+            confining it to the tracked micro-label.</td>
+        </tr>
+        <tr>
+          <td>03 Semantic</td><td>The no-other-colour statement</td>
+          <td class="t-note">A boxed rule: no silver, no bronze, no blue, no purple, no amber warning
+            state, no separate info blue. Up is <code>#9BE222</code>, down is <code>#E2564A</code>,
+            everything else is a surface, a hairline or a grade of white.</td>
+        </tr>
+        <tr>
+          <td>03 Semantic</td><td>Red swatch, in use, and measured</td>
+          <td class="t-note"><code>#E2564A</code> at <code>Y 23.32%</code>, sampled from the leaderboard
+            delta, shown as text and icon only — there is no red fill anywhere in the export. Two live
+            leaderboard rows demonstrate it. The table gives <code>5.54</code> on <code>--bg</code>,
+            <code>4.84</code> on <code>--sunken</code>, and <code>4.36</code> on
+            <code>--surface</code> — missing AA by <code>0.14</code>, the weakest legibility pair in the
+            system, with a note that it must not be pushed onto smaller or lighter text.</td>
+        </tr>
+        <tr>
+          <td>04 Type scale</td><td>Fourteen specimens at true size</td>
+          <td class="t-note">Sampled. Each row states size, weight, tracking, any line-height or case
+            rule, and the class it comes from — from the <code>34/800/-.025em</code> screen title down to
+            the <code>9.5/700/.14em</code> floor. Thirteen distinct sizes;
+            <code>11&nbsp;px</code> appears twice, at <code>.11em</code> for the status pill and
+            <code>.09em</code> for the type tag, and the sheet notes the difference is real.</td>
+        </tr>
+        <tr>
+          <td>04 Type scale</td><td>Font rule</td>
+          <td class="t-note">The full stack written out, with Inter named first so it is picked up where
+            locally installed and nothing is fetched, and the standing rule that every figure sitting in
+            a column takes <code>tabular-nums</code>.</td>
+        </tr>
+        <tr>
+          <td>05 Spacing &amp; radii</td><td>Measured spacing, bars at true size</td>
+          <td class="t-note">Thirteen values — <code>2, 5, 6, 7, 8, 10, 11, 12, 13, 14, 16, 18,
+            22&nbsp;px</code> — each drawn at its real width beside what it is used for, with
+            <code>16&nbsp;px</code> marked as the gutter. Stated plainly: there is no strict 4-point grid
+            in the export.</td>
+        </tr>
+        <tr>
+          <td>05 Spacing &amp; radii</td><td>Three padding demonstrations</td>
+          <td class="t-note">The <code>16&nbsp;px</code> gutter as a wash band; the card
+            <code>16&nbsp;px</code> → panel <code>12/14&nbsp;px</code> nesting; and a three-row list at
+            <code>10px 12px</code> with <code>--line-soft</code> borders and none on the first.</td>
+        </tr>
+        <tr>
+          <td>05 Spacing &amp; radii</td><td>Radii</td>
+          <td class="t-note">Five cells: <code>12&nbsp;px</code> panels, <code>16&nbsp;px</code> cards,
+            <code>999&nbsp;px</code> pills, <code>50%</code> circles, and the one other measured radius in
+            the export — <code>5&nbsp;px</code> on the <code>17&nbsp;px</code> club square. The rule: 12
+            and 16 never meet on the same edge, and <code>999px</code> is used rather than
+            <code>50%</code> on anything that can hold a label so the shape survives a longer
+            string.</td>
+        </tr>
+        <tr>
+          <td>05 Spacing &amp; radii</td><td>Control heights</td>
+          <td class="t-note">Six heights with provenance:
+            <code>32</code> status pill, <code>34</code> dark pill and small icon button,
+            <code>38</code> circular icon button and tab, <code>52</code> primary accent button,
+            <code>58</code> tab bar — all sampled — and <code>44&nbsp;px</code> for fields, which is
+            <strong>proposed</strong>. It is followed by the sheet's own open question about touch
+            targets.</td>
+        </tr>
+        <tr>
+          <td>06 Controls</td><td>State vocabulary</td>
+          <td class="t-note">A boxed rule listing the only three hover colours, all sampled —
+            <code>--acid → #A8EC33</code>, <code>--surface → #222833</code>,
+            <code>--sunken → #1A1F27</code> — plus pressed, disabled and focus. It states outright that
+            nothing in the export shows a disabled or focused control, so every disabled and focus
+            specimen on the page is proposed even where the control itself is sampled.</td>
+        </tr>
+        <tr>
+          <td>06 Controls</td><td>Fourteen controls</td>
+          <td class="t-note">Each with a spec line, a source reference and every state rendered live.
+            Six sampled: filled accent pill, dark pill button, <code>View&nbsp;all ↗</code> pill,
+            circular icon button, status pill, type tag. Eight proposed: outlined accent pill, segmented
+            control, text field, select, search field, toggle, checkbox, radio.</td>
+        </tr>
+        <tr>
+          <td>07 Icons</td><td>Tab glyphs</td>
+          <td class="t-note">Sampled. Five, one per tab — crossed swords, trophy, microphone, bell,
+            person — all at 1.7 stroke.</td>
+        </tr>
+        <tr>
+          <td>07 Icons</td><td>Utility set</td>
+          <td class="t-note">Thirteen glyphs, each shown at 24&nbsp;px written out in full as a 24-box
+            inline SVG and again at 18&nbsp;px referencing the same symbol — one geometry, two sizes, no
+            separate small set. Eight are sampled (search, filter, plus, arrow up-right, timer, thumb up,
+            arrow up, arrow down); five are proposed (chevron, target, close, check, info).</td>
+        </tr>
+        <tr>
+          <td>07 Icons</td><td>Stroke-weight note</td>
+          <td class="t-note">A boxed correction: the contract's <code>1.7–1.9</code> range is not the
+            whole truth. Tab glyphs are 1.7, search and filter and timer are 1.9, plus is 2.4, the delta
+            arrows are 2.8 and 3.2, and the empty-state swords are 1.5. The real rule is optical — the
+            smaller the render, the heavier the stroke.</td>
+        </tr>
+        <tr>
+          <td>Footer</td><td>The two lists</td>
+          <td class="t-note">Everything sampled and everything proposed, restated as prose so the split
+            can be read without scrolling the page.</td>
+        </tr>
+        <tr>
+          <td>Page</td><td>Convenience</td>
+          <td class="t-note">Clicking any hex label copies it. A documentation-only monospace stack
+            (<code>--fd-mono</code>) aligns hex values in tables and is explicitly marked as not a
+            product token.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>The state vocabulary it fixes</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Every control on the sheet renders these, and only these.</caption>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Default</td><td class="t-note">The base token for that control. Sampled.</td></tr>
+        <tr><td>Hover</td><td class="t-note">One of three values, all sampled: accent fills go to <code>#A8EC33</code>, <code>--surface</code> goes to <code>#222833</code>, <code>--sunken</code> goes to <code>#1A1F27</code>. No fourth hover colour exists.</td></tr>
+        <tr><td>Pressed</td><td class="t-note"><code>translateY(1px)</code>, sampled from the Like button, plus a <strong>proposed</strong> <code>rgba(0,0,0,.18)</code> veil over the base token so the press is visible in a still image. No new hex enters the system.</td></tr>
+        <tr><td>Focus</td><td class="t-note"><code>outline:2px solid var(--acid)</code> at <code>outline-offset:3px</code>. The rule is sampled from the Like button, but no focused control appears anywhere in the export, so every focus specimen on the page is proposed.</td></tr>
+        <tr><td>Disabled</td><td class="t-note"><strong>Proposed.</strong> <code>opacity:.38</code> on the base token plus <code>cursor:not-allowed</code>, landing at about <code>2.6:1</code> against its own surface — deliberately below the <code>3:1</code> interactive floor so it cannot be mistaken for live.</td></tr>
+        <tr><td>Selected / on</td><td class="t-note">Sampled where it exists: an accent pill carrying icon <em>and</em> label on the tab bar and the segmented control, or a <code>--sunken</code> fill with accent text and a solid glyph on the Like button.</td></tr>
+        <tr><td>Quiet variant</td><td class="t-note">The status pill's only permitted variation — the wash swapped for <code>--sunken</code> and the accent for <code>--muted</code>. Geometry, type and dot unchanged.</td></tr>
+        <tr><td>Failing pairings, shown as failing</td><td class="t-note">The sheet renders the failures rather than hiding them — white on accent at <code>1.58:1</code>, <code>--dim</code> on <code>--surface</code> at <code>2.56:1</code>, red on <code>--surface</code> at <code>4.36:1</code> — each labelled with what it must not be used for.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>All four surfaces and both hairlines</b> — sampled from the War Room and Backchat dark-mode exports</li>
+        <li><b>The accent, its ink, its wash and its hover</b> — <code>#9BE222</code>, <code>#0B0E06</code>, <code>rgba(155,226,34,.12)</code>, <code>#A8EC33</code></li>
+        <li><b>Hero gradient</b> — angle, all three stops, peak proportions, triangle opacities</li>
+        <li><b>The semantic red</b> — <code>#E2564A</code>, from the leaderboard delta, text and icon only</li>
+        <li><b>The whole type scale</b> — fourteen specimens, each traced to the class it comes from</li>
+        <li><b>All spacing and all radii</b> — measured, including the absence of a 4-point grid</li>
+        <li><b>Five control heights</b> — 32, 34, 38, 52, 58&nbsp;px</li>
+        <li><b>Six controls</b> — filled accent pill, dark pill, <code>View&nbsp;all ↗</code> pill, circular icon button (38 and 34&nbsp;px, dark and accent), status pill, type tag</li>
+        <li><b>Thirteen glyphs</b> — the five tab glyphs plus search, filter, plus, arrow up-right, timer, thumb up, arrow up, arrow down</li>
+        <li><b>Three hover colours and the focus rule</b> — sampled from the reference implementations</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The sheet itself</b> — no design documentation exists; this is the first place the system is written down in one place</li>
+        <li><b>Eight controls</b> — outlined accent pill, segmented control, text field, select, search field, toggle, checkbox, radio. None exists in the export</li>
+        <li><b>Every disabled and focus specimen</b> — including on the six sampled controls, because the export contains neither state</li>
+        <li><b>The press veil</b> — <code>rgba(0,0,0,.18)</code> over the base token</li>
+        <li><b>The disabled rule</b> — <code>opacity:.38</code>, chosen to land below the <code>3:1</code> interactive floor</li>
+        <li><b>The 44&nbsp;px control height</b> — the first height in the system that satisfies the touch-target minimum on its own</li>
+        <li><b>The 6&nbsp;px checkbox radius</b> — derived from the only sampled small-square radius, the 5&nbsp;px club plate</li>
+        <li><b>Five glyphs</b> — chevron, target, close, check, info</li>
+        <li><b>All contrast figures</b> — computed from the hex values rather than sampled, to two decimal places, including for pairings the export already ships</li>
+        <li><b>The recess rule</b> — that <code>--sunken</code> may only appear inside <code>--surface</code></li>
+        <li><b>The optical stroke-weight rule</b> — that icon weight scales inversely with render size, which the export does but the contract does not say</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Eight of the fourteen controls do not exist yet — sign them off?</h3>
+      <p>Sampled and shippable today: filled accent pill, dark pill, <code>View&nbsp;all ↗</code> pill,
+      circular icon button, status pill, type tag. Proposed and needing a decision:
+      <span class="flag">outlined accent pill, segmented control, text field, select, search field,
+      toggle, checkbox, radio</span>. Every form, sheet and settings screen in the library depends on
+      that second list, so it is the gating item. Each one was derived from a sampled pattern rather
+      than invented — the field shell is the sunken panel, the segmented control is the tab-bar rule —
+      but derived is not approved.</p>
+    </li>
+    <li>
+      <h3>Are the touch targets acceptable?</h3>
+      <p><code>34&nbsp;px</code> and <code>38&nbsp;px</code> are both under the <code>44&nbsp;px</code>
+      minimum. In the export they sit in enough padding that the tappable area clears it, but nothing
+      enforces that, and a control moved into a tighter layout will quietly fail. We chose
+      <span class="flag">44&nbsp;px</span> for the proposed field height so at least one control in the
+      system satisfies the target on its own. The decision is whether to raise the existing two, or to
+      add a written padding rule that keeps them legal.</p>
+    </li>
+    <li>
+      <h3>Red on a card misses AA by 0.14 — do we change it or ring-fence it?</h3>
+      <p><code>#E2564A</code> on <code>#1C2129</code> computes to <code>4.36:1</code> against a
+      <code>4.5</code> requirement. The one place it actually lands there today — the leaderboard delta
+      — is 11/600 with a heavy arrow beside it and the number duplicated by the rank column, so it
+      reads. But it is the weakest pair in the system. Options: lighten the red slightly for use on
+      <code>--surface</code>, keep it and forbid it below a stated size and weight, or move it to
+      <code>--sunken</code> where it clears at <code>4.84</code>. This build has taken the second
+      option; it needs to be a rule, not a habit.</p>
+    </li>
+    <li>
+      <h3>Should the icon-weight range in the contract be rewritten?</h3>
+      <p>The contract says <code>1.7–1.9</code>. The export actually runs <code>1.5</code> to
+      <code>3.2</code>, and the pattern underneath is optical rather than fixed — the smaller the
+      render, the heavier the stroke, so a glyph holds its weight at 10&nbsp;px. The five proposed
+      glyphs follow that same rule. We suggest the contract should read
+      <span class="flag">1.5–3.2, scaled optically</span> instead.</p>
+    </li>
+    <li>
+      <h3>Is <code>--dim</code> allowed to stay where it is?</h3>
+      <p>It fails AA for body text on every surface — <code>2.56:1</code> on
+      <code>--surface</code>, <code>3.26:1</code> at best on <code>--bg</code>. In the export it only
+      ever carries the tracked micro-label, which is decorative and never the sole route to
+      information, and this build keeps it strictly there. Confirm that constraint, because the
+      temptation to use it for secondary body copy will come up on every dense screen.</p>
+    </li>
+    <li>
+      <h3>Three summary counts on the sheet do not match what it renders</h3>
+      <p>The masthead claims twelve type steps and sixteen glyphs; the footer claims eleven sampled
+      glyphs. What is actually on the page is <span class="flag">fourteen type specimens across
+      thirteen distinct sizes</span> and <span class="flag">eighteen glyphs, thirteen sampled and five
+      proposed</span>. The specimens and the badges are correct — only the prose totals are stale. Tell
+      us which numbers you want quoted externally and we will make the counts and the copy agree.</p>
+    </li>
+    <li>
+      <h3>Does this sheet become the contract?</h3>
+      <p>It currently documents the system; the build contract is a separate markdown file, and the two
+      already disagree on icon weight. One of them has to be authoritative. Our recommendation is that
+      this page becomes the reference and the contract shrinks to the rules that cannot be shown —
+      structure, asset handling, naming — with everything measurable living here.</p>
+    </li>
+  </ol>
+</section>

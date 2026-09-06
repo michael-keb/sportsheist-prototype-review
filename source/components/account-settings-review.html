@@ -1,0 +1,2073 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Account settings · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; /* bordered section container */ --surface: #1C2129; /* cards, controls, tab bar */ --sunken: #13171E; /* inner panels, dark pills */ --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); /* hero */ --hero-a: #0D3617; --hero-b: #17481C; /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* semantic red — destructive / downward only */ --red: #E2564A; --red-line: rgba(226,86,74,.38); --red-wash: rgba(226,86,74,.10); /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* photography extracted from the Figma exports */ --av-you:url(data:image/jpeg;base64,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); --av-02:url(data:image/jpeg;base64,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); --av-03:url(data:image/jpeg;base64,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); --av-04:url(data:image/jpeg;base64,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);}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:0 0 40px}
+.mk .frame{position:relative;padding-bottom:26px}
+.mk .nav{display:flex;align-items:center;gap:8px;padding:14px var(--gutter) 0}
+.mk .nav__spacer{flex:1}
+.mk .title{margin:12px var(--gutter) 4px; font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1; text-transform:uppercase;}
+.mk .intro{margin:8px var(--gutter) 0; font-size:13px;color:var(--muted);}
+.mk .label{margin:22px var(--gutter) 10px; font-size:18px;font-weight:600;letter-spacing:-.015em;}
+.mk .head{display:flex;align-items:center;gap:8px;margin:22px var(--gutter) 10px}
+.mk .head h2{flex:1;margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .note{margin:8px var(--gutter) 0;font-size:12px;color:var(--dim)}
+.mk .note--wash{margin:10px var(--gutter) 0;padding:9px 12px; border-radius:var(--r-panel);background:var(--acid-wash); font-size:12px;color:var(--acid);}
+.mk .eyebrow{margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .pill-btn{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:12.5px;font-weight:500;cursor:pointer; transition:background .18s var(--ease);}
+.mk .pill-btn:hover{background:#222833}
+.mk .pill-btn svg{width:14px;height:14px}
+.mk .icon-btn{display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease);}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn svg{width:17px;height:17px}
+.mk .status-pill{display:inline-flex;align-items:center;gap:7px; height:32px;padding:0 14px;border-radius:var(--r-pill); background:var(--acid-wash); font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--acid);white-space:nowrap;}
+.mk .status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mk .avatar{border-radius:50%;flex:0 0 auto; background-color:#20262F;background-size:cover;background-position:center 22%;}
+.mk .tag{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px; border-radius:var(--r-pill);background:var(--sunken); font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase; color:var(--dim);white-space:nowrap;}
+.mk .tag svg{width:11px;height:11px}
+.mk .tag--live{background:var(--acid-wash);color:var(--acid)}
+.mk .ident{display:flex;align-items:center;gap:13px; margin:16px var(--gutter) 0;padding:16px; border-radius:var(--r-card);background:var(--surface);}
+.mk .ident__av{width:60px;height:60px;box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--acid)}
+.mk .ident__main{flex:1;min-width:0}
+.mk .ident__name{display:block;font-size:17px;font-weight:600;letter-spacing:-.015em}
+.mk .ident__handle{display:block;margin-top:2px;font-size:12.5px;color:var(--muted)}
+.mk .fields{margin:0 var(--gutter);display:flex;flex-direction:column;gap:8px}
+.mk .field{position:relative;display:flex;align-items:center;gap:12px; min-height:64px;padding:0 14px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--surface); transition:border-color .18s var(--ease);}
+.mk .field__main{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:11px 0}
+.mk .field__label{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);}
+.mk .field__value{display:block;width:100%; font:inherit;font-size:15px;font-weight:600;letter-spacing:-.01em;line-height:1.25; color:var(--text); background:none;border:0;padding:0;margin:0; white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .field__value::placeholder{color:var(--dim);font-weight:500}
+.mk .field__value:focus{outline:none}
+.mk .field__mask{letter-spacing:.16em;font-size:15px}
+.mk .field__aff{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;color:var(--dim)}
+.mk .field__aff svg{width:16px;height:16px}
+.mk .field--locked{background:var(--sunken);border-color:var(--line-soft)}
+.mk .field--locked .field__value{color:var(--muted);font-weight:500}
+.mk .field--edit .field__aff{color:var(--muted)}
+.mk .field--edit:focus-within{border-color:var(--acid)}
+.mk .field--edit:focus-within .field__label{color:var(--acid)}
+.mk select.field__value{appearance:none;-webkit-appearance:none;cursor:pointer; text-overflow:ellipsis;}
+.mk select.field__value option{background:#1C2129;color:#FFF}
+.mk select.field__value--bh{position:absolute;width:1px;height:1px;opacity:0; pointer-events:none;overflow:hidden;}
+.mk button.field__value{text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none}
+.mk .field__aff svg{transition:transform .16s var(--ease),color .16s var(--ease)}
+.mk .field.is-open{border-color:var(--acid)}
+.mk .field.is-open .field__label{color:var(--acid)}
+.mk .field.is-open .field__aff{color:var(--text)}
+.mk .field.is-open .field__aff svg{transform:rotate(180deg)}
+.mk .dd{position:absolute;top:calc(100% + 8px);left:0;z-index:80; min-width:100%;width:max-content;max-width:276px; max-height:288px;overflow:auto;padding:6px; background:var(--surface);border:1px solid var(--line);border-radius:var(--r-panel); box-shadow:0 18px 44px rgba(0,0,0,.55);}
+.mk .dd[hidden]{display:none}
+.mk .dd__opt{display:flex;align-items:center;gap:10px;width:100%;min-height:44px; padding:5px 10px;border:0;border-radius:8px;background:none;color:var(--text); font:inherit;font-size:15px;line-height:1.3;text-align:left;cursor:pointer;}
+.mk .dd__opt:hover{background:var(--sunken)}
+.mk .dd__opt:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.mk .dd__opt[aria-selected="true"]{font-weight:650}
+.mk .dd__t{flex:1;min-width:0}
+.mk .dd__tick{visibility:hidden;flex:0 0 auto;width:17px;height:17px;color:var(--acid)}
+.mk .dd__opt[aria-selected="true"] .dd__tick{visibility:visible}
+.mk .field--bad{border-color:var(--red)}
+.mk .field--bad .field__label{color:var(--red)}
+.mk .field__err{display:flex;align-items:center;gap:6px; min-height:18px;margin:6px 2px 0; font-size:11.5px;font-weight:500;color:var(--red);}
+.mk .field__err svg{width:12px;height:12px;flex:0 0 auto}
+.mk .field__err[hidden]{display:flex;visibility:hidden}
+.mk .field__act{flex:0 0 auto;height:30px;padding:0 12px; border:0;border-radius:var(--r-pill);background:#242A34;color:var(--text); font:inherit;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase; cursor:pointer;transition:background .18s var(--ease);}
+.mk .field__act:hover{background:#2C333E}
+.mk .field__eye{flex:0 0 auto;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center; border:0;border-radius:50%;background:none;color:var(--muted);cursor:pointer;}
+.mk .field__eye:hover{color:var(--text)}
+.mk .field__eye svg{width:17px;height:17px}
+.mk .card{margin:0 var(--gutter); border:1px solid var(--line);border-radius:var(--r-card); background:var(--section);overflow:hidden;}
+.mk .card--surface{background:var(--surface);border-color:transparent}
+.mk .rows{list-style:none;margin:0;padding:0}
+.mk .row{display:flex;align-items:center;gap:12px; min-height:64px;padding:8px 14px; border-top:1px solid var(--line-soft); background:none;border-left:0;border-right:0;border-bottom:0; width:100%;color:inherit;font:inherit;text-align:left;}
+.mk .row:first-child{border-top:0}
+.mk button.row{cursor:pointer;transition:background .18s var(--ease)}
+.mk button.row:hover{background:rgba(255,255,255,.03)}
+.mk .row__ico{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center; width:20px;height:20px;color:var(--muted);}
+.mk .row__ico svg{width:20px;height:20px}
+.mk .row__main{flex:1;min-width:0}
+.mk .row__name{display:block;font-size:14.5px;font-weight:600;letter-spacing:-.01em; white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk .row__sub{display:block;margin-top:2px;font-size:11.5px;color:var(--muted); white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.mk .row__end{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;color:var(--dim)}
+.mk .row__end svg{width:16px;height:16px}
+.mk .row__time{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mk .row--kill .row__name,.mk .row--kill .row__ico,.mk .row--kill .row__end{color:var(--red)}
+.mk .card--kill{border-color:var(--red-line);background:var(--red-wash)}
+.mk button.row--kill:hover{background:rgba(226,86,74,.10)}
+.mk .dtype{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;border-radius:11px; background:var(--sunken);color:var(--muted);}
+.mk .dtype svg{width:20px;height:20px}
+.mk .dtype--now{background:var(--acid-wash);color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.30)}
+.mk .dtype--warn{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.mk .sess .row__sub{font-variant-numeric:tabular-nums}
+.mk .mini-btn{flex:0 0 auto;height:30px;padding:0 12px; border:1px solid var(--line);border-radius:var(--r-pill); background:transparent;color:var(--text); font:inherit;font-size:12px;font-weight:600;cursor:pointer; transition:background .18s var(--ease),border-color .18s var(--ease),color .18s var(--ease);}
+.mk .mini-btn:hover{background:rgba(255,255,255,.05)}
+.mk .mini-btn[disabled]{color:var(--dim);border-color:var(--line-soft);cursor:default}
+.mk .here{flex:0 0 auto;height:26px;padding:0 10px;border-radius:var(--r-pill); display:inline-flex;align-items:center; background:var(--acid-wash);color:var(--acid); font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;}
+.mk .sw{position:relative;flex:0 0 auto; width:46px;height:28px;padding:0; border:1px solid var(--line);border-radius:var(--r-pill); background:var(--sunken);cursor:pointer; transition:background .18s var(--ease),border-color .18s var(--ease);}
+.mk .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%; background:var(--dim); transition:transform .18s var(--ease),background .18s var(--ease);}
+.mk .sw[aria-checked="true"]{background:var(--acid);border-color:var(--acid)}
+.mk .sw[aria-checked="true"]::after{transform:translateX(18px);background:var(--acid-ink)}
+.mk .sw:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .sw[disabled]{cursor:not-allowed}
+.mk .setting{display:flex;align-items:flex-start;gap:13px; margin:0 var(--gutter);padding:15px 15px 16px; border-radius:var(--r-card);background:var(--surface); transition:background .2s var(--ease),box-shadow .2s var(--ease);}
+.mk .setting__ico{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;border-radius:11px;background:var(--sunken);color:var(--muted);}
+.mk .setting__ico svg{width:19px;height:19px}
+.mk .setting__main{flex:1;min-width:0;padding-top:1px}
+.mk .setting__name{display:block;font-size:15px;font-weight:600;letter-spacing:-.015em}
+.mk .setting__sub{display:block;margin-top:5px;font-size:12.5px;color:var(--muted)}
+.mk .setting .sw{margin-top:4px}
+.mk .setting--on{background:var(--acid-wash);box-shadow:inset 3px 0 0 var(--acid)}
+.mk .setting--on .setting__ico{background:rgba(155,226,34,.16);color:var(--acid)}
+.mk .deps{position:relative;transition:opacity .2s var(--ease)}
+.mk .deps__bar{display:none;align-items:center;gap:8px; margin:12px var(--gutter) 0;padding:9px 12px; border-radius:var(--r-panel);background:var(--acid-wash); font-size:12px;font-weight:600;color:var(--acid);}
+.mk .deps__bar svg{width:14px;height:14px;flex:0 0 auto}
+.mk .deps__count{margin:10px var(--gutter) 0;font-size:12px;color:var(--dim); font-variant-numeric:tabular-nums;}
+.mk .deps.is-paused .deps__bar{display:flex}
+.mk .deps.is-paused .deps__body{opacity:.38;pointer-events:none}
+.mk .deps.is-paused .deps__count{color:var(--dim)}
+.mk .pw{margin:14px var(--gutter) 0}
+.mk .pw__bar{display:flex;gap:5px}
+.mk .pw__seg{flex:1;height:4px;border-radius:var(--r-pill);background:var(--sunken)}
+.mk .pw__seg.is-on{background:var(--acid)}
+.mk .pw__seg.is-bad{background:var(--red)}
+.mk .pw__row{display:flex;align-items:baseline;gap:6px;margin-top:9px}
+.mk .pw__lab{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acid)}
+.mk .pw__lab.is-bad{color:var(--red)}
+.mk .pw__hint{flex:1;font-size:11.5px;color:var(--dim);text-align:right}
+.mk .reqs{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
+.mk .reqs li{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim)}
+.mk .reqs li svg{width:14px;height:14px;flex:0 0 auto}
+.mk .reqs li.is-met{color:var(--muted)}
+.mk .reqs li.is-met svg{color:var(--acid)}
+.mk .link{display:inline-block;margin:14px var(--gutter) 0;padding:0; border:0;background:none;color:var(--acid); font:inherit;font-size:12.5px;font-weight:600;cursor:pointer; text-decoration:underline;text-underline-offset:3px; text-decoration-color:rgba(155,226,34,.4);}
+.mk .commit{position:sticky;bottom:0;z-index:5; margin-top:22px;padding:14px var(--gutter) calc(14px + env(safe-area-inset-bottom,0px)); background:var(--bg);border-top:1px solid var(--line);}
+.mk .commit::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:26px; pointer-events:none; background:linear-gradient(to top,var(--bg),rgba(3,4,1,0));}
+.mk .btn{display:flex;align-items:center;justify-content:center;gap:8px; width:100%;height:52px; border:0;border-radius:var(--r-pill);background:var(--acid);color:var(--acid-ink); font:inherit;font-size:15px;font-weight:700;letter-spacing:-.01em;cursor:pointer; transition:background .18s var(--ease),color .18s var(--ease);}
+.mk .btn svg{width:17px;height:17px}
+.mk .btn[disabled]{background:var(--surface);color:var(--dim);cursor:not-allowed}
+.mk .btn--ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+.mk .btn--ghost:hover{background:rgba(255,255,255,.04)}
+.mk .btn--kill{background:transparent;border:1px solid var(--red-line);color:var(--red)}
+.mk .btn--kill:hover{background:var(--red-wash)}
+.mk .commit__note{margin:9px 0 0;font-size:11.5px;color:var(--dim);text-align:center}
+.mk .stack{margin:14px var(--gutter) 0}
+.mk .stack .btn{margin-top:0}
+.mk .anch{position:relative}
+.mk .pop{position:absolute;top:calc(100% + 8px);right:0;z-index:80;width:236px;padding:10px; background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card); box-shadow:0 18px 44px rgba(0,0,0,.55);}
+.mk .pop[hidden]{display:none}
+.mk .pop__t{margin:0 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim)}
+.mk .avgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:9px}
+.mk .avgrid button{width:100%;aspect-ratio:1;padding:0;border:0;border-radius:var(--r-pill);cursor:pointer; background-size:cover;background-position:center 22%;box-shadow:0 0 0 1px var(--line)}
+.mk .avgrid button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--acid)}
+.mk .avgrid button:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .pop__i{display:flex;align-items:center;gap:8px;width:100%;height:36px;padding:0 10px;border:0; border-radius:9px;background:none;color:var(--text);font:inherit;font-size:13px; text-align:left;cursor:pointer}
+.mk .pop__i:hover{background:var(--sunken)}
+.mk .pop__i:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.mk .pop__i--kill{color:var(--red)}
+.mk .modal{position:absolute;inset:0;z-index:120;display:grid;place-items:center;padding:20px}
+.mk .modal[hidden]{display:none}
+.mk .modal__scrim{position:absolute;inset:0;background:rgba(3,4,1,.72)}
+.mk .modal__box{position:relative;width:100%;max-width:320px;padding:18px;background:var(--surface); border:1px solid var(--line);border-radius:var(--r-card);box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.mk .modal__box h3{margin:0 0 8px;font-size:17px;font-weight:600;letter-spacing:-.015em}
+.mk .modal__box p{margin:0 0 14px;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .modal__acts{display:flex;gap:8px}
+.mk .modal__acts .btn{flex:1;margin:0}
+.mk .reset{margin:10px var(--gutter) 0;padding:12px;background:var(--sunken); border:1px solid var(--line);border-radius:var(--r-panel)}
+.mk .reset[hidden]{display:none}
+.mk .reset p{margin:0 0 10px;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .reset .btn{margin:0;height:40px}
+.mk .commit__note.is-ok{color:var(--acid)}
+.mk .ident__av--none{display:grid;place-items:center;background:var(--sunken); box-shadow:inset 0 0 0 1px var(--line); font-size:15px;font-weight:700;letter-spacing:-.02em;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Account settings</h1>
+    <p class="dek">The four sub-pages a member reaches from Profile: account details, changing a password,
+security and signed-in devices, and notification settings. These ship today as light-theme screens
+inside a dark app, so this is not a restyle — it is the account area re-authored in the brand.</p>
+    <div class="meta">
+      <span><b>Component</b> account-settings</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 4</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">Account details<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Change password<span class="side__tag">02</span></a></li>
+      <li><a class="side__item" href="#scr-3">Security and devices<span class="side__tag">03</span></a></li>
+      <li><a class="side__item" href="#scr-4">Notifications<span class="side__tag">04</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><span class="side__item" aria-current="page">Account settings<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">One field, one row, one switch</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">4 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>Account details</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="nav">
+    <button class="icon-btn" type="button" aria-label="Back to profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="nav__spacer"></span>
+  </div>
+  <h1 class="title">Account details</h1>
+  <p class="intro">Five of these fields are managed by SportsHeist and can’t be edited here. The three address fields are yours to change.</p>
+
+  <!-- identity -->
+  <div class="ident">
+    <div class="avatar ident__av" style="background-image:var(--av-you)" role="img" aria-label="Your profile photo"></div>
+    <div class="ident__main">
+      <span class="ident__name">Dylan Nguyen</span>
+      <span class="ident__handle">dylan_n · Barcelona</span>
+    </div>
+    <span class="anch">
+      <button class="pill-btn" type="button" id="av-btn" aria-expanded="false" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2l1.1-2h6.4l1.1 2h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-8Z"/><circle cx="12" cy="12.4" r="3.2"/></svg>
+        Change
+      </button>
+      <div class="pop" id="av-pop" role="dialog" aria-label="Change your profile photo" hidden>
+        <p class="pop__t">Pick a photo</p>
+        <div class="avgrid" id="av-grid">
+          <button type="button" aria-label="Photo 1" aria-pressed="true"  data-av="var(--av-you)" style="background-image:var(--av-you)"></button>
+          <button type="button" aria-label="Photo 2" aria-pressed="false" data-av="var(--av-02)"  style="background-image:var(--av-02)"></button>
+          <button type="button" aria-label="Photo 3" aria-pressed="false" data-av="var(--av-03)"  style="background-image:var(--av-03)"></button>
+          <button type="button" aria-label="Photo 4" aria-pressed="false" data-av="var(--av-04)"  style="background-image:var(--av-04)"></button>
+        </div>
+        <button class="pop__i pop__i--kill" type="button" id="av-clear">Remove the photo</button>
+      </div>
+    </span>
+  </div>
+
+  <!-- identity fields — locked -->
+  <div class="head">
+    <h2>Identity</h2>
+    <span class="tag">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      Locked
+    </span>
+  </div>
+  <div class="fields">
+    <div class="field field--locked">
+      <span class="field__main">
+        <span class="field__label">Name</span>
+        <span class="field__value">Dylan Nguyen</span>
+      </span>
+      <span class="field__aff" aria-label="Read only" title="Managed by SportsHeist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      </span>
+    </div>
+    <div class="field field--locked">
+      <span class="field__main">
+        <span class="field__label">Username</span>
+        <span class="field__value">dylan_n</span>
+      </span>
+      <span class="field__aff" aria-label="Read only" title="Managed by SportsHeist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      </span>
+    </div>
+    <div class="field field--locked">
+      <span class="field__main">
+        <span class="field__label">Date of birth</span>
+        <span class="field__value">1 February 2000</span>
+      </span>
+      <span class="field__aff" aria-label="Read only" title="Managed by SportsHeist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      </span>
+    </div>
+  </div>
+  <p class="note">Ask support to change a locked field — it appears on your membership record.</p>
+
+  <!-- contact fields — locked -->
+  <div class="head">
+    <h2>Contact</h2>
+    <span class="tag">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      Locked
+    </span>
+  </div>
+  <div class="fields">
+    <div class="field field--locked">
+      <span class="field__main">
+        <span class="field__label">Account email</span>
+        <span class="field__value">dylan.n@sportsheist.app</span>
+      </span>
+      <span class="field__aff" aria-label="Read only" title="Managed by SportsHeist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      </span>
+    </div>
+    <div class="field field--locked">
+      <span class="field__main">
+        <span class="field__label">Mobile number</span>
+        <span class="field__value">+61 412 034 918</span>
+      </span>
+      <span class="field__aff" aria-label="Read only" title="Managed by SportsHeist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- address fields — editable -->
+  <div class="head">
+    <h2>Address</h2>
+    <span class="tag tag--live">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19.2 8.8a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0L4 16v4Z"/></svg>
+      You can edit
+    </span>
+  </div>
+  <div class="fields" data-dirty-scope>
+    <label class="field field--edit">
+      <span class="field__main">
+        <span class="field__label">Residential address</span>
+        <input class="field__value" type="text" value="214 Lygon Street, Carlton" autocomplete="street-address">
+      </span>
+      <span class="field__aff" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19.2 8.8a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0L4 16v4Z"/></svg>
+      </span>
+    </label>
+    <label class="field field--edit">
+      <span class="field__main">
+        <span class="field__label">Province / state</span>
+        <select class="field__value">
+          <option selected>Victoria</option>
+          <option>New South Wales</option>
+          <option>Queensland</option>
+          <option>South Australia</option>
+          <option>Western Australia</option>
+          <option>Tasmania</option>
+        </select>
+      </span>
+      <span class="field__aff" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </span>
+    </label>
+    <label class="field field--edit">
+      <span class="field__main">
+        <span class="field__label">Country</span>
+        <select class="field__value">
+          <option selected>Australia</option>
+          <option>New Zealand</option>
+          <option>Spain</option>
+          <option>United Kingdom</option>
+          <option>Vietnam</option>
+        </select>
+      </span>
+      <span class="field__aff" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </span>
+    </label>
+  </div>
+
+  <!-- sign-in + sub-pages -->
+  <h2 class="label">Sign-in and security</h2>
+  <div class="fields">
+    <div class="field">
+      <span class="field__main">
+        <span class="field__label">Password</span>
+        <span class="field__value field__mask">••••••••</span>
+      </span>
+      <button class="field__act" type="button" data-go="f-password">Change</button>
+    </div>
+  </div>
+  <div class="card" style="margin-top:8px">
+    <ul class="rows">
+      <li><button class="row" type="button" data-go="f-security">
+        <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 5.8v5.4c0 4.3 2.9 8.1 7 9.3 4.1-1.2 7-5 7-9.3V5.8L12 3Z"/><path d="m9.2 12.1 2 2 3.6-3.9"/></svg></span>
+        <span class="row__main"><span class="row__name">Security and devices</span></span>
+        <span class="row__end"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></span>
+      </button></li>
+      <li><button class="row" type="button" data-go="f-notify">
+        <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16M10 20.5h4"/></svg></span>
+        <span class="row__main"><span class="row__name">Notification settings</span></span>
+        <span class="row__end"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></span>
+      </button></li>
+    </ul>
+  </div>
+
+  <!-- destructive -->
+  <h2 class="label">Close your account</h2>
+  <div class="card card--kill">
+    <ul class="rows">
+      <li><button class="row row--kill" type="button" id="kill-btn">
+        <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.3A1.8 1.8 0 0 0 9.2 21h5.6a1.8 1.8 0 0 0 1.8-1.7L17.5 7"/><path d="M10.5 11v6M13.5 11v6"/></svg></span>
+        <span class="row__main">
+          <span class="row__name">Delete my account</span>
+          <span class="row__sub">Permanent. Your ideas, votes and merits go with it.</span>
+        </span>
+        <span class="row__end"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></span>
+      </button></li>
+    </ul>
+  </div>
+
+  <footer class="commit">
+    <button class="btn" type="button" id="save-details" disabled>Save changes</button>
+    <p class="commit__note" id="save-details-note">Nothing changed yet</p>
+  </footer>
+
+  <!-- confirm before the destructive row does anything -->
+  <div class="modal" id="kill-modal" hidden>
+    <div class="modal__scrim" data-close></div>
+    <div class="modal__box" role="dialog" aria-modal="true" aria-labelledby="kill-t">
+      <h3 id="kill-t">Delete your account?</h3>
+      <p>Your ideas, votes and merits go with it, and 1,240.0 credits are forfeited. This can’t be
+         undone — support can’t restore it.</p>
+      <div class="modal__acts">
+        <button class="btn btn--ghost" type="button" data-close>Keep it</button>
+        <button class="btn btn--kill" type="button" id="kill-go">Delete</button>
+      </div>
+    </div>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Change password</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="nav">
+    <button class="icon-btn" type="button" aria-label="Back to account details">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="nav__spacer"></span>
+  </div>
+  <h1 class="title">Change password</h1>
+  <p class="intro">Pick something you don’t use anywhere else. You’ll stay signed in on this device; every other device is signed out.</p>
+
+  <div class="fields" style="margin-top:18px">
+    <div>
+      <label class="field field--edit" id="pw-cur-field">
+        <span class="field__main">
+          <span class="field__label">Current password</span>
+          <input class="field__value" type="password" id="pw-cur" value="Ferrymead-88" autocomplete="current-password">
+        </span>
+        <button class="field__eye" type="button" data-eye="pw-cur" aria-label="Show current password" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/></svg>
+        </button>
+      </label>
+      <p class="field__err" id="pw-cur-err" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4h.01"/></svg>
+        That isn’t your current password.
+      </p>
+    </div>
+
+    <div>
+      <label class="field field--edit" id="pw-new-field">
+        <span class="field__main">
+          <span class="field__label">New password</span>
+          <input class="field__value" type="password" id="pw-new" value="Kestrels19" autocomplete="new-password">
+        </span>
+        <button class="field__eye" type="button" data-eye="pw-new" aria-label="Show new password" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/></svg>
+        </button>
+      </label>
+    </div>
+  </div>
+
+  <!-- strength -->
+  <div class="pw">
+    <div class="pw__bar" id="pw-bar" role="img" aria-label="Password strength: strong">
+      <span class="pw__seg"></span><span class="pw__seg"></span><span class="pw__seg"></span><span class="pw__seg"></span>
+    </div>
+    <div class="pw__row">
+      <span class="pw__lab" id="pw-lab">Strong</span>
+      <span class="pw__hint" id="pw-hint">Add a symbol to reach very strong</span>
+    </div>
+    <ul class="reqs" id="pw-reqs">
+      <li data-req="len"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>At least 10 characters</li>
+      <li data-req="case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>An upper and a lower case letter</li>
+      <li data-req="num"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>A number</li>
+      <li data-req="sym"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>A symbol, for extra strength</li>
+    </ul>
+  </div>
+
+  <div class="fields" style="margin-top:16px">
+    <div>
+      <label class="field field--edit field--bad" id="pw-cfm-field">
+        <span class="field__main">
+          <span class="field__label">Confirm new password</span>
+          <input class="field__value" type="password" id="pw-cfm" value="Kestrels1" autocomplete="new-password">
+        </span>
+        <button class="field__eye" type="button" data-eye="pw-cfm" aria-label="Show confirmation" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/></svg>
+        </button>
+      </label>
+      <p class="field__err" id="pw-cfm-err">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4h.01"/></svg>
+        Both new-password fields must match.
+      </p>
+    </div>
+  </div>
+
+  <button class="link" type="button" id="forgot-btn" aria-expanded="false" aria-controls="forgot">I don’t remember my current password</button>
+  <div class="reset" id="forgot" hidden>
+    <p id="forgot-copy">We’ll email a reset link to <b>dylan.n@sportsheist.app</b>. It lasts an hour, and
+       your current password keeps working until you use it.</p>
+    <button class="btn btn--ghost" type="button" id="forgot-send">Email me a reset link</button>
+  </div>
+
+  <footer class="commit">
+    <button class="btn" type="button" id="save-pw" disabled>Update password</button>
+    <p class="commit__note" id="save-pw-note">Fix the confirmation to continue</p>
+  </footer>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-3">
+        <figcaption class="scr__cap"><span class="scr__n">03</span>Security and devices</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="nav">
+    <button class="icon-btn" type="button" aria-label="Back to account details">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="nav__spacer"></span>
+  </div>
+  <h1 class="title">Security</h1>
+  <p class="intro">Everything on this screen takes effect the moment you tap it. There is nothing to save.</p>
+
+  <!-- 2FA -->
+  <div class="setting" id="tfa-card" style="margin-top:18px">
+    <span class="setting__ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 5.8v5.4c0 4.3 2.9 8.1 7 9.3 4.1-1.2 7-5 7-9.3V5.8L12 3Z"/><path d="m9.2 12.1 2 2 3.6-3.9"/></svg>
+    </span>
+    <span class="setting__main">
+      <span class="setting__name">Two-factor authentication</span>
+      <span class="setting__sub">Signing in from a new device will need a one-time pin, sent to +61 412 034 918. Turning this on starts the check straight away.</span>
+    </span>
+    <button class="sw" type="button" role="switch" aria-checked="false" aria-label="Two-factor authentication" id="tfa-sw"></button>
+  </div>
+
+  <!-- devices -->
+  <div class="head">
+    <h2>Where you’re signed in</h2>
+    <span class="status-pill" id="sess-count">6 sessions</span>
+  </div>
+  <p class="note" style="margin-top:-4px">Six devices hold a session. Signing one out ends it immediately.</p>
+
+  <div class="card" style="margin-top:10px">
+    <ul class="rows" id="sess-list">
+      <li class="row sess">
+        <span class="dtype dtype--now">
+          <!-- phone -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.6"/><path d="M10.6 5.4h2.8"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">iPhone 17 Pro</span>
+          <span class="row__sub">Melbourne · Active now</span>
+        </span>
+        <span class="here">This device</span>
+      </li>
+
+      <li class="row sess">
+        <span class="dtype">
+          <!-- laptop -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4.5" width="16" height="11" rx="2"/><path d="M2 18.7h20"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">MacBook Pro 14″</span>
+          <span class="row__sub">Melbourne · 2 hours ago</span>
+        </span>
+        <button class="mini-btn" type="button">Sign out</button>
+      </li>
+
+      <li class="row sess">
+        <span class="dtype">
+          <!-- tablet -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="2.5" width="15" height="19" rx="2.4"/><path d="M10.4 18.6h3.2"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">iPad Air</span>
+          <span class="row__sub">Melbourne · Yesterday</span>
+        </span>
+        <button class="mini-btn" type="button">Sign out</button>
+      </li>
+
+      <li class="row sess">
+        <span class="dtype">
+          <!-- desktop / browser -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="19" height="12.6" rx="2.2"/><path d="M2.5 8.1h19"/><path d="M12 16.6v4M9 20.6h6"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">Chrome on Windows</span>
+          <span class="row__sub">Sydney · 3 Jul</span>
+        </span>
+        <button class="mini-btn" type="button">Sign out</button>
+      </li>
+
+      <li class="row sess">
+        <span class="dtype">
+          <!-- tv -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6.2" width="19" height="11.6" rx="2.2"/><path d="M8.2 2.8 12 6.2l3.8-3.4"/><path d="M7.6 21h8.8"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">Apple TV</span>
+          <span class="row__sub">Melbourne · 28 Jun</span>
+        </span>
+        <button class="mini-btn" type="button">Sign out</button>
+      </li>
+
+      <li class="row sess">
+        <span class="dtype">
+          <!-- watch -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.6" y="6.6" width="10.8" height="10.8" rx="3.2"/><path d="M9.4 6.6 8.9 3h6.2l-.5 3.6M9.4 17.4l-.5 3.6h6.2l-.5-3.6"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">Apple Watch</span>
+          <span class="row__sub">Melbourne · 21 Jun</span>
+        </span>
+        <button class="mini-btn" type="button">Sign out</button>
+      </li>
+    </ul>
+  </div>
+
+  <div class="stack">
+    <button class="btn btn--kill" type="button" id="sess-killall">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5.5H18A2.5 2.5 0 0 1 20.5 8v8a2.5 2.5 0 0 1-2.5 2.5h-3"/><path d="M10 8.5 6.5 12l3.5 3.5M6.5 12H15"/></svg>
+      Sign out everywhere else
+    </button>
+    <p class="commit__note" id="sess-killall-note">Ends the five other sessions. This device stays signed in.</p>
+  </div>
+
+  <!-- recent sign-ins -->
+  <div class="head">
+    <h2>Recent sign-ins</h2>
+  </div>
+  <div class="card">
+    <ul class="rows">
+      <li class="row sess">
+        <span class="dtype">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.6"/><path d="M10.6 5.4h2.8"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">iPhone 17 Pro</span>
+          <span class="row__sub">Melbourne, Australia</span>
+        </span>
+        <span class="row__time">Today, 8:57 pm</span>
+      </li>
+      <li class="row sess">
+        <span class="dtype">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4.5" width="16" height="11" rx="2"/><path d="M2 18.7h20"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">MacBook Pro 14″</span>
+          <span class="row__sub">Melbourne, Australia</span>
+        </span>
+        <span class="row__time">Today, 11:02 am</span>
+      </li>
+      <li class="row sess">
+        <span class="dtype dtype--warn">
+          <!-- unknown device — the designed fallback -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.6" y="3" width="14.8" height="18" rx="2.6"/><path d="M9.8 9.4a2.3 2.3 0 1 1 3.2 2.2c-.6.2-.9.7-.9 1.3v.5"/><path d="M12.1 16.6h.01"/></svg>
+        </span>
+        <span class="row__main">
+          <span class="row__name">Unrecognised device</span>
+          <span class="row__sub">Ho Chi Minh City · Not you?</span>
+        </span>
+        <span class="row__time">2 Apr, 8:54 pm</span>
+      </li>
+    </ul>
+  </div>
+  <p class="note">Only the last 30 days are kept.</p>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-4">
+        <figcaption class="scr__cap"><span class="scr__n">04</span>Notifications</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="nav">
+    <button class="icon-btn" type="button" aria-label="Back to account details">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="nav__spacer"></span>
+  </div>
+  <h1 class="title">Notifications</h1>
+
+  <!-- master -->
+  <div class="setting" id="pause-card" style="margin-top:16px">
+    <span class="setting__ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 0 1 8.4-5.5M18 11v6M4 17h16M10 20.5h4"/><path d="M4 4l16 16"/></svg>
+    </span>
+    <span class="setting__main">
+      <span class="setting__name">Pause everything</span>
+      <span class="setting__sub">A master switch. While it’s on, nothing below is sent — and nothing below is forgotten.</span>
+    </span>
+    <button class="sw" type="button" role="switch" aria-checked="false" aria-label="Pause everything" id="pause-sw"></button>
+  </div>
+
+  <!-- dependents -->
+  <div class="deps" id="deps">
+    <p class="deps__bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="5" width="3.4" height="14" rx="1.2"/><rect x="13.6" y="5" width="3.4" height="14" rx="1.2"/></svg>
+      Paused — all 9 settings below are held, none are sent
+    </p>
+    <p class="deps__count" id="deps-count">7 of 9 on</p>
+
+    <div class="deps__body">
+
+      <!-- WHAT -->
+      <div class="head">
+        <h2>What you’re told about</h2>
+      </div>
+      <div class="card">
+        <ul class="rows">
+          <li class="row">
+            <span class="row__main"><span class="row__name">My ideas and proposals</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="My ideas and proposals"></button>
+          </li>
+          <li class="row">
+            <span class="row__main"><span class="row__name">Management responses</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Management responses"></button>
+          </li>
+          <li class="row">
+            <span class="row__main"><span class="row__name">New ideas in my club</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="false" aria-label="New ideas in my club"></button>
+          </li>
+          <li class="row">
+            <span class="row__main"><span class="row__name">Ideas I’ve backed</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Ideas I’ve backed"></button>
+          </li>
+          <li class="row">
+            <span class="row__main"><span class="row__name">Member of the Match, Week and Season</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Member of the Match, Week and Season"></button>
+          </li>
+          <li class="row">
+            <span class="row__main"><span class="row__name">Match and playoff updates</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Match and playoff updates"></button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- HOW -->
+      <div class="head">
+        <h2>How you’re told</h2>
+      </div>
+      <p class="note" style="margin-top:-4px">Turn a channel off and every topic above stops arriving that way. Your topic choices are kept.</p>
+      <div class="card" style="margin-top:10px">
+        <ul class="rows">
+          <li class="row">
+            <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.6"/><path d="M10.6 5.4h2.8"/></svg></span>
+            <span class="row__main"><span class="row__name">Push on this device</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Push on this device"></button>
+          </li>
+          <li class="row">
+            <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.4"/><path d="m3.8 7 8.2 6 8.2-6"/></svg></span>
+            <span class="row__main"><span class="row__name">Email</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="true" aria-label="Email"></button>
+          </li>
+          <li class="row">
+            <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h11l5 4v9H4v-13Z"/><path d="M7.5 9.5h5M7.5 13h9"/></svg></span>
+            <span class="row__main"><span class="row__name">Club news and product updates</span></span>
+            <button class="sw" type="button" role="switch" aria-checked="false" aria-label="Club news and product updates"></button>
+          </li>
+        </ul>
+      </div>
+      <p class="note">Support and account email — receipts, password changes, security notices — is always sent. It isn’t a preference.</p>
+
+    </div>
+  </div>
+
+  <footer class="commit">
+    <button class="btn" type="button" id="save-notify" disabled>Save changes</button>
+    <p class="commit__note" id="save-notify-note">Nothing changed yet</p>
+  </footer>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One field, one row, one switch</h2>
+  <p>
+    Settings screens fail by accumulation. Every new preference arrives with its own control, and after
+    a year there are four field heights, three kinds of toggle and two ideas about where a label goes.
+    So this proposal is deliberately narrow: there is <em>one</em> field anatomy, <em>one</em> row
+    height, and <em>one</em> switch, and every screen here is built from those three parts plus copy.
+  </p>
+  <p>
+    The field is a <code>64&nbsp;px</code> box with its label above its value and a single glyph at the
+    trailing edge. That glyph is the whole affordance grammar: a padlock means you cannot change this,
+    a pencil means you can, a chevron means it opens a list. Locked fields also sit on the recessed
+    surface with their value dropped to secondary grey, so a member can tell what is editable by
+    scanning the right-hand edge rather than by tapping things and finding out.
+  </p>
+  <p>
+    The switch puts the accent on the <em>track</em> and never on the knob, which keeps the on-state
+    reading as a filled channel rather than a green dot — legible at a glance down a list of nine.
+    And each screen is honest about when it commits: the security screen says outright that everything
+    takes effect immediately and there is nothing to save, while the other two carry a sticky bar that
+    counts the changes and stays disabled until there is something to save.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Shared</td><td>Screen head</td>
+          <td class="t-note">A <code>38&nbsp;px</code> circular back button on
+            <code>#1C2129</code>, then the title at 34/800, uppercase, tracking
+            <code>-.025em</code>, and an intro line at 13&nbsp;px in <code>#99A0AE</code>. Pushed
+            routes carry no hero — the title does the work.</td>
+        </tr>
+        <tr>
+          <td>Frame 1</td><td>Identity card</td>
+          <td class="t-note"><code>#1C2129</code>, <code>R16</code>, <code>16&nbsp;px</code> padding.
+            A <code>60&nbsp;px</code> portrait carrying a double ring —
+            <code>0 0 0 2px</code> in the card fill then <code>0 0 0 3.5px</code> accent — so the
+            accent never touches the photograph. Name 17/600 tracking <code>-.015em</code>, handle and
+            club at 12.5&nbsp;px in <code>#99A0AE</code>, and a <code>34&nbsp;px</code>
+            <code>Change</code> pill with a camera glyph.</td>
+        </tr>
+        <tr>
+          <td>Frame 1</td><td>Group tag</td>
+          <td class="t-note">Sits in each section header and states the group's editability.
+            <code>24&nbsp;px</code>, R pill,
+            <code>#13171E</code>, 10.5/700/<code>.12em</code> uppercase in <code>#5B606B</code> with
+            an 11&nbsp;px glyph. <code>Locked</code> carries a padlock;
+            <code>You can edit</code> switches to <code>rgba(155,226,34,.12)</code> with accent text
+            and a pencil.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Field</td>
+          <td class="t-note">The single anatomy. <code>min-height&nbsp;64&nbsp;px</code>, padding
+            <code>0&nbsp;14&nbsp;px</code>, <code>R12</code>, 1&nbsp;px
+            <code>rgba(255,255,255,.075)</code>, fill <code>#1C2129</code>. Label
+            10.5/700/<code>.14em</code> uppercase in <code>#5B606B</code>; value 15/600 tracking
+            <code>-.01em</code>, truncating with an ellipsis. Trailing glyph 16&nbsp;px.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Field — locked</td>
+          <td class="t-note">Fill drops to <code>#13171E</code>, border softens to
+            <code>rgba(255,255,255,.045)</code>, and the value drops to <code>#99A0AE</code> at
+            weight 500. Trailing glyph is a padlock at <code>#5B606B</code>, titled
+            <em>Managed by SportsHeist</em>.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Field — editable</td>
+          <td class="t-note">Stays on <code>#1C2129</code> with a white value and a pencil glyph at
+            <code>#99A0AE</code>. On focus the border goes to accent <em>and the label goes to
+            accent with it</em>, so the active field is identifiable without relying on the border
+            alone.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Field — select</td>
+          <td class="t-note">Same box, native <code>select</code> with the appearance stripped, and a
+            chevron in place of the pencil. Option list forced to <code>#1C2129</code> on white so
+            the native menu does not arrive in the system's own light palette.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Field — invalid</td>
+          <td class="t-note">Border and label both go <code>#E2564A</code>, and a message appears
+            beneath at 11.5&nbsp;px in the same red with a 12&nbsp;px glyph. The message box reserves
+            its <code>18&nbsp;px</code> of height even when hidden — it uses
+            <code>visibility</code> rather than <code>display</code> — so validating a field never
+            shifts the layout underneath it.</td>
+        </tr>
+        <tr>
+          <td>Frame 1</td><td>In-field action</td>
+          <td class="t-note">The password row's <code>Change</code> control:
+            <code>30&nbsp;px</code>, R pill, <code>#242A34</code>, label
+            11.5/700/<code>.06em</code> uppercase. The value above it is eight bullets at
+            <code>.16em</code> tracking.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Row</td>
+          <td class="t-note"><code>min-height&nbsp;64&nbsp;px</code> — the same height as a field —
+            padding <code>8/14&nbsp;px</code>, 1&nbsp;px <code>rgba(255,255,255,.045)</code> top
+            border, first child unbordered. Sits inside a card of
+            <code>#080A0C</code> with a 1&nbsp;px hairline at <code>R16</code>, clipped. Name
+            14.5/600 tracking <code>-.01em</code>; sub-line 11.5&nbsp;px in <code>#99A0AE</code>,
+            tabular; leading glyph 20&nbsp;px, trailing chevron 16&nbsp;px in
+            <code>#5B606B</code>. Pressable rows lift to
+            <code>rgba(255,255,255,.03)</code> on hover.</td>
+        </tr>
+        <tr>
+          <td>Frame 1</td><td>Destructive card</td>
+          <td class="t-note">The one place red becomes a surface. Card border goes
+            <code>rgba(226,86,74,.38)</code>, fill <code>rgba(226,86,74,.10)</code>, and the row's
+            name, glyph and chevron all go <code>#E2564A</code>. Carries a consequence sub-line rather
+            than a bare label.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Switch</td>
+          <td class="t-note"><code>46&nbsp;×&nbsp;28&nbsp;px</code>, R pill. Off: track
+            <code>#13171E</code> with a 1&nbsp;px <code>rgba(255,255,255,.075)</code> edge and a
+            <code>20&nbsp;px</code> knob in <code>#5B606B</code>. On: track fills accent, border
+            matches, and the knob translates <code>18&nbsp;px</code> and becomes
+            <code>#0B0E06</code>. Accent on the track, never on the knob. Focus ring is a 2&nbsp;px
+            accent outline at <code>2&nbsp;px</code> offset. Built as
+            <code>role="switch"</code> with <code>aria-checked</code>.</td>
+        </tr>
+        <tr>
+          <td>Frames 3–4</td><td>Setting card</td>
+          <td class="t-note">For the two settings that carry an explanation: <code>R16</code>,
+            <code>#1C2129</code>, padding <code>15/15/16&nbsp;px</code>, a <code>38&nbsp;px</code>
+            <code>R11</code> glyph tile on <code>#13171E</code>, name 15/600, sub-copy 12.5&nbsp;px in
+            <code>#99A0AE</code>, switch top-aligned. Engaged, the card goes to
+            <code>rgba(155,226,34,.12)</code> with an <code>inset 3px 0 0</code> accent edge and the
+            tile lifts to <code>rgba(155,226,34,.16)</code> with an accent glyph.</td>
+        </tr>
+        <tr>
+          <td>Frame 2</td><td>Strength meter</td>
+          <td class="t-note">Four <code>4&nbsp;px</code> R-pill segments on <code>#13171E</code>,
+            <code>5&nbsp;px</code> apart, filling accent — or <code>#E2564A</code> at one bar. Label
+            11/700/<code>.14em</code> uppercase; a right-aligned hint at 11.5&nbsp;px in
+            <code>#5B606B</code>. Four requirement lines at 12.5&nbsp;px in <code>#5B606B</code>, each
+            rising to <code>#99A0AE</code> with an accent tick as it is met. Length is a gate, not a
+            point: a password under ten characters can never show more than one bar.</td>
+        </tr>
+        <tr>
+          <td>Frame 2</td><td>Reveal control</td>
+          <td class="t-note"><code>32&nbsp;px</code> transparent circle holding a 17&nbsp;px eye glyph
+            that swaps to a struck-through eye, with <code>aria-pressed</code> tracking the state.</td>
+        </tr>
+        <tr>
+          <td>Frame 2</td><td>Text link</td>
+          <td class="t-note">12.5/600 accent, underlined at <code>3&nbsp;px</code> offset with the
+            rule at <code>rgba(155,226,34,.4)</code> so the underline reads as a link without
+            competing with the label.</td>
+        </tr>
+        <tr>
+          <td>Frame 3</td><td>Device tile</td>
+          <td class="t-note"><code>38&nbsp;px</code>, <code>R11</code>, <code>#13171E</code>, glyph
+            20&nbsp;px in <code>#99A0AE</code>. Six device glyphs drawn for this screen — phone,
+            laptop, tablet, desktop, television, watch — plus a seventh unknown-device glyph as the
+            designed fallback. Current device: <code>rgba(155,226,34,.12)</code> with an accent glyph
+            and an inset <code>rgba(155,226,34,.30)</code> ring. Suspicious:
+            <code>rgba(226,86,74,.10)</code> with a red glyph and a
+            <code>rgba(226,86,74,.38)</code> ring.</td>
+        </tr>
+        <tr>
+          <td>Frame 3</td><td>Session controls</td>
+          <td class="t-note">The current device carries a <code>26&nbsp;px</code>
+            <code>This device</code> pill on the accent wash at 10.5/700/<code>.12em</code>. Every
+            other row carries a <code>30&nbsp;px</code> outlined <code>Sign out</code> button that
+            becomes a disabled <code>Signed out</code> in place — the row is not removed, so the list
+            does not jump under the finger that tapped it.</td>
+        </tr>
+        <tr>
+          <td>Frame 4</td><td>Dependency wrapper</td>
+          <td class="t-note">When the master switch is on, a
+            <code>rgba(155,226,34,.12)</code> bar appears at 12/600 accent with a pause glyph, the
+            nine dependent switches are disabled, the whole group drops to <code>38%</code> opacity
+            with pointer events off, and the count line rewrites itself to
+            <code>7 of 9 on — held while paused</code>. Nothing is unset.</td>
+        </tr>
+        <tr>
+          <td>Frames 1, 2, 4</td><td>Commit bar</td>
+          <td class="t-note">Sticky to the bottom of the scrolling area — not the viewport — on
+            <code>#030401</code> with a 1&nbsp;px top hairline and a <code>26&nbsp;px</code> gradient
+            fade above it, padded with <code>env(safe-area-inset-bottom)</code>. Button
+            <code>52&nbsp;px</code>, R pill, accent with <code>#0B0E06</code> ink; disabled it drops to
+            <code>#1C2129</code> with a <code>#5B606B</code> label. Beneath it a status line at
+            11.5&nbsp;px in <code>#5B606B</code>.</td>
+        </tr>
+        <tr>
+          <td>Frame 3</td><td>Ghost and kill buttons</td>
+          <td class="t-note">Same <code>52&nbsp;px</code> geometry. Ghost is transparent with a
+            1&nbsp;px hairline; the destructive
+            <code>Sign out everywhere else</code> is transparent with a
+            <code>rgba(226,86,74,.38)</code> edge and <code>#E2564A</code> label, washing to
+            <code>rgba(226,86,74,.10)</code> on hover. Red is an outline here, never a fill — a fill
+            would need <code>#0B0E06</code> ink and read as a primary action.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Field locked</td><td class="t-note">Recessed fill, softened border, value at <code>#99A0AE</code>/500, padlock glyph.</td></tr>
+        <tr><td>Field editable</td><td class="t-note">Card fill, white value at 600, pencil glyph.</td></tr>
+        <tr><td>Field focused</td><td class="t-note">Border goes accent and the uppercase label goes accent with it.</td></tr>
+        <tr><td>Field invalid</td><td class="t-note">Border and label go <code>#E2564A</code>; a red message with a glyph appears in space already reserved for it.</td></tr>
+        <tr><td>Commit — clean</td><td class="t-note">Button disabled on <code>#1C2129</code>, note reads <code>Nothing changed yet</code>.</td></tr>
+        <tr><td>Commit — dirty</td><td class="t-note">Button enabled, note counts the edits — <code>1 field changed</code>, <code>3 fields changed</code>, and on frame 4 <code>2 settings changed</code>.</td></tr>
+        <tr><td>Commit — blocked</td><td class="t-note">Frame 2 keeps the button disabled and says why: <code>Fix the confirmation to continue</code>, <code>Choose a stronger password</code>, or <code>Fill in all three fields</code>. When it clears, the note becomes the consequence — <code>Every other device will be signed out</code>.</td></tr>
+        <tr><td>Strength</td><td class="t-note">Five readings from <code>Too short</code> to <code>Very strong</code>, with the segment colour going red at one bar, and a hint naming the one thing that would improve it.</td></tr>
+        <tr><td>Password reuse</td><td class="t-note">If the new password equals the current one, the current field turns invalid and its message rewrites to <code>Your new password must be different.</code></td></tr>
+        <tr><td>Two-factor off / on</td><td class="t-note">Off is a plain card. On washes the card accent, adds the 3&nbsp;px accent edge and lifts the glyph tile. Applies immediately — there is no save on this screen.</td></tr>
+        <tr><td>Session — current</td><td class="t-note">Accent tile, <code>Active now</code>, and a <code>This device</code> pill instead of a button.</td></tr>
+        <tr><td>Session — other</td><td class="t-note">Neutral tile, location and last-seen, an outlined <code>Sign out</code>.</td></tr>
+        <tr><td>Session — signed out</td><td class="t-note">The button becomes a disabled <code>Signed out</code> in place; the row stays.</td></tr>
+        <tr><td>Sign-in — unrecognised</td><td class="t-note">Red tile with the unknown-device glyph and the line <code>Ho Chi Minh City · Not you?</code> — the only red in the recent-sign-ins list.</td></tr>
+        <tr><td>Notifications — live</td><td class="t-note">Nine switches, count line reads <code>7 of 9 on</code>.</td></tr>
+        <tr><td>Notifications — paused</td><td class="t-note">Master card washes accent; a pause bar appears; the group dims to <code>38%</code> and disables; the count keeps its figures and adds <code>held while paused</code>.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions disabled, including the switch knob travel.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Screen title</b> — 34/800 uppercase at the gutter</li>
+        <li><b>Section label</b> — 18/600 white, no adornment</li>
+        <li><b>Section container</b> — the bordered <code>#080A0C</code> card with its 1&nbsp;px hairline</li>
+        <li><b>Status pill</b> — the <code>LIVE NOW</code> treatment, reused for the session count</li>
+        <li><b>Icon button</b> — <code>38&nbsp;px</code> circle, white 1.9-stroke glyph</li>
+        <li><b>Pill button</b> — the <code>34&nbsp;px</code> secondary control</li>
+        <li><b>Row rhythm</b> — hairline-divided rows with an unbordered first child</li>
+        <li><b>Avatar</b> — circle, cover fill, <code>center 22%</code> position</li>
+        <li><b>Semantic red</b> — <code>#E2564A</code>, used only for destructive and downward</li>
+        <li><b>Tokens, radii, type scale</b> — copied from the reference implementation</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The entire dark treatment</b> — these four screens ship today in a light theme; nothing here is a restyle of an existing dark frame, because none exists</li>
+        <li><b>The single field anatomy</b> — one <code>64&nbsp;px</code> box for locked, editable, select, masked and invalid</li>
+        <li><b>Affordance grammar</b> — padlock, pencil, chevron, read from the trailing edge</li>
+        <li><b>Locked / You-can-edit group tags</b> — editability declared at the group rather than discovered per field</li>
+        <li><b>The switch</b> — accent on the track, knob in accent-ink</li>
+        <li><b>Reserved error space</b> — validation never reflows the screen</li>
+        <li><b>Strength meter</b> — four segments, five readings, length as a gate rather than a point</li>
+        <li><b>Device glyph set</b> — seven glyphs including the unknown-device fallback</li>
+        <li><b>Session row</b> — current-device pill, in-place sign-out, and the red suspicious variant</li>
+        <li><b>Master / dependent pattern</b> — pause without unsetting, with a live count that keeps its figures</li>
+        <li><b>Sticky commit bar</b> — with its change count and its blocked-reason line</li>
+        <li><b>Destructive card</b> — the one red surface, with a consequence sub-line</li>
+        <li><b>All copy</b> — including the promise that support and account email is always sent and is not a preference</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>The account area is light today. Does all of it move?</h3>
+      <p>Everything else in this set is a dark screen being redesigned as a dark screen. This one is
+      not: the account sub-pages currently ship as light-theme screens inside a dark app, so a member
+      tapping <em>Account details</em> today falls through a seam. We have re-authored all four in the
+      brand on the assumption that <span class="flag">the whole account area goes dark</span>. That is
+      a bigger commitment than a restyle — every field, every switch and every native control in the
+      account tree has to come with it, including anything not captured here. If instead the account
+      area is meant to stay light deliberately, then the seam needs designing rather than removing, and
+      that is a different piece of work.</p>
+    </li>
+    <li>
+      <h3>Which five fields are locked, and which three are the member's?</h3>
+      <p>We have locked name, username, date of birth, account email and mobile number, and left the
+      three address fields editable — the reading being that anything verified against an identity
+      document cannot be self-edited, and anything that is just a postal address can. Username is the
+      arguable one: it is not on a document, but changing it breaks every attribution in Backchat and
+      the standings. The screen tells a member to
+      <span class="flag">ask support to change a locked field</span>, which is only honest if that
+      route exists.</p>
+    </li>
+    <li>
+      <h3>Does changing a password sign out every other device?</h3>
+      <p>Frame&nbsp;2 promises it twice — in the intro and again in the commit note the moment the form
+      becomes valid. It is the right behaviour and it is what a member expects, but it is a statement
+      about session handling that we cannot verify, and it is the sort of promise that generates support
+      tickets when it turns out to be untrue.</p>
+    </li>
+    <li>
+      <h3>Is SMS the only second factor, and is 30 days the real retention?</h3>
+      <p>The two-factor card commits to a one-time pin sent to the member's mobile number, and says
+      turning it on <span class="flag">starts the check straight away</span> — so there is no
+      enrolment screen, which is a decision as much as an omission. Separately, the recent-sign-ins
+      list ends with <span class="flag">Only the last 30 days are kept</span>. Both are assumptions. If
+      an authenticator app or a passkey is in scope, the card needs a method row rather than a bare
+      switch.</p>
+    </li>
+    <li>
+      <h3>What actually happens when a member deletes their account?</h3>
+      <p>The destructive row states it plainly:
+      <span class="flag">Permanent. Your ideas, votes and merits go with it.</span> That is the
+      strongest and clearest version, but it has consequences the product may not want — removing a
+      member's votes retrospectively changes the counts on settled proposals, and removing their ideas
+      removes things other members backed. The likely real answer is that the account is closed and the
+      contributions are anonymised, in which case this sentence is wrong and needs rewriting before it
+      goes anywhere near a member.</p>
+    </li>
+    <li>
+      <h3>Is the nine-setting notification list the right list?</h3>
+      <p>Six topics and three channels, with the topic choices preserved when a channel is turned off,
+      and a note that support and account email is always sent and is not a preference. The topics are
+      drawn from what the product currently does, so they will drift as features land. Worth confirming
+      the split is the right one — topics and channels as two independent axes — before the list grows,
+      because the alternative shape is a grid, and a grid at this width does not work.</p>
+    </li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  var EYE_OPEN  = '<path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/>';
+  var EYE_SHUT  = '<path d="M3.5 3.5l17 17"/><path d="M9.6 6.2A9.4 9.4 0 0 1 12 5.8c6 0 9.5 6.2 9.5 6.2a17 17 0 0 1-2.6 3.4M6.6 7.9A17 17 0 0 0 2.5 12s3.5 6.2 9.5 6.2c1.1 0 2.1-.2 3-.5"/><path d="M9.9 10a3.1 3.1 0 0 0 4.2 4.3"/>';
+
+  /* ---------- jump between frames ---------- */
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-go]'); if(!b) return;
+    var t = document.getElementById(b.getAttribute('data-go'));
+    if (t) t.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+
+  /* ---------- generic switch ---------- */
+  document.addEventListener('click', function(e){
+    var s = e.target.closest('.sw'); if(!s || s.disabled) return;
+    s.setAttribute('aria-checked', s.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+    s.dispatchEvent(new CustomEvent('sh:switch', {bubbles:true}));
+  });
+
+  /* ---------- FRAME 1 — dirty tracking ---------- */
+  var f1     = document.getElementById('f-details');
+  var f1save = document.getElementById('save-details');
+  var f1note = document.getElementById('save-details-note');
+  var f1base = [];
+  var f1in   = [].slice.call(f1.querySelectorAll('[data-dirty-scope] input, [data-dirty-scope] select'));
+  f1in.forEach(function(el){ f1base.push(el.value); });
+  function f1check(){
+    var n = 0;
+    f1in.forEach(function(el,i){ if (el.value !== f1base[i]) n++; });
+    f1save.disabled = n === 0;
+    f1note.textContent = n === 0 ? 'Nothing changed yet'
+      : (n === 1 ? '1 field changed' : n + ' fields changed');
+  }
+  f1in.forEach(function(el){ el.addEventListener('input', f1check); el.addEventListener('change', f1check); });
+
+  /* ---------- FRAME 2 — strength + validation ---------- */
+  var cur  = document.getElementById('pw-cur');
+  var neu  = document.getElementById('pw-new');
+  var cfm  = document.getElementById('pw-cfm');
+  var bar  = document.getElementById('pw-bar');
+  var segs = [].slice.call(bar.querySelectorAll('.pw__seg'));
+  var lab  = document.getElementById('pw-lab');
+  var hint = document.getElementById('pw-hint');
+  var reqs = document.getElementById('pw-reqs');
+  var cfmF = document.getElementById('pw-cfm-field');
+  var cfmE = document.getElementById('pw-cfm-err');
+  var curF = document.getElementById('pw-cur-field');
+  var curE = document.getElementById('pw-cur-err');
+  var pwBtn  = document.getElementById('save-pw');
+  var pwNote = document.getElementById('save-pw-note');
+
+  var NAMES = ['Too short','Weak','Fair','Strong','Very strong'];
+  var HINTS = ['At least 10 characters','Mix upper and lower case','Add a number',
+               'Add a symbol to reach very strong','Nothing more to add'];
+
+  function score(v){
+    var met = {
+      len:  v.length >= 10,
+      case: /[a-z]/.test(v) && /[A-Z]/.test(v),
+      num:  /[0-9]/.test(v),
+      sym:  /[^A-Za-z0-9]/.test(v)
+    };
+    var s = (met.len?1:0) + (met.case?1:0) + (met.num?1:0) + (met.sym?1:0);
+    if (!met.len) s = Math.min(s, 1);           /* short can never exceed 1 bar */
+    return {s:s, met:met};
+  }
+
+  function pwPaint(){
+    var v = neu.value, r = score(v), s = r.s;
+
+    segs.forEach(function(el,i){
+      el.className = 'pw__seg' + (i < s ? (s <= 1 ? ' is-bad' : ' is-on') : '');
+    });
+    lab.textContent  = v.length ? NAMES[s] : 'Enter a new password';
+    lab.className    = 'pw__lab' + (v.length && s <= 1 ? ' is-bad' : '');
+    hint.textContent = v.length ? HINTS[s] : '';
+    bar.setAttribute('aria-label', 'Password strength: ' + (v.length ? NAMES[s] : 'empty'));
+
+    [].slice.call(reqs.children).forEach(function(li){
+      li.classList.toggle('is-met', !!r.met[li.getAttribute('data-req')]);
+    });
+
+    /* confirm */
+    var mismatch = cfm.value.length > 0 && cfm.value !== v;
+    cfmF.classList.toggle('field--bad', mismatch);
+    cfmE.hidden = !mismatch;
+
+    /* current password — demo rule: must not equal the new one */
+    var reused = cur.value.length > 0 && cur.value === v;
+    curF.classList.toggle('field--bad', reused);
+    curE.hidden = !reused;
+    if (reused) curE.lastChild.textContent = ' Your new password must be different.';
+
+    var ok = cur.value.length > 0 && s >= 2 && cfm.value === v && v.length > 0 && !reused;
+    pwBtn.disabled  = !ok;
+    pwNote.textContent = ok ? 'Every other device will be signed out'
+      : mismatch ? 'Fix the confirmation to continue'
+      : s < 2 && v.length ? 'Choose a stronger password'
+      : 'Fill in all three fields';
+  }
+  [cur,neu,cfm].forEach(function(el){ el.addEventListener('input', pwPaint); });
+  pwPaint();
+
+  /* reveal buttons */
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-eye]'); if(!b) return;
+    var inp = document.getElementById(b.getAttribute('data-eye'));
+    var show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    b.setAttribute('aria-pressed', show ? 'true' : 'false');
+    b.querySelector('svg').innerHTML = show ? EYE_SHUT : EYE_OPEN;
+  });
+
+  /* ---------- FRAME 3 — 2FA applies immediately ---------- */
+  var tfa = document.getElementById('tfa-sw');
+  var tfaCard = document.getElementById('tfa-card');
+  tfa.addEventListener('sh:switch', function(){
+    tfaCard.classList.toggle('setting--on', tfa.getAttribute('aria-checked') === 'true');
+  });
+
+  /* ---------- FRAME 4 — master / dependents ---------- */
+  var pauseSw   = document.getElementById('pause-sw');
+  var pauseCard = document.getElementById('pause-card');
+  var deps      = document.getElementById('deps');
+  var depsCount = document.getElementById('deps-count');
+  var childSw   = [].slice.call(deps.querySelectorAll('.sw'));
+  var f4save    = document.getElementById('save-notify');
+  var f4note    = document.getElementById('save-notify-note');
+  var f4base    = childSw.map(function(s){ return s.getAttribute('aria-checked'); })
+                    .concat([pauseSw.getAttribute('aria-checked')]);
+
+  function f4paint(){
+    var paused = pauseSw.getAttribute('aria-checked') === 'true';
+    pauseCard.classList.toggle('setting--on', paused);
+    deps.classList.toggle('is-paused', paused);
+    childSw.forEach(function(s){ s.disabled = paused; });
+
+    var on = childSw.filter(function(s){ return s.getAttribute('aria-checked') === 'true'; }).length;
+    depsCount.textContent = paused
+      ? on + ' of ' + childSw.length + ' on — held while paused'
+      : on + ' of ' + childSw.length + ' on';
+
+    var now = childSw.map(function(s){ return s.getAttribute('aria-checked'); })
+                .concat([pauseSw.getAttribute('aria-checked')]);
+    var n = 0;
+    now.forEach(function(v,i){ if (v !== f4base[i]) n++; });
+    f4save.disabled = n === 0;
+    f4note.textContent = n === 0 ? 'Nothing changed yet'
+      : (n === 1 ? '1 setting changed' : n + ' settings changed');
+  }
+  deps.addEventListener('sh:switch', f4paint);
+  pauseSw.addEventListener('sh:switch', f4paint);
+  f4paint();
+
+  /* ---------- FRAME 3 — sessions ---------- */
+  var sessList  = document.getElementById('sess-list');
+  var sessCount = document.getElementById('sess-count');
+  var killAll   = document.getElementById('sess-killall');
+
+  function sessPaint(){
+    var live = 1 + [].slice.call(sessList.querySelectorAll('.mini-btn'))
+                     .filter(function(b){ return !b.disabled; }).length;
+    sessCount.textContent = live === 1 ? '1 session' : live + ' sessions';
+    if (killAll){
+      killAll.disabled = live <= 1;
+      document.getElementById('sess-killall-note').textContent = live <= 1
+        ? 'Nothing else is signed in. Only this device holds a session.'
+        : 'Ends the ' + (live - 1) + ' other session' + (live - 1 === 1 ? '' : 's')
+          + '. This device stays signed in.';
+    }
+  }
+  sessList.addEventListener('click', function(e){
+    var b = e.target.closest('.mini-btn'); if(!b || b.disabled) return;
+    b.disabled = true;
+    b.textContent = 'Signed out';
+    sessPaint();
+  });
+  if (killAll) killAll.addEventListener('click', function(){
+    [].slice.call(sessList.querySelectorAll('.mini-btn')).forEach(function(b){
+      if (!b.disabled){ b.disabled = true; b.textContent = 'Signed out'; }
+    });
+    sessPaint();
+  });
+  sessPaint();
+
+  /* ============================================================
+     Everything below closes the dead controls the review found.
+     ============================================================ */
+
+  /* ---------- one popover primitive: outside click, Escape, focus return ---------- */
+  function popover(btn, pop){
+    if (!btn || !pop) return null;
+    function away(e){ if (!btn.parentNode.contains(e.target)) close(false); }
+    function esc(e){ if (e.key === 'Escape'){ e.stopPropagation(); close(true); } }
+    function open(){
+      pop.hidden = false;
+      btn.setAttribute('aria-expanded','true');
+      document.addEventListener('mousedown', away, true);
+      document.addEventListener('keydown', esc, true);
+      var first = pop.querySelector('button'); if (first) first.focus();
+    }
+    function close(focus){
+      pop.hidden = true;
+      btn.setAttribute('aria-expanded','false');
+      document.removeEventListener('mousedown', away, true);
+      document.removeEventListener('keydown', esc, true);
+      if (focus) btn.focus();
+    }
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      pop.hidden ? open() : close(true);
+    });
+    return {open:open, close:close};
+  }
+
+  /* ---------- FRAME 1 — the profile photo actually changes ---------- */
+  var avBtn  = document.getElementById('av-btn');
+  var avPop  = document.getElementById('av-pop');
+  var avImg  = document.querySelector('.ident__av');
+  var avPo   = popover(avBtn, avPop);
+  var avBase = avImg ? avImg.getAttribute('style') : '';
+  var avNow  = avBase;
+
+  if (avPo){
+    document.getElementById('av-grid').addEventListener('click', function(e){
+      var b = e.target.closest('button[data-av]'); if(!b) return;
+      [].slice.call(this.children).forEach(function(x){
+        x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+      });
+      avImg.style.backgroundImage = b.getAttribute('data-av');
+      avImg.classList.remove('ident__av--none');
+      avImg.textContent = '';
+      avNow = b.getAttribute('data-av');
+      f1check();
+      avPo.close(true);
+    });
+    document.getElementById('av-clear').addEventListener('click', function(){
+      avImg.style.backgroundImage = 'none';
+      avImg.classList.add('ident__av--none');
+      avImg.textContent = 'DN';
+      [].slice.call(document.getElementById('av-grid').children).forEach(function(x){
+        x.setAttribute('aria-pressed','false');
+      });
+      avNow = 'none';
+      f1check();
+      avPo.close(true);
+    });
+  }
+
+  /* the photo counts as a change, so fold it into the dirty count */
+  f1check = function(){
+    var n = 0;
+    f1in.forEach(function(el,i){ if (el.value !== f1base[i]) n++; });
+    if (avNow !== avBase) n++;
+    f1save.disabled = n === 0;
+    f1note.classList.remove('is-ok');
+    f1note.textContent = n === 0 ? 'Nothing changed yet'
+      : (n === 1 ? '1 field changed' : n + ' fields changed');
+  };
+  f1in.forEach(function(el){
+    el.addEventListener('input', function(){ f1check(); });
+    el.addEventListener('change', function(){ f1check(); });
+  });
+
+  /* ---------- FRAME 1 — Save commits, so the button stops lying ---------- */
+  f1save.addEventListener('click', function(){
+    f1in.forEach(function(el,i){ f1base[i] = el.value; });
+    avBase = avNow;
+    f1save.disabled = true;
+    f1note.textContent = 'Saved — your address is up to date';
+    f1note.classList.add('is-ok');
+  });
+
+  /* ---------- FRAME 1 — the destructive row asks first ---------- */
+  var killBtn   = document.getElementById('kill-btn');
+  var killModal = document.getElementById('kill-modal');
+  if (killBtn && killModal){
+    var killEsc = function(e){ if (e.key === 'Escape') killClose(); };
+    function killOpen(){
+      killModal.hidden = false;
+      document.addEventListener('keydown', killEsc, true);
+      killModal.querySelector('#kill-go').focus();
+    }
+    function killClose(){
+      killModal.hidden = true;
+      document.removeEventListener('keydown', killEsc, true);
+      killBtn.focus();
+    }
+    killBtn.addEventListener('click', killOpen);
+    killModal.addEventListener('click', function(e){
+      if (e.target.closest('[data-close]')) killClose();
+    });
+    document.getElementById('kill-go').addEventListener('click', function(){
+      killClose();
+      killBtn.disabled = true;
+      killBtn.querySelector('.row__name').textContent = 'Deletion scheduled';
+      killBtn.querySelector('.row__sub').textContent =
+        'Your account closes on 30 August 2026. Sign in before then to stop it.';
+    });
+  }
+
+  /* ---------- FRAME 2 — the forgotten-password link opens something ---------- */
+  var forgotBtn = document.getElementById('forgot-btn');
+  var forgot    = document.getElementById('forgot');
+  if (forgotBtn && forgot){
+    forgotBtn.addEventListener('click', function(){
+      var open = forgot.hidden;
+      forgot.hidden = !open;
+      forgotBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) document.getElementById('forgot-send').focus();
+    });
+    document.getElementById('forgot-send').addEventListener('click', function(){
+      this.disabled = true;
+      this.textContent = 'Reset link sent';
+      document.getElementById('forgot-copy').innerHTML =
+        'Sent to <b>dylan.n@sportsheist.app</b>. It expires in an hour. Nothing has changed yet — '
+        + 'your current password still works until you use the link.';
+    });
+  }
+
+  /* ---------- FRAME 2 — Update password commits ---------- */
+  pwBtn.addEventListener('click', function(){
+    [cur,neu,cfm].forEach(function(el){ el.value = ''; el.disabled = true; });
+    [].slice.call(document.querySelectorAll('[data-eye]')).forEach(function(b){ b.disabled = true; });
+    pwBtn.disabled = true;
+    pwNote.textContent = 'Password updated · 5 other devices signed out';
+    pwNote.classList.add('is-ok');
+  });
+
+  /* ---------- FRAME 4 — Save commits ---------- */
+  f4save.addEventListener('click', function(){
+    f4base = childSw.map(function(s){ return s.getAttribute('aria-checked'); })
+               .concat([pauseSw.getAttribute('aria-checked')]);
+    f4save.disabled = true;
+    f4note.textContent = 'Saved — these choices apply from now';
+    f4note.classList.add('is-ok');
+  });
+
+  /* ---------- the selects: branded menu over a hidden native holder ----------
+     The OS option popup is the one piece of system chrome a <select> can't
+     restyle, so the select stays in the DOM as the state holder and a
+     button + listbox popover does the showing. Same rules as the library
+     date picker: Escape closes, away-click closes, arrows move, choosing
+     fires input + change on the native select. */
+  var DD_UID = 0;
+  var DD_TICK = '<svg class="dd__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>';
+  [].slice.call(document.querySelectorAll('select.field__value')).forEach(function(sel){
+    if (sel.disabled) return;
+    var row = sel.closest('.field');
+    if (!row || row.classList.contains('field--locked')) return;
+    sel.classList.add('field__value--bh');
+    sel.tabIndex = -1;
+    sel.setAttribute('aria-hidden','true');
+
+    var base = sel.id || 'dd' + (++DD_UID);
+    var lbl = null;
+    var wrap = sel.closest('label');
+    if (wrap) lbl = wrap.querySelector('.field__label');
+    if (lbl && !lbl.id) lbl.id = base + '-lbl';
+
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'field__value';
+    btn.id = base + '-face';
+    btn.setAttribute('aria-haspopup','listbox');
+    btn.setAttribute('aria-expanded','false');
+    if (lbl) btn.setAttribute('aria-labelledby', lbl.id + ' ' + btn.id);
+    btn.appendChild(document.createElement('span'));
+    var face = btn.firstChild;
+    sel.parentNode.insertBefore(btn, sel.nextSibling);
+
+    var dd = document.createElement('div');
+    dd.className = 'dd'; dd.hidden = true;
+    dd.setAttribute('role','listbox');
+    if (lbl) dd.setAttribute('aria-labelledby', lbl.id);
+    row.appendChild(dd);
+
+    function paintFace(){
+      var o = sel.options[sel.selectedIndex];
+      face.textContent = o ? o.textContent : '';
+    }
+    function build(){
+      dd.innerHTML = '';
+      [].slice.call(sel.options).forEach(function(o, i){
+        if (o.value === '' && o.hasAttribute('value')) return;
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'dd__opt';
+        b.setAttribute('role','option');
+        b.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
+        if (o.disabled) b.disabled = true;
+        var t = document.createElement('span'); t.className = 'dd__t';
+        t.textContent = o.textContent;
+        b.appendChild(t); b.insertAdjacentHTML('beforeend', DD_TICK);
+        b.addEventListener('click', function(){
+          sel.selectedIndex = i;
+          paintFace();
+          sel.dispatchEvent(new Event('input',  {bubbles:true}));
+          sel.dispatchEvent(new Event('change', {bubbles:true}));
+          shut(); btn.focus();
+        });
+        dd.appendChild(b);
+      });
+    }
+    function opts(){ return [].slice.call(dd.querySelectorAll('.dd__opt:not([disabled])')); }
+    function show(){
+      build(); dd.hidden = false; row.classList.add('is-open');
+      btn.setAttribute('aria-expanded','true');
+      var cur = dd.querySelector('[aria-selected="true"]:not([disabled])') || opts()[0];
+      if (cur){ cur.focus(); cur.scrollIntoView({block:'nearest'}); }
+      document.addEventListener('mousedown', away, true);
+      document.addEventListener('keydown', keys, true);
+    }
+    function shut(){
+      dd.hidden = true; row.classList.remove('is-open');
+      btn.setAttribute('aria-expanded','false');
+      document.removeEventListener('mousedown', away, true);
+      document.removeEventListener('keydown', keys, true);
+    }
+    function away(e){ if (!row.contains(e.target)) shut(); }
+    function keys(e){
+      if (e.key === 'Escape'){ shut(); btn.focus(); return; }
+      if (e.key === 'Tab'){ shut(); return; }
+      var os = opts(), i = os.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+        e.preventDefault();
+        var n = e.key === 'ArrowDown' ? Math.min(i + 1, os.length - 1) : Math.max(i - 1, 0);
+        if (os[n]){ os[n].focus(); os[n].scrollIntoView({block:'nearest'}); }
+      } else if (e.key === 'Home' && os[0]){
+        e.preventDefault(); os[0].focus();
+      } else if (e.key === 'End' && os.length){
+        e.preventDefault(); os[os.length - 1].focus();
+      }
+    }
+    btn.addEventListener('click', function(){ dd.hidden ? show() : shut(); });
+    btn.addEventListener('keydown', function(e){
+      if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && dd.hidden){ e.preventDefault(); show(); }
+    });
+    sel.addEventListener('focus', function(){ btn.focus(); });
+    sel.addEventListener('input',  paintFace);
+    sel.addEventListener('change', paintFace);
+    paintFace();
+  });
+})();
+</script>

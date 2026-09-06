@@ -1,0 +1,2084 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Upload &amp; pickers · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; --surface: #1C2129; --sunken: #13171E; --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); --acid-line: rgba(155,226,34,.30); /* semantic red — destructive and failure only */ --red: #E2564A; --red-wash: rgba(226,86,74,.12); --red-line: rgba(226,86,74,.28); /* neutral wash — where a state must NOT read as red or acid */ --neutral-wash: rgba(255,255,255,.06); /* skeleton — states.html */ --bone: rgba(255,255,255,.055); --sheen: rgba(255,255,255,.06); /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; /* sheet shell — sheets.html, unchanged */ --r-sheet: 18px; --sheet-max: 560px; --sheet-vh: 88vh; --grab-w: 40px; --grab-h: 4px; --h-field: 52px; --h-row: 48px; /* dialog shell — dialogs.html, unchanged */ --dlg-inset: 20px; --dlg-max: 340px; --dlg-pad: 20px; /* scrim — dialogs.html / sheets.html */ --scrim: rgba(3,4,1,.72); --scrim-blur: 10px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* portraits from _assets/avatars.css — the mapping the rest of the library uses: dylan_n ("You") 08, taythaytu 01, capitan_7 02, fan_pulse 03, club_staff 04, transfer_brig 07, scout_mode 12, dons_mode 14 */ --av-01:url(data:image/jpeg;base64,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); /* taythaytu */ --av-02:url(data:image/jpeg;base64,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); /* capitan_7 */ --av-03:url(data:image/jpeg;base64,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); /* fan_pulse */ --av-04:url(data:image/jpeg;base64,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); /* club_staff */ --av-07:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAHAAAAAcBAQAAAAAAAAAAAAAAAAECAwQFBgcI/8QAOBAAAgEDAwMCAwYFAwUBAAAAAQIDAAQRBRIhBjFBE1EiYXEHFDKBkcEVI0KhsVLR8CU0Q2KC4f/EABkBAAMBAQEAAAAAAAAAAAAAAAECAwQABf/EAB4RAAICAwEBAQEAAAAAAAAAAAABAhEDEiExQSJh/9oADAMBAAIRAxEAPwDr9FRZoZogCNJJoyaSTXHAoEgAsSAB3JPAqPeXkdnFvcjcfwqT3NUL6i9+xeQYQDEeRxnywHn9qnPLGLotDDKav4XGoa3p+mFVuJiZGRpFiiRpHZR3ICg1AXrDTjKENvfAF0QMbZiCW7YxnjwT4Pes7qUUF1fmQi5Cpai3JYLtIDFifi5ydxpDaZbyITFcYRpN5VoAwwMED4SPbvg/SqRnBrrFlikn4bux1Ox1KL1bK5jmXJGVPkdxUvNc2sIrqDURcwzwSLHZsheOU7jIXQ42kZwAGIJJxnHHnUaTrxaQ2922Rn4JPOPn/vQlKKdJg0lVmhoUAQQCDkHsRRgURAClUAKOuOEbaLFO4osV1hGitJ2c06aST3rjjHdTa3Y6fcL97cl2P8qJRuZyOOB9PyGayV/1FevCbmWaLSbVuBnDSkfXsPoM1aNo0+u6hdarax+s0lw8MfrNtXapxnPPwZB4AySK591d0n1Hbak0l+yXY8PCTtUewU9qxwULuT9N0t6qC8Eaj1XphciG0uL4+ZLmdgD9AKqz1KA+6OwW3weDBPIpH96ODpm/mj3eiQPnSR09djcGiPHHatalFeEHiyvpoNI67IZY7pzN4UXBAYfSQfv+ta+x1ey1IkQzGKcD8D8Mv1HkfMVyK50qeE8Kfoae0/UpLV0iuTJ6an4ZFOHi+h9vlSyxxn5w5ZJwdSPSnTt1JNZtFKdxiPwt7qe1XINc8+zDVprxLm2ncSlEDpMvaRc9/kfeug0YppUyU6vgvNDNJoZphRZNETRkGk4oHBE0xdTehbSS4ztUkD50+RWV6ivJ9Tju9Gs7eRl2lLmfb8EXGRlu3twMmkySqPCuGG80m6RK6diW3s5QECRxjCDwB/zJrDdVXtrqk7G61eS2iRiEWMhRx358mt1pfpXGgD7uzNE7sN7jkgcZP6VTXdiJP5WcxZJClRjn5YxWTHF6o9CTqcl9MZobercLBY62L1N34ZQCceRmrbWo7i0VDbW8LOSciQ4FXOmdOWVrdG5WJBJ7hAP8UNa0f+JW4w5VgeMHFVcbdiqfwxE1jrF9Hul02xwPEc3JqVc9L6ZN05LdpZmGSNMuH5ZSO/NWcXSbG4Lvd3iFgBsjn+BfyOavJ9OZdBvLKRy5aE4YjntTJ9pCT86Z77IJFfVL5YmCxpDkxZ4DZAyB8/P0rrIauS/Zrp7aT1XJbuspaeyMoY8BRkcEfvXVRmrJp9RjywlB1Id3UW6iAo9tMSJNFik76G6gEPFIliWWJo2GQwINLzRFq45MprKFbKxNqjfAjSKBnOPlWLvdXka7+7wkLg/HI3ZfkPc1tdcd0WOaIg7H+IA+OxBrCdQdP3F4jT6fI8c6KSgU43c9vrjzWSqep6UJWt36ydD1Fa6cjpNsPHD+pyT7EUyvVNtqQENvHIrEECQOAAf3o49O06fTohcm5jKxDc00Xq/FjsTg85qs1HT9Ks7WWaz1DE6p8Gy12ksewAxyfFN2qCtL/pd6bre64e3ugomTsR2YeDVjqMiXOn3SgNgwsCU74Ixx+tYzp3SNSR/vOpMN+zKhe4yexra6TALuVrYuyAryRjPH1oxbvUXJS/Q10Lo8tnFLNOxdo0FvGznJCg5Iz7DitfsooY44IliiUKijgCnBirxVKjFlyPJNyYkLSsUqhTEyOXow9Mg0M01C2SPUpi8uGhtmkXGe2T2HzoKaqepr0WunMACzgbwitgsc4H5Z70r4grrKJr8aVq81xez7tO1CNVZicmNhnD4HjuD+VXttbLJZ+rDIsgHxKynIYeCDWQtddt9atrm1kQC+ChZ7dR/R5dM9wP7VTW2oah0lcN/BpXvbEKWmjkfIiye3y+fioONu/pqjOlRur2GdmLQKVY98Ypi3s5XbdcZc+MgDFYp/tRcTGNrVlPfCsGxUi3+0ZpctJF6MYH45CABQcX9LxnykzW3kiW4K5HHesTq/VPp6pCtnKVjtJMzuvILNx3+X7mqLX+rrzVsi39SGzDAtIGw7jPf5Cq+122s6MGBs522lCc5J8j3HvVsWJp7MzZcqa1R33p/XBrlgbn0vSdHKOoORnAOR9c1bK9Yf7NnH8Gmi9VWGVeMA90xgH9q2GSKdrpnJe+huqLvNHvNdR1iAaOnmjVFLOwVR3JOBVFqfVOn6e6wxBrq4dgqRocZJ7DNMrfgjpel0g5qv1m3iuAnxDdlQwUjOM/8AP0rJax1Xezz+lbyIkafDiPsx8nPkeB796gW+s3NqwmbM77x6aN/VJnA/uaSSbRWPHZC6ksX04yaol08M0Uv8gCQjaQdo4Hjuao727+9ootpEttVfLSyIdsc4zyT7H/1PB8e1O9V64k0N5Lfw29yryf8ATSm5VYbiHDhW/EpHGT5z2rHW8PqQrKZ54pZA2wso9Pjk857flRgrXQyfeDtzB6MwWIKl1uyDHwP/AKHihBB99mPqRRpNHwyb/wAZ98dv0plj6GZPUEwKhpGUZG7/AE58UmGWUyrcJKEdWC7cZ2qaqTHopHti0QiMqEFlX/T8jT2mogltJGMblpB/KXvznHPYc+Ki3UgWZoLeASkjLEknHHsDikRXE01obcsfSjQ/CAADjycdzk13roD4rOn9GdU6fot5cRTQtMwJjDxSDaq53YA7HnPP6V0rTNd0vVwfu04EgGTHJgMB+9efLGJoUjCKSHjVuPfHP+KvNOmaW8iUkjYCzePp/mnljVWSjlblR3O3uLK7/wC3uYpceEcE0+YB7VyNLoxNlDgg++P71dWXVl/Z8feDIg/olG6oUaCs1vrK5vXO1yI/A7D9KzunXl1e6i8+/CQg7ccfEeP1Ayar7x3wRwPzq70W0a30xMqQZf5jfn/+VpnUY0jJiTlK2S44UzyORx9Kftwh1mwSQhT6u9c9gQpI/uKCowGQAo78+aoV1Iv1vbRq+6K1V2kP1G39/wDNQSs1SdIqdG0S41DrxNFWRkt5ZvUnH9JRfiJx78YHnmnOsbqG66uuFlt4re1th6UMQI2qqnHYfnV1D1NZaX1Gl3bWxuNTJlW4A+FUQjCoSfIIDH9M1i5bgnWjLfFGIGcIueSc9vejX6sVP80Pz3UcrrFa2rNGYgr5+AHBPb8sc1Dh026utXS3CNGzYbeT2HuTVnJcXV3DB6Fu0So8imST8J3bSBx5/wB60HSNlJeXzQ3oQmPayKn9fvn6d6LVrgVV9LnSul4GtVRYisW3lsfE/wDz3rm7osRkCL/5SoHnGSf2Fd0dkhsZZ3YBURjuHAAArjVleC3tJJUQNslAY452sODnv3GPzpscVEXNJzJUREdxFGvJSJVP1xzVpo+2WW5lHA4jU/QZrM2l28r3M8aZJzgDjFaPQmZdJjfy5LEe/NUyP8kMMXv0tGbPPPcDjtQeRUbk4IyTzz70y8xLDnG3j2qLf3TR2crDG8LgY9zwP81mNnh//9k=); /* transfer_brig */ --av-08:url(data:image/jpeg;base64,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); /* dylan_n · You */ --av-12:url(data:image/jpeg;base64,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); /* scout_mode */ --av-14:url(data:image/jpeg;base64,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); /* dons_mode */}
+@keyframes shim{to{transform:translateX(100%)}}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk [hidden]{display:none!important}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:0}
+.mk code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.94em;color:inherit}
+.mk .stg{position:relative;overflow:hidden; width:100%;height:684px;min-height:100%; background:var(--bg);}
+.mk .frame + .frame{margin-top:16px}
+.mk .host{position:absolute;inset:0;overflow:hidden; padding:34px 0 0; /* clears the status bar */}
+.mk .host--dim{opacity:.5}
+.mk .appbar{display:flex;align-items:center;gap:8px;height:48px;padding:0 8px;margin-bottom:6px}
+.mk .appbar__t{flex:1;min-width:0;margin:0;text-align:center; font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;}
+.mk .disc{position:relative;flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;border:0;border-radius:50%; background:var(--surface);color:var(--text);cursor:pointer; transition:background .16s var(--ease);}
+.mk .disc::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .disc:hover{background:#222833}
+.mk .disc svg{width:19px;height:19px}
+.mk .disc:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .disc--ghost{background:transparent}
+.mk .disc--ghost:hover{background:var(--surface)}
+.mk .top{margin:2px var(--gutter) 0}
+.mk .eyebrow{margin:0 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .title{margin:0;font-size:28px;font-weight:800;letter-spacing:-.025em;line-height:1.02;text-transform:uppercase}
+.mk .sub{margin:9px 0 0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .up{margin:20px var(--gutter) 0}
+.mk .up__head{display:flex;align-items:baseline;gap:6px;margin-bottom:5px}
+.mk .up__label{margin:0;flex:1;min-width:0;font-size:13px;font-weight:600;line-height:22px}
+.mk .req{color:var(--red);font-size:15px;line-height:1}
+.mk .up__n{flex:0 0 auto;font-size:11.5px;font-weight:700;color:var(--dim); font-variant-numeric:tabular-nums;letter-spacing:.04em;}
+.mk .up__help{margin:0 0 11px;font-size:11.5px;line-height:1.45;color:var(--muted)}
+.mk .up__help b{color:var(--text);font-weight:600}
+.mk .up__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mk .up__add{position:relative;aspect-ratio:1; display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px; border:1px dashed rgba(255,255,255,.18);border-radius:var(--r-panel); background:var(--sunken);color:var(--muted); font:inherit;font-size:9.5px;font-weight:700;letter-spacing:.10em;text-transform:uppercase; cursor:pointer;transition:border-color .16s var(--ease),color .16s var(--ease),background .16s var(--ease);}
+.mk .up__add svg{width:20px;height:20px}
+.mk .up__add:hover{border-color:var(--acid-line);color:var(--acid);background:var(--acid-wash)}
+.mk .up__add:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .thumb{position:relative;aspect-ratio:1;border-radius:var(--r-panel);overflow:hidden; background-size:cover;background-position:center 26%;background-color:var(--sunken); box-shadow:inset 0 0 0 1px var(--line);}
+.mk .thumb--bone{background-image:none}
+.mk .thumb__x{position:absolute;top:3px;right:3px; display:inline-flex;align-items:center;justify-content:center; width:22px;height:22px;border:0;border-radius:50%; background:rgba(3,4,1,.74);color:var(--text);cursor:pointer; -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px); transition:background .16s var(--ease);}
+.mk .thumb__x::after{content:"";position:absolute;inset:-11px;border-radius:50%}
+.mk .thumb__x:hover{background:var(--red);color:var(--acid-ink)}
+.mk .thumb__x svg{width:12px;height:12px}
+.mk .thumb__x:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.mk .thumb__veil{position:absolute;inset:0;display:flex;align-items:center;justify-content:center; background:rgba(3,4,1,.62);}
+.mk .thumb__pc{font-size:11px;font-weight:800;letter-spacing:-.01em;color:var(--text); font-variant-numeric:tabular-nums;}
+.mk .thumb__bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.14)}
+.mk .thumb__bar i{display:block;height:100%;background:var(--acid)}
+.mk .thumb--fail{box-shadow:inset 0 0 0 1px var(--red-line)}
+.mk .thumb--fail .thumb__veil{background:rgba(226,86,74,.30)}
+.mk .thumb__mk{display:inline-flex;color:var(--text)}
+.mk .thumb__mk svg{width:18px;height:18px}
+.mk .thumb__cap{position:absolute;left:0;right:0;bottom:0;padding:3px 5px; background:rgba(3,4,1,.76); font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase; text-align:center;}
+.mk .thumb__cap--fail{color:var(--red)}
+.mk .pick{display:flex;flex-direction:column;align-items:center;margin:14px var(--gutter) 0}
+.mk .pick__disc{position:relative;width:96px;height:96px;border-radius:50%; background-size:cover;background-position:center 22%;background-color:var(--sunken); box-shadow:inset 0 0 0 1px var(--line);}
+.mk .pick__disc--empty{display:flex;align-items:center;justify-content:center; border:1px dashed rgba(255,255,255,.18);box-shadow:none;color:var(--dim);}
+.mk .pick__disc--empty svg{width:34px;height:34px}
+.mk .pick__edit{position:absolute;right:-2px;bottom:-2px; display:inline-flex;align-items:center;justify-content:center; width:34px;height:34px;border:2px solid var(--bg);border-radius:50%; background:var(--acid);color:var(--acid-ink);cursor:pointer; transition:background .16s var(--ease);}
+.mk .pick__edit::after{content:"";position:absolute;inset:-5px;border-radius:50%}
+.mk .pick__edit:hover{background:#A8EC33}
+.mk .pick__edit svg{width:17px;height:17px}
+.mk .pick__edit:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .pick__name{margin:13px 0 0;font-size:16px;font-weight:600;letter-spacing:-.015em}
+.mk .pick__meta{margin:4px 0 0;font-size:11.5px;color:var(--muted)}
+.mk .pick__acts{display:flex;gap:8px;margin:14px 0 0}
+.mk .pill-btn{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 15px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap; transition:background .18s var(--ease);}
+.mk .pill-btn:hover{background:#222833}
+.mk .pill-btn svg{width:15px;height:15px}
+.mk .pill-btn--danger{color:var(--red)}
+.mk .pill-btn--danger:hover{background:var(--red-wash)}
+.mk .pill-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .rail{display:flex;gap:8px;margin:18px var(--gutter) 0;overflow-x:auto;padding-bottom:2px}
+.mk .rail::-webkit-scrollbar{height:0}
+.mk .rail{scrollbar-width:none}
+.mk .rail__b{position:relative;flex:0 0 auto;width:46px;height:46px;padding:0; border:0;border-radius:50%;background-size:cover;background-position:center 22%; box-shadow:inset 0 0 0 1px var(--line);cursor:pointer; transition:box-shadow .16s var(--ease);}
+.mk .rail__b::after{content:"";position:absolute;inset:0;border-radius:50%}
+.mk .rail__b:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)}
+.mk .rail__b[aria-pressed="true"]{box-shadow:0 0 0 2px var(--acid),inset 0 0 0 1px var(--acid)}
+.mk .rail__b:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .banner{display:flex;align-items:flex-start;gap:10px; margin:14px var(--gutter) 0;padding:12px; border-radius:var(--r-panel);background:var(--sunken);border:1px solid var(--line);}
+.mk .banner__icon{flex:0 0 auto;color:var(--muted);margin-top:1px}
+.mk .banner__icon svg{width:18px;height:18px}
+.mk .banner__txt{flex:1;min-width:0;font-size:12px;line-height:1.45;color:var(--muted)}
+.mk .banner__txt b{display:block;color:var(--text);font-size:12.5px;font-weight:600;margin-bottom:2px}
+.mk .banner--warn{background:var(--red-wash);border-color:var(--red-line)}
+.mk .banner--warn .banner__icon{color:var(--red)}
+.mk .banner--warn .banner__txt{color:#D9BDB9}
+.mk .banner--warn .banner__txt b{color:var(--text)}
+.mk .btn{position:relative;flex:1 1 0;min-width:0; display:inline-flex;align-items:center;justify-content:center;gap:8px; height:46px;padding:0 14px;border:0;border-radius:var(--r-pill); font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em; cursor:pointer;white-space:nowrap; transition:background .18s var(--ease),opacity .18s var(--ease);}
+.mk .btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .btn--acid:hover{background:#A8EC33}
+.mk .btn--danger{background:var(--red);color:var(--acid-ink)}
+.mk .btn--danger:hover{background:#E9675C}
+.mk .btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .btn--ghost:hover{background:#181D25}
+.mk .btn--wide{width:100%;flex:0 0 auto}
+.mk .btn[disabled]{opacity:.42;pointer-events:none}
+.mk .btn svg{width:18px;height:18px}
+.mk .btn__n{display:inline-flex;align-items:center;justify-content:center; min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill); background:rgba(11,14,6,.16);font-size:12px;font-variant-numeric:tabular-nums;}
+.mk .btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .sheet{position:relative;z-index:1; display:flex;flex-direction:column; width:100%;max-height:min(var(--sheet-vh),var(--sheet-max)); border:1px solid var(--line);border-bottom:0; border-radius:var(--r-sheet) var(--r-sheet) 0 0; background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%); box-shadow:0 -20px 50px rgba(0,0,0,.6); overflow:hidden;}
+.mk .sheet:focus{outline:none}
+.mk .sheet:focus-visible{outline:2px solid var(--acid);outline-offset:-3px}
+.mk .sheet__grab{flex:0 0 auto;display:flex;align-items:center;justify-content:center; height:26px;width:100%;padding:0;margin:0;border:0;background:transparent; cursor:grab;touch-action:none;}
+.mk .sheet__grab::before{content:"";width:var(--grab-w);height:var(--grab-h);border-radius:var(--r-pill); background:rgba(255,255,255,.18);transition:background .16s var(--ease);}
+.mk .sheet__grab:hover::before{background:rgba(255,255,255,.30)}
+.mk .sheet__grab:focus-visible{outline:2px solid var(--acid);outline-offset:-4px;border-radius:var(--r-sheet) var(--r-sheet) 0 0}
+.mk .sheet.is-dragging{transition:none}
+.mk .sheet.is-dragging .sheet__grab{cursor:grabbing}
+.mk .sheet__head{flex:0 0 auto;display:flex;align-items:center;gap:9px; padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);}
+.mk .sheet__title{margin:0;flex:1;min-width:0; font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--text);}
+.mk .sheet__n{flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px; border-radius:var(--r-pill);background:var(--acid-wash);color:var(--acid); font-size:10.5px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;}
+.mk .sheet__clear{flex:0 0 auto;position:relative;border:0;background:transparent;padding:4px 2px;margin:0; color:var(--muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer; transition:color .16s var(--ease);}
+.mk .sheet__clear::after{content:"";position:absolute;inset:-11px -6px}
+.mk .sheet__clear:hover{color:var(--text)}
+.mk .sheet__clear[disabled]{color:var(--dim);cursor:default}
+.mk .sheet__x{flex:0 0 auto;position:relative; display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;margin-right:-4px; border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted); cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);}
+.mk .sheet__x::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.mk .sheet__x:hover{background:rgba(255,255,255,.11);color:var(--text)}
+.mk .sheet__x svg{width:16px;height:16px}
+.mk .sheet__x:focus-visible,.mk .sheet__clear:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .sheet__body::-webkit-scrollbar{width:0;height:0}
+.mk .sheet__body{scrollbar-width:none}
+.mk .sheet__body{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch; overscroll-behavior:contain;padding:12px var(--gutter);}
+.mk .sheet__body--last{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+.mk .sheet__lede{margin:0 0 12px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .sheet__grp{margin:16px 0 8px;font-size:10px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .sheet__body > .sheet__grp:first-child{margin-top:0}
+.mk .sheet__foot{flex:0 0 auto;padding:12px var(--gutter); padding-bottom:calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line);background:var(--sunken);}
+.mk .sheet__foot--pair{display:flex;gap:10px}
+.mk .sheet__foot .sheet__fine{margin:9px 0 0;font-size:11px;line-height:1.4;color:var(--dim);text-align:center;}
+.mk .acts{margin:0;padding:0;list-style:none;overflow:hidden; border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);}
+.mk .acts li + li{border-top:1px solid var(--line-soft)}
+.mk .act{display:flex;align-items:center;gap:13px;width:100%;min-height:54px;padding:0 14px; border:0;background:transparent;color:var(--text); font:inherit;font-size:14.5px;font-weight:500;text-align:left;cursor:pointer; transition:background .16s var(--ease);}
+.mk .act:hover{background:rgba(255,255,255,.045)}
+.mk .act > svg{width:20px;height:20px;flex:0 0 auto;color:var(--muted)}
+.mk .act small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--dim)}
+.mk .act__t{flex:1;min-width:0}
+.mk .act--danger{color:var(--red)}
+.mk .act--danger > svg{color:var(--red)}
+.mk .act--danger:hover{background:var(--red-wash)}
+.mk .act[disabled]{color:var(--dim);cursor:default;pointer-events:none}
+.mk .act[disabled] > svg{color:var(--dim)}
+.mk .act:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.mk .opt{display:flex;align-items:center;gap:12px;width:100%; min-height:var(--h-row);padding:11px 14px; border:1px solid var(--line);border-radius:var(--r-panel); background-color:var(--sunken);background-image:none; color:var(--text);font:inherit;font-size:13.5px;font-weight:500; text-align:left;cursor:pointer; transition:background-color .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);}
+.mk .opt + .opt{margin-top:8px}
+.mk .opt:hover{border-color:rgba(255,255,255,.14)}
+.mk .opt__text{flex:1;min-width:0}
+.mk .opt__text small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.mk .opt[aria-checked="true"]{background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash)); border-color:var(--acid-line);color:var(--acid);font-weight:600;}
+.mk .opt[aria-checked="true"] .opt__text small{color:rgba(155,226,34,.72)}
+.mk .opt:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .check{position:relative;flex:0 0 auto;width:20px;height:20px;border-radius:6px; background:var(--surface);box-shadow:inset 0 0 0 1px var(--line); transition:background .16s var(--ease),box-shadow .16s var(--ease);}
+.mk .check svg{position:absolute;inset:0;width:20px;height:20px;opacity:0;color:var(--acid-ink);transition:opacity .14s var(--ease)}
+.mk .opt[aria-checked="true"] .check{background:var(--acid);box-shadow:none}
+.mk .opt[aria-checked="true"] .check svg{opacity:1}
+.mk .ctl{display:flex;align-items:center;gap:10px;height:var(--h-field);padding:0 14px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--surface);color:var(--text);}
+.mk .ctl__icon{flex:0 0 auto;width:19px;height:19px;color:var(--muted)}
+.mk .ctl__in{flex:1;min-width:0;height:100%;border:0;background:transparent;color:inherit; font:inherit;font-size:16px;padding:0;margin:0;outline:none;}
+.mk .ctl__in::placeholder{color:var(--dim);opacity:1}
+.mk .ctl__in::-webkit-search-cancel-button{display:none}
+.mk .ctl--stick{position:sticky;top:0;z-index:2;margin:-12px calc(-1 * var(--gutter)) 12px; padding:12px var(--gutter);height:auto; border:0;border-bottom:1px solid var(--line-soft);border-radius:0;background:#181D25;}
+.mk .ctl--stick .ctl__box{display:flex;align-items:center;gap:10px;width:100%;height:44px;padding:0 12px; border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken); transition:border-color .16s var(--ease),box-shadow .16s var(--ease);}
+.mk .ctl--stick:focus-within .ctl__box{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.mk .sel{display:flex;align-items:center;gap:10px;width:100%;height:var(--h-field);padding:0 14px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--surface);color:var(--text); font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer; transition:border-color .16s var(--ease);}
+.mk .sel:hover{border-color:rgba(255,255,255,.14)}
+.mk .sel__v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk .sel__v.is-empty{color:var(--dim)}
+.mk .sel > svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted)}
+.mk .sel:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .selwrap{margin:20px var(--gutter) 0}
+.mk .selwrap .up__head{margin-bottom:7px}
+.mk .dlg{position:relative; width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max); margin:0 auto;padding:var(--dlg-pad); border-radius:var(--r-card);background:var(--surface);border:1px solid var(--line); box-shadow:0 24px 60px rgba(0,0,0,.55);}
+.mk .dlg__close{position:absolute;top:12px;right:12px; display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;border-radius:50%; background:var(--sunken);border:1px solid var(--line-soft);color:var(--muted); cursor:pointer;transition:color .18s var(--ease),background .18s var(--ease);}
+.mk .dlg__close::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.mk .dlg__close svg{width:15px;height:15px}
+.mk .dlg__close:hover{color:var(--text);background:#1A1F27}
+.mk .dlg__close:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .dlg__title{margin:14px 0 0;padding-right:26px;font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.2}
+.mk .dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .dlg__body b{color:var(--text);font-weight:600}
+.mk .dlg__act{display:flex;gap:10px;margin-top:18px}
+.mk .dlg__act--single .btn{width:100%}
+.mk .prev{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.mk .prev__i{position:relative;aspect-ratio:1;border-radius:var(--r-panel);overflow:hidden; background-size:cover;background-position:center 26%;background-color:var(--sunken); box-shadow:inset 0 0 0 1px var(--line);}
+.mk .prev__i--more{display:flex;align-items:center;justify-content:center;background-image:none; font-size:16px;font-weight:800;letter-spacing:-.02em;color:var(--muted); font-variant-numeric:tabular-nums;}
+.mk .prev__sz{position:absolute;left:0;right:0;bottom:0;padding:3px 6px; background:rgba(3,4,1,.76); font-size:9px;font-weight:700;letter-spacing:.06em;text-align:center; font-variant-numeric:tabular-nums;color:rgba(255,255,255,.86);}
+.mk .prev__sz.is-bad{color:var(--red)}
+.mk .prev__i--out{box-shadow:inset 0 0 0 1px var(--red-line);opacity:.72}
+.mk .tile{display:inline-flex;align-items:center;justify-content:center; width:44px;height:44px;border-radius:var(--r-panel);flex:0 0 auto;}
+.mk .tile svg{width:22px;height:22px}
+.mk .tile--acid{background:var(--acid-wash);color:var(--acid)}
+.mk .tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.mk .tile--warn{background:var(--neutral-wash);color:var(--red)}
+.mk .tile--neutral{background:var(--neutral-wash);color:var(--text)}
+.mk .perm{display:flex;align-items:center;justify-content:center;gap:10px;margin:16px 0 0}
+.mk .perm__b{flex:0 0 auto;width:64px;aspect-ratio:3 / 4;border-radius:10px; background-size:cover;background-position:center 26%; box-shadow:inset 0 0 0 1px var(--line);}
+.mk .perm__b--live{display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px; background-image:none;background-color:var(--sunken);color:var(--acid); box-shadow:inset 0 0 0 1px var(--acid-line);}
+.mk .perm__b--live svg{width:22px;height:22px}
+.mk .perm__arrow{flex:0 0 auto;color:var(--dim)}
+.mk .perm__arrow svg{width:20px;height:20px}
+.mk .toaster{position:absolute;left:0;right:0;bottom:0;z-index:6; display:flex;flex-direction:column;gap:8px; padding:0 var(--gutter) calc(16px + env(safe-area-inset-bottom,0px));}
+.mk .toast{display:flex;align-items:center;gap:11px;padding:9px 10px 9px 12px;min-height:52px; border-radius:var(--r-card);background:var(--surface); border:1px solid var(--line);box-shadow:0 14px 34px rgba(0,0,0,.5);}
+.mk .toast::before{content:"";flex:0 0 auto;width:3px;height:22px;border-radius:2px;background:var(--mark-color,var(--acid))}
+.mk .toast__icon{display:inline-flex;flex:0 0 auto;color:var(--mark-color,var(--acid))}
+.mk .toast__icon svg{width:19px;height:19px}
+.mk .toast__msg{flex:1;min-width:0;font-size:13px;font-weight:500;line-height:1.35}
+.mk .toast__msg small{display:block;margin-top:3px;font-size:11.5px;font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk .toast__act{flex:0 0 auto;height:32px;padding:0 12px;border:0;border-radius:var(--r-pill); background:var(--acid-wash);color:var(--acid); font:inherit;font-size:12.5px;font-weight:700;cursor:pointer; transition:background .18s var(--ease);}
+.mk .toast__act:hover{background:rgba(155,226,34,.2)}
+.mk .toast__act:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .toast--error{--mark-color:var(--red)}
+.mk .toast--error .toast__act{background:var(--red-wash);color:var(--red)}
+.mk .track{display:block;margin-top:7px;height:3px;border-radius:2px;overflow:hidden; background:rgba(255,255,255,.10);}
+.mk .track__fill{display:block;height:100%;border-radius:2px;background:var(--acid)}
+.mk .bone{position:relative;overflow:hidden;background:var(--bone)}
+.mk .bone::after{content:"";position:absolute;inset:0;transform:translateX(-100%); background:linear-gradient(90deg,transparent,var(--sheen),transparent); animation:shim 1.35s var(--ease) infinite;}
+.mk .ring{display:inline-flex;color:var(--acid)}
+.mk .ring svg{display:block}
+.mk .ovl{position:absolute;inset:0;z-index:5;display:flex;justify-content:center}
+.mk .ovl--bottom{align-items:flex-end}
+.mk .ovl--centre{align-items:center}
+.mk .ovl__sheet{width:100%;max-width:420px;position:relative;z-index:1}
+.mk .scrim{position:absolute;inset:0;background:var(--scrim); -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9); backdrop-filter:blur(var(--scrim-blur)) saturate(.9);}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .mk .scrim{background:rgba(3,4,1,.86)}
+}
+.mk .layer{position:fixed;inset:0;z-index:60;display:none;align-items:flex-end;justify-content:center}
+.mk .layer.is-open{display:flex}
+.mk .layer .scrim{opacity:0;transition:opacity .22s var(--ease)}
+.mk .layer.is-in .scrim{opacity:1}
+.mk .layer .sheet{max-width:420px;transform:translateY(101%); transition:transform .32s var(--ease);will-change:transform; max-height:min(var(--sheet-vh),var(--sheet-max),calc(100% - 24px - env(safe-area-inset-top,0px)));}
+.mk .layer.is-in .sheet{transform:translateY(0)}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+  .mk .bone::after{animation:none!important;opacity:0}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Upload &amp; pickers</h1>
+    <p class="dek">Every surface that puts a photo into SportsHeist — the profile-picture picker, the match-photo
+field, the upload confirmation, and the multi-select list that shares the same shell. Three of these
+sheets exist in the shipped app and are captured nowhere: the coverage audit lists the avatar picker
+as “Not captured” and the multi-select sheet as unused.</p>
+    <div class="meta">
+      <span><b>Component</b> upload</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 9</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">The field<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Source sheet<span class="side__tag">02</span></a></li>
+      <li><a class="side__item" href="#scr-3">Camera permission<span class="side__tag">03</span></a></li>
+      <li><a class="side__item" href="#scr-4">Confirm upload<span class="side__tag">04</span></a></li>
+      <li><a class="side__item" href="#scr-5">Uploading<span class="side__tag">05</span></a></li>
+      <li><a class="side__item" href="#scr-6">Upload failed<span class="side__tag">06</span></a></li>
+      <li><a class="side__item" href="#scr-7">Too big, wrong type<span class="side__tag">07</span></a></li>
+      <li><a class="side__item" href="#scr-8">Multi-select sheet<span class="side__tag">08</span></a></li>
+      <li><a class="side__item" href="#scr-9">Picture set<span class="side__tag">09</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><span class="side__item" aria-current="page">Upload &amp; pickers<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">The sheet behind every plus button</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">9 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>The field</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="stg">
+    <div class="host">
+      <div class="appbar">
+        <button class="disc disc--ghost" type="button" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+        </button>
+        <h1 class="appbar__t">Your picture</h1>
+        <span style="width:38px"></span>
+      </div>
+
+      <header class="top">
+        <p class="eyebrow">Step 4 of 6</p>
+        <h2 class="title">Put a face<br>to the vote</h2>
+        <p class="sub">Members recognise you by this in every locker room and on every
+          leaderboard. You can change it whenever you like.</p>
+      </header>
+
+      <div class="pick">
+        <div class="pick__disc pick__disc--empty" role="img" aria-label="No picture chosen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="3.6"/><path d="M4.6 20a7.4 7.4 0 0 1 14.8 0"/></svg>
+          <button class="pick__edit" type="button" data-open="source" aria-haspopup="dialog" aria-label="Choose a picture">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg>
+          </button>
+        </div>
+        <p class="pick__name">dylan_n</p>
+        <p class="pick__meta">Barcelona · joined today</p>
+      </div>
+
+      <div class="up">
+        <div class="up__head">
+          <p class="up__label">Match photos <span class="req" aria-hidden="true">*</span></p>
+          <span class="up__n">0 / 6</span>
+        </div>
+        <p class="up__help">Up to six photos. Whoever is in them has to be happy to be there.</p>
+        <div class="up__grid">
+          <button class="up__add" type="button" data-open="source" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5v11M6.5 12h11"/></svg>
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the + on the avatar disc or the Add tile in frames
+     01 and 09.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a photo" data-pane="source" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Add a photo</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.2l1.1-1.9A1.5 1.5 0 0 1 9.6 4.3h4.8a1.5 1.5 0 0 1 1.3.8L16.8 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg>
+          <span class="act__t">Take a photo<small>Opens the camera</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 15.6l4.4-4 3.4 3.1 3.1-3.4 6.1 5.5"/><circle cx="15.6" cy="9" r="1.4"/></svg>
+          <span class="act__t">Choose one photo<small>From your library</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7.5" y="3.5" width="13" height="13" rx="1.8"/><path d="M7.5 12.4l3.4-3 2.6 2.4 2.4-2.6 4.6 4.2"/><path d="M16.5 20.5H5.3A1.8 1.8 0 0 1 3.5 18.7V7.5"/></svg>
+          <span class="act__t">Choose several<small>Up to 6 at a time</small></span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+          <span class="act__t">Remove current picture</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Source sheet</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="stg">
+    <div class="host host--dim" aria-hidden="true">
+      <div class="appbar">
+        <span class="disc disc--ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+        </span>
+        <h2 class="appbar__t">Your picture</h2>
+        <span style="width:38px"></span>
+      </div>
+      <div class="pick">
+        <div class="pick__disc pick__disc--empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="3.6"/><path d="M4.6 20a7.4 7.4 0 0 1 14.8 0"/></svg>
+        </div>
+        <p class="pick__name">dylan_n</p>
+      </div>
+    </div>
+
+    <div class="ovl ovl--bottom">
+      <span class="scrim" aria-hidden="true"></span>
+      <div class="ovl__sheet">
+        <section class="sheet" role="group" aria-label="Add a photo, specimen">
+          <div class="sheet__grab" aria-hidden="true"></div>
+          <div class="sheet__head">
+            <h3 class="sheet__title">Add a photo</h3>
+            <button class="sheet__x" type="button" aria-label="Close">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </div>
+          <div class="sheet__body sheet__body--last">
+            <ul class="acts">
+              <li><button class="act" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.2l1.1-1.9A1.5 1.5 0 0 1 9.6 4.3h4.8a1.5 1.5 0 0 1 1.3.8L16.8 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg>
+                <span class="act__t">Take a photo<small>Opens the camera</small></span></button></li>
+              <li><button class="act" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 15.6l4.4-4 3.4 3.1 3.1-3.4 6.1 5.5"/><circle cx="15.6" cy="9" r="1.4"/></svg>
+                <span class="act__t">Choose one photo<small>From your library</small></span></button></li>
+              <li><button class="act" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7.5" y="3.5" width="13" height="13" rx="1.8"/><path d="M7.5 12.4l3.4-3 2.6 2.4 2.4-2.6 4.6 4.2"/><path d="M16.5 20.5H5.3A1.8 1.8 0 0 1 3.5 18.7V7.5"/></svg>
+                <span class="act__t">Choose several<small>Up to 6 at a time · 6 slots free</small></span></button></li>
+              <li><button class="act act--danger" type="button" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+                <span class="act__t">Remove current picture<small>Nothing to remove yet</small></span></button></li>
+            </ul>
+            <div style="margin-top:10px">
+              <button class="btn btn--ghost btn--wide" type="button">Cancel</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the + on the avatar disc or the Add tile in frames
+     01 and 09.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a photo" data-pane="source" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Add a photo</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.2l1.1-1.9A1.5 1.5 0 0 1 9.6 4.3h4.8a1.5 1.5 0 0 1 1.3.8L16.8 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg>
+          <span class="act__t">Take a photo<small>Opens the camera</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 15.6l4.4-4 3.4 3.1 3.1-3.4 6.1 5.5"/><circle cx="15.6" cy="9" r="1.4"/></svg>
+          <span class="act__t">Choose one photo<small>From your library</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7.5" y="3.5" width="13" height="13" rx="1.8"/><path d="M7.5 12.4l3.4-3 2.6 2.4 2.4-2.6 4.6 4.2"/><path d="M16.5 20.5H5.3A1.8 1.8 0 0 1 3.5 18.7V7.5"/></svg>
+          <span class="act__t">Choose several<small>Up to 6 at a time</small></span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+          <span class="act__t">Remove current picture</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-3">
+        <figcaption class="scr__cap"><span class="scr__n">03</span>Camera permission</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="stg">
+    <div class="host host--dim" aria-hidden="true">
+      <div class="appbar">
+        <span class="disc disc--ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+        </span>
+        <h2 class="appbar__t">Your picture</h2>
+        <span style="width:38px"></span>
+      </div>
+    </div>
+
+    <div class="ovl ovl--centre">
+      <span class="scrim" aria-hidden="true"></span>
+      <div style="position:relative;z-index:1;width:100%">
+        <div class="dlg" role="group" aria-label="Use the camera, specimen">
+          <button class="dlg__close" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+          </button>
+          <span class="tile tile--acid" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.2l1.1-1.9A1.5 1.5 0 0 1 9.6 4.3h4.8a1.5 1.5 0 0 1 1.3.8L16.8 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg>
+          </span>
+          <h3 class="dlg__title">Use the camera?</h3>
+          <p class="dlg__body">iOS will ask next. SportsHeist uses the camera only when you
+            press <b>Take a photo</b> — never in the background, and it does not touch your
+            library unless you pick from it.</p>
+          <div class="perm" aria-hidden="true">
+            <span class="perm__b" style="background-image:var(--av-08)"></span>
+            <span class="perm__arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12h13M17.5 12l-4-4M17.5 12l-4 4"/></svg>
+            </span>
+            <span class="perm__b perm__b--live">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5"/></svg>
+            </span>
+          </div>
+          <div class="dlg__act">
+            <button class="btn btn--ghost" type="button">Not now</button>
+            <button class="btn btn--acid" type="button">Use camera</button>
+          </div>
+        </div>
+
+        <div class="banner banner--warn" style="max-width:340px;margin-left:auto;margin-right:auto">
+          <span class="banner__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+          </span>
+          <span class="banner__txt">
+            <b>If they say no</b>
+            The camera row stays in the sheet but reads <em>Camera access is off</em> and takes
+            them to Settings. It is never removed — a missing row looks like a bug.
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the + on the avatar disc or the Add tile in frames
+     01 and 09.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a photo" data-pane="source" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Add a photo</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.2l1.1-1.9A1.5 1.5 0 0 1 9.6 4.3h4.8a1.5 1.5 0 0 1 1.3.8L16.8 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg>
+          <span class="act__t">Take a photo<small>Opens the camera</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 15.6l4.4-4 3.4 3.1 3.1-3.4 6.1 5.5"/><circle cx="15.6" cy="9" r="1.4"/></svg>
+          <span class="act__t">Choose one photo<small>From your library</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7.5" y="3.5" width="13" height="13" rx="1.8"/><path d="M7.5 12.4l3.4-3 2.6 2.4 2.4-2.6 4.6 4.2"/><path d="M16.5 20.5H5.3A1.8 1.8 0 0 1 3.5 18.7V7.5"/></svg>
+          <span class="act__t">Choose several<small>Up to 6 at a time</small></span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+          <span class="act__t">Remove current picture</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-4">
+        <figcaption class="scr__cap"><span class="scr__n">04</span>Confirm upload</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="stg">
+    <div class="host host--dim" aria-hidden="true">
+      <div class="appbar">
+        <span class="disc disc--ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+        </span>
+        <h2 class="appbar__t">Locker room</h2>
+        <span style="width:38px"></span>
+      </div>
+    </div>
+
+    <div class="ovl ovl--centre">
+      <span class="scrim" aria-hidden="true"></span>
+      <div style="position:relative;z-index:1;width:100%">
+        <div class="dlg" role="group" aria-label="Upload four photos, specimen">
+          <button class="dlg__close" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+          </button>
+          <span class="tile tile--neutral" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+          </span>
+          <h3 class="dlg__title">Upload 4 photos?</h3>
+          <p class="dlg__body">They go straight to <b>Post-Match Breakdown</b>, where every
+            member of the room can see them. <b>8.1 MB</b> in total.</p>
+          <div class="prev" aria-hidden="true">
+            <span class="prev__i" style="background-image:var(--av-01)"><span class="prev__sz">2.4 MB</span></span>
+            <span class="prev__i" style="background-image:var(--av-02)"><span class="prev__sz">1.9 MB</span></span>
+            <span class="prev__i" style="background-image:var(--av-12)"><span class="prev__sz">2.2 MB</span></span>
+            <span class="prev__i prev__i--more">+1</span>
+          </div>
+          <div class="dlg__act">
+            <button class="btn btn--ghost" type="button">Cancel</button>
+            <button class="btn btn--acid" type="button">Upload 4</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the + on the avatar disc or the Add tile in frames
+     01 and 09.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a photo" data-pane="source" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Add a photo</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.2l1.1-1.9A1.5 1.5 0 0 1 9.6 4.3h4.8a1.5 1.5 0 0 1 1.3.8L16.8 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg>
+          <span class="act__t">Take a photo<small>Opens the camera</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 15.6l4.4-4 3.4 3.1 3.1-3.4 6.1 5.5"/><circle cx="15.6" cy="9" r="1.4"/></svg>
+          <span class="act__t">Choose one photo<small>From your library</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7.5" y="3.5" width="13" height="13" rx="1.8"/><path d="M7.5 12.4l3.4-3 2.6 2.4 2.4-2.6 4.6 4.2"/><path d="M16.5 20.5H5.3A1.8 1.8 0 0 1 3.5 18.7V7.5"/></svg>
+          <span class="act__t">Choose several<small>Up to 6 at a time</small></span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+          <span class="act__t">Remove current picture</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-5">
+        <figcaption class="scr__cap"><span class="scr__n">05</span>Uploading</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="stg">
+    <div class="host">
+      <div class="appbar">
+        <button class="disc disc--ghost" type="button" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+        </button>
+        <h2 class="appbar__t">Locker room</h2>
+        <span style="width:38px"></span>
+      </div>
+
+      <div class="up">
+        <div class="up__head">
+          <p class="up__label">Match photos <span class="req" aria-hidden="true">*</span></p>
+          <span class="up__n">3 / 6</span>
+        </div>
+        <p class="up__help"><b>Uploading 4 of 4.</b> You can leave this screen — the uploads
+          carry on.</p>
+        <div class="up__grid">
+          <span class="thumb" style="background-image:var(--av-01)" role="img" aria-label="Photo 1, uploaded">
+            <button class="thumb__x" type="button" aria-label="Remove photo 1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </span>
+          <span class="thumb" style="background-image:var(--av-02)" role="img" aria-label="Photo 2, uploaded">
+            <button class="thumb__x" type="button" aria-label="Remove photo 2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </span>
+          <span class="thumb" style="background-image:var(--av-12)" role="img" aria-label="Photo 3, uploaded">
+            <button class="thumb__x" type="button" aria-label="Remove photo 3">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </span>
+          <span class="thumb" style="background-image:var(--av-03)" role="img" aria-label="Photo 4, uploading, 46 percent">
+            <span class="thumb__veil"><b class="thumb__pc">46%</b></span>
+            <span class="thumb__bar" aria-hidden="true"><i style="width:46%"></i></span>
+          </span>
+        </div>
+      </div>
+
+      <div class="banner">
+        <span class="banner__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8.2h.01M12 11.4v4.6"/></svg>
+        </span>
+        <span class="banner__txt">
+          <b>What ships today</b>
+          One indefinite snackbar reading <code>Đang tải ảnh lên...</code> for the whole batch.
+          No count, no percentage, no cancel, and the thumbnails appear one at a time with no
+          placeholder, so the grid reflows under your thumb.
+        </span>
+      </div>
+    </div>
+
+    <div class="toaster">
+      <div class="toast" role="status" aria-live="polite">
+        <span class="toast__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+        </span>
+        <span class="toast__msg">Uploading photo 4 of 4
+          <small>6.2 MB of 8.1 MB · 76%</small>
+          <span class="track" aria-hidden="true"><span class="track__fill" style="width:76%"></span></span>
+        </span>
+        <button class="toast__act" type="button">Stop</button>
+      </div>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the + on the avatar disc or the Add tile in frames
+     01 and 09.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a photo" data-pane="source" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Add a photo</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.2l1.1-1.9A1.5 1.5 0 0 1 9.6 4.3h4.8a1.5 1.5 0 0 1 1.3.8L16.8 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg>
+          <span class="act__t">Take a photo<small>Opens the camera</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 15.6l4.4-4 3.4 3.1 3.1-3.4 6.1 5.5"/><circle cx="15.6" cy="9" r="1.4"/></svg>
+          <span class="act__t">Choose one photo<small>From your library</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7.5" y="3.5" width="13" height="13" rx="1.8"/><path d="M7.5 12.4l3.4-3 2.6 2.4 2.4-2.6 4.6 4.2"/><path d="M16.5 20.5H5.3A1.8 1.8 0 0 1 3.5 18.7V7.5"/></svg>
+          <span class="act__t">Choose several<small>Up to 6 at a time</small></span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+          <span class="act__t">Remove current picture</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-6">
+        <figcaption class="scr__cap"><span class="scr__n">06</span>Upload failed</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="stg">
+    <div class="host">
+      <div class="appbar">
+        <button class="disc disc--ghost" type="button" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+        </button>
+        <h2 class="appbar__t">Locker room</h2>
+        <span style="width:38px"></span>
+      </div>
+
+      <div class="up">
+        <div class="up__head">
+          <p class="up__label">Match photos <span class="req" aria-hidden="true">*</span></p>
+          <span class="up__n">3 / 6</span>
+        </div>
+        <p class="up__help"><b>1 of 4 didn’t upload.</b> The other three are safe.</p>
+        <div class="up__grid">
+          <span class="thumb" style="background-image:var(--av-01)" role="img" aria-label="Photo 1, uploaded">
+            <button class="thumb__x" type="button" aria-label="Remove photo 1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </span>
+          <span class="thumb" style="background-image:var(--av-02)" role="img" aria-label="Photo 2, uploaded">
+            <button class="thumb__x" type="button" aria-label="Remove photo 2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </span>
+          <span class="thumb" style="background-image:var(--av-12)" role="img" aria-label="Photo 3, uploaded">
+            <button class="thumb__x" type="button" aria-label="Remove photo 3">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </span>
+          <button class="thumb thumb--fail" type="button" style="background-image:var(--av-03)"
+                  aria-label="Photo 4 failed to upload. Tap to try again.">
+            <span class="thumb__veil"><span class="thumb__mk">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.6v3.6h-3.6"/></svg>
+            </span></span>
+            <span class="thumb__cap thumb__cap--fail">Retry</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="banner banner--warn">
+        <span class="banner__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/></svg>
+        </span>
+        <span class="banner__txt">
+          <b>Photo 4 timed out</b>
+          The request gave up after 20 seconds. Tap the tile to try it again, or remove it and
+          carry on with three.
+        </span>
+      </div>
+    </div>
+
+    <div class="toaster">
+      <div class="toast toast--error" role="alert">
+        <span class="toast__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/></svg>
+        </span>
+        <span class="toast__msg">1 photo didn’t upload<small>Request timed out · 408</small></span>
+        <button class="toast__act" type="button">Try again</button>
+      </div>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the + on the avatar disc or the Add tile in frames
+     01 and 09.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a photo" data-pane="source" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Add a photo</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.2l1.1-1.9A1.5 1.5 0 0 1 9.6 4.3h4.8a1.5 1.5 0 0 1 1.3.8L16.8 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg>
+          <span class="act__t">Take a photo<small>Opens the camera</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 15.6l4.4-4 3.4 3.1 3.1-3.4 6.1 5.5"/><circle cx="15.6" cy="9" r="1.4"/></svg>
+          <span class="act__t">Choose one photo<small>From your library</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7.5" y="3.5" width="13" height="13" rx="1.8"/><path d="M7.5 12.4l3.4-3 2.6 2.4 2.4-2.6 4.6 4.2"/><path d="M16.5 20.5H5.3A1.8 1.8 0 0 1 3.5 18.7V7.5"/></svg>
+          <span class="act__t">Choose several<small>Up to 6 at a time</small></span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+          <span class="act__t">Remove current picture</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-7">
+        <figcaption class="scr__cap"><span class="scr__n">07</span>Too big, wrong type</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="stg">
+    <div class="host host--dim" aria-hidden="true">
+      <div class="appbar">
+        <span class="disc disc--ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+        </span>
+        <h2 class="appbar__t">Locker room</h2>
+        <span style="width:38px"></span>
+      </div>
+    </div>
+
+    <div class="ovl ovl--centre">
+      <span class="scrim" aria-hidden="true"></span>
+      <div style="position:relative;z-index:1;width:100%">
+        <div class="dlg" role="group" aria-label="Two files were left out, specimen">
+          <button class="dlg__close" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+          </button>
+          <span class="tile tile--warn" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+          </span>
+          <h3 class="dlg__title">2 files were left out</h3>
+          <p class="dlg__body">The other two are ready to upload. Nothing has been sent yet.</p>
+          <div class="prev" aria-hidden="true">
+            <span class="prev__i prev__i--out" style="background-image:var(--av-14)"><span class="prev__sz is-bad">9.4 MB</span></span>
+            <span class="prev__i prev__i--more prev__i--out" style="font-size:11px;letter-spacing:.06em">HEIC</span>
+          </div>
+          <p class="dlg__body" style="margin-top:12px">
+            <b>tunnel_walk.heic</b> is 9.4 MB — the ceiling is <b>7.5 MB</b>.<br>
+            <b>teamsheet.heic</b> is a format we can’t read. Send <b>JPG</b> or <b>PNG</b>.
+          </p>
+          <div class="dlg__act">
+            <button class="btn btn--ghost" type="button">Pick again</button>
+            <button class="btn btn--acid" type="button">Upload 2</button>
+          </div>
+        </div>
+
+        <div class="banner banner--warn" style="max-width:340px;margin-left:auto;margin-right:auto">
+          <span class="banner__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8.2h.01M12 11.4v4.6"/></svg>
+          </span>
+          <span class="banner__txt">
+            <b>This screen is a proposal, not a capture</b>
+            <code>upload.dart</code> validates nothing — no size, no format, no dimensions, no
+            compression. The <code>7.5 MB</code> and <code>JPG / PNG / PDF</code> limits belong
+            to the GBG vendor page (<code>CA-15</code>), not to this widget. Both numbers need
+            confirming against the upload endpoint before build.
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the + on the avatar disc or the Add tile in frames
+     01 and 09.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a photo" data-pane="source" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Add a photo</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.2l1.1-1.9A1.5 1.5 0 0 1 9.6 4.3h4.8a1.5 1.5 0 0 1 1.3.8L16.8 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg>
+          <span class="act__t">Take a photo<small>Opens the camera</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 15.6l4.4-4 3.4 3.1 3.1-3.4 6.1 5.5"/><circle cx="15.6" cy="9" r="1.4"/></svg>
+          <span class="act__t">Choose one photo<small>From your library</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7.5" y="3.5" width="13" height="13" rx="1.8"/><path d="M7.5 12.4l3.4-3 2.6 2.4 2.4-2.6 4.6 4.2"/><path d="M16.5 20.5H5.3A1.8 1.8 0 0 1 3.5 18.7V7.5"/></svg>
+          <span class="act__t">Choose several<small>Up to 6 at a time</small></span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+          <span class="act__t">Remove current picture</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-8">
+        <figcaption class="scr__cap"><span class="scr__n">08</span>Multi-select sheet</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="stg">
+    <div class="host host--dim" aria-hidden="true">
+      <div class="appbar">
+        <span class="disc disc--ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+        </span>
+        <h2 class="appbar__t">Your details</h2>
+        <span style="width:38px"></span>
+      </div>
+      <div class="selwrap">
+        <div class="up__head">
+          <p class="up__label">Sports you follow</p>
+        </div>
+        <span class="sel">
+          <span class="sel__v">Football, Basketball, Cricket</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </span>
+      </div>
+    </div>
+
+    <div class="ovl ovl--bottom">
+      <span class="scrim" aria-hidden="true"></span>
+      <div class="ovl__sheet">
+        <section class="sheet" role="group" aria-label="Sports you follow, specimen">
+          <div class="sheet__grab" aria-hidden="true"></div>
+          <div class="sheet__head">
+            <h3 class="sheet__title">Sports you follow</h3>
+            <span class="sheet__n">3 on</span>
+            <button class="sheet__clear" type="button">Clear all</button>
+            <button class="sheet__x" type="button" aria-label="Close">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </div>
+          <div class="sheet__body" style="max-height:296px">
+            <div class="ctl ctl--stick">
+              <span class="ctl__box">
+                <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.6"/><path d="M16 16l4.2 4.2"/></svg>
+                <input class="ctl__in" type="search" placeholder="Search 9 sports" aria-label="Search sports" autocomplete="off" spellcheck="false">
+              </span>
+            </div>
+            <button class="opt" type="button" role="checkbox" aria-checked="true">
+              <span class="opt__text">Football<small>Champions League, La Liga, EPL</small></span>
+              <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+            </button>
+            <button class="opt" type="button" role="checkbox" aria-checked="true">
+              <span class="opt__text">Basketball<small>NBA, WNBA, EuroLeague</small></span>
+              <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+            </button>
+            <button class="opt" type="button" role="checkbox" aria-checked="true">
+              <span class="opt__text">Cricket<small>Sheffield Shield, BBL</small></span>
+              <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+            </button>
+            <button class="opt" type="button" role="checkbox" aria-checked="false">
+              <span class="opt__text">Rugby league<small>NRL</small></span>
+              <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+            </button>
+            <button class="opt" type="button" role="checkbox" aria-checked="false">
+              <span class="opt__text">Australian rules<small>AFL, AFLW</small></span>
+              <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+            </button>
+            <button class="opt" type="button" role="checkbox" aria-checked="false">
+              <span class="opt__text">Tennis<small>ATP, WTA</small></span>
+              <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+            </button>
+          </div>
+          <div class="sheet__foot">
+            <button class="btn btn--acid btn--wide" type="button">Apply <span class="btn__n">3</span></button>
+            <p class="sheet__fine">Pick at least one. Nothing changes behind the sheet until
+              you press Apply.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the + on the avatar disc or the Add tile in frames
+     01 and 09.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a photo" data-pane="source" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Add a photo</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.2l1.1-1.9A1.5 1.5 0 0 1 9.6 4.3h4.8a1.5 1.5 0 0 1 1.3.8L16.8 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg>
+          <span class="act__t">Take a photo<small>Opens the camera</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 15.6l4.4-4 3.4 3.1 3.1-3.4 6.1 5.5"/><circle cx="15.6" cy="9" r="1.4"/></svg>
+          <span class="act__t">Choose one photo<small>From your library</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7.5" y="3.5" width="13" height="13" rx="1.8"/><path d="M7.5 12.4l3.4-3 2.6 2.4 2.4-2.6 4.6 4.2"/><path d="M16.5 20.5H5.3A1.8 1.8 0 0 1 3.5 18.7V7.5"/></svg>
+          <span class="act__t">Choose several<small>Up to 6 at a time</small></span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+          <span class="act__t">Remove current picture</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-9">
+        <figcaption class="scr__cap"><span class="scr__n">09</span>Picture set</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="stg">
+    <div class="host">
+      <div class="appbar">
+        <button class="disc disc--ghost" type="button" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+        </button>
+        <h2 class="appbar__t">Your picture</h2>
+        <span style="width:38px"></span>
+      </div>
+
+      <div class="pick">
+        <div class="pick__disc" style="background-image:var(--av-08)" role="img" aria-label="Your picture">
+          <button class="pick__edit" type="button" data-open="source" aria-haspopup="dialog" aria-label="Change your picture">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13.4 6.6 17.4 10.6"/></svg>
+          </button>
+        </div>
+        <p class="pick__name">dylan_n</p>
+        <p class="pick__meta">Barcelona · 2.1 MB · uploaded just now</p>
+        <div class="pick__acts">
+          <button class="pill-btn" type="button" data-open="source">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.6v3.6h-3.6"/></svg>
+            Change
+          </button>
+          <button class="pill-btn pill-btn--danger" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+            Remove
+          </button>
+        </div>
+      </div>
+
+      <p class="sheet__grp" style="margin:22px var(--gutter) 8px">Or use one of ours</p>
+      <div class="rail" role="group" aria-label="Supplied pictures">
+        <button class="rail__b" type="button" aria-pressed="false" style="background-image:var(--av-01)" aria-label="Supplied picture 1"></button>
+        <button class="rail__b" type="button" aria-pressed="false" style="background-image:var(--av-02)" aria-label="Supplied picture 2"></button>
+        <button class="rail__b" type="button" aria-pressed="false" style="background-image:var(--av-03)" aria-label="Supplied picture 3"></button>
+        <button class="rail__b" type="button" aria-pressed="false" style="background-image:var(--av-04)" aria-label="Supplied picture 4"></button>
+        <button class="rail__b" type="button" aria-pressed="false" style="background-image:var(--av-07)" aria-label="Supplied picture 5"></button>
+        <button class="rail__b" type="button" aria-pressed="false" style="background-image:var(--av-12)" aria-label="Supplied picture 6"></button>
+        <button class="rail__b" type="button" aria-pressed="false" style="background-image:var(--av-14)" aria-label="Supplied picture 7"></button>
+      </div>
+
+      <div class="up">
+        <div class="up__head">
+          <p class="up__label">Match photos</p>
+          <span class="up__n">4 / 6</span>
+        </div>
+        <div class="up__grid">
+          <span class="thumb" style="background-image:var(--av-01)" role="img" aria-label="Photo 1">
+            <button class="thumb__x" type="button" aria-label="Remove photo 1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </span>
+          <span class="thumb" style="background-image:var(--av-02)" role="img" aria-label="Photo 2">
+            <button class="thumb__x" type="button" aria-label="Remove photo 2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </span>
+          <span class="thumb" style="background-image:var(--av-12)" role="img" aria-label="Photo 3">
+            <button class="thumb__x" type="button" aria-label="Remove photo 3">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </span>
+          <span class="thumb" style="background-image:var(--av-03)" role="img" aria-label="Photo 4">
+            <button class="thumb__x" type="button" aria-label="Remove photo 4">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </span>
+        </div>
+        <div class="up__grid" style="margin-top:8px">
+          <button class="up__add" type="button" data-open="source" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5v11M6.5 12h11"/></svg>
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toaster">
+      <div class="toast" role="status">
+        <span class="toast__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.3 12.3 2.6 2.6 4.8-5.4"/></svg>
+        </span>
+        <span class="toast__msg">Picture set<small>4 photos attached · 8.1 MB</small></span>
+        <button class="toast__act" type="button">Undo</button>
+      </div>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the + on the avatar disc or the Add tile in frames
+     01 and 09.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a photo" data-pane="source" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Add a photo</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.2l1.1-1.9A1.5 1.5 0 0 1 9.6 4.3h4.8a1.5 1.5 0 0 1 1.3.8L16.8 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg>
+          <span class="act__t">Take a photo<small>Opens the camera</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 15.6l4.4-4 3.4 3.1 3.1-3.4 6.1 5.5"/><circle cx="15.6" cy="9" r="1.4"/></svg>
+          <span class="act__t">Choose one photo<small>From your library</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7.5" y="3.5" width="13" height="13" rx="1.8"/><path d="M7.5 12.4l3.4-3 2.6 2.4 2.4-2.6 4.6 4.2"/><path d="M16.5 20.5H5.3A1.8 1.8 0 0 1 3.5 18.7V7.5"/></svg>
+          <span class="act__t">Choose several<small>Up to 6 at a time</small></span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+          <span class="act__t">Remove current picture</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The sheet behind every plus button</h2>
+
+  <p>One widget, <code>WUpload</code>, handles every image upload in the app: your profile picture,
+    locker-room photos, idea attachments. Tapping its plus button opens a bottom sheet offering
+    three ways to get a photo in. That sheet has never been screenshotted, specified or designed —
+    it is a bare list in an eight-pixel margin, with no title, no grabber, no rounded top and no
+    safe-area inset, so its last row finishes inside the home-indicator gesture zone.</p>
+
+  <p>More importantly, <b>it validates nothing.</b> No size limit, no format check, no compression,
+    no cropping. A member can pick a 40&nbsp;megapixel HEIC straight off a new iPhone and the app
+    will stream the original bytes at full size to the server. If the upload fails, it fails
+    silently: the file simply is not there, with no error, no toast and no retry. There is no
+    progress either — one indefinite Vietnamese snackbar covers the whole batch, with no count, no
+    percentage and no way to stop.</p>
+
+  <p>The nine screens here rebuild the source sheet, the confirmation and the multi-select list on
+    the library's existing sheet and dialog shells, and add the five states the code is missing:
+    a permission prompt, real per-file progress, a failure you can retry, a rejection that explains
+    itself, and a result. Every screen is marked below as either <b>real</b> — it exists in
+    <code>upload.dart</code> — or <b>proposed</b>.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. “Real” means it exists in <code>upload.dart</code> or <code>select_multiple.dart</code> today.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Host</td><td>Avatar disc</td><td class="t-note"><b>Real.</b> <code>96 px</code> circle, <code>background-position: center 22%</code> per the kit's avatar rule. Empty is a <code>1 px</code> dashed rim on <code>--sunken</code> holding a <code>34 px</code> figure glyph — not a grey square. A <code>34 px</code> accent disc with a <code>2 px --bg</code> ring sits bottom-right and is the trigger.</td></tr>
+        <tr><td>Host</td><td>Field label</td><td class="t-note"><b>Real</b> — <code>upload.dart:84</code> builds <code>"label (n/maxCount)"</code>. Split here into <code>forms.html</code>'s <code>13/600</code> label plus red required star, with the count as a separate tracked tabular figure on the right so it does not wrap inside the label.</td></tr>
+        <tr><td>Host</td><td>Photo grid</td><td class="t-note"><b>Real</b> — four across, from <code>upload.dart:110</code> (<code>count = 4</code>, <code>imageSize = width / 4</code>). Cells are square, <code>R12</code>, <code>8 px</code> gaps, <code>1 px --line</code> inset rim.</td></tr>
+        <tr><td>Host</td><td>Add tile</td><td class="t-note"><b>Real</b> as a plus tile; redrawn. The shipped version is <code>CColor.black.shade200</code> at 40% opacity holding a <code>45 pt</code> Material <code>Icons.add</code>. Here it is a <code>1 px</code> dashed <code>rgba(255,255,255,.18)</code> tile on <code>--sunken</code> with a <code>2.2</code>-stroke plus and a tracked <code>ADD</code> label, going accent-wash on press.</td></tr>
+        <tr><td>Host</td><td>Remove badge</td><td class="t-note"><b>Real</b>, moved and recoloured. Shipped: a <code>CColor.danger</code> <code>#E04A09</code> orange square offset <em>outside</em> the thumbnail at <code>-8, -8</code>. Here: a <code>22 px</code> disc inside the tile at <code>3 px</code>, <code>rgba(3,4,1,.74)</code> + blur, going <code>#E2564A</code> on press, with an <code>::after</code> expansion to <code>44 px</code>. <code>#E04A09</code> is a third hue the contract does not permit.</td></tr>
+        <tr><td>Source sheet</td><td>Shell</td><td class="t-note"><b>Real surface, new shell.</b> <code>sheets.html</code> verbatim: <code>18 px</code> top corners, <code>40 × 4</code> grabber in a <code>26 px</code> strip, <code>#1C2129 → #13171E</code> fill, <code>0 −20 50 rgba(0,0,0,.6)</code> lift, tracked-caps title on a hairline, <code>54 px</code> action rows on <code>--sunken</code>, safe-area inset on the last row. The shipped sheet has none of this.</td></tr>
+        <tr><td>Source sheet</td><td>Take a photo</td><td class="t-note"><b>Real</b> — <code>ImageSource.camera</code>, <code>upload.dart:406</code>. Promoted to first: on a match-day surface the camera is the likely intent, and the shipped order puts it third.</td></tr>
+        <tr><td>Source sheet</td><td>Choose one photo</td><td class="t-note"><b>Real</b> — <code>ImageSource.gallery</code>, single, <code>upload.dart:385</code>.</td></tr>
+        <tr><td>Source sheet</td><td>Choose several</td><td class="t-note"><b>Real</b> — <code>pickMultiImage()</code>, <code>upload.dart:394</code>. Rendered only when <code>uploadType == UploadType.multiple</code>, so it is absent from the avatar picker. The remaining-slot count in the sub-label is new.</td></tr>
+        <tr><td>Source sheet</td><td>Remove current picture</td><td class="t-note"><b>Proposed as a row.</b> Removal exists (<code>upload.dart:167</code>) but only as the red badge on a thumbnail. Putting it in the sheet gives the avatar case a route it does not have — the <code>96 px</code> disc has no badge. Destructive, last, <code>#E2564A</code>, disabled with a reason when there is nothing to remove.</td></tr>
+        <tr><td>Permission</td><td>Pre-prompt dialog</td><td class="t-note"><b>Proposed.</b> <code>dialogs.html</code>'s shell, <code>44 px</code> accent tile, a two-plate illustration, <b>Not now</b> / <b>Use camera</b>. Shown once, before the OS prompt, because an OS prompt fired with no context is the single most-denied dialog in any app.</td></tr>
+        <tr><td>Confirm dialog</td><td>Shell + previews</td><td class="t-note"><b>Real surface, new shell.</b> <code>upload.dart:276</code> is a bare <code>AlertDialog</code> with zero padding, a full-bleed <code>GridView</code> and two flat text buttons reading <code>Cancel</code> / <code>Upload</code>. Rebuilt on <code>dialogs.html</code>: question in the title, consequence in the body, count and total size stated, <code>2</code>-up <code>R12</code> previews with per-file sizes, <code>46 px</code> action pair, verb repeated — <b>Upload 4 photos?</b> → <b>Upload 4</b>.</td></tr>
+        <tr><td>Progress</td><td>Per-tile</td><td class="t-note"><b>Proposed.</b> A <code>rgba(3,4,1,.62)</code> veil with a tabular percentage and a <code>3 px</code> accent track along the bottom of the tile, so the grid never reflows as files land.</td></tr>
+        <tr><td>Progress</td><td>Batch toast</td><td class="t-note"><b>Proposed.</b> <code>dialogs.html</code>'s toast plus a <code>3 px</code> determinate track, byte count, percentage and <b>Stop</b>. Replaces the indefinite <code>Đang tải ảnh lên...</code> snackbar.</td></tr>
+        <tr><td>Failure</td><td>Retry tile</td><td class="t-note"><b>Proposed.</b> The failed tile becomes a button: red <code>1 px</code> rim, a <code>rgba(226,86,74,.30)</code> veil, a <code>2</code>-stroke refresh glyph and a tracked <code>RETRY</code> caption. Red is paired with the glyph <em>and</em> the word, never colour alone.</td></tr>
+        <tr><td>Rejection</td><td>Size / format dialog</td><td class="t-note"><b>Proposed, and the numbers are unconfirmed.</b> Names each rejected file, its measured size against the ceiling, and the accepted formats. The affirmative continues with the files that passed rather than cancelling the whole pick.</td></tr>
+        <tr><td>Multi-select</td><td>Sheet</td><td class="t-note"><b>Real surface, new shell.</b> <code>select_multiple.dart:84</code>. <code>sheets.html</code>'s multi-select: <code>48 px</code> minimum rows, <code>R12</code>, square accent checkbox with <code>--acid-ink</code> tick, selected row washed <code>rgba(155,226,34,.12)</code> with a <code>30%</code> rim, count pill in the head, <b>Clear all</b> that greys at zero, sticky search on a hairline, and a full-width accent <b>Apply</b> carrying the same count.</td></tr>
+        <tr><td>Multi-select</td><td>Trigger</td><td class="t-note"><b>Real</b> — a <code>WInput</code> with <code>CIcon.arrowDown</code> whose text becomes <code>'Đã chọn: n'</code> above one selection. Rebuilt as <code>sheets.html</code>'s <code>52 px</code> select showing the actual labels while they fit, falling back to <code>n selected</code>.</td></tr>
+        <tr><td>Result</td><td>Avatar set</td><td class="t-note"><b>Proposed as a state.</b> The disc filled, the edit disc becoming a pencil, file size and time under the name, and <b>Change</b> / <b>Remove</b> pills. Below it the supplied-portrait rail from <code>onboarding.html</code>, single-choice, <code>46 px</code> discs with a <code>2 px</code> accent ring when chosen.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Field empty</td><td class="t-note">Dashed avatar disc, one dashed Add tile, count reads <code>0 / 6</code>. Frame&nbsp;01.</td></tr>
+        <tr><td>Source sheet, single-upload field</td><td class="t-note"><b>Choose several</b> is absent — that is the code's own rule, and it is why the avatar picker offers two sources, not three. Frame&nbsp;02.</td></tr>
+        <tr><td>Source sheet, nothing to remove</td><td class="t-note">The destructive row stays visible but disabled at <code>--dim</code>, with <em>Nothing to remove yet</em> as its reason. A row that appears and disappears reads as a bug.</td></tr>
+        <tr><td>Camera permission asked</td><td class="t-note">Accent tile, plain explanation of when the camera is used, <b>Not now</b> / <b>Use camera</b>. Frame&nbsp;03.</td></tr>
+        <tr><td>Camera permission denied</td><td class="t-note">The camera row remains in the sheet but reads <em>Camera access is off</em> and routes to Settings. Never removed.</td></tr>
+        <tr><td>Confirming a batch</td><td class="t-note">Count and total size in the body, per-file sizes on the previews, <code>+n</code> tile past three. Frame&nbsp;04.</td></tr>
+        <tr><td>Confirming one photo</td><td class="t-note">Single <code>1</code>-up preview, title <b>Upload this photo?</b>. Today a single pick and a camera capture skip confirmation entirely and upload immediately — see <b>Decisions</b>.</td></tr>
+        <tr><td>Uploading</td><td class="t-note">Finished tiles are plain; the in-flight tile carries a veil, a percentage and a track. Batch toast shows <code>photo n of m</code>, bytes and <b>Stop</b>. Frame&nbsp;05.</td></tr>
+        <tr><td>One failed, rest fine</td><td class="t-note">Only the failed tile changes. The help line states what survived — <em>1 of 4 didn't upload. The other three are safe.</em> — because losing three good uploads to one bad one is the actual fear. Frame&nbsp;06.</td></tr>
+        <tr><td>Rejected before upload</td><td class="t-note">Nothing has been sent. Each rejection names the file, the measured value and the limit. Frame&nbsp;07.</td></tr>
+        <tr><td>Field full</td><td class="t-note">The Add tile disappears at <code>maxCount</code> — the code's behaviour (<code>upload.dart:219</code>) — and the count turns accent so the reason for its absence is on screen.</td></tr>
+        <tr><td>Multi-select, none chosen</td><td class="t-note">Count pill hidden, <b>Clear all</b> greyed, <b>Apply</b> disabled. The shipped code instead throws <code>UDialog().showError('Vui lòng chọn tối thiếu 1 lựa chọn')</code> when you deselect the last item — an error dialog for a state the button should simply have prevented.</td></tr>
+        <tr><td>Picture set</td><td class="t-note">Filled disc, pencil, size and time, <b>Change</b> / <b>Remove</b>, plus the supplied-portrait rail and a confirmation toast with <b>Undo</b>. Frame&nbsp;09.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">No slide, no fade, no sheen.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Real — it exists in the code today</h3>
+      <ul>
+        <li><b>The source sheet itself</b> — <code>upload.dart:378</code>, <code>showModalBottomSheet</code>. <code>AU-10:102</code>: “Avatar picker sheet — Not captured”</li>
+        <li><b>Three sources, and only three</b> — gallery single, gallery multiple, camera. Two video rows exist but are commented out at <code>upload.dart:414–427</code>, and the <code>isVideo</code> branch that would use them is commented out at <code>:250</code>, so video cannot be picked</li>
+        <li><b>The confirm dialog</b> — <code>upload.dart:276</code>, <code>showDialog</code> → a bare <code>AlertDialog</code> holding a <code>GridView</code> of the picked files</li>
+        <li><b>The multi-select sheet</b> — <code>select_multiple.dart:84</code>. <code>AU-09</code> records it as not used on that screen; it is captured nowhere</li>
+        <li><b>Four-across grid</b> — <code>upload.dart:110</code></li>
+        <li><b>Count in the label</b> — <code>upload.dart:84</code></li>
+        <li><b>A count cap</b> — <code>maxCount</code>, checked at <code>:220</code> for the Add tile and at <code>:348</code> during upload</li>
+        <li><b>Remove with confirmation</b> — <code>upload.dart:167</code>, <code>UDialog().showConfirm</code></li>
+        <li><b>Selection count in the trigger</b> — <code>select_multiple.dart:191</code>, <code>'Đã chọn: n'</code></li>
+        <li><b>Search inside the sheet</b> — <code>select_multiple.dart:105</code>, debounced by <code>Delay()</code></li>
+        <li><b>Selected-row highlight</b> — <code>select_multiple.dart:144</code>, <code>CColor.primary.shade100</code></li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>Proposed — it does not exist today</h3>
+      <ul>
+        <li><b>Any validation at all.</b> No size check, no format check, no dimension check, no compression, no cropper. <code>pickImage()</code> is called with no <code>maxWidth</code>, no <code>maxHeight</code> and no <code>imageQuality</code> (<code>upload.dart:261</code>); <code>postUploadPhysicalBlob</code> (<code>api.dart:237</code>) reads the file's length only to build the multipart part, never to test it. <code>pubspec.yaml</code> has no <code>flutter_image_compress</code> and no <code>image_cropper</code></li>
+        <li><b>The 7.5 MB and JPG / PNG / PDF limits.</b> These belong to the <b>GBG vendor web view</b> (<code>CA-15</code>), which is a third-party page inside a web view, not to <code>upload.dart</code>. They are quoted here as the most defensible starting numbers, not as a capture</li>
+        <li><b>Any upload progress.</b> The listener at <code>upload.dart:102</code> shows one indefinite snackbar for the whole batch. No bytes, no count, no percentage, no cancel</li>
+        <li><b>Any failure feedback.</b> A failed upload returns <code>null</code> and is skipped at <code>:359</code>. No error, no toast, no retry — the file is simply absent</li>
+        <li><b>A permission pre-prompt.</b> <code>image_picker</code> raises the OS prompt implicitly. There is no in-app explanation, no denied state and no route to Settings. <code>permission_handler</code> is in <code>pubspec</code> but is used only for Android storage in <code>downloadFile</code></li>
+        <li><b>A sheet shell.</b> The shipped sheet is a bare <code>Wrap</code> in an <code>8 px</code> horizontal padding: no title, no grabber, no top radius, no safe-area inset</li>
+        <li><b>Remove in the sheet</b> — the avatar's <code>96 px</code> disc has no remove badge, so today there is no way to clear a profile picture from that screen</li>
+        <li><b>The supplied-portrait rail</b> — carried over from <code>onboarding.html</code>; not in <code>upload.dart</code></li>
+        <li><b>Sizes, times and Undo</b> on the result</li>
+        <li><b>English throughout.</b> <code>Đang tải ảnh lên...</code>, <code>Xóa ảnh đã chọn</code>, <code>Bạn có chắc muốn xóa ảnh hiện tại không?</code>, <code>Đã chọn: n</code>, <code>Thông báo!</code> and <code>Vui lòng chọn tối thiếu 1 lựa chọn</code> are all shipped strings in these two files</li>
+        <li><b>Dropping <code>#E04A09</code></b> — the remove badge's orange is a third hue. Destructive is <code>#E2564A</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li>
+      <h3>What is the real size ceiling, and which formats does the endpoint accept?</h3>
+      <p>This is the one thing we cannot invent, and the one thing that will produce support tickets
+        on day one. <code>upload.dart</code> enforces nothing, so today the answer is “whatever the
+        server does”, discovered by the member as a silent failure. We have built to
+        <span class="flag">7.5 MB</span> and <span class="flag">JPG / PNG</span> because those are
+        the numbers the GBG identity page already shows members — but that is a different vendor on a
+        different endpoint, and PDF makes no sense for a match photo. We need the upload endpoint's
+        actual limits.</p>
+      <p>Related and just as important: <b>should the app compress before uploading?</b> A current
+        iPhone photo is 3–6 MB and a burst of six is 30 MB on a stadium 4G connection. We would
+        resize the long edge to <span class="flag">2048 px</span> at <span class="flag">85%
+        JPEG</span> client-side, which puts almost every photo comfortably under any ceiling and
+        makes the rejection screen rare rather than routine. That needs a decision because it is a
+        code change, not a design one.</p>
+    </li>
+    <li>
+      <h3>Should HEIC be accepted or converted?</h3>
+      <p>Every iPhone shoots HEIC by default, so “send JPG or PNG” is a rejection most iPhone members
+        would hit. We have shown HEIC as a rejection in frame&nbsp;07 to make the state legible, but
+        <span class="flag">converting HEIC to JPEG on device</span> is almost certainly the right
+        answer and removes the whole screen. Same decision as compression, same code change.</p>
+    </li>
+    <li>
+      <h3>Should a single photo be confirmed, like a batch is?</h3>
+      <p>Today it is not: <code>showConfirmImage</code> is reached only from the multi-pick branch,
+        so choosing one photo from the library, or taking one with the camera, uploads it
+        immediately with no preview and no chance to back out. We have assumed
+        <span class="flag">confirm every upload, batch or single</span>, on the grounds that a photo
+        of the wrong person going into a locker room is not recoverable by the member. If you would
+        rather keep single picks instant, the sheet row should say so.</p>
+    </li>
+    <li>
+      <h3>Is the profile picture cropped, and by whom?</h3>
+      <p>There is no cropper anywhere in the path, so a landscape photo becomes a circle by
+        <code>BoxFit.cover</code> centred on the middle of the frame — which cuts heads off. We have
+        assumed <span class="flag">a square crop step with a draggable frame before upload</span>,
+        but we have not drawn it, because it is a screen in its own right and it depends on the
+        compression decision above. Flag it if you want it in this pass.</p>
+    </li>
+    <li>
+      <h3>Should the multi-select sheet be revived, or removed?</h3>
+      <p><code>WSelectMultiple</code> is fully built and, per <code>AU-09</code>, is used nowhere.
+        We have drawn it as <b>Sports you follow</b> because that is the most plausible real use and
+        it is the field the onboarding flow arguably needs. But a component with no caller is dead
+        code, and dead code with a designed appearance invites someone to wire it up in the wrong
+        place. Either name the screen it belongs on, or we mark it deprecated and drop it from the
+        library.</p>
+    </li>
+    <li>
+      <h3>Can the maximum photo count be stated on screen?</h3>
+      <p><code>maxCount</code> is optional. When it is null the label shows no count and the Add tile
+        never disappears, so there is no ceiling a member can see. We have assumed
+        <span class="flag">every upload field declares a maximum</span> and shows it, because a field
+        that silently stops accepting photos is indistinguishable from a broken one. That means
+        naming a number for each surface — locker-room photos, idea attachments, profile.</p>
+    </li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  var reduce = window.matchMedia &&
+               window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ============================================================
+     PER-ROOT WIRING
+     The review shell replays everything outside the MAIN element
+     into every device, so every frame gets its own copy of the live
+     layer. Each copy is wired against its own root — `.mk` in the
+     review, the document standalone — so the + in frame 09 opens
+     frame 09's sheet and nothing else.
+     ============================================================ */
+  var roots = document.querySelectorAll('.mk');
+  if (!roots.length) roots = [document.body];
+  Array.prototype.forEach.call(roots, wire);
+
+  function wire(root){
+    var layer = root.querySelector('[data-layer]');
+    var scrim = layer ? layer.querySelector('[data-scrim]') : null;
+    var pane = null, opener = null;
+
+    function focusables(el){
+      return Array.prototype.filter.call(
+        el.querySelectorAll('button, [href], input, select, textarea, [tabindex]'),
+        function(x){
+          return !x.hasAttribute('disabled') &&
+                 x.getAttribute('tabindex') !== '-1' &&
+                 x.offsetParent !== null;
+        });
+    }
+    function open(name, trigger){
+      if (!layer || pane) return;
+      pane = layer.querySelector('[data-pane="' + name + '"]');
+      if (!pane) return;
+      opener = trigger || null;
+      pane.hidden = false;
+      pane.style.transform = '';
+      layer.classList.add('is-open');
+      requestAnimationFrame(function(){ layer.classList.add('is-in'); });
+      pane.setAttribute('tabindex','-1');
+      pane.focus();
+      document.addEventListener('keydown', onKey, true);
+    }
+    function close(){
+      if (!pane) return;
+      var closing = pane;
+      pane = null;
+      layer.classList.remove('is-in');
+      document.removeEventListener('keydown', onKey, true);
+      setTimeout(function(){
+        layer.classList.remove('is-open');
+        closing.hidden = true;
+        closing.style.transform = '';
+      }, reduce ? 0 : 300);
+      if (opener) opener.focus();
+      opener = null;
+    }
+    function onKey(e){
+      if (!pane) return;
+      if (e.key === 'Escape'){ e.preventDefault(); close(); return; }
+      if (e.key !== 'Tab') return;
+      var f = focusables(pane);
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+      else if (!pane.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+    }
+
+    root.addEventListener('click', function(e){
+      if (!e.target.closest) return;
+
+      var o = e.target.closest('[data-open]');
+      if (o){ open(o.getAttribute('data-open'), o); return; }
+      if (e.target.closest('[data-close]')){ close(); return; }
+      if (scrim && e.target === scrim){ close(); return; }
+
+      /* ---------- specimen checkboxes drive the count and Apply ---------- */
+      var cb = e.target.closest('.opt[role="checkbox"]');
+      if (cb){
+        cb.setAttribute('aria-checked', cb.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+        sync(cb.closest('.sheet'));
+        return;
+      }
+      var cl = e.target.closest('.sheet__clear');
+      if (cl){
+        var sh = cl.closest('.sheet');
+        Array.prototype.forEach.call(sh.querySelectorAll('.opt[role="checkbox"]'), function(x){
+          x.setAttribute('aria-checked','false');
+        });
+        sync(sh);
+        return;
+      }
+
+      /* ---------- the supplied-picture rail is single choice ---------- */
+      var rb = e.target.closest('.rail__b');
+      if (rb){
+        var grp = rb.closest('.rail');
+        var was = rb.getAttribute('aria-pressed') === 'true';
+        Array.prototype.forEach.call(grp.querySelectorAll('.rail__b'), function(x){
+          x.setAttribute('aria-pressed','false');
+        });
+        rb.setAttribute('aria-pressed', was ? 'false' : 'true');
+        var host = grp.closest('.host');
+        var disc = host ? host.querySelector('.pick__disc') : null;
+        if (disc && !was) disc.style.backgroundImage = rb.style.backgroundImage;
+        return;
+      }
+    });
+
+    /* the count appears twice — the head pill and the button — and
+       Clear all greys out at zero. sheets.html's rule, unchanged. */
+    function sync(sh){
+      if (!sh) return;
+      var on = sh.querySelectorAll('.opt[role="checkbox"][aria-checked="true"]').length;
+      var n  = sh.querySelector('.sheet__n');
+      var cl = sh.querySelector('.sheet__clear');
+      var ap = sh.querySelector('.sheet__foot .btn--acid');
+      if (n){ n.hidden = on === 0; n.textContent = on + ' on'; }
+      if (cl) cl.disabled = on === 0;
+      if (ap){
+        ap.disabled = on === 0;
+        ap.innerHTML = on === 0 ? 'Apply' : 'Apply <span class="btn__n">' + on + '</span>';
+      }
+    }
+    Array.prototype.forEach.call(root.querySelectorAll('.sheet'), function(sh){
+      if (sh.querySelector('.opt[role="checkbox"]')) sync(sh);
+    });
+
+    /* ---------- grabber drag ---------- */
+    if (layer){
+      var drag = null;
+      layer.addEventListener('pointerdown', function(e){
+        var g = e.target.closest ? e.target.closest('.sheet__grab') : null;
+        if (!g || !pane) return;
+        drag = { y:e.clientY, t:Date.now(), dy:0 };
+        pane.classList.add('is-dragging');
+        if (g.setPointerCapture) g.setPointerCapture(e.pointerId);
+      });
+      layer.addEventListener('pointermove', function(e){
+        if (!drag || !pane) return;
+        drag.dy = Math.max(0, e.clientY - drag.y);
+        pane.style.transform = 'translateY(' + drag.dy + 'px)';
+        if (scrim) scrim.style.opacity = String(Math.max(0, 1 - drag.dy / 420));
+      });
+      var endDrag = function(){
+        if (!drag || !pane){ drag = null; return; }
+        var d = drag.dy, ms = Math.max(1, Date.now() - drag.t);
+        var fast = d / ms > 0.55;
+        drag = null;
+        pane.classList.remove('is-dragging');
+        if (scrim) scrim.style.opacity = '';
+        if (d > 90 || (fast && d > 24)){ pane.style.transform = 'translateY(101%)'; close(); }
+        else { pane.style.transform = ''; }
+      };
+      layer.addEventListener('pointerup', endDrag);
+      layer.addEventListener('pointercancel', endDrag);
+    }
+  }
+})();
+</script>

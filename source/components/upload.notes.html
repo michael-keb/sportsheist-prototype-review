@@ -1,0 +1,193 @@
+<p class="dek">Every surface that puts a photo into SportsHeist — the profile-picture picker, the match-photo
+field, the upload confirmation, and the multi-select list that shares the same shell. Three of these
+sheets exist in the shipped app and are captured nowhere: the coverage audit lists the avatar picker
+as “Not captured” and the multi-select sheet as unused.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The sheet behind every plus button</h2>
+
+  <p>One widget, <code>WUpload</code>, handles every image upload in the app: your profile picture,
+    locker-room photos, idea attachments. Tapping its plus button opens a bottom sheet offering
+    three ways to get a photo in. That sheet has never been screenshotted, specified or designed —
+    it is a bare list in an eight-pixel margin, with no title, no grabber, no rounded top and no
+    safe-area inset, so its last row finishes inside the home-indicator gesture zone.</p>
+
+  <p>More importantly, <b>it validates nothing.</b> No size limit, no format check, no compression,
+    no cropping. A member can pick a 40&nbsp;megapixel HEIC straight off a new iPhone and the app
+    will stream the original bytes at full size to the server. If the upload fails, it fails
+    silently: the file simply is not there, with no error, no toast and no retry. There is no
+    progress either — one indefinite Vietnamese snackbar covers the whole batch, with no count, no
+    percentage and no way to stop.</p>
+
+  <p>The nine screens here rebuild the source sheet, the confirmation and the multi-select list on
+    the library's existing sheet and dialog shells, and add the five states the code is missing:
+    a permission prompt, real per-file progress, a failure you can retry, a rejection that explains
+    itself, and a result. Every screen is marked below as either <b>real</b> — it exists in
+    <code>upload.dart</code> — or <b>proposed</b>.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. “Real” means it exists in <code>upload.dart</code> or <code>select_multiple.dart</code> today.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Host</td><td>Avatar disc</td><td class="t-note"><b>Real.</b> <code>96 px</code> circle, <code>background-position: center 22%</code> per the kit's avatar rule. Empty is a <code>1 px</code> dashed rim on <code>--sunken</code> holding a <code>34 px</code> figure glyph — not a grey square. A <code>34 px</code> accent disc with a <code>2 px --bg</code> ring sits bottom-right and is the trigger.</td></tr>
+        <tr><td>Host</td><td>Field label</td><td class="t-note"><b>Real</b> — <code>upload.dart:84</code> builds <code>"label (n/maxCount)"</code>. Split here into <code>forms.html</code>'s <code>13/600</code> label plus red required star, with the count as a separate tracked tabular figure on the right so it does not wrap inside the label.</td></tr>
+        <tr><td>Host</td><td>Photo grid</td><td class="t-note"><b>Real</b> — four across, from <code>upload.dart:110</code> (<code>count = 4</code>, <code>imageSize = width / 4</code>). Cells are square, <code>R12</code>, <code>8 px</code> gaps, <code>1 px --line</code> inset rim.</td></tr>
+        <tr><td>Host</td><td>Add tile</td><td class="t-note"><b>Real</b> as a plus tile; redrawn. The shipped version is <code>CColor.black.shade200</code> at 40% opacity holding a <code>45 pt</code> Material <code>Icons.add</code>. Here it is a <code>1 px</code> dashed <code>rgba(255,255,255,.18)</code> tile on <code>--sunken</code> with a <code>2.2</code>-stroke plus and a tracked <code>ADD</code> label, going accent-wash on press.</td></tr>
+        <tr><td>Host</td><td>Remove badge</td><td class="t-note"><b>Real</b>, moved and recoloured. Shipped: a <code>CColor.danger</code> <code>#E04A09</code> orange square offset <em>outside</em> the thumbnail at <code>-8, -8</code>. Here: a <code>22 px</code> disc inside the tile at <code>3 px</code>, <code>rgba(3,4,1,.74)</code> + blur, going <code>#E2564A</code> on press, with an <code>::after</code> expansion to <code>44 px</code>. <code>#E04A09</code> is a third hue the contract does not permit.</td></tr>
+        <tr><td>Source sheet</td><td>Shell</td><td class="t-note"><b>Real surface, new shell.</b> <code>sheets.html</code> verbatim: <code>18 px</code> top corners, <code>40 × 4</code> grabber in a <code>26 px</code> strip, <code>#1C2129 → #13171E</code> fill, <code>0 −20 50 rgba(0,0,0,.6)</code> lift, tracked-caps title on a hairline, <code>54 px</code> action rows on <code>--sunken</code>, safe-area inset on the last row. The shipped sheet has none of this.</td></tr>
+        <tr><td>Source sheet</td><td>Take a photo</td><td class="t-note"><b>Real</b> — <code>ImageSource.camera</code>, <code>upload.dart:406</code>. Promoted to first: on a match-day surface the camera is the likely intent, and the shipped order puts it third.</td></tr>
+        <tr><td>Source sheet</td><td>Choose one photo</td><td class="t-note"><b>Real</b> — <code>ImageSource.gallery</code>, single, <code>upload.dart:385</code>.</td></tr>
+        <tr><td>Source sheet</td><td>Choose several</td><td class="t-note"><b>Real</b> — <code>pickMultiImage()</code>, <code>upload.dart:394</code>. Rendered only when <code>uploadType == UploadType.multiple</code>, so it is absent from the avatar picker. The remaining-slot count in the sub-label is new.</td></tr>
+        <tr><td>Source sheet</td><td>Remove current picture</td><td class="t-note"><b>Proposed as a row.</b> Removal exists (<code>upload.dart:167</code>) but only as the red badge on a thumbnail. Putting it in the sheet gives the avatar case a route it does not have — the <code>96 px</code> disc has no badge. Destructive, last, <code>#E2564A</code>, disabled with a reason when there is nothing to remove.</td></tr>
+        <tr><td>Permission</td><td>Pre-prompt dialog</td><td class="t-note"><b>Proposed.</b> <code>dialogs.html</code>'s shell, <code>44 px</code> accent tile, a two-plate illustration, <b>Not now</b> / <b>Use camera</b>. Shown once, before the OS prompt, because an OS prompt fired with no context is the single most-denied dialog in any app.</td></tr>
+        <tr><td>Confirm dialog</td><td>Shell + previews</td><td class="t-note"><b>Real surface, new shell.</b> <code>upload.dart:276</code> is a bare <code>AlertDialog</code> with zero padding, a full-bleed <code>GridView</code> and two flat text buttons reading <code>Cancel</code> / <code>Upload</code>. Rebuilt on <code>dialogs.html</code>: question in the title, consequence in the body, count and total size stated, <code>2</code>-up <code>R12</code> previews with per-file sizes, <code>46 px</code> action pair, verb repeated — <b>Upload 4 photos?</b> → <b>Upload 4</b>.</td></tr>
+        <tr><td>Progress</td><td>Per-tile</td><td class="t-note"><b>Proposed.</b> A <code>rgba(3,4,1,.62)</code> veil with a tabular percentage and a <code>3 px</code> accent track along the bottom of the tile, so the grid never reflows as files land.</td></tr>
+        <tr><td>Progress</td><td>Batch toast</td><td class="t-note"><b>Proposed.</b> <code>dialogs.html</code>'s toast plus a <code>3 px</code> determinate track, byte count, percentage and <b>Stop</b>. Replaces the indefinite <code>Đang tải ảnh lên...</code> snackbar.</td></tr>
+        <tr><td>Failure</td><td>Retry tile</td><td class="t-note"><b>Proposed.</b> The failed tile becomes a button: red <code>1 px</code> rim, a <code>rgba(226,86,74,.30)</code> veil, a <code>2</code>-stroke refresh glyph and a tracked <code>RETRY</code> caption. Red is paired with the glyph <em>and</em> the word, never colour alone.</td></tr>
+        <tr><td>Rejection</td><td>Size / format dialog</td><td class="t-note"><b>Proposed, and the numbers are unconfirmed.</b> Names each rejected file, its measured size against the ceiling, and the accepted formats. The affirmative continues with the files that passed rather than cancelling the whole pick.</td></tr>
+        <tr><td>Multi-select</td><td>Sheet</td><td class="t-note"><b>Real surface, new shell.</b> <code>select_multiple.dart:84</code>. <code>sheets.html</code>'s multi-select: <code>48 px</code> minimum rows, <code>R12</code>, square accent checkbox with <code>--acid-ink</code> tick, selected row washed <code>rgba(155,226,34,.12)</code> with a <code>30%</code> rim, count pill in the head, <b>Clear all</b> that greys at zero, sticky search on a hairline, and a full-width accent <b>Apply</b> carrying the same count.</td></tr>
+        <tr><td>Multi-select</td><td>Trigger</td><td class="t-note"><b>Real</b> — a <code>WInput</code> with <code>CIcon.arrowDown</code> whose text becomes <code>'Đã chọn: n'</code> above one selection. Rebuilt as <code>sheets.html</code>'s <code>52 px</code> select showing the actual labels while they fit, falling back to <code>n selected</code>.</td></tr>
+        <tr><td>Result</td><td>Avatar set</td><td class="t-note"><b>Proposed as a state.</b> The disc filled, the edit disc becoming a pencil, file size and time under the name, and <b>Change</b> / <b>Remove</b> pills. Below it the supplied-portrait rail from <code>onboarding.html</code>, single-choice, <code>46 px</code> discs with a <code>2 px</code> accent ring when chosen.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Field empty</td><td class="t-note">Dashed avatar disc, one dashed Add tile, count reads <code>0 / 6</code>. Frame&nbsp;01.</td></tr>
+        <tr><td>Source sheet, single-upload field</td><td class="t-note"><b>Choose several</b> is absent — that is the code's own rule, and it is why the avatar picker offers two sources, not three. Frame&nbsp;02.</td></tr>
+        <tr><td>Source sheet, nothing to remove</td><td class="t-note">The destructive row stays visible but disabled at <code>--dim</code>, with <em>Nothing to remove yet</em> as its reason. A row that appears and disappears reads as a bug.</td></tr>
+        <tr><td>Camera permission asked</td><td class="t-note">Accent tile, plain explanation of when the camera is used, <b>Not now</b> / <b>Use camera</b>. Frame&nbsp;03.</td></tr>
+        <tr><td>Camera permission denied</td><td class="t-note">The camera row remains in the sheet but reads <em>Camera access is off</em> and routes to Settings. Never removed.</td></tr>
+        <tr><td>Confirming a batch</td><td class="t-note">Count and total size in the body, per-file sizes on the previews, <code>+n</code> tile past three. Frame&nbsp;04.</td></tr>
+        <tr><td>Confirming one photo</td><td class="t-note">Single <code>1</code>-up preview, title <b>Upload this photo?</b>. Today a single pick and a camera capture skip confirmation entirely and upload immediately — see <b>Decisions</b>.</td></tr>
+        <tr><td>Uploading</td><td class="t-note">Finished tiles are plain; the in-flight tile carries a veil, a percentage and a track. Batch toast shows <code>photo n of m</code>, bytes and <b>Stop</b>. Frame&nbsp;05.</td></tr>
+        <tr><td>One failed, rest fine</td><td class="t-note">Only the failed tile changes. The help line states what survived — <em>1 of 4 didn't upload. The other three are safe.</em> — because losing three good uploads to one bad one is the actual fear. Frame&nbsp;06.</td></tr>
+        <tr><td>Rejected before upload</td><td class="t-note">Nothing has been sent. Each rejection names the file, the measured value and the limit. Frame&nbsp;07.</td></tr>
+        <tr><td>Field full</td><td class="t-note">The Add tile disappears at <code>maxCount</code> — the code's behaviour (<code>upload.dart:219</code>) — and the count turns accent so the reason for its absence is on screen.</td></tr>
+        <tr><td>Multi-select, none chosen</td><td class="t-note">Count pill hidden, <b>Clear all</b> greyed, <b>Apply</b> disabled. The shipped code instead throws <code>UDialog().showError('Vui lòng chọn tối thiếu 1 lựa chọn')</code> when you deselect the last item — an error dialog for a state the button should simply have prevented.</td></tr>
+        <tr><td>Picture set</td><td class="t-note">Filled disc, pencil, size and time, <b>Change</b> / <b>Remove</b>, plus the supplied-portrait rail and a confirmation toast with <b>Undo</b>. Frame&nbsp;09.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">No slide, no fade, no sheen.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Real — it exists in the code today</h3>
+      <ul>
+        <li><b>The source sheet itself</b> — <code>upload.dart:378</code>, <code>showModalBottomSheet</code>. <code>AU-10:102</code>: “Avatar picker sheet — Not captured”</li>
+        <li><b>Three sources, and only three</b> — gallery single, gallery multiple, camera. Two video rows exist but are commented out at <code>upload.dart:414–427</code>, and the <code>isVideo</code> branch that would use them is commented out at <code>:250</code>, so video cannot be picked</li>
+        <li><b>The confirm dialog</b> — <code>upload.dart:276</code>, <code>showDialog</code> → a bare <code>AlertDialog</code> holding a <code>GridView</code> of the picked files</li>
+        <li><b>The multi-select sheet</b> — <code>select_multiple.dart:84</code>. <code>AU-09</code> records it as not used on that screen; it is captured nowhere</li>
+        <li><b>Four-across grid</b> — <code>upload.dart:110</code></li>
+        <li><b>Count in the label</b> — <code>upload.dart:84</code></li>
+        <li><b>A count cap</b> — <code>maxCount</code>, checked at <code>:220</code> for the Add tile and at <code>:348</code> during upload</li>
+        <li><b>Remove with confirmation</b> — <code>upload.dart:167</code>, <code>UDialog().showConfirm</code></li>
+        <li><b>Selection count in the trigger</b> — <code>select_multiple.dart:191</code>, <code>'Đã chọn: n'</code></li>
+        <li><b>Search inside the sheet</b> — <code>select_multiple.dart:105</code>, debounced by <code>Delay()</code></li>
+        <li><b>Selected-row highlight</b> — <code>select_multiple.dart:144</code>, <code>CColor.primary.shade100</code></li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>Proposed — it does not exist today</h3>
+      <ul>
+        <li><b>Any validation at all.</b> No size check, no format check, no dimension check, no compression, no cropper. <code>pickImage()</code> is called with no <code>maxWidth</code>, no <code>maxHeight</code> and no <code>imageQuality</code> (<code>upload.dart:261</code>); <code>postUploadPhysicalBlob</code> (<code>api.dart:237</code>) reads the file's length only to build the multipart part, never to test it. <code>pubspec.yaml</code> has no <code>flutter_image_compress</code> and no <code>image_cropper</code></li>
+        <li><b>The 7.5 MB and JPG / PNG / PDF limits.</b> These belong to the <b>GBG vendor web view</b> (<code>CA-15</code>), which is a third-party page inside a web view, not to <code>upload.dart</code>. They are quoted here as the most defensible starting numbers, not as a capture</li>
+        <li><b>Any upload progress.</b> The listener at <code>upload.dart:102</code> shows one indefinite snackbar for the whole batch. No bytes, no count, no percentage, no cancel</li>
+        <li><b>Any failure feedback.</b> A failed upload returns <code>null</code> and is skipped at <code>:359</code>. No error, no toast, no retry — the file is simply absent</li>
+        <li><b>A permission pre-prompt.</b> <code>image_picker</code> raises the OS prompt implicitly. There is no in-app explanation, no denied state and no route to Settings. <code>permission_handler</code> is in <code>pubspec</code> but is used only for Android storage in <code>downloadFile</code></li>
+        <li><b>A sheet shell.</b> The shipped sheet is a bare <code>Wrap</code> in an <code>8 px</code> horizontal padding: no title, no grabber, no top radius, no safe-area inset</li>
+        <li><b>Remove in the sheet</b> — the avatar's <code>96 px</code> disc has no remove badge, so today there is no way to clear a profile picture from that screen</li>
+        <li><b>The supplied-portrait rail</b> — carried over from <code>onboarding.html</code>; not in <code>upload.dart</code></li>
+        <li><b>Sizes, times and Undo</b> on the result</li>
+        <li><b>English throughout.</b> <code>Đang tải ảnh lên...</code>, <code>Xóa ảnh đã chọn</code>, <code>Bạn có chắc muốn xóa ảnh hiện tại không?</code>, <code>Đã chọn: n</code>, <code>Thông báo!</code> and <code>Vui lòng chọn tối thiếu 1 lựa chọn</code> are all shipped strings in these two files</li>
+        <li><b>Dropping <code>#E04A09</code></b> — the remove badge's orange is a third hue. Destructive is <code>#E2564A</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li>
+      <h3>What is the real size ceiling, and which formats does the endpoint accept?</h3>
+      <p>This is the one thing we cannot invent, and the one thing that will produce support tickets
+        on day one. <code>upload.dart</code> enforces nothing, so today the answer is “whatever the
+        server does”, discovered by the member as a silent failure. We have built to
+        <span class="flag">7.5 MB</span> and <span class="flag">JPG / PNG</span> because those are
+        the numbers the GBG identity page already shows members — but that is a different vendor on a
+        different endpoint, and PDF makes no sense for a match photo. We need the upload endpoint's
+        actual limits.</p>
+      <p>Related and just as important: <b>should the app compress before uploading?</b> A current
+        iPhone photo is 3–6 MB and a burst of six is 30 MB on a stadium 4G connection. We would
+        resize the long edge to <span class="flag">2048 px</span> at <span class="flag">85%
+        JPEG</span> client-side, which puts almost every photo comfortably under any ceiling and
+        makes the rejection screen rare rather than routine. That needs a decision because it is a
+        code change, not a design one.</p>
+    </li>
+    <li>
+      <h3>Should HEIC be accepted or converted?</h3>
+      <p>Every iPhone shoots HEIC by default, so “send JPG or PNG” is a rejection most iPhone members
+        would hit. We have shown HEIC as a rejection in frame&nbsp;07 to make the state legible, but
+        <span class="flag">converting HEIC to JPEG on device</span> is almost certainly the right
+        answer and removes the whole screen. Same decision as compression, same code change.</p>
+    </li>
+    <li>
+      <h3>Should a single photo be confirmed, like a batch is?</h3>
+      <p>Today it is not: <code>showConfirmImage</code> is reached only from the multi-pick branch,
+        so choosing one photo from the library, or taking one with the camera, uploads it
+        immediately with no preview and no chance to back out. We have assumed
+        <span class="flag">confirm every upload, batch or single</span>, on the grounds that a photo
+        of the wrong person going into a locker room is not recoverable by the member. If you would
+        rather keep single picks instant, the sheet row should say so.</p>
+    </li>
+    <li>
+      <h3>Is the profile picture cropped, and by whom?</h3>
+      <p>There is no cropper anywhere in the path, so a landscape photo becomes a circle by
+        <code>BoxFit.cover</code> centred on the middle of the frame — which cuts heads off. We have
+        assumed <span class="flag">a square crop step with a draggable frame before upload</span>,
+        but we have not drawn it, because it is a screen in its own right and it depends on the
+        compression decision above. Flag it if you want it in this pass.</p>
+    </li>
+    <li>
+      <h3>Should the multi-select sheet be revived, or removed?</h3>
+      <p><code>WSelectMultiple</code> is fully built and, per <code>AU-09</code>, is used nowhere.
+        We have drawn it as <b>Sports you follow</b> because that is the most plausible real use and
+        it is the field the onboarding flow arguably needs. But a component with no caller is dead
+        code, and dead code with a designed appearance invites someone to wire it up in the wrong
+        place. Either name the screen it belongs on, or we mark it deprecated and drop it from the
+        library.</p>
+    </li>
+    <li>
+      <h3>Can the maximum photo count be stated on screen?</h3>
+      <p><code>maxCount</code> is optional. When it is null the label shows no count and the Add tile
+        never disappears, so there is no ceiling a member can see. We have assumed
+        <span class="flag">every upload field declares a maximum</span> and shows it, because a field
+        that silently stops accepting photos is indistinguishable from a broken one. That means
+        naming a number for each surface — locker-room photos, idea attachments, profile.</p>
+    </li>
+  </ol>
+</section>

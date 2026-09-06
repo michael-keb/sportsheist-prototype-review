@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en" data-component="backchat">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Backchat</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — BACKCHAT HOME
+   Tab 3 of 5. The live-social surface: the club's always-on Fan
+   Stadium, Locker Rooms that are live now, and Locker Rooms
+   scheduled to open.
+
+   Coded from the new dark-mode Figma frame. Colours, geometry and
+   type scale are the sampled tokens of _assets/CONTRACT.md; the
+   hero, section container, status pill, icon button, card, row,
+   tab bar and avatar constructions are reused from merits.html.
+
+   Two photographic assets in the Figma frame have not been
+   exported yet and are marked in the markup below:
+     1. the knockout microphone prop in the hero
+     2. the stadium photograph behind the Fan Stadium card
+   The stadium is standing in as a CSS gradient; the microphone
+   slot is left empty rather than drawn.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls, tab bar        */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* hero */
+  --hero-a:        #0D3617;
+  --hero-b:        #17481C;
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* photography extracted from the Figma exports (_assets/avatars.css).
+     av-17 / av-02 / av-12 are the same three faces merits.html gives to
+     taythaytu, capitan_7 and scout_mode; av-01 is unused elsewhere and
+     carries club_staff. */
+  --av-01:url(data:image/jpeg;base64,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);
+  --av-02:url(data:image/jpeg;base64,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);
+  --av-12:url(data:image/jpeg;base64,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);
+  --av-17:url(data:image/jpeg;base64,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);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ---------- shared bits ---------- */
+.label{
+  margin:22px var(--gutter) 10px;
+  font-size:18px;font-weight:600;letter-spacing:-.015em;
+}
+.head{display:flex;align-items:center;gap:8px;margin:22px var(--gutter) 10px}
+.head h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.head .spacer{flex:1}
+
+.pill-btn{
+  display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:17px;height:17px}
+
+/* room-creation control: the only accent-filled control on the screen */
+.add{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--acid);color:var(--acid-ink);
+  cursor:pointer;transition:transform .18s var(--ease);
+}
+.add svg{width:15px;height:15px}
+.add:hover{transform:scale(1.06)}
+
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  height:32px;padding:0 14px;border-radius:var(--r-pill);
+  background:var(--acid-wash);
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;
+}
+.status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+/* scheduled, not live: same pill, no dot, no accent */
+.status-pill--quiet{background:var(--sunken);color:var(--muted)}
+.status-pill--quiet::before{display:none}
+
+.avatar{
+  border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{
+  position:relative;overflow:hidden;
+  margin:0 var(--gutter);
+  border-radius:var(--r-card);
+  background:linear-gradient(112deg,var(--hero-a) 0%,var(--hero-b) 58%,#0C3416 100%);
+  height:138px;
+  display:flex;align-items:center;
+  padding:0 18px;
+}
+.hero__field{position:absolute;inset:0;pointer-events:none}
+.hero__range{position:absolute;right:0;bottom:0;width:54%;height:38%;pointer-events:none;z-index:1}
+.hero__prop{
+  position:absolute;right:14px;bottom:0;height:124px;width:auto;
+  pointer-events:none;opacity:.95;z-index:2;   /* prop sits in front of the range */
+}
+.hero__title{
+  position:relative;z-index:3;margin:0;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+
+/* ============================================================
+   FAN STADIUM CARD
+   ============================================================ */
+.stadium{
+  position:relative;display:block;overflow:hidden;
+  margin:10px var(--gutter) 0;height:132px;
+  border-radius:var(--r-card);background:#061309;
+  color:inherit;text-decoration:none;cursor:pointer;
+}
+/* ---- stand-in for the stadium photograph: a floodlit pitch ---- */
+.stadium__art{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(140% 120% at 50% 128%, #35802F 0%, #1F5822 34%, #0C2913 68%, #061309 100%);
+}
+.stadium__art::before{        /* stand band, then the floodlight bloom over it */
+  content:"";position:absolute;left:0;right:0;top:0;height:44%;
+  background:
+    radial-gradient(32% 130% at 22% 2%,  rgba(255,255,255,.52), rgba(255,255,255,0) 74%),
+    radial-gradient(30% 120% at 78% 0%,  rgba(255,255,255,.44), rgba(255,255,255,0) 74%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, rgba(255,255,255,0) 1px 9px),
+    linear-gradient(180deg, #0A1A10 0%, rgba(6,19,9,0) 100%);
+}
+.stadium__art::after{         /* mown stripes running away from the camera */
+  content:"";position:absolute;left:-16%;right:-16%;bottom:-10%;height:66%;
+  background:repeating-linear-gradient(93deg,
+    rgba(255,255,255,.085) 0 16px, rgba(255,255,255,0) 16px 34px);
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0),#000 44%);
+          mask-image:linear-gradient(180deg,rgba(0,0,0,0),#000 44%);
+}
+.stadium__scrim{              /* keeps the two pills legible over the bloom */
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(3,4,1,.46) 0%,rgba(3,4,1,0) 54%);
+}
+.glass{
+  position:absolute;top:12px;z-index:2;
+  display:inline-flex;align-items:center;gap:6px;
+  height:28px;padding:0 12px;border-radius:var(--r-pill);
+  background:rgba(3,4,1,.55);
+  -webkit-backdrop-filter:blur(9px) saturate(150%);
+          backdrop-filter:blur(9px) saturate(150%);
+  white-space:nowrap;
+}
+.glass--live{
+  left:12px;color:var(--acid);
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+}
+.glass--live::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.glass--enter{right:12px;color:var(--text);font-size:12.5px;font-weight:600}
+.glass--enter svg{width:13px;height:13px}
+
+/* ============================================================
+   SECTION CONTAINER
+   ============================================================ */
+.section{
+  margin:0 var(--gutter);padding:12px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);
+}
+.section + .section{margin-top:10px}
+.section__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.section__bar .spacer{flex:1}
+
+/* ---------- live carousel ---------- */
+.rail{
+  display:flex;gap:10px;
+  margin:0 -12px;padding:0 12px 2px;
+  overflow-x:auto;overscroll-behavior-x:contain;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.rail::-webkit-scrollbar{display:none}
+.rail > .room{flex:0 0 244px;scroll-snap-align:start}
+
+/* ---------- upcoming list ---------- */
+.list{display:flex;flex-direction:column;gap:10px}
+
+/* ---------- room card ---------- */
+.room{
+  padding:14px;border-radius:var(--r-panel);background:var(--surface);
+  text-align:left;
+}
+.room__when{
+  margin:0 0 9px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--acid);font-variant-numeric:tabular-nums;
+}
+.room__title{
+  margin:0;font-size:15px;font-weight:600;line-height:1.27;letter-spacing:-.01em;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;
+}
+/* carousel cards reserve both title lines so their footers align */
+.rail .room__title{min-height:2.54em}
+.room__host{display:flex;align-items:center;gap:8px;margin-top:10px;min-width:0}
+.room__host .avatar{width:24px;height:24px}
+.room__host span{
+  font-size:12px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.room__foot{
+  display:flex;align-items:center;gap:14px;
+  margin-top:12px;padding-top:11px;border-top:1px solid var(--line-soft);
+}
+.stat{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;
+}
+.stat svg{width:14px;height:14px;color:var(--muted);flex:0 0 auto}
+.access{
+  margin-left:auto;display:inline-flex;align-items:center;gap:5px;
+  font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);white-space:nowrap;
+}
+.access svg{width:12px;height:12px;flex:0 0 auto}
+
+/* ---------- empty state ---------- */
+.empty{
+  padding:28px 14px;border-radius:var(--r-panel);background:var(--surface);
+  text-align:center;font-size:13px;color:var(--dim);
+}
+
+/* ============================================================
+   SEARCH · FILTER · REMINDERS — the three section-bar controls
+   All three were `aria-hidden` glyphs on a button with no handler.
+   Sheet shell, option row and check mark are sheets.html's,
+   pasted unchanged. The overlay carries the class `tabbar`
+   because that is the review shell's hook for "pin this inside
+   the phone"; `.overlay.tabbar` undoes the bar's own layout
+   (pointer-events:none would otherwise kill the scrim).
+   ============================================================ */
+[hidden]{display:none!important}
+
+.icon-btn{position:relative}
+/* 38 px visual, 44 px hit area — create-idea.html's ::after expansion */
+.icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.icon-btn[aria-expanded="true"],
+.icon-btn[aria-pressed="true"]{background:var(--acid-wash);color:var(--acid)}
+.icon-btn__on{
+  position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;
+  background:var(--acid);box-shadow:0 0 0 2px var(--section);
+}
+.pill-btn:focus-visible,.add:focus-visible,.stadium:focus-visible{
+  outline:2px solid var(--acid);outline-offset:2px;
+}
+
+/* inline search field */
+.find{
+  display:flex;align-items:center;gap:9px;height:42px;padding:0 12px;margin-bottom:12px;
+  border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);
+}
+.find:focus-within{border-color:rgba(155,226,34,.42)}
+.find > svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted)}
+.find__in{
+  flex:1;min-width:0;border:0;background:none;outline:none;
+  color:var(--text);font:inherit;font-size:13.5px;
+}
+.find__in::placeholder{color:var(--dim)}
+.find__x{
+  position:relative;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;border:0;border-radius:50%;
+  background:rgba(255,255,255,.07);color:var(--muted);cursor:pointer;
+}
+.find__x::after{content:"";position:absolute;inset:-10px;border-radius:inherit}
+.find__x svg{width:13px;height:13px}
+.find__x:hover{background:rgba(255,255,255,.13);color:var(--text)}
+.find__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.found{
+  margin:0 0 10px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);font-variant-numeric:tabular-nums;
+}
+
+/* ---------- sheet shell ---------- */
+.overlay.tabbar{padding:0;max-width:none;margin:0;pointer-events:auto}
+.overlay{
+  position:fixed;inset:0;z-index:60;
+  display:none;align-items:flex-end;justify-content:center;
+}
+.overlay.is-open{display:flex}
+.scrim{
+  position:absolute;inset:0;background:rgba(3,4,1,.72);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  opacity:0;transition:opacity .2s var(--ease);
+}
+.overlay.is-in .scrim{opacity:1}
+.sheet{
+  position:relative;z-index:1;display:flex;flex-direction:column;
+  width:100%;max-width:420px;max-height:min(76%,560px);
+  border:1px solid var(--line);border-bottom:0;border-radius:20px 20px 0 0;
+  background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%);
+  box-shadow:0 -20px 50px rgba(0,0,0,.6);overflow:hidden;
+  opacity:0;transform:translateY(16px);
+  transition:opacity .2s var(--ease),transform .28s var(--ease);
+}
+.overlay.is-in .sheet{opacity:1;transform:none}
+.sheet:focus{outline:none}
+.sheet__grab{flex:0 0 auto;display:flex;align-items:center;justify-content:center;height:26px}
+.sheet__grab::before{content:"";width:38px;height:4px;border-radius:var(--r-pill);background:rgba(255,255,255,.18)}
+.sheet__head{
+  flex:0 0 auto;display:flex;align-items:center;gap:9px;
+  padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);
+}
+.sheet__title{
+  margin:0;flex:1;min-width:0;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+}
+.sheet__n{
+  flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px;
+  border-radius:var(--r-pill);background:var(--acid-wash);color:var(--acid);
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;
+}
+.sheet__clear{
+  flex:0 0 auto;border:0;background:transparent;padding:6px 2px;margin:0;
+  color:var(--muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:color .16s var(--ease);
+}
+.sheet__clear:hover{color:var(--text)}
+.sheet__clear[disabled]{color:var(--dim);cursor:default}
+.sheet__x{
+  position:relative;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-4px;
+  border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.sheet__x::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.sheet__x:hover{background:rgba(255,255,255,.11);color:var(--text)}
+.sheet__x svg{width:16px;height:16px}
+.sheet__x:focus-visible,.sheet__clear:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.sheet__body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:12px var(--gutter);
+}
+.sheet__body::-webkit-scrollbar{width:0;height:0}
+.sheet__grp{
+  margin:16px 0 8px;font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.sheet__body > .sheet__grp:first-child{margin-top:0}
+.sheet__foot{
+  flex:0 0 auto;padding:12px var(--gutter);
+  padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);background:var(--sunken);
+}
+
+/* ---------- option row ---------- */
+.opt{
+  display:flex;align-items:center;gap:12px;width:100%;
+  min-height:52px;padding:11px 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background-color:var(--sunken);background-image:none;
+  color:var(--text);font:inherit;font-size:13.5px;font-weight:500;
+  text-align:left;cursor:pointer;
+  transition:background-color .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);
+}
+.opt + .opt{margin-top:8px}
+.opt:hover{border-color:rgba(255,255,255,.14)}
+.opt__text{flex:1;min-width:0}
+.opt__text small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.opt[aria-checked="true"]{
+  background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash));
+  border-color:rgba(155,226,34,.30);color:var(--acid);font-weight:600;
+}
+.opt[aria-checked="true"] .opt__text small{color:rgba(155,226,34,.72)}
+.opt:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.check{
+  position:relative;flex:0 0 auto;width:20px;height:20px;border-radius:6px;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);
+  transition:background .16s var(--ease),box-shadow .16s var(--ease);
+}
+.check svg{
+  position:absolute;inset:0;width:20px;height:20px;opacity:0;color:var(--acid-ink);
+  transition:opacity .14s var(--ease);
+}
+.opt[aria-checked="true"] .check{background:var(--acid);box-shadow:none}
+.opt[aria-checked="true"] .check svg{opacity:1}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;height:48px;padding:0 14px;border:0;border-radius:var(--r-pill);
+  background:var(--acid);color:var(--acid-ink);
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em;cursor:pointer;
+}
+.btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.btn__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
+  background:rgba(11,14,6,.18);font-size:11.5px;font-variant-numeric:tabular-nums;
+}
+
+/* ============================================================
+   TAB BAR
+   ============================================================ */
+.tabbar{position:fixed;left:0;right:0;bottom:0;max-width:420px;margin:0 auto;
+  padding:0 var(--gutter) calc(14px + env(safe-area-inset-bottom,0px));pointer-events:none}
+.tabbar__inner{
+  display:flex;align-items:center;justify-content:space-between;
+  height:58px;padding:0 10px;border-radius:var(--r-pill);background:var(--surface);
+  box-shadow:0 10px 30px rgba(0,0,0,.6);pointer-events:auto;
+}
+.tab{
+  display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 12px;
+  border:0;border-radius:var(--r-pill);background:transparent;color:var(--text);
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.tab svg{width:19px;height:19px;flex:0 0 auto}
+.tab__label{display:none}
+.tab[aria-current="page"]{background:var(--acid);color:var(--acid-ink)}
+.tab[aria-current="page"] .tab__label{display:inline}
+.tab:not([aria-current="page"]):hover{color:var(--acid)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+  <!-- ================= HERO ================= -->
+  <header class="hero">
+    <svg class="hero__field" viewBox="0 0 343 138" preserveAspectRatio="none" aria-hidden="true">
+      <g fill="none" stroke="#000" stroke-linecap="square" stroke-linejoin="round">
+        <path d="M-16 122 L26 84 L68 122 L110 84 L152 122 L194 84 L236 122 L278 84 L320 122 L362 84"
+              stroke-width="13" opacity=".13"/>
+        <path d="M-16 82 L26 44 L68 82 L110 44 L152 82 L194 44 L236 82 L278 44 L320 82 L362 44"
+              stroke-width="13" opacity=".09"/>
+        <path d="M-16 42 L26 4 L68 42 L110 4 L152 42 L194 4 L236 42 L278 4 L320 42 L362 4"
+              stroke-width="13" opacity=".06"/>
+      </g>
+    </svg>
+
+    <!-- ASSET GAP — the knockout microphone prop that sits in front of the
+         acid range in the Figma frame has not been exported. When it lands,
+         drop it in here exactly as merits.html does with its athlete:
+         <img class="hero__prop" alt="" src="data:image/png;base64,…">
+         Nothing is drawn in its place. -->
+
+    <svg class="hero__range" viewBox="0 0 226 69" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 69 L40 28 L80 69 Z"     fill="#9BE222"/>
+      <path d="M88 69 L140 6 L192 69 Z"   fill="#9BE222"/>
+      <path d="M184 69 L226 32 L226 69 Z" fill="#9BE222"/>
+    </svg>
+
+    <h1 class="hero__title">Backchat</h1>
+  </header>
+
+  <!-- ================= FAN STADIUM ================= -->
+  <h2 class="label">Fan Stadium</h2>
+
+  <a class="stadium" href="#" aria-label="Enter Barcelona’s Stadium, live 24/7">
+    <!-- ASSET GAP — the stadium photograph is not exported yet. Everything
+         inside .stadium__art is a CSS stand-in for it and should be replaced
+         by the image, not extended. -->
+    <span class="stadium__art" aria-hidden="true"></span>
+    <span class="stadium__scrim" aria-hidden="true"></span>
+    <span class="glass glass--live">Live 24/7</span>
+    <span class="glass glass--enter">Enter
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </span>
+  </a>
+
+  <!-- ================= LOCKER ROOMS ================= -->
+  <div class="head">
+    <h2>Locker Rooms</h2>
+    <button class="add" type="button" aria-label="Start a Locker Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <span class="spacer"></span>
+    <button class="pill-btn" type="button">View all
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </button>
+  </div>
+
+  <!-- ---------- live now ---------- -->
+  <section class="section" aria-label="Locker Rooms live now">
+    <div class="section__bar">
+      <span class="status-pill">Live now</span>
+      <span class="spacer"></span>
+      <button class="icon-btn" type="button" aria-label="Find a live room"
+              data-find-toggle aria-expanded="false" aria-controls="bc-find">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+      </button>
+      <button class="icon-btn" type="button" aria-label="Filter live rooms"
+              data-sheet-open aria-haspopup="dialog" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16l-6.3 7.4V19l-3.4-2.2v-3.9L4 5.5Z"/></svg>
+        <span class="icon-btn__on" data-filter-on hidden></span>
+      </button>
+      <button class="icon-btn" type="button" aria-label="Rooms I am reminded about"
+              data-remind-toggle aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16M10 20.3h4"/></svg>
+      </button>
+    </div>
+
+    <!-- search — opened by the magnifier above, filters the rail below -->
+    <div class="find" id="bc-find" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+      <input class="find__in" type="search" data-find-in placeholder="Search live rooms or hosts" aria-label="Find a live room">
+      <button class="find__x" type="button" data-find-clear aria-label="Clear search" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+
+    <p class="found" data-found hidden></p>
+
+    <!-- data-access mirrors the badge each card already draws; data-remind is the
+         reminder set in alerts.html ("You set a reminder for … Manager Auto Room") -->
+    <div class="rail" role="list" aria-label="Live Locker Rooms">
+      <article class="room" role="listitem" data-room data-access="open" data-remind="1">
+        <h3 class="room__title">Manager Auto Room</h3>
+        <div class="room__host">
+          <span class="avatar" style="background-image:var(--av-01)" role="img" aria-label="club_staff"></span>
+          <span>host : club_staff</span>
+        </div>
+        <div class="room__foot">
+          <span class="stat" aria-label="1 speaker">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+            1
+          </span>
+          <span class="stat" aria-label="2 in the room">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+            2
+          </span>
+          <span class="access">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+            Open room
+          </span>
+        </div>
+      </article>
+
+      <article class="room" role="listitem" data-room data-access="open">
+        <h3 class="room__title">Change Barca Coach : the shortlist</h3>
+        <div class="room__host">
+          <span class="avatar" style="background-image:var(--av-17)" role="img" aria-label="taythaytu"></span>
+          <span>host : taythaytu</span>
+        </div>
+        <div class="room__foot">
+          <span class="stat" aria-label="3 speakers">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+            3
+          </span>
+          <span class="stat" aria-label="41 in the room">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+            41
+          </span>
+          <span class="access">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+            Open room
+          </span>
+        </div>
+      </article>
+
+      <article class="room" role="listitem" data-room data-access="locked">
+        <h3 class="room__title">Squad for the Arsenal leg</h3>
+        <div class="room__host">
+          <span class="avatar" style="background-image:var(--av-02)" role="img" aria-label="capitan_7"></span>
+          <span>host : capitan_7</span>
+        </div>
+        <div class="room__foot">
+          <span class="stat" aria-label="2 speakers">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+            2
+          </span>
+          <span class="stat" aria-label="18 in the room">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+            18
+          </span>
+          <span class="access">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0V11"/></svg>
+            Locked room
+          </span>
+        </div>
+      </article>
+    </div>
+
+    <!-- no-match state for the search / filter / reminder controls above.
+         Separate from the shipped empty below, which means "nothing is live". -->
+    <p class="empty" data-none hidden>No live room matches that search or filter.</p>
+
+    <!-- live empty state — remove the hidden attribute to preview -->
+    <p class="empty" hidden>No Locker Rooms in session</p>
+  </section>
+
+  <!-- ---------- upcoming ---------- -->
+  <section class="section" aria-label="Upcoming Locker Rooms">
+    <div class="section__bar">
+      <span class="status-pill status-pill--quiet">Upcoming</span>
+    </div>
+
+    <div class="list" role="list">
+      <article class="room" role="listitem">
+        <p class="room__when">Sunday · April 19 · 6:00 PM</p>
+        <h3 class="room__title">Pre-match build-up : Barcelona v Arsenal</h3>
+        <div class="room__host">
+          <span class="avatar" style="background-image:var(--av-01)" role="img" aria-label="club_staff"></span>
+          <span>host : club_staff</span>
+        </div>
+        <div class="room__foot">
+          <span class="stat" aria-label="2 speakers">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+            2
+          </span>
+          <span class="stat" aria-label="74 booked in">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+            74
+          </span>
+          <span class="access">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+            Open room
+          </span>
+        </div>
+      </article>
+
+      <article class="room" role="listitem">
+        <p class="room__when">Sunday · April 19 · 9:30 PM</p>
+        <h3 class="room__title">Full-time verdict and player ratings</h3>
+        <div class="room__host">
+          <span class="avatar" style="background-image:var(--av-12)" role="img" aria-label="scout_mode"></span>
+          <span>host : scout_mode</span>
+        </div>
+        <div class="room__foot">
+          <span class="stat" aria-label="3 speakers">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+            3
+          </span>
+          <span class="stat" aria-label="12 booked in">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+            12
+          </span>
+          <span class="access">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0V11"/></svg>
+            Locked room
+          </span>
+        </div>
+      </article>
+    </div>
+
+    <!-- upcoming empty state — remove the hidden attribute to preview -->
+    <p class="empty" hidden>No Upcoming Locker Rooms</p>
+  </section>
+
+</main>
+
+<!-- ================= TAB BAR ================= -->
+<nav class="tabbar" aria-label="Primary">
+  <div class="tabbar__inner">
+    <button class="tab" type="button" aria-label="War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/>
+        <path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/>
+      </svg><span class="tab__label">War Room</span>
+    </button>
+
+    <button class="tab" type="button" aria-label="Merits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/>
+      </svg><span class="tab__label">Merits</span>
+    </button>
+
+    <button class="tab" type="button" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>
+      </svg><span class="tab__label">Backchat</span>
+    </button>
+
+    <button class="tab" type="button" aria-label="Alerts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16"/>
+      </svg><span class="tab__label">Alerts</span>
+    </button>
+
+    <button class="tab" type="button" aria-label="Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>
+      </svg><span class="tab__label">Profile</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ================= FILTER SHEET =================
+     Outside <main> so it is replayed into every device and stays inside
+     the phone. Access is the one axis a live room card actually carries
+     — the badge in its footer — so it is the only group here. -->
+<div class="overlay tabbar" data-sheet="live">
+  <div class="scrim" data-sheet-close></div>
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Filter live rooms" tabindex="-1">
+    <span class="sheet__grab" aria-hidden="true"></span>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Filter live rooms</h3>
+      <span class="sheet__n" data-sheet-n hidden></span>
+      <button class="sheet__clear" type="button" data-sheet-clear>Clear all</button>
+      <button class="sheet__x" type="button" data-sheet-close aria-label="Close filter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <p class="sheet__grp">Access</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-access="open">
+        <span class="opt__text">Open room<small>Anyone at the club can walk in</small></span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-access="locked">
+        <span class="opt__text">Locked room<small>The host admits members one by one</small></span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+    </div>
+    <div class="sheet__foot">
+      <button class="btn" type="button" data-sheet-apply>Apply <span class="btn__n" data-sheet-btn-n hidden></span></button>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* The review page emits the component into a `.mk` container and the
+     prototype into an iframe, so nothing is resolved with a bare
+     document.querySelector — resolve from the element that was clicked. */
+  function root(el){ return (el && el.closest && el.closest('.mk')) || document; }
+
+  function checked(r){
+    return Array.prototype.slice.call(r.querySelectorAll('[data-sheet="live"] .opt[aria-checked="true"]'))
+      .map(function(o){ return o.dataset.access; });
+  }
+
+  /* ---------- live rail: search + access filter + reminders ---------- */
+  function apply(r){
+    var field  = r.querySelector('.find');
+    var input  = r.querySelector('[data-find-in]');
+    var q      = (field && !field.hidden && input) ? input.value.trim().toLowerCase() : '';
+    var on     = checked(r);
+    var remind = r.querySelector('[data-remind-toggle]');
+    var only   = remind && remind.getAttribute('aria-pressed') === 'true';
+    var rooms  = Array.prototype.slice.call(r.querySelectorAll('.rail [data-room]'));
+    var shown  = 0;
+
+    rooms.forEach(function(room){
+      var hit = (!q || room.textContent.toLowerCase().indexOf(q) > -1) &&
+                (!on.length || on.indexOf(room.dataset.access) > -1) &&
+                (!only || room.dataset.remind === '1');
+      room.hidden = !hit;
+      if (hit) shown++;
+    });
+
+    var active = !!q || !!on.length || only;
+    var found  = r.querySelector('[data-found]');
+    var none   = r.querySelector('[data-none]');
+    var dot    = r.querySelector('[data-filter-on]');
+    var clearX = r.querySelector('[data-find-clear]');
+
+    if (found){
+      found.hidden = !active;
+      found.textContent = shown + ' of ' + rooms.length + ' live rooms';
+    }
+    if (none)   none.hidden = shown > 0;
+    if (dot)    dot.hidden  = !on.length;
+    if (clearX) clearX.hidden = !q;
+  }
+
+  function syncSheet(r){
+    var n     = checked(r).length;
+    var pill  = r.querySelector('[data-sheet-n]');
+    var btnN  = r.querySelector('[data-sheet-btn-n]');
+    var clear = r.querySelector('[data-sheet-clear]');
+    if (pill){ pill.hidden = !n; pill.textContent = n + ' on'; }
+    if (btnN){ btnN.hidden = !n; btnN.textContent = n; }
+    if (clear) clear.disabled = !n;
+  }
+
+  /* ---------- the sheet ---------- */
+  var trigger = null, snapshot = null;
+
+  function openSheet(btn){
+    var r  = root(btn);
+    var ov = r.querySelector('[data-sheet="live"]');
+    if (!ov) return;
+    trigger  = btn;
+    snapshot = Array.prototype.slice.call(ov.querySelectorAll('.opt'))
+      .map(function(o){ return o.getAttribute('aria-checked'); });
+    btn.setAttribute('aria-expanded','true');
+    ov.classList.add('is-open');
+    requestAnimationFrame(function(){
+      ov.classList.add('is-in');
+      var s = ov.querySelector('.sheet'); if (s) s.focus();
+    });
+    syncSheet(r);
+  }
+
+  function closeSheet(ov, revert){
+    var r = root(ov);
+    if (revert && snapshot){
+      Array.prototype.slice.call(ov.querySelectorAll('.opt')).forEach(function(o,i){
+        o.setAttribute('aria-checked', snapshot[i]);
+      });
+    }
+    snapshot = null;
+    ov.classList.remove('is-in');
+    window.setTimeout(function(){ ov.classList.remove('is-open'); }, 220);
+    var t = r.querySelector('[data-sheet-open]');
+    if (t) t.setAttribute('aria-expanded','false');
+    syncSheet(r);
+    if (trigger){ trigger.focus(); trigger = null; }
+  }
+
+  document.addEventListener('click', function(e){
+    var t;
+
+    /* tab bar */
+    if ((t = e.target.closest('.tab'))){
+      var bar = t.closest('.tabbar__inner'); if (!bar) return;
+      bar.querySelectorAll('.tab').forEach(function(x){
+        if (x === t){ x.setAttribute('aria-current','page'); x.removeAttribute('aria-label'); }
+        else { x.removeAttribute('aria-current'); }
+      });
+      return;
+    }
+
+    /* search: show / hide the field */
+    if ((t = e.target.closest('[data-find-toggle]'))){
+      var r = root(t), field = r.querySelector('.find');
+      var open = field.hidden;
+      field.hidden = !open;
+      t.setAttribute('aria-expanded', String(open));
+      if (open){ field.querySelector('.find__in').focus(); }
+      else { field.querySelector('.find__in').value = ''; }
+      apply(r);
+      return;
+    }
+
+    if ((t = e.target.closest('[data-find-clear]'))){
+      var rc = root(t), inp = rc.querySelector('[data-find-in]');
+      inp.value = ''; inp.focus(); apply(rc);
+      return;
+    }
+
+    /* reminders: a plain two-state toggle on the rail */
+    if ((t = e.target.closest('[data-remind-toggle]'))){
+      t.setAttribute('aria-pressed', t.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+      apply(root(t));
+      return;
+    }
+
+    /* filter sheet */
+    if ((t = e.target.closest('[data-sheet-open]'))){ openSheet(t); return; }
+
+    if ((t = e.target.closest('.opt'))){
+      t.setAttribute('aria-checked', t.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+      syncSheet(root(t));
+      return;
+    }
+
+    if ((t = e.target.closest('[data-sheet-clear]'))){
+      var rq = root(t);
+      rq.querySelectorAll('[data-sheet="live"] .opt').forEach(function(o){
+        o.setAttribute('aria-checked','false');
+      });
+      syncSheet(rq);
+      return;
+    }
+
+    if ((t = e.target.closest('[data-sheet-apply]'))){
+      var ra = root(t);
+      apply(ra);
+      closeSheet(ra.querySelector('[data-sheet="live"]'), false);
+      return;
+    }
+
+    if ((t = e.target.closest('[data-sheet-close]'))){
+      closeSheet(t.closest('.overlay'), true);
+    }
+  });
+
+  document.addEventListener('input', function(e){
+    if (e.target.matches('[data-find-in]')) apply(root(e.target));
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Escape') return;
+    var open = document.querySelector('.overlay.is-open');
+    if (open){ closeSheet(open, true); return; }
+    var f = document.activeElement;
+    if (f && f.matches && f.matches('[data-find-in]')){
+      var r = root(f), tog = r.querySelector('[data-find-toggle]');
+      r.querySelector('.find').hidden = true;
+      f.value = '';
+      tog.setAttribute('aria-expanded','false');
+      tog.focus();
+      apply(r);
+    }
+  });
+})();
+</script>
+</body>
+</html>

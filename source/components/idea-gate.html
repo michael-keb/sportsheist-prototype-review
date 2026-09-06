@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en" data-component="idea-gate">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Idea gate</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — THE IDEA GATE  (CRoute.warningIdea)
+
+   The screen a member hits before the create-idea form. Five
+   phone-width frames stacked down one page:
+
+     01 Eligible          the gate as it should read
+     02 Late in the match caution over the gate
+     03 Category closed   the club does not take this kind of Idea
+     04 Short of Credits  the deposit cannot be covered
+     05 Suppressed        what the compose form carries once the
+                          member has ticked "don't show this again"
+
+   ---- WHAT THE LIVE SCREEN ACTUALLY GATES ON: NOTHING ----------
+   lib/pages/ideas/warning_create.dart is a stateless Scaffold with
+   a header, a raster lockup (stack_create.png + idea_light.svg), the
+   Bebas line `SUBMIT YOUR IDEA!`, one centred paragraph from
+   `ideaPage.info create`, and a CONTINUE button whose only body is
+   `GoRouter.of(context).pushNamed(CRoute.createIdeas)`.
+
+   There is no permission read, no balance read, no match-state read,
+   no cost figure and no branch. `warningIdea` appears 7 times in
+   lib/ — three are its own declaration in routes.dart, and the other
+   five are push sites: `ideas_screen`, `voting_screen`,
+   `result_screen`, and `proposal_body` twice. Every one is an
+   unconditional `routes.pushNamed` off an app-bar action. So the
+   route named `warningIdea` warns about nothing and gates nothing:
+   it is a full-screen interruption that reads one paragraph and
+   always continues.
+
+   The paragraph itself is the whole content:
+     "With enough Likes in time your Idea becomes a Proposal.
+      Otherwise, it lapses. Members may vote to Support or Reject
+      your Idea if it becomes a Proposal."
+   — accurate, and it never mentions that posting costs anything.
+
+   ---- WHAT IT COULD GATE ON, FROM THE SAME REPO ----------------
+   Three signals already exist and are already fetched before this
+   screen is reachable:
+
+   1. PERMISSION. `ConfigClub.permissions` carries
+      `member_post_idea_positions` and
+      `member_post_idea_on_field_decision`, surfaced as
+      `CNum.perMissUserPostPosition` / `perMissUserPostOnField`.
+      They are read in exactly one place — `ideas/drop_down/title.dart`
+      — to choose how many category tiles the compose form draws. And
+      that logic has a hole: `findList()` returns 0 when BOTH are
+      false, and index 0 is then rendered anyway, so a member with no
+      posting permission at all is still offered Positions.
+   2. COST. `ConfigClub.creditPostIdea` is the server's deposit
+      figure. It is read on the compose form, the veto pages and the
+      like counter — never before the member commits to the flow.
+   3. MATCH WINDOW. `ideaPage.this game still run` and the two
+      strings in `result/result_count.dart` establish that an Idea
+      whose stages outrun the fixture is cancelled and the deposit
+      refunded. Nothing checks for it up front.
+
+   This file gates on all three, and every branch is called out as a
+   proposal in the notes.
+
+   ---- CURRENCY ------------------------------------------------
+   ONE noun: **Credits**, always with a figure in front of it. This
+   is wallet.html's and create-idea.html's resolution, adopted
+   unchanged. `Participation Credits`, `Participation Deposit` as a
+   noun and the legacy `BOND` are all retired; `deposit` survives as
+   a verb and as a state of Credits ("locked"). The live build ships
+   four names for the one thing, and `ideaPage.participation credit`
+   ships the literal `[x] PARTICIPATION CREDITS` with `[x]` never
+   substituted.
+
+   Deposit is **25.0 Credits**, matching wallet.html and
+   create-idea.html. The figure is INVENTED — see the notes.
+
+   Token block copied verbatim from merits.html. Dialog shell, scrim,
+   state tiles, action row, verb convention and inline banner are
+   dialogs.html. Frame, app bar, spec rows, amount lockup and consent
+   row are create-idea.html. Portrait from _assets/avatars.css.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;
+  --surface:       #1C2129;
+  --sunken:        #13171E;
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* semantic red — the only other hue */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.12);
+  --red-line:      rgba(226,86,74,.28);
+
+  /* neutral wash — dialogs.html; where a state must read as neither */
+  --neutral-wash:  rgba(255,255,255,.06);
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  /* dialog shell — dialogs.html */
+  --dlg-inset:     20px;
+  --dlg-max:       340px;
+  --dlg-pad:       20px;
+  --scrim:         rgba(3,4,1,.72);
+  --scrim-blur:    10px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* portrait — _assets/avatars.css. --av-16 is dylan_n, the viewer,
+     the same face locker-room.html and create-idea.html use for
+     "you". */
+  --av-16:url(data:image/jpeg;base64,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);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 60px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+
+/* ============================================================
+   PAGE FURNITURE
+   ============================================================ */
+.top{margin:6px var(--gutter) 0}
+.eyebrow{
+  margin:0 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.doc-title{
+  margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.doc-sub{margin:10px 0 0;font-size:13px;line-height:1.45;color:var(--muted)}
+.doc-sub b{color:var(--text);font-weight:600}
+
+.note{
+  margin:16px var(--gutter) 0;padding:14px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+}
+.note dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:9px 12px}
+.note dt{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);white-space:nowrap;padding-top:2px;
+}
+.note dd{margin:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.note dd b{color:var(--text);font-weight:600}
+
+/* frame caption — create-idea.html */
+.fr-cap{display:flex;align-items:center;gap:9px;margin:34px var(--gutter) 10px}
+.fr-cap__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:26px;height:22px;padding:0 7px;border-radius:var(--r-pill);
+  background:var(--acid-wash);color:var(--acid);
+  font-size:10.5px;font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums;
+}
+.fr-cap__t{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.fr-cap__s{flex:1;height:1px;background:var(--line)}
+.fr-note{margin:10px var(--gutter) 0;font-size:12px;line-height:1.5;color:var(--muted)}
+.fr-note b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   FRAME + APP BAR  —  create-idea.html
+   ============================================================ */
+.fr{
+  position:relative;overflow:hidden;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--bg);
+}
+.fr__body{padding:0 0 22px}
+.fr--dialog{min-height:760px}   /* a dialog frame is a whole phone screen */
+
+.bar{
+  display:flex;align-items:center;gap:10px;
+  height:56px;padding:0 10px 0 8px;
+  border-bottom:1px solid var(--line-soft);
+}
+.bar__title{flex:1;margin:0;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+
+.icon-btn{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}  /* 44 px hit */
+.icon-btn:hover{background:#222833}
+.icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.icon-btn svg{width:17px;height:17px}
+.icon-btn--bare{background:transparent}
+.icon-btn--bare:hover{background:var(--surface)}
+
+.label{margin:24px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.state-tag{
+  margin:20px var(--gutter) 8px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+
+/* ============================================================
+   THE LOCKUP
+   ------------------------------------------------------------
+   Replaces the raster pair the live screen draws — a 164 pt
+   stack_create.png photograph with a 129 × 170 idea_light.svg
+   lamp laid over it, both authored for a white scaffold. Neither
+   has a dark-mode export, so this is a drawn 24-box glyph at
+   1.5 stroke in a 72 px acid-wash tile. See the notes: if the
+   illustrated lamp is wanted, it needs re-cutting for #030401.
+   ============================================================ */
+.lock-up{
+  display:flex;flex-direction:column;align-items:center;
+  padding:26px var(--gutter) 0;text-align:center;
+}
+.tile{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;border-radius:var(--r-panel);flex:0 0 auto;
+}
+.tile svg{width:22px;height:22px}
+.tile--acid{background:var(--acid-wash);color:var(--acid)}
+.tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.tile--warn{background:var(--neutral-wash);color:var(--red)}
+.tile--neutral{background:var(--neutral-wash);color:var(--text)}
+/* 72 px is a new size, and only the gate uses it: it is the one
+   place in the flow that is an illustration slot rather than a
+   state marker. */
+.tile--hero{width:72px;height:72px;border-radius:20px}
+.tile--hero svg{width:36px;height:36px}
+
+.lock-up h1{
+  margin:18px 0 0;
+  font-size:30px;font-weight:800;letter-spacing:-.025em;line-height:1.04;
+  text-transform:uppercase;
+}
+.lock-up p{margin:11px 0 0;max-width:30em;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.lock-up p b{color:var(--text);font-weight:600}
+
+/* who is posting */
+.byline{
+  display:flex;align-items:center;gap:9px;
+  margin:16px var(--gutter) 0;padding:9px 12px;
+  border-radius:var(--r-pill);background:var(--sunken);
+  box-shadow:inset 0 0 0 1px var(--line);
+  font-size:12.5px;color:var(--muted);
+}
+.byline b{color:var(--text);font-weight:600}
+.avatar{
+  width:26px;height:26px;border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+.byline__crest{
+  margin-left:auto;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  height:22px;padding:0 8px;border-radius:6px;
+  background:rgba(255,255,255,.94);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.13);
+  font-size:9.5px;font-weight:800;letter-spacing:-.03em;color:var(--acid-ink);
+}
+
+/* ============================================================
+   THE LIFECYCLE RAIL
+   The one paragraph the live screen shows, broken into the three
+   things that actually happen — each one carrying what it does to
+   the member's Credits, because that is the part the paragraph
+   leaves out.
+   ============================================================ */
+.rail{list-style:none;margin:0 var(--gutter);padding:0}
+.rail li{position:relative;display:flex;gap:13px;padding:0 0 16px}
+.rail li:last-child{padding-bottom:0}
+.rail__n{
+  position:relative;z-index:1;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:50%;
+  background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line);
+  color:var(--muted);
+  font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;
+}
+.rail li::before{
+  content:"";position:absolute;left:14.5px;top:30px;bottom:0;width:1px;background:var(--line);
+}
+.rail li:last-child::before{display:none}
+.rail__t{flex:1;min-width:0;padding-top:4px}
+.rail__t h3{margin:0;font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.rail__t p{margin:5px 0 0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.rail__t p b{color:var(--text);font-weight:600}
+.rail__money{
+  display:block;margin-top:8px;
+  font-size:12px;font-weight:600;line-height:1.4;color:var(--muted);
+}
+.rail__money svg{
+  width:14px;height:14px;margin-right:6px;vertical-align:-3px;color:var(--muted);
+}
+.rail__money.is-good{color:var(--acid)}
+.rail__money.is-good svg{color:var(--acid)}
+.rail__money.is-bad b{color:var(--text)}
+.rail__money.is-bad svg{color:var(--red)}
+
+/* ============================================================
+   SPEC ROWS + AMOUNT LOCKUP  —  create-idea.html, unchanged
+   ============================================================ */
+.section{
+  margin:0 var(--gutter);padding:12px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+}
+.amount{
+  display:flex;align-items:baseline;gap:9px;
+  padding:14px;margin-bottom:10px;
+  border-radius:var(--r-panel);background:var(--sunken);
+}
+.amount b{font-size:38px;font-weight:800;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+.amount span{
+  font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);line-height:1.3;
+}
+.amount em{
+  margin-left:auto;align-self:center;font-style:normal;text-align:right;
+  font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);
+}
+
+.rows{list-style:none;margin:0;padding:0;border-radius:var(--r-panel);background:var(--sunken);overflow:hidden}
+.rows + .rows{margin-top:10px}
+.rows li{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 13px;border-top:1px solid var(--line-soft);font-size:13px;
+}
+.rows li:first-child{border-top:0}
+.rows li svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted)}
+.rows li svg.is-good{color:var(--acid)}
+.rows li svg.is-bad{color:var(--red)}
+.rows__k{flex:1;min-width:0;color:var(--muted)}
+.rows__v{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.rows__v--good{color:var(--acid)}
+.rows li p{margin:0;flex:1;font-size:12.5px;line-height:1.4;color:var(--muted)}
+.rows li p b{color:var(--text);font-weight:600}
+.rows--total li{border-top:1px solid var(--line)}
+.rows li.is-sum{background:rgba(255,255,255,.03)}
+.rows li.is-sum .rows__k{color:var(--text);font-weight:600}
+
+/* ============================================================
+   CONSENT ROW  —  create-idea.html, unchanged
+   ============================================================ */
+.consent{
+  display:flex;align-items:flex-start;gap:13px;
+  width:calc(100% - var(--gutter) * 2);min-height:56px;margin:12px var(--gutter) 0;padding:14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  font:inherit;text-align:left;cursor:pointer;
+}
+.consent:hover{background:#222833}
+.consent:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.consent__box{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;flex:0 0 auto;border-radius:7px;
+  background:transparent;box-shadow:inset 0 0 0 1.6px rgba(255,255,255,.30);
+  color:var(--acid-ink);
+}
+.consent__box svg{width:15px;height:15px;opacity:0}
+.consent[aria-checked="true"] .consent__box{background:var(--acid);box-shadow:none}
+.consent[aria-checked="true"] .consent__box svg{opacity:1}
+.consent__txt{font-size:13.5px;line-height:1.45}
+.consent__txt b{font-weight:600}
+
+/* ============================================================
+   ACTION ROW + BUTTONS
+   One set of names for the whole file. Order, widths, gap, weight
+   and the verb convention are dialogs.html; the screen footer takes
+   forms.html's 52 px, the dialog row keeps dialogs.html's 46 px.
+   ============================================================ */
+.actions{display:flex;gap:10px;margin:20px var(--gutter) 0}
+.act{display:flex;gap:10px;margin-top:18px}
+.act--single .btn,.actions--single .btn{width:100%}
+.btn{
+  position:relative;flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:52px;padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:15px;font-weight:700;letter-spacing:-.005em;
+  cursor:pointer;white-space:nowrap;
+  transition:background .18s var(--ease),transform .12s var(--ease);
+}
+.act .btn{min-height:46px;font-size:14.5px}
+.btn svg{width:18px;height:18px;flex:0 0 auto}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--ghost{background:var(--surface);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.btn--ghost:hover{background:#222833}
+.btn[disabled]{background:var(--sunken);color:var(--dim);cursor:not-allowed;box-shadow:none}
+.btn[disabled]:active{transform:none}
+
+.linkbtn{
+  border:0;background:transparent;padding:0;
+  color:var(--acid);font:inherit;font-size:12.5px;font-weight:700;
+  text-decoration:underline;text-underline-offset:3px;cursor:pointer;
+}
+.linkbtn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.fine{
+  margin:12px var(--gutter) 0;text-align:center;
+  font-size:11.5px;line-height:1.45;color:var(--dim);
+}
+
+/* ============================================================
+   DIALOG SHELL + SCRIM  —  dialogs.html, unchanged
+   ============================================================ */
+.behind{opacity:.5;pointer-events:none;filter:saturate(.85)}
+.scrim-wrap{
+  position:absolute;inset:0;z-index:5;
+  display:flex;align-items:center;justify-content:center;
+}
+.scrim{
+  position:absolute;inset:0;background:var(--scrim);
+  -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+  backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .scrim{background:rgba(3,4,1,.86)}
+}
+.dlg{
+  position:relative;z-index:1;
+  width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max);
+  margin:0 auto;padding:var(--dlg-pad);
+  border-radius:var(--r-card);background:var(--surface);
+  border:1px solid var(--line);
+  box-shadow:0 24px 60px rgba(0,0,0,.55);
+}
+.dlg__close{
+  position:absolute;top:12px;right:12px;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:50%;
+  background:var(--sunken);border:1px solid var(--line-soft);color:var(--muted);
+  cursor:pointer;transition:color .18s var(--ease),background .18s var(--ease);
+}
+.dlg__close::after{content:"";position:absolute;inset:-7px;border-radius:inherit}  /* 44 px hit */
+.dlg__close svg{width:15px;height:15px}
+.dlg__close:hover{color:var(--text);background:#1A1F27}
+.dlg__close:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.dlg__title{
+  margin:14px 0 0;padding-right:26px;
+  font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.2;
+}
+.dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.dlg__body b{color:var(--text);font-weight:600}
+.dlg .rows{margin-top:14px}
+
+/* ============================================================
+   INLINE BANNER  —  dialogs.html, unchanged
+   ============================================================ */
+.banner{
+  display:flex;align-items:flex-start;gap:10px;
+  margin:0 var(--gutter);padding:12px;
+  border-radius:var(--r-panel);background:var(--sunken);border:1px solid var(--line);
+}
+.banner__icon{flex:0 0 auto;color:var(--muted);margin-top:1px}
+.banner__icon svg{width:18px;height:18px}
+.banner__txt{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.banner__txt b{display:block;color:var(--text);font-size:13px;font-weight:600;margin-bottom:2px}
+.banner__link{
+  align-self:center;flex:0 0 auto;border:0;background:transparent;padding:0 2px;
+  font:inherit;font-size:12.5px;font-weight:700;color:var(--acid);cursor:pointer;
+}
+.banner__link:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.banner__link[aria-expanded="true"]{text-decoration:underline;text-underline-offset:3px}
+
+/* The banner's Details disclosure. An inline panel rather than a modal: this
+   frame is short and `.fr` clips its own overflow, so a full-height scrim
+   would be cut off. Same contract — Escape closes, an outside click closes,
+   focus returns to the trigger. */
+.detail{
+  margin:10px var(--gutter) 0;padding:14px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--surface);box-shadow:0 18px 44px rgba(0,0,0,.45);
+}
+.detail__head{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+.detail__head h3{flex:1;margin:0;font-size:15px;font-weight:600;letter-spacing:-.015em}
+.detail__x{
+  width:28px;height:28px;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:0;border-radius:50%;background:var(--sunken);color:var(--muted);cursor:pointer;
+}
+.detail__x svg{width:14px;height:14px}
+.detail__x:hover{background:#1A1F27;color:var(--text)}
+.detail__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* a permission list that has to be readable as allowed / not allowed
+   without relying on the tick's colour: the word is always there. */
+.perm li{align-items:flex-start}
+.perm__k{flex:1;min-width:0}
+.perm__k b{display:block;font-size:13px;font-weight:600;color:var(--text)}
+.perm__k span{display:block;margin-top:2px;font-size:11.5px;line-height:1.35;color:var(--muted)}
+.perm__v{
+  flex:0 0 auto;align-self:center;
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+}
+.perm__v svg{width:14px;height:14px}
+.perm__v--yes{color:var(--acid)}
+.perm__v--yes svg{color:var(--acid)}
+.perm__v--no svg{color:var(--red)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+  <header class="top">
+    <p class="eyebrow">War Room · before the form</p>
+    <h1 class="doc-title">Idea gate</h1>
+    <p class="doc-sub">The screen a member meets on the way to creating an Idea — the one that
+      says whether they are allowed to and what it costs. It has a route
+      (<code>CRoute.warningIdea</code>, referenced 7 times and pushed from five) and it has never been
+      captured or
+      rebuilt. <b>The live version gates on nothing.</b></p>
+  </header>
+
+  <div class="note">
+    <dl>
+      <dt>As built</dt>
+      <dd><code>warning_create.dart</code> is a stateless screen: a raster lamp, the Bebas line
+          <b>SUBMIT YOUR IDEA!</b>, one centred paragraph, and a <b>CONTINUE</b> button that always
+          pushes the form. No permission read, no balance read, no cost figure, no branch.</dd>
+      <dt>The gap</dt>
+      <dd>The paragraph explains Likes, Proposals and lapsing accurately — and <b>never mentions
+          that posting costs 25.0 Credits</b>, which is the only thing on this screen a member
+          could get wrong at a price.</dd>
+      <dt>Now gates on</dt>
+      <dd><b>Three signals the app already fetches:</b> the club's per-category posting
+          permissions, the member's available Credits against the deposit, and whether the fixture
+          will outlast the Idea's own stages.</dd>
+      <dt>Currency</dt>
+      <dd><b>Credits</b>, one noun, always with a figure. A <b>deposit of 25.0 Credits</b>,
+          returned when the Idea becomes a Proposal, forfeited only if it lapses.</dd>
+    </dl>
+  </div>
+
+  <!-- ============================================================
+       01 · ELIGIBLE
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">01</span><span class="fr-cap__t">Eligible</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr" aria-label="Idea gate — eligible">
+    <div class="bar">
+      <button class="icon-btn icon-btn--bare" type="button" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <h2 class="bar__title">Create idea</h2>
+      <span style="width:38px"></span>
+    </div>
+
+    <div class="fr__body">
+
+      <div class="lock-up">
+        <span class="tile tile--acid tile--hero" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 17.4a6.5 6.5 0 1 1 6 0"/><path d="M9 17.4h6"/>
+            <path d="M9.7 20.4h4.6"/><path d="M10.6 17.4v-3.1a1.4 1.4 0 1 1 1.4-1.4 1.4 1.4 0 1 1 1.4 1.4v3.1"/>
+          </svg>
+        </span>
+        <h1>Start an idea</h1>
+        <p>An Idea needs <b>enough Likes before its clock runs out</b> to become a Proposal. If it
+          gets them, Barcelona votes to Support or Reject it. If it doesn't, it lapses.</p>
+      </div>
+
+      <p class="byline">
+        <span class="avatar" style="background-image:var(--av-16)" role="img" aria-label="dylan_n"></span>
+        Posting as <b>dylan_n</b>
+        <span class="byline__crest" role="img" aria-label="FC Barcelona">BAR</span>
+      </p>
+
+      <h3 class="label">What happens next</h3>
+      <ol class="rail">
+        <li>
+          <span class="rail__n">1</span>
+          <div class="rail__t">
+            <h3>You post it</h3>
+            <p>Your Idea goes into the War Room and the Ideas stage opens for <b>6 minutes</b>.</p>
+            <p class="rail__money">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.6"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
+              <b>25.0 Credits</b> are locked
+            </p>
+          </div>
+        </li>
+        <li>
+          <span class="rail__n">2</span>
+          <div class="rail__t">
+            <h3>It collects Likes</h3>
+            <p>Reach <b>120 Likes</b> before the 6 minutes end and it becomes a Proposal. The club
+              then votes for <b>3 minutes</b>.</p>
+            <p class="rail__money is-good">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>
+              <b>25.0 Credits</b> returned in full
+            </p>
+          </div>
+        </li>
+        <li>
+          <span class="rail__n">3</span>
+          <div class="rail__t">
+            <h3>Or it lapses</h3>
+            <p>Short of 120 when the clock ends, the Idea closes and never reaches a vote. This
+              is the <b>only</b> way the deposit does not come back.</p>
+            <p class="rail__money is-bad">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              <b>25.0 Credits</b> forfeited
+            </p>
+          </div>
+        </li>
+      </ol>
+
+      <h3 class="label">The deposit</h3>
+      <div class="section">
+        <div class="amount">
+          <b>25.0</b><span>Credits</span><em>Per idea<br>at Barcelona</em>
+        </div>
+        <ul class="rows rows--total">
+          <li><span class="rows__k">Available now</span><span class="rows__v">940.0</span></li>
+          <li><span class="rows__k">Locked by this Idea</span><span class="rows__v">−25.0</span></li>
+          <li class="is-sum"><span class="rows__k">Left to spend</span><span class="rows__v">915.0</span></li>
+        </ul>
+        <ul class="rows">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v4.4l3 2"/></svg>
+            <p><b>Nothing is locked yet.</b> The deposit is taken when you post, not when you open
+              the form — you can write an Idea and discard it for free.</p>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5A8 8 0 1 1 17.3 6"/><path d="M20.5 4v4.2h-4.2"/></svg>
+            <p>If the match ends while your Idea is still running, it is <b>cancelled
+              automatically</b> and the deposit is returned.</p>
+          </li>
+        </ul>
+      </div>
+
+      <h3 class="label">What Barcelona lets you post</h3>
+      <div class="section">
+        <ul class="rows perm">
+          <li>
+            <span class="perm__k">
+              <b>Positions</b>
+              <span>Who plays, who captains, who is rested.</span>
+            </span>
+            <span class="perm__v perm__v--yes">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>
+              Open
+            </span>
+          </li>
+          <li>
+            <span class="perm__k">
+              <b>On-field decisions</b>
+              <span>Instructions the coach can carry out during the match.</span>
+            </span>
+            <span class="perm__v perm__v--yes">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>
+              Open
+            </span>
+          </li>
+        </ul>
+        <p class="fr-note" style="margin-left:2px;margin-right:2px">Set by the club, per category.
+          Off-field and management decisions are never member Ideas at any club, so they are not
+          listed — a category a member can never use is not a locked door, it is somebody else's
+          building.</p>
+      </div>
+
+      <button class="consent" type="button" role="checkbox" aria-checked="false" data-consent>
+        <span class="consent__box" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+        </span>
+        <span class="consent__txt">Don't show this again. <b>I know a deposit of 25.0 Credits is
+          locked when I post, and forfeited if my Idea lapses.</b></span>
+      </button>
+
+      <div class="actions">
+        <button class="btn btn--ghost" type="button">Not now</button>
+        <button class="btn btn--acid" type="button">Start an idea</button>
+      </div>
+      <p class="fine" data-fine>You'll see the deposit again on the last step, with a figure and a
+        confirmation, before anything is locked.</p>
+    </div>
+  </section>
+
+  <p class="fr-note"><b>The verb is repeated, per the dialog convention:</b> “Start an idea” →
+    <b>Start an idea</b>. It is deliberately <em>not</em> “Post idea” — that verb belongs to the
+    last step of the form, where the deposit is actually taken. The live screen's affirmative is
+    <b>CONTINUE</b>, shouted, which names neither the act nor its cost. The secondary is
+    <b>Not now</b> rather than Cancel, because the ask can come back.</p>
+
+  <!-- ============================================================
+       02 · LATE IN THE MATCH
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">02</span><span class="fr-cap__t">Late in the match</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr fr--dialog" aria-label="Idea gate — late in the match">
+    <div class="behind" aria-hidden="true">
+      <div class="bar">
+        <span class="icon-btn icon-btn--bare">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        </span>
+        <h2 class="bar__title">Create idea</h2>
+        <span style="width:38px"></span>
+      </div>
+      <div class="fr__body">
+        <div class="lock-up">
+          <span class="tile tile--acid tile--hero">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 17.4a6.5 6.5 0 1 1 6 0"/><path d="M9 17.4h6"/>
+              <path d="M9.7 20.4h4.6"/><path d="M10.6 17.4v-3.1a1.4 1.4 0 1 1 1.4-1.4 1.4 1.4 0 1 1 1.4 1.4v3.1"/>
+            </svg>
+          </span>
+          <h1>Start an idea</h1>
+          <p>An Idea needs enough Likes before its clock runs out to become a Proposal.</p>
+        </div>
+        <h3 class="label">The deposit</h3>
+        <div class="section">
+          <div class="amount"><b>25.0</b><span>Credits</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scrim-wrap">
+      <div class="scrim"></div>
+      <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="late-t" aria-describedby="late-b">
+        <button class="dlg__close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="tile tile--warn" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/>
+          </svg>
+        </span>
+        <h3 class="dlg__title" id="late-t">Start this late?</h3>
+        <p class="dlg__body" id="late-b">
+          <b>Barcelona v Girona has about 7 minutes left.</b> An Idea needs 6 minutes of Likes and
+          3 minutes of voting, so the match will almost certainly finish first.
+        </p>
+        <ul class="rows">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5A8 8 0 1 1 17.3 6"/><path d="M20.5 4v4.2h-4.2"/></svg>
+            <p>If it does, your Idea is <b>cancelled automatically</b> and your <b>25.0
+              Credits</b> come straight back. You lose the Idea, not the deposit.</p>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v4.4l3 2"/></svg>
+            <p>A <b>Position</b> Idea keeps running after the whistle. Only on-field decisions have
+              to land inside the match.</p>
+          </li>
+        </ul>
+        <div class="act">
+          <button class="btn btn--ghost" type="button">Not now</button>
+          <button class="btn btn--acid" type="button">Start it anyway</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">A <b>caution</b>, not a block — the member is eligible and the money is safe,
+    so the affirmative stays acid and stays on the right. This is the one state that earns the
+    route's name: <code>warningIdea</code> currently warns about nothing. Copy comes from the two
+    strings the build already ships —
+    <code>ideaPage.this game still run</code> and the cancellation lines in
+    <code>result/result_count.dart</code> — which are the only places the app admits the match
+    clock can outrun an Idea. Warning is red on the <b>neutral</b> wash with no ring, one step
+    below error, exactly as in the dialogs kit.</p>
+
+  <!-- ============================================================
+       03 · CATEGORY CLOSED
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">03</span><span class="fr-cap__t">Category closed</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr fr--dialog" aria-label="Idea gate — category closed">
+    <div class="behind" aria-hidden="true">
+      <div class="bar">
+        <span class="icon-btn icon-btn--bare">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        </span>
+        <h2 class="bar__title">Create idea</h2>
+        <span style="width:38px"></span>
+      </div>
+      <div class="fr__body">
+        <h3 class="label">What Barcelona lets you post</h3>
+        <div class="section">
+          <ul class="rows perm">
+            <li>
+              <span class="perm__k"><b>Positions</b><span>Who plays, who captains, who is rested.</span></span>
+              <span class="perm__v perm__v--yes">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>
+                Open
+              </span>
+            </li>
+            <li>
+              <span class="perm__k"><b>On-field decisions</b><span>Instructions the coach can carry out during the match.</span></span>
+              <span class="perm__v perm__v--no">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                Club only
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="scrim-wrap">
+      <div class="scrim"></div>
+      <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="perm-t" aria-describedby="perm-b">
+        <button class="dlg__close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="tile tile--neutral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4.5" y="10.5" width="15" height="9.5" rx="2.6"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/><path d="M12 14.4v2"/>
+          </svg>
+        </span>
+        <h3 class="dlg__title" id="perm-t">Post a Position idea instead?</h3>
+        <p class="dlg__body" id="perm-b">
+          <b>Barcelona has on-field decisions switched off for member Ideas.</b> Only the club can
+          put those forward, and that is the club's setting, not anything about your account.
+        </p>
+        <ul class="rows">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            <p><b>Positions is open to you</b> — same 6-minute Ideas stage, same 3-minute vote,
+              same deposit of 25.0 Credits.</p>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+            <p>Nothing has been locked and <b>no Credits have moved</b>.</p>
+          </li>
+        </ul>
+        <div class="act">
+          <button class="btn btn--ghost" type="button">Back</button>
+          <button class="btn btn--acid" type="button">Post a Position</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">The real gate. <code>ConfigClub.permissions</code> already carries
+    <code>member_post_idea_positions</code> and <code>member_post_idea_on_field_decision</code> per
+    club, and the app reads them in exactly one place —
+    <code>ideas/drop_down/title.dart</code> — to decide how many category tiles the compose form
+    draws. <b>That logic has a hole:</b> <code>findList()</code> returns <code>0</code> when both
+    permissions are false, and index <code>0</code> is rendered anyway, so a member with no posting
+    permission at all is still shown Positions and can still submit. Checking at the gate closes
+    it, and turns a dead end into a question with a way out. A padlock on the <b>neutral</b> tile,
+    not red: this is a rule, not a failure, and nothing has gone wrong or cost anything.</p>
+
+  <!-- ============================================================
+       04 · SHORT OF CREDITS
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">04</span><span class="fr-cap__t">Short of Credits</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr fr--dialog" aria-label="Idea gate — short of Credits">
+    <div class="behind" aria-hidden="true">
+      <div class="bar">
+        <span class="icon-btn icon-btn--bare">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        </span>
+        <h2 class="bar__title">Create idea</h2>
+        <span style="width:38px"></span>
+      </div>
+      <div class="fr__body">
+        <h3 class="label">The deposit</h3>
+        <div class="section">
+          <div class="amount"><b>25.0</b><span>Credits</span></div>
+          <ul class="rows rows--total">
+            <li><span class="rows__k">Available now</span><span class="rows__v">12.0</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="scrim-wrap">
+      <div class="scrim"></div>
+      <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="cr-t" aria-describedby="cr-b">
+        <button class="dlg__close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="tile tile--neutral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="6" width="18" height="12.5" rx="2.6"/><path d="M3 10.5h18"/><path d="M6.5 14.6h4"/>
+          </svg>
+        </span>
+        <h3 class="dlg__title" id="cr-t">Top up to start this idea?</h3>
+        <p class="dlg__body" id="cr-b">
+          Every Idea holds a deposit of <b>25.0 Credits</b> until it becomes a Proposal. You're
+          <b>13.0</b> short.
+        </p>
+        <ul class="rows rows--total">
+          <li><span class="rows__k">Deposit needed</span><span class="rows__v">25.0</span></li>
+          <li><span class="rows__k">Available now</span><span class="rows__v">12.0</span></li>
+          <li class="is-sum"><span class="rows__k">Short by</span><span class="rows__v">13.0</span></li>
+        </ul>
+        <ul class="rows">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+            <p>You have <b>300.0 Credits</b> locked on 12 live Ideas. Those come back as each one
+              becomes a Proposal — <b>they can't cover this one</b>.</p>
+          </li>
+        </ul>
+        <div class="act">
+          <button class="btn btn--ghost" type="button">Not now</button>
+          <button class="btn btn--acid" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Top up Credits
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">Derivable today and checked nowhere: <code>ConfigClub.creditPostIdea</code>
+    is the deposit and the wallet knows the balance, but the first time a member finds out they
+    can't afford to post is <b>after</b> writing the Idea, at the confirm dialog. The shortfall is
+    stated as a figure, the locked balance is explained rather than hidden, and the exit is the
+    wallet's own top-up. <b>Neutral tile again</b> — being short of money is not an error, and the
+    only red on this frame would have to be the figure, which is exactly where the contract says
+    not to put it.</p>
+
+  <!-- ============================================================
+       05 · SUPPRESSED
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">05</span><span class="fr-cap__t">Suppressed</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr" aria-label="Idea gate — suppressed">
+    <div class="bar">
+      <button class="icon-btn icon-btn--bare" type="button" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <h2 class="bar__title">Create idea</h2>
+      <span style="width:38px"></span>
+    </div>
+    <div class="fr__body">
+      <p class="state-tag">Step 1 of 3 · the form, opened directly</p>
+      <div class="banner">
+        <span class="banner__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.6"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
+        </span>
+        <span class="banner__txt">
+          <b>Deposit 25.0 Credits · 915.0 left</b>
+          Locked when you post, returned when your Idea becomes a Proposal.
+        </span>
+        <button class="banner__link" type="button">Details</button>
+      </div>
+      <p class="fr-note">Once the member has ticked <b>Don't show this again</b>, the gate stops
+        appearing and the form carries this instead — a single line at the top of step 1, with the
+        figure, the balance after it, and a route back to the full explanation. The cost never
+        disappears; only the full-screen interruption does.</p>
+    </div>
+  </section>
+
+  <p class="fr-note"><b>Why the gate should be suppressible at all:</b> the route is pushed from
+    five places and shows the same paragraph every single time, so a member who posts twice a week
+    reads it a hundred times a year. A gate that cannot be dismissed is not read — it is tapped
+    through, which is exactly how a member ends up surprised by a forfeited deposit. The
+    disclosure that matters survives as the banner and as the confirm dialog on the last step of
+    the form, both of which carry the figure.</p>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ---- "Don't show this again" -------------------------------------
+     The tick has to change something, or it is decoration. It rewrites the
+     fine print under the action row, which is the only copy on this frame
+     that describes what happens next time. Scoped to its own .fr. */
+  document.querySelectorAll('[data-consent]').forEach(function(b){
+    var fr   = b.closest('.fr');
+    var fine = fr && fr.querySelector('[data-fine]');
+    var was  = fine ? fine.innerHTML : '';
+    b.addEventListener('click', function(){
+      var on = b.getAttribute('aria-checked') === 'true';
+      b.setAttribute('aria-checked', String(!on));
+      if (!fine) return;
+      fine.innerHTML = on ? was
+        : 'This gate will stop appearing. The form will carry the deposit line instead — ' +
+          '<b>25.0 Credits · 915.0 left</b> — and the confirmation on the last step is unchanged.';
+    });
+  });
+
+  /* ---- the banner's Details disclosure ------------------------------
+     Was a bare button with nothing behind it. It now opens the deposit
+     explanation the full gate carries, inline under the banner. */
+  document.querySelectorAll('.banner__link').forEach(function(link){
+    var banner = link.closest('.banner');
+    if (!banner) return;
+
+    var box = document.createElement('div');
+    box.className = 'detail';
+    box.hidden = true;
+    box.setAttribute('role','dialog');
+    box.setAttribute('aria-label','The deposit');
+    box.innerHTML =
+      '<div class="detail__head"><h3>The deposit</h3>' +
+      '<button class="detail__x" type="button" aria-label="Close">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>' +
+      '</button></div>' +
+      '<ul class="rows rows--total">' +
+      '<li><span class="rows__k">Available now</span><span class="rows__v">940.0</span></li>' +
+      '<li><span class="rows__k">Locked by this Idea</span><span class="rows__v">−25.0</span></li>' +
+      '<li class="is-sum"><span class="rows__k">Left to spend</span><span class="rows__v">915.0</span></li>' +
+      '</ul>' +
+      '<ul class="rows">' +
+      '<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" ' +
+      'stroke-linecap="round" stroke-linejoin="round" class="is-good" aria-hidden="true">' +
+      '<path d="M4.5 12.5l5 5 10-11"/></svg>' +
+      '<p><b>Returned in full</b> the moment your Idea becomes a Proposal.</p></li>' +
+      '<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round" class="is-bad" aria-hidden="true">' +
+      '<path d="M12 5v14M5 12l7 7 7-7"/></svg>' +
+      '<p><b>Forfeited</b> only if it lapses without enough Likes. Nothing else takes it — ' +
+      'a vetoed, cancelled or ruled-out Proposal still returns the deposit.</p></li>' +
+      '</ul>';
+    banner.parentNode.insertBefore(box, banner.nextSibling);
+
+    link.setAttribute('aria-haspopup','dialog');
+    link.setAttribute('aria-expanded','false');
+
+    function esc(e){ if(e.key === 'Escape'){ e.stopPropagation(); close(true); } }
+    function away(e){ if(!box.contains(e.target) && !link.contains(e.target)) close(false); }
+    function open(){
+      box.hidden = false;
+      link.setAttribute('aria-expanded','true');
+      document.addEventListener('keydown', esc, true);
+      document.addEventListener('mousedown', away, true);
+      box.querySelector('.detail__x').focus();
+    }
+    function close(refocus){
+      box.hidden = true;
+      link.setAttribute('aria-expanded','false');
+      document.removeEventListener('keydown', esc, true);
+      document.removeEventListener('mousedown', away, true);
+      if (refocus) link.focus();
+    }
+    link.addEventListener('click', function(){ box.hidden ? open() : close(true); });
+    box.querySelector('.detail__x').addEventListener('click', function(){ close(true); });
+  });
+})();
+</script>
+</body>
+</html>

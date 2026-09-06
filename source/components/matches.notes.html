@@ -1,0 +1,317 @@
+<p class="dek">Two pushed screens: the club's fixture list, and the record of a finished match. Matches
+is not one of the five tabs and has no designed frames, so both are new — built entirely from the
+established dark-mode language.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>A screen with no frames behind it</h2>
+  <p>
+    Matches is not a navigation destination. It is not one of the five tabs, it has no Figma frame, and
+    in the checked-out source the matches body renders an empty container. What does exist is a written
+    spec and a set of API fields. Both screens here are therefore built as <em>pushed</em> screens — a
+    back control, no tab bar — because that is the only honest reading of a surface reached from
+    somewhere else.
+  </p>
+  <p>
+    The fixture list carries a three-way filter and, on the Live tab, the empty state you will see for
+    most of any given week. The detail screen carries the result, the match record, and the member
+    playoff attached to that match — the part of this screen that is genuinely SportsHeist rather than
+    a generic scoreboard.
+  </p>
+  <p>
+    Clubs appear here more often than on any other screen, so the crest plate does a lot of work. No
+    club crest artwork exists anywhere in the export, so every plate currently holds a three-letter code
+    — but the plate itself is now the canonical one, and real artwork can drop into it without the layout
+    moving.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. Screen 1 is the fixture list, screen 2 the match detail.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Screen</td><td>Boundary</td>
+          <td class="t-note">The fixture list and the match detail are two screens, so each one gets its
+            own device above rather than a rule between them in a shared scroll. Neither borrows a
+            header or a gutter from the other.</td>
+        </tr>
+        <tr>
+          <td>Header</td><td>Back and title</td>
+          <td class="t-note"><code>38&nbsp;px</code> circle on <code>#1C2129</code> with an 18&nbsp;px
+            1.9-stroke chevron, then the screen title at 34/800, uppercase, tracking
+            <code>-.025em</code>, line-height <code>.95</code> — <code>Matches</code> and
+            <code>Finished match</code>. No hero banner: a pushed screen does not get one.</td>
+        </tr>
+        <tr>
+          <td>Filter</td><td>Segmented control</td>
+          <td class="t-note">Track on <code>#1C2129</code> with <code>4&nbsp;px</code> padding, fully
+            rounded, holding three equal <code>38&nbsp;px</code> segments at 13/600. Inactive labels are
+            <code>#99A0AE</code>; the selected segment is an accent pill with <code>#0B0E06</code> ink
+            at 700 — the tab-bar rule applied to a filter.</td>
+        </tr>
+        <tr>
+          <td>Live tab</td><td>Empty state</td>
+          <td class="t-note">Bordered block — fill <code>#080A0C</code>, 1&nbsp;px hairline at white
+            7.5%, <code>R16</code>, padding <code>26px 20px 24px</code> — with a
+            <code>44&nbsp;px</code> disc on <code>#1C2129</code> holding a 21&nbsp;px
+            <code>#5B606B</code> broadcast glyph, a heading at 15/600
+            (<code>No live game at the moment</code>) and a <code>26ch</code> line at 12.5&nbsp;px in
+            <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Crest plate</td><td>Construction</td>
+          <td class="t-note">The canonical plate, settled in Club selection and ported here verbatim: a
+            fixed light ground <code>rgba(255,255,255,.94)</code> with an inner hairline
+            <code>inset 0 0 0 1px rgba(0,0,0,.13)</code> reading as a bevel, radius
+            <code>size&nbsp;×&nbsp;.28</code>, padding <code>size&nbsp;×&nbsp;.125</code> on all sides,
+            and artwork fitted <code>object-fit:contain</code> into the padded <em>square</em>. No
+            shadow, no tint, no ring. Three sizes only — <code>64&nbsp;px</code> for fixture cards and
+            the result lockup, <code>40&nbsp;px</code> for dense lists, <code>28&nbsp;px</code> inline in
+            a data row. Until artwork exists the plate holds the club's 2–4 character code, uppercase
+            800, tracking <code>-.03em</code>, in <code>#0B0E06</code>, at
+            <code>size&nbsp;×&nbsp;.30</code>. Measured against the card the plate is
+            <code>14.4:1</code> and against the canvas <code>18.3:1</code>, identically for every
+            club.</td>
+        </tr>
+        <tr>
+          <td>Fixture card</td><td>Shell</td>
+          <td class="t-note">Full-width button, <code>R16</code>, fill <code>#1C2129</code>, padding
+            <code>14px 16px 0</code>, hovering to <code>#222833</code>. Cards stack
+            <code>10&nbsp;px</code> apart inside the <code>16&nbsp;px</code> gutter.</td>
+        </tr>
+        <tr>
+          <td>Fixture card</td><td>Competition line</td>
+          <td class="t-note"><code>LaLiga · Matchday 33</code> at 10.5/700, tracking
+            <code>.14em</code>, uppercase, <code>#5B606B</code>, truncating.</td>
+        </tr>
+        <tr>
+          <td>Fixture card</td><td>Body grid</td>
+          <td class="t-note">Three columns — <code>1fr auto 1fr</code> — over two rows, so the crests
+            and the centre figure sit on one line and the club names centre beneath them.
+            <code>10&nbsp;px</code> column gap, <code>9&nbsp;px</code> row gap.</td>
+        </tr>
+        <tr>
+          <td>Fixture card</td><td>Centre figure</td>
+          <td class="t-note">An upcoming fixture shows the kick-off time at 22/800, tracking
+            <code>-.025em</code>. A finished one shows the score: two figures at 26/800, tracking
+            <code>-.035em</code>, separated by a <code>9 × 1.5&nbsp;px</code> dash in
+            <code>#5B606B</code>. All tabular.</td>
+        </tr>
+        <tr>
+          <td>Fixture card</td><td>Club names</td>
+          <td class="t-note">12.5/600 centred and truncating. The losing side drops to 500 weight in
+            <code>#99A0AE</code> and its score figure to <code>#99A0AE</code>. Outcome is carried by
+            weight and colour on the <em>name and the figure</em> — the crest plate is a fixed constant
+            and is never re-ringed to mark a winner.</td>
+        </tr>
+        <tr>
+          <td>Fixture card</td><td>Footer</td>
+          <td class="t-note">1&nbsp;px <code>--line-soft</code> top border, <code>11&nbsp;px</code>
+            padding. A small status pill, then the date pushed right at 11.5&nbsp;px in
+            <code>#99A0AE</code> tabular, then a 15&nbsp;px <code>#5B606B</code> chevron.</td>
+        </tr>
+        <tr>
+          <td>Status pill</td><td>Two intensities, one shape</td>
+          <td class="t-note">Full size is <code>32&nbsp;px</code> with an 11/700 accent label on
+            <code>rgba(155,226,34,.12)</code> and a <code>6&nbsp;px</code> dot. The small variant used
+            in card footers is <code>26&nbsp;px</code>, <code>11&nbsp;px</code> side padding,
+            10&nbsp;px label, <code>5&nbsp;px</code> dot. The quiet variant swaps the wash for
+            <code>#13171E</code> and the accent for <code>#99A0AE</code>. Geometry, type and dot are
+            otherwise identical — intensity is the only permitted variation.</td>
+        </tr>
+        <tr>
+          <td>Result lockup</td><td>Field block</td>
+          <td class="t-note"><code>R16</code>, padding <code>16px 16px 18px</code>, on the hero gradient
+            — <code>112deg</code>, <code>#0D3617</code> → <code>#17481C</code> at 58% →
+            <code>#0C3416</code> — with the faint white triangles at <code>3.0%</code>,
+            <code>2.4%</code> and <code>2.6%</code>. Deliberately without the acid peaks or the knockout
+            prop: those belong to a titled hero.</td>
+        </tr>
+        <tr>
+          <td>Result lockup</td><td>Contents</td>
+          <td class="t-note">Competition centred at 10.5/700 in <code>rgba(255,255,255,.62)</code>,
+            then the same three-column grid over three rows: <code>64&nbsp;px</code> plates and the
+            score, then club names at 12.5/700 uppercase tracking <code>.03em</code>, then a tag row.
+            Score figures are 40/800 at <code>-.04em</code>; the loser's drops to
+            <code>rgba(255,255,255,.5)</code> and its name to <code>rgba(255,255,255,.58)</code> at
+            600. The winner is named in words by the <code>Winner</code> pill in the third row; the
+            plate is left alone.</td>
+        </tr>
+        <tr>
+          <td>Match detail</td><td>Data rows</td>
+          <td class="t-note">Card on <code>#1C2129</code> at <code>R16</code> with
+            <code>16&nbsp;px</code> horizontal padding. Rows are <code>11&nbsp;px</code> vertical with a
+            1&nbsp;px <code>--line-soft</code> top border, none on the first. Key at 13&nbsp;px in
+            <code>#99A0AE</code>, value right-aligned at 13.5/600 tabular. Five rows: match date,
+            kick-off, full time, opponent (with a <code>28&nbsp;px</code> inline plate), location.</td>
+        </tr>
+        <tr>
+          <td>Playoffs</td><td>Section container</td>
+          <td class="t-note"><code>#080A0C</code> fill, 1&nbsp;px hairline, <code>R16</code>,
+            <code>12&nbsp;px</code> padding, under an 18/600 <code>Member playoffs</code> label.</td>
+        </tr>
+        <tr>
+          <td>Playoffs</td><td>Podium</td>
+          <td class="t-note"><code>R12</code> panel on <code>#1C2129</code>, three columns at
+            <code>1fr 1.14fr 1fr</code> aligned to the baseline, <code>8&nbsp;px</code> apart, padding
+            <code>12px 10px 16px</code>. Order on screen is 2nd, 1st, 3rd.</td>
+        </tr>
+        <tr>
+          <td>Playoffs</td><td>Award marker</td>
+          <td class="t-note">A small <code>Member of the match</code> pill centred above the podium with
+            a 14&nbsp;px accent caret pointing down at the winner's column. The award is named in words
+            and located by geometry.</td>
+        </tr>
+        <tr>
+          <td>Playoffs</td><td>Plinths</td>
+          <td class="t-note">Portraits at <code>52&nbsp;px</code>, ringed 2&nbsp;px in the panel fill
+            plus <code>3.5&nbsp;px</code> at <code>rgba(255,255,255,.20)</code>. The winner is
+            <code>64&nbsp;px</code> with an accent ring. Rank chips are <code>21&nbsp;px</code> pills
+            anchored to the portrait's lower edge at 11/800 tabular — <code>#2A303A</code> with white
+            ink, accent with <code>#0B0E06</code> for first. Name at 12.5/600 truncating, score at
+            12&nbsp;px in <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Playoffs</td><td>Prize rows</td>
+          <td class="t-note">The same row card nested inside the container: member-of-the-match prize,
+            member-of-the-week prize, and the week's open and close timestamps.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Live filter, nothing live</td><td class="t-note">The empty block, then a <code>Next up</code> label and the next two fixtures. The tab is never a dead end.</td></tr>
+        <tr><td>Upcoming fixture</td><td class="t-note">Kick-off time in the centre slot, both clubs at full strength, accent <code>Upcoming</code> pill, relative date (<code>Today</code>) or absolute (<code>Sat 2 May</code>).</td></tr>
+        <tr><td>Finished, won</td><td class="t-note">Score in the centre, loser's name at 500 in <code>#99A0AE</code> and its figure muted, winner's at full strength. Quiet <code>Full time</code> pill. The plates are identical in both columns.</td></tr>
+        <tr><td>Finished, drawn</td><td class="t-note">Both figures at full strength and neither name demoted. The absence of emphasis is the draw.</td></tr>
+        <tr><td>Finished, no score returned</td><td class="t-note">Both figures render as muted en-dashes, both clubs demoted, and the pill reads <code>Pending</code> rather than <code>Full time</code> — the honest state for a match the API has not settled.</td></tr>
+        <tr><td>Filter switching</td><td class="t-note">Segments carry <code>aria-selected</code> and each controls a panel; switching shows one panel and hides the others outright.</td></tr>
+        <tr><td>Long club name</td><td class="t-note">Truncates with an ellipsis inside its column — <code>Athletic Club</code> and <code>Villarreal</code> both fit at 375; the column is fixed so a longer name cannot push the score off centre.</td></tr>
+        <tr><td>Result, winner</td><td class="t-note">A <code>Winner</code> pill in the third grid row, plus the score and name weight. The losing column's tag slot stays empty rather than carrying a <code>Loser</code> label, and neither plate is marked.</td></tr>
+        <tr><td>Podium, tied scores</td><td class="t-note">All three members currently read <code>0 points</code>. Rank, portrait size, ring and the named award carry the outcome — the score does not.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Tokens</b> — surfaces, hairlines, accent, hero gradient, radii, type scale, copied verbatim from the sampled set</li>
+        <li><b>Screen title</b> — 34/800 uppercase at <code>-.025em</code></li>
+        <li><b>Section label</b> — 18/600 at the gutter, no adornment</li>
+        <li><b>Section container</b> — <code>#080A0C</code>, 1&nbsp;px hairline, <code>R16</code>, <code>12&nbsp;px</code> padding</li>
+        <li><b>Crest plate</b> — the canonical light plate settled in Club selection, ported here verbatim rather than reinvented</li>
+        <li><b>Status pill</b> — the <code>LIVE NOW</code> geometry, type and dot</li>
+        <li><b>Icon button</b> — <code>38&nbsp;px</code> circle with a 1.9-stroke glyph</li>
+        <li><b>Card and row</b> — <code>R16</code> card on <code>#1C2129</code>; rows at 10–11&nbsp;px with a <code>--line-soft</code> top border and none on the first</li>
+        <li><b>Podium</b> — the plinth construction from the Merits proposal: size, rank chip, ring opacities</li>
+        <li><b>Field gradient and triangles</b> — reused for the result lockup</li>
+        <li><b>Photography</b> — three portraits from the export set</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Both screens</b> — Matches has no designed frame and no built screen; the fixture list and the match record are new</li>
+        <li><b>Code fallback content</b> — no crest artwork exists in the export, so every plate on this screen holds a club code (<code>BAR</code>, <code>RMA</code>) rather than a crest</li>
+        <li><b>Fixture card</b> — the three-column lockup that holds a kick-off time or a score in the same slot</li>
+        <li><b>Outcome without colour</b> — winner and loser expressed as name weight, figure opacity and a named pill only</li>
+        <li><b>Segmented filter</b> — Live / Upcoming / Finished, built from the tab-bar active rule</li>
+        <li><b>Quiet and small status-pill variants</b> — <code>Full time</code> and <code>Pending</code> at <code>26&nbsp;px</code> on <code>#13171E</code></li>
+        <li><b>Empty live state</b> — block, glyph, heading and the promise that the fixture appears the moment it kicks off</li>
+        <li><b>Result lockup</b> — the hero language used as a scoreboard, without peaks or prop</li>
+        <li><b>Pending score treatment</b> — muted en-dashes and a <code>Pending</code> pill for a finished match with no result returned</li>
+        <li><b>Member-of-the-match award</b> — the named pill and the caret that points at the winner's column</li>
+        <li><b>Pushed-screen chrome</b> — back control and no tab bar, because Matches is not a tab</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:14px">
+    <b>Reconciled since the first review.</b> This screen was built before the crest plate was settled,
+    and it originally drew its own: a dark <code>#13171E</code> plate with a 1&nbsp;px white hairline at
+    <code>56 / 40 / 24&nbsp;px</code>, with the winner marked by brightening that hairline. It has now
+    been brought onto the canonical light plate from Club selection — the same ground, the same inner
+    hairline, the same proportional radius and padding, the same square fit — with its sizes remapped to
+    the sanctioned <code>28 / 40 / 64&nbsp;px</code>. Two things followed from that. The plate no longer
+    carries any per-club or per-state variation, which is the whole point of it: contrast is now a
+    property of the plate, identical for every club, rather than of whichever crest happens to be in it.
+    And because the plate may not take a ring, the winner's emphasis moved entirely onto the name, the
+    score figure and the <code>Winner</code> pill, which were already carrying it. Nothing else on the
+    screen changed.
+  </p>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Where do club crests come from?</h3>
+      <p>There is no crest artwork anywhere in the export, so every plate on this screen falls back to a
+      <span class="flag">club code</span> — <code>BAR</code>, <code>RMA</code>, <code>ARS</code>. The
+      plate is now the canonical one and is sized so artwork lands in it without the layout moving, but we
+      still need a licensed source and an ingest process before build — including the rule that rejects a
+      pale, transparent-background crest that would disappear into the light plate. Until then, confirm
+      the codes are correct per club: they are currently ours.</p>
+    </li>
+    <li>
+      <h3>What is the currency called, and is it the same one?</h3>
+      <p>The playoff prize rows read <code>1,000 points</code>. The Merits tab calls the currency
+      <code>Merits</code>, the API calls it <code>Reputation Points</code>, and elsewhere it appears as
+      <code>Credits</code>, <code>Participation Credits</code>, <code>Participation Deposit</code> and a
+      legacy <code>BOND</code>. This screen uses <span class="flag">points</span> because that is the
+      spec's word, but if a playoff prize pays the same currency the leaderboard ranks on, it must use
+      the same name. If it is a different quantity, it needs a different one.</p>
+    </li>
+    <li>
+      <h3>Why is every podium score zero?</h3>
+      <p>All three members read <code>0 points</code> — that is what the source data says. The build
+      handles it by making rank, scale, ring and the named award carry the outcome, so the screen is
+      not broken. But three members tied on nothing does not explain how a member of the match is
+      chosen. We need the scoring rule, and whether the score should be shown at all if it is not what
+      decides the winner.</p>
+    </li>
+    <li>
+      <h3>The location field is unusable as it stands</h3>
+      <p>The match detail row currently prints
+      <code>Emi, Mimasaka, 709-4292, Japan</code> for a Champions League quarter-final. That is the
+      value in the source — an unfiltered address string, and for a fixture that would not be played
+      there. Either the row shows the <span class="flag">stadium name</span> and city, or it comes off
+      the screen. It should not ship a postal address.</p>
+    </li>
+    <li>
+      <h3>Is Matches reached from the tab bar or from a club?</h3>
+      <p>Matches is not one of the five tabs and the current source renders it empty, so both frames are
+      built as <span class="flag">pushed screens</span> with a back control and no tab bar. If Matches
+      is meant to be a first-class destination it needs a hero, a place in the navigation, and a sixth
+      slot in a bar that already holds five.</p>
+    </li>
+    <li>
+      <h3>What does a live match actually look like?</h3>
+      <p>The Live filter is built and its empty state is designed, but there is no live fixture card:
+      nothing in the source defines what changes while a match is in play — a clock, a period marker, a
+      score that updates, a link into the room talking about it. That card needs designing before the
+      filter is worth shipping.</p>
+    </li>
+  </ol>
+</section>

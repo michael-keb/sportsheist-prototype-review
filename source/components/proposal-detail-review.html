@@ -1,0 +1,2710 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Proposal detail · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; /* bordered section container */ --surface: #1C2129; /* cards, controls, tab bar */ --sunken: #13171E; /* inner panels, dark pills */ --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); --acid-track: #2E3F1F; /* the threshold bar's dark green track */ /* the one semantic red */ --red: #E2564A; --red-wash: rgba(226,86,74,.12); --red-track: rgba(226,86,74,.16); /* ---- the hold treatment — canonical, settled in veto.html and copied from it verbatim. Every value is either the accent #9BE222 or the canvas at an alpha: no third hue enters the palette, because held is a different KIND of mark, not a different colour. Genuine holds only. */ --hold-ring: rgba(155,226,34,.30); --hold-under: rgba(155,226,34,.05); --hold-bars: repeating-linear-gradient(135deg, rgba(155,226,34,.11) 0 5px, rgba(155,226,34,0) 5px 11px); /* acid bars on a dark plane */ --struck: repeating-linear-gradient(135deg, rgba(3,4,1,.62) 0 4px, rgba(3,4,1,0) 4px 9px); /* dark bars on an acid plate */ /* neutral wash, for a pill that must read as neither pass nor fail */ --null-wash: rgba(255,255,255,.07); /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* tracked micro-labels ONLY — 2.56:1 */ /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; --h-field: 52px; /* forms.html control height */ --h-cmp: 44px; /* composer field min + send disc */ --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* portraits — pasted from _assets/avatars.css */ --av-01:url(data:image/jpeg;base64,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); --av-03:url(data:image/jpeg;base64,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); --av-05:url(data:image/jpeg;base64,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); --av-11:url(data:image/jpeg;base64,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);}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk [hidden]{display:none!important}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+.mk .frame{width:375px;max-width:100%;margin:0 auto; border:1px solid var(--line);border-radius:22px; background:var(--bg);overflow:hidden;}
+.mk .frame + .frame{margin-top:26px}
+.mk .tailspace{height:112px}
+.mk .eyebrow{margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .label{margin:22px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .topbar{display:flex;align-items:center;gap:8px;margin:6px var(--gutter) 0}
+.mk .topbar h2{flex:1;min-width:0;margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em; color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .icon-btn{position:relative; display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease);}
+.mk .icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .icon-btn svg{width:17px;height:17px}
+.mk .pill-btn{position:relative; display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:12.5px;font-weight:500;cursor:pointer; transition:background .18s var(--ease);}
+.mk .pill-btn::after{content:"";position:absolute;inset:-5px 0;border-radius:inherit}
+.mk .pill-btn:hover{background:#222833}
+.mk .pill-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .pill-btn svg{width:13px;height:13px;flex:0 0 auto}
+.mk .status-pill{display:inline-flex;align-items:center;gap:7px; height:32px;padding:0 14px;border-radius:var(--r-pill); background:var(--acid-wash); font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--acid);white-space:nowrap;}
+.mk .status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mk .status-pill--held{background-color:var(--sunken);background-image:var(--hold-bars); box-shadow:inset 0 0 0 1px var(--hold-ring);}
+.mk .status-pill--off{background:var(--red-wash);color:var(--red)}
+.mk .status-pill--inert{background:var(--sunken);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .section{margin:0 var(--gutter);padding:12px; border:1px solid var(--line);border-radius:var(--r-card); background:var(--section);}
+.mk .section + .section{margin-top:12px}
+.mk .section__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.mk .section__bar .spacer{flex:1}
+.mk .panel{border-radius:var(--r-panel);background:var(--surface)}
+.mk .panel + .panel{margin-top:12px}
+.mk .sunk{border-radius:var(--r-panel);background:var(--sunken)}
+.mk .avatar{border-radius:50%;flex:0 0 auto; background-color:#20262F;background-size:cover;background-position:center 22%;}
+.mk .avatars{display:flex;flex:0 0 auto}
+.mk .avatars > .avatar + .avatar{margin-left:-9px}
+.mk .avatars .avatar{width:22px;height:22px;border:1.5px solid var(--bg)}
+.mk .hint{display:flex;align-items:flex-start;gap:7px;margin:10px 0 0; font-size:11.5px;line-height:1.4;color:var(--muted);}
+.mk .hint svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:var(--dim)}
+.mk .phead{margin:18px var(--gutter) 0}
+.mk .pline{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.mk .pline .eyebrow{margin:0;flex:1;min-width:0; white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .phead h1{margin:0;font-size:24px;font-weight:700;letter-spacing:-.025em;line-height:1.15;}
+.mk .pby{display:flex;align-items:center;gap:9px;margin-top:13px}
+.mk .pby__who{flex:1;min-width:0;font-size:12.5px;color:var(--muted); white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .pby__who b{color:var(--text);font-weight:600}
+.mk .typetag{flex:0 0 auto;display:inline-flex;align-items:center;height:24px;padding:0 10px; border-radius:var(--r-pill);background:var(--sunken);color:var(--muted); font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase; white-space:nowrap;}
+.mk .clocks{display:flex;gap:10px;margin:14px var(--gutter) 0}
+.mk .clock{flex:1;min-width:0;padding:12px 13px 11px;border-radius:var(--r-panel); background:var(--sunken);border:1px solid transparent;}
+.mk .clock--held{background-color:var(--sunken);background-image:var(--hold-bars); border-color:var(--hold-ring);}
+.mk .clock__top{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.mk .clock__top svg{width:13px;height:13px;flex:0 0 auto;color:var(--dim)}
+.mk .clock--held .clock__top svg{color:var(--acid)}
+.mk .clock__top span{font-size:9.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase; color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .clock--held .clock__top span{color:var(--acid)}
+.mk .clock time,.mk .clock .fig{display:block;font-size:24px;font-weight:700;letter-spacing:-.03em; line-height:1;color:var(--text);font-variant-numeric:tabular-nums;}
+.mk .clock small{display:block;margin-top:6px;font-size:11px;color:var(--muted)}
+.mk .clock--done time{color:var(--muted)}
+.mk .copy{margin:0;font-size:13.5px;line-height:1.55;color:var(--muted)}
+.mk .copy + .copy{margin-top:10px}
+.mk .clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical; overflow:hidden;}
+.mk .disclose{display:inline-flex;align-items:center;gap:6px; margin-top:11px;padding:0;height:30px; border:0;background:transparent;color:var(--acid); font:inherit;font-size:12.5px;font-weight:700;letter-spacing:.02em; cursor:pointer;}
+.mk .disclose svg{width:14px;height:14px;transition:transform .2s var(--ease)}
+.mk .disclose[aria-expanded="true"] svg{transform:rotate(180deg)}
+.mk .disclose:focus-visible{outline:2px solid var(--acid);outline-offset:2px;border-radius:6px}
+.mk .gauge{padding:14px;border-radius:var(--r-panel);background:var(--sunken); --bar-track:var(--acid-track); --bar-fill:var(--acid); --now-ink:var(--text);}
+.mk .gauge--off{--bar-track:var(--red-track);--bar-fill:var(--red);--now-ink:var(--red)}
+.mk .gauge--held{--bar-track:#3D424B;--bar-fill:var(--muted);--now-ink:var(--text)}
+.mk .gauge__head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.mk .gauge__lede{flex:1;min-width:0;font-size:13.5px;font-weight:600;line-height:1.3; letter-spacing:-.005em;color:var(--text);}
+.mk .verdictpill{flex:0 0 auto;max-width:126px;padding:5px 10px;border-radius:var(--r-pill); background:var(--acid-wash);color:var(--acid); font-size:10px;font-weight:700;letter-spacing:.1em;line-height:1.3; text-transform:uppercase;text-align:center;}
+.mk .verdictpill--off{background:var(--red-wash);color:var(--red)}
+.mk .verdictpill--null{background:var(--null-wash);color:var(--muted)}
+.mk .gauge__figs{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:14px}
+.mk .gauge__now{display:flex;align-items:baseline;gap:7px;min-width:0}
+.mk .gauge__now b{font-size:34px;font-weight:800;letter-spacing:-.04em;line-height:.9; color:var(--now-ink);font-variant-numeric:tabular-nums;}
+.mk .gauge__now span{font-size:12px;font-weight:600;color:var(--muted)}
+.mk .gauge__need{flex:0 0 auto;padding:6px 11px;border-radius:var(--r-pill);background:var(--surface); font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase; color:var(--acid);font-variant-numeric:tabular-nums;}
+.mk .gauge--off .gauge__need,.mk .gauge--held .gauge__need{color:var(--muted)}
+.mk .bar{position:relative;height:10px;margin:14px 0 0; border-radius:var(--r-pill);background:var(--bar-track);}
+.mk .bar__fill{position:absolute;left:0;top:0;bottom:0;width:0; border-radius:var(--r-pill);background:var(--bar-fill); transition:width 1.15s var(--ease);}
+.mk .is-drawn .bar__fill{width:calc(var(--now) * 1%)}
+.mk .bar--held .bar__fill::after{content:"";position:absolute;inset:0;border-radius:inherit;background-image:var(--struck);}
+.mk .bar__knob{position:absolute;right:0;top:50%;width:16px;height:16px;border-radius:50%; transform:translate(50%,-50%);background:var(--bar-fill); box-shadow:0 0 0 3px var(--sunken);}
+.mk .bar__tick{position:absolute;left:calc(var(--req) * 1%);top:-4px;bottom:-4px; width:2px;margin-left:-1px;border-radius:1px;background:var(--text);}
+.mk .barfoot{display:flex;justify-content:space-between;gap:10px;margin-top:11px; font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase; color:var(--muted);}
+.mk .gaugenote{margin:12px 0 0;padding-top:11px;border-top:1px solid var(--line-soft); font-size:11.5px;line-height:1.4;color:var(--muted);}
+.mk .gaugenote b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.mk .ballot{list-style:none;margin:0;padding:0}
+.mk .opt{display:flex;align-items:center;gap:12px;width:100%; padding:13px 14px; border:0;border-top:1px solid var(--line-soft); background:transparent;color:var(--text); font:inherit;text-align:left;cursor:pointer; transition:background .18s var(--ease),box-shadow .18s var(--ease);}
+.mk .ballot li:first-child .opt{border-top:0}
+.mk .opt:hover{background:rgba(255,255,255,.035)}
+.mk .opt:focus-visible{outline:2px solid var(--acid);outline-offset:-2px;border-radius:6px}
+.mk .opt[aria-pressed="true"]{background:var(--acid-wash);box-shadow:inset 3px 0 0 var(--acid);}
+.mk .opt[aria-pressed="true"]:hover{background:rgba(155,226,34,.17)}
+.mk .slot{flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; width:28px;height:28px;border-radius:50%; border:1.5px solid rgba(255,255,255,.18); background:transparent;color:var(--muted); font-size:13px;font-weight:800;font-variant-numeric:tabular-nums; transition:background .18s var(--ease),border-color .18s var(--ease),color .18s var(--ease);}
+.mk .opt[aria-pressed="true"] .slot{border-color:var(--acid);background:var(--acid);color:var(--acid-ink)}
+.mk .slot--set{border-color:var(--acid);background:var(--acid);color:var(--acid-ink)}
+.mk .slot--out{border-style:dashed;border-color:rgba(255,255,255,.16);color:var(--muted)}
+.mk .opt__name{flex:1;min-width:0;display:flex;align-items:center;gap:7px; font-size:14.5px;font-weight:600;line-height:1.25;letter-spacing:-.005em;}
+.mk .opt__name svg{width:14px;height:14px;flex:0 0 auto;color:var(--red)}
+.mk .opt__pct{flex:0 0 auto;font-size:14px;font-weight:700;color:var(--muted); font-variant-numeric:tabular-nums;}
+.mk .opt[aria-pressed="true"] .opt__pct{color:var(--text)}
+.mk .opt--reject .opt__name{color:var(--muted)}
+.mk .opt--reject[aria-pressed="true"] .opt__name{color:var(--text)}
+.mk .ballot__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px; padding:2px 14px 11px;}
+.mk .ballot__head span:first-child{font-size:12.5px;color:var(--muted)}
+.mk .ballot__head span:last-child{flex:0 0 auto;white-space:nowrap; font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);font-variant-numeric:tabular-nums;}
+.mk .actions{display:flex;gap:10px;margin:14px var(--gutter) 0}
+.mk .btn{flex:1;height:var(--h-field); display:inline-flex;align-items:center;justify-content:center;gap:8px; border:0;border-radius:var(--r-pill); font:inherit;font-size:15px;font-weight:600;letter-spacing:-.005em; cursor:pointer; transition:background .18s var(--ease),color .18s var(--ease),transform .12s var(--ease);}
+.mk .btn svg{width:18px;height:18px;flex:0 0 auto}
+.mk .btn:active{transform:translateY(1px)}
+.mk .btn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .btn--ghost{background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);color:var(--text);flex:0 0 39%}
+.mk .btn--ghost:hover{background:rgba(255,255,255,.05)}
+.mk .btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .btn--acid:hover{background:#A8EC33}
+.mk .btn--flat{background:var(--surface);color:var(--text)}
+.mk .btn--flat:hover{background:#222833}
+.mk .btn:disabled{background:var(--sunken);box-shadow:none;color:var(--dim);cursor:not-allowed;transform:none}
+.mk .btn--wide{width:calc(100% - var(--gutter) * 2);margin:14px var(--gutter) 0;flex:none}
+.mk .costline{margin:9px var(--gutter) 0;font-size:11.5px;line-height:1.4;color:var(--muted); text-align:center;}
+.mk .costline b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.mk .receipt{padding:13px 14px 4px}
+.mk .receipt__top{display:flex;align-items:center;flex-wrap:wrap;gap:4px 9px;margin-bottom:4px}
+.mk .receipt__top .eyebrow{margin:0;flex:1}
+.mk .receipt__lock{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto; font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase; color:var(--acid);}
+.mk .receipt__lock svg{width:13px;height:13px}
+.mk .mine{list-style:none;margin:0;padding:0}
+.mk .mine li{display:flex;align-items:center;gap:12px; padding:11px 0;border-top:1px solid var(--line-soft);}
+.mk .mine li:first-child{border-top:0}
+.mk .mine__name{flex:1;min-width:0;font-size:14px;font-weight:600;letter-spacing:-.005em}
+.mk .mine--top li:first-child .mine__name{color:var(--acid)}
+.mk .mine__was{flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.1em; text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums;}
+.mk .gate{padding:26px 16px 22px;text-align:center;border-radius:var(--r-panel);background:var(--sunken)}
+.mk .gate__art{width:34px;height:34px;color:var(--acid);opacity:.9}
+.mk .gate h3{margin:13px 0 0;font-size:17px;font-weight:600;letter-spacing:-.015em}
+.mk .gate p{margin:7px auto 0;max-width:26em;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .pips{display:flex;justify-content:center;gap:7px;margin:16px 0 0}
+.mk .pip{width:26px;height:5px;border-radius:3px;background:rgba(255,255,255,.11);}
+.mk .pip--on{background:var(--acid)}
+.mk .gate__count{margin:12px 0 0;font-size:12.5px;font-weight:600;color:var(--text); font-variant-numeric:tabular-nums;}
+.mk .gate__count span{color:var(--muted);font-weight:400}
+.mk .chartpanel{padding:14px 12px 10px}
+.mk .chartpanel .eyebrow{margin-left:2px}
+.mk .chart{display:block;width:100%;height:auto;overflow:visible}
+.mk .grid{stroke:var(--line-soft);stroke-width:1}
+.mk .ax{stroke:var(--line);stroke-width:1}
+.mk .axnum{fill:var(--muted);font-size:9px;font-weight:600;font-family:var(--font)}
+.mk .xlab{fill:var(--muted);font-size:9.5px;font-weight:600;font-family:var(--font)}
+.mk .xlab--now{fill:var(--text);font-weight:700}
+.mk .band{fill:rgba(155,226,34,.07)}
+.mk .thresh{stroke:var(--acid);stroke-width:1.2;stroke-dasharray:3 3;opacity:.8}
+.mk .zonelab{font-size:8.5px;font-weight:700;font-family:var(--font);letter-spacing:.13em;}
+.mk .zonelab--pass{fill:var(--acid)}
+.mk .marker{stroke:rgba(255,255,255,.22);stroke-width:1;stroke-dasharray:2 3}
+.mk .markerlab{fill:var(--muted);font-size:8px;font-weight:700;font-family:var(--font); letter-spacing:.12em;}
+.mk .series{fill:none;stroke:#FFF;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.mk .series--lead{stroke:var(--acid);stroke-width:2.4; stroke-dasharray:250;stroke-dashoffset:0; transition:stroke-dashoffset 1.15s var(--ease);}
+.mk .series--held{stroke:var(--muted);stroke-width:2.4;stroke-dasharray:5 4}
+.mk .series--sub{stroke:#FFF;opacity:.34;stroke-width:1.8}
+.mk .ldot{fill:var(--acid)}
+.mk .ltip{fill:var(--acid);stroke:var(--surface);stroke-width:2.4}
+.mk .ltip--held{fill:var(--muted);stroke:var(--surface);stroke-width:2.4}
+.mk .valnum{fill:var(--acid);font-size:11px;font-weight:700;font-family:var(--font); font-variant-numeric:tabular-nums;transition:opacity .5s .8s linear;}
+.mk .valnum--held{fill:var(--text)}
+.mk .valnum--sub{fill:#FFF;opacity:.5;font-size:9.5px;font-weight:600}
+.mk .chartpanel.is-armed .series--lead{stroke-dashoffset:250}
+.mk .chartpanel.is-armed .valnum{opacity:0}
+.mk .chartpanel.is-armed.is-drawn .series--lead{stroke-dashoffset:0}
+.mk .chartpanel.is-armed.is-drawn .valnum{opacity:1}
+.mk .chartpanel.is-armed.is-drawn .valnum--sub{opacity:.5}
+.mk .chartfoot{margin:8px 2px 2px;font-size:11px;line-height:1.4;color:var(--muted)}
+.mk .tally{padding:0 0 4px}
+.mk .tally__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px; padding:12px 14px 10px;}
+.mk .tally__head span:first-child{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk .tally__head span:last-child{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);}
+.mk .trow{display:flex;align-items:center;gap:11px;padding:11px 14px;border-top:1px solid var(--line-soft)}
+.mk .swatch{flex:0 0 18px;height:2.5px;border-radius:2px;background:rgba(255,255,255,var(--o,.3))}
+.mk .swatch--win{background:var(--acid);height:3px}
+.mk .trow__name{flex:1;min-width:0;font-size:13.5px;line-height:1.25}
+.mk .trow__name i{display:block;margin-top:3px;font-style:normal;font-size:10.5px; letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.mk .trow__name i.you{color:var(--acid)}
+.mk .tval{flex:0 0 auto;font-size:13.5px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk .tval--win{color:var(--acid);font-weight:700;font-size:15px}
+.mk .verdict{display:flex;align-items:center;gap:13px;min-height:70px;padding:14px 16px;border-radius:var(--r-panel)}
+.mk .verdict__badge{width:34px;height:34px;flex:0 0 auto;border-radius:50%; display:inline-flex;align-items:center;justify-content:center;}
+.mk .verdict__badge svg{width:19px;height:19px;display:block}
+.mk .verdict__body{min-width:0}
+.mk .verdict__word{display:block;font-size:16px;font-weight:700;letter-spacing:.05em;line-height:1.1; text-transform:uppercase;}
+.mk .verdict__sub{display:block;margin-top:4px;font-size:12.5px;line-height:1.3;color:var(--muted); font-variant-numeric:tabular-nums;}
+.mk .verdict--pos{background:var(--acid-wash);box-shadow:inset 0 0 0 1px rgba(155,226,34,.22)}
+.mk .verdict--pos .verdict__badge{background:var(--acid);color:var(--acid-ink)}
+.mk .verdict--pos .verdict__word{color:var(--acid)}
+.mk .verdict--neg{background:var(--red-wash);box-shadow:inset 0 0 0 1px rgba(226,86,74,.24)}
+.mk .verdict--neg .verdict__badge{background:var(--red);color:var(--acid-ink)}
+.mk .verdict--neg .verdict__word{color:var(--red)}
+.mk .verdict--held{background-color:var(--sunken);background-image:var(--hold-bars); box-shadow:inset 0 0 0 1px var(--hold-ring);}
+.mk .verdict--held .verdict__badge{background:rgba(155,226,34,.13);color:var(--acid)}
+.mk .verdict--held .verdict__word{color:var(--acid)}
+.mk .verdict--held .verdict__sub time{color:var(--text);font-weight:700}
+.mk .verdict--inert{background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .verdict--inert .verdict__badge{background:var(--surface);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .verdict--inert .verdict__word{color:var(--text)}
+.mk .holdbar{display:flex;align-items:center;gap:12px;margin:16px var(--gutter) 0;padding:13px 14px;border-radius:var(--r-panel)}
+.mk .held{background-color:var(--sunken);background-image:var(--hold-bars);border:1px solid var(--hold-ring)}
+.mk .holdbar__disc{display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto;border-radius:50%; background:var(--sunken);box-shadow:inset 0 0 0 1px var(--hold-ring);color:var(--acid);}
+.mk .holdbar__disc svg{width:21px;height:21px}
+.mk .holdbar__id{flex:1;min-width:0}
+.mk .holdbar__id b{display:block;font-size:11px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--acid);}
+.mk .holdbar__id span{display:block;margin-top:3px;font-size:11.5px;color:var(--muted)}
+.mk .reason{padding:14px}
+.mk .reason h3{margin:0;font-size:13.5px;font-weight:600;letter-spacing:-.005em}
+.mk .reason p{margin:8px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .reason p b{color:var(--text);font-weight:600}
+.mk .thead{display:flex;align-items:baseline;gap:8px;margin:24px var(--gutter) 10px}
+.mk .thead h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .thead__n{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk .thread{list-style:none;margin:0 var(--gutter);padding:0 14px;border-radius:var(--r-panel);background:var(--surface)}
+.mk .thread > li{position:relative}
+.mk .cm{display:flex;gap:11px;padding:13px 0;border-top:1px solid var(--line-soft)}
+.mk .thread > li:first-child > .cm{border-top:0}
+.mk .cm__av{width:34px;height:34px}
+.mk .cm__main{flex:1;min-width:0}
+.mk .cm__by{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.mk .cm__name{font-size:13.5px;font-weight:600;letter-spacing:-.005em; white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .cm__when{flex:0 0 auto;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.mk .cm__when::before{content:"·";margin-right:5px;color:var(--dim)}
+.mk .cm__text{margin:0;font-size:13px;line-height:1.46;color:var(--text)}
+.mk .cm__of{flex:0 0 auto;margin-left:auto;margin-right:-6px; display:inline-flex;align-items:center;justify-content:center; width:28px;height:28px;border:0;border-radius:50%; background:transparent;color:var(--dim);cursor:pointer; transition:background .16s var(--ease),color .16s var(--ease);}
+.mk .cm__of:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.mk .cm__of:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.mk .cm__of svg{width:16px;height:16px}
+.mk .badge{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center; height:16px;padding:0 5px;border-radius:4px; background:rgba(255,255,255,.10);box-shadow:inset 0 0 0 1px var(--line); font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase; color:rgba(255,255,255,.82);}
+.mk .cm--club{margin:0 -14px;padding:13px 14px;background:var(--sunken)}
+.mk .crest-av{flex:0 0 auto;display:flex;align-items:center;justify-content:center; width:34px;height:34px;border-radius:8px; background:#20262F;box-shadow:inset 0 0 0 1px var(--line); font-size:10.5px;font-weight:800;letter-spacing:.02em;color:rgba(255,255,255,.85);}
+.mk .cm--you .cm__av{box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--acid)}
+.mk .cm__acts{display:flex;align-items:center;gap:4px;margin:9px -10px -5px;flex-wrap:wrap}
+.mk .sig{position:relative; display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 10px; border:0;border-radius:var(--r-pill); background:transparent;color:var(--muted); box-shadow:inset 0 0 0 1px transparent; font:inherit;font-size:11.5px;font-weight:600;cursor:pointer; transition:color .16s var(--ease),background .16s var(--ease),box-shadow .16s var(--ease);}
+.mk .sig::after{content:"";position:absolute;left:0;right:0;top:-5px;bottom:-5px}
+.mk .sig svg{width:14px;height:14px;flex:0 0 auto}
+.mk .sig b{font-weight:700;font-variant-numeric:tabular-nums}
+.mk .sig:hover{color:var(--text);background:rgba(255,255,255,.045)}
+.mk .sig:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.mk .sig--agree[aria-pressed="true"]{color:var(--acid);font-weight:700;box-shadow:inset 0 0 0 1px rgba(155,226,34,.34)}
+.mk .sig--against[aria-pressed="true"]{color:var(--text);font-weight:700;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.mk .sig--against[aria-pressed="true"] svg{color:var(--red)}
+.mk .empty{margin:0 var(--gutter);padding:30px 22px 26px;text-align:center; border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);}
+.mk .empty__art{width:52px;height:52px;color:var(--acid);opacity:.9}
+.mk .empty--bad .empty__art{color:var(--red);opacity:1}
+.mk .empty h3{margin:15px 0 0;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.mk .empty p{margin:8px auto 0;max-width:27em;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .empty p code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px; color:var(--text);background:var(--sunken);padding:1px 5px;border-radius:4px;}
+.mk .empty .btn{width:auto;min-width:170px;margin-top:20px;padding:0 22px;flex:none}
+.mk .emptyquiet{margin:0 var(--gutter);padding:22px 18px;text-align:center; border-radius:var(--r-panel);background:var(--sunken); font-size:13px;color:var(--muted);}
+.mk .composer{position:fixed;left:0;right:0;bottom:0;z-index:20; max-width:420px;margin:0 auto; padding:10px var(--gutter) calc(10px + env(safe-area-inset-bottom,0px)); background:rgba(3,4,1,.93); -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px); border-top:1px solid var(--line);}
+.mk .cmp__row{display:flex;align-items:flex-end;gap:10px}
+.mk .cmp__av{width:30px;height:30px;margin-bottom:7px}
+.mk .cmp__field{flex:1;min-width:0;display:flex;flex-direction:column; min-height:var(--h-cmp);padding:10px 12px 9px; border:1px solid var(--line);border-radius:var(--r-panel);background:var(--surface); transition:border-color .16s var(--ease),box-shadow .16s var(--ease);}
+.mk .cmp__field:hover{border-color:rgba(255,255,255,.14)}
+.mk .cmp__field:focus-within{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.mk .cmp__field.is-over,.mk .cmp__field.is-over:focus-within{border-color:var(--red);box-shadow:0 0 0 3px var(--red-wash)}
+.mk .cmp__in{display:block;width:100%;min-height:23px;max-height:112px;overflow-y:auto; border:0;background:transparent;color:inherit; font:inherit;font-size:16px;line-height:1.44;padding:0;margin:0;outline:none;resize:none;}
+.mk .cmp__in::placeholder{color:var(--dim);opacity:1}
+.mk .cmp__count{display:flex;align-items:center;gap:5px;align-self:flex-end;margin-top:6px; font-size:11px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;}
+.mk .cmp__count svg{display:none;width:12px;height:12px}
+.mk .cmp__count.is-over{color:var(--red)}
+.mk .cmp__count.is-over svg{display:block}
+.mk .send{flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; width:var(--h-cmp);height:var(--h-cmp);border:0;border-radius:50%; background:var(--acid);color:var(--acid-ink);cursor:pointer; transition:background .18s var(--ease),transform .12s var(--ease),color .18s var(--ease);}
+.mk .send svg{width:19px;height:19px}
+.mk .send:hover{background:#A8EC33}
+.mk .send:active{transform:translateY(1px)}
+.mk .send:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .send[disabled]{background:var(--sunken);color:var(--dim);cursor:not-allowed;transform:none}
+.mk .send.is-busy{background:var(--sunken);color:var(--acid);cursor:progress}
+.mk .send.is-busy .send__plane{display:none}
+.mk .send__spin{display:none;transform-origin:12px 12px;animation:spin .9s linear infinite}
+.mk .send.is-busy .send__spin{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+  .mk .send__spin{animation:none}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Proposal detail</h1>
+    <p class="dek">The screen where a member actually casts the vote the whole product exists for. It is the
+detail behind the Voting card: the proposal in full, the clock, the threshold, the ranked ballot, the
+count once it is running, and every way the count can end — approved, rejected, held under a veto, or
+cancelled by the club.</p>
+    <div class="meta">
+      <span><b>Component</b> proposal-detail</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 10</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">Before voting<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Casting the ballot<span class="side__tag">02</span></a></li>
+      <li><a class="side__item" href="#scr-3">Voted · chart locked<span class="side__tag">03</span></a></li>
+      <li><a class="side__item" href="#scr-4">Voted · count open<span class="side__tag">04</span></a></li>
+      <li><a class="side__item" href="#scr-5">Veto hold<span class="side__tag">05</span></a></li>
+      <li><a class="side__item" href="#scr-6">Settled · approved<span class="side__tag">06</span></a></li>
+      <li><a class="side__item" href="#scr-7">Settled · rejected<span class="side__tag">07</span></a></li>
+      <li><a class="side__item" href="#scr-8">Cancelled by the club<span class="side__tag">08</span></a></li>
+      <li><a class="side__item" href="#scr-9">Nothing cast yet<span class="side__tag">09</span></a></li>
+      <li><a class="side__item" href="#scr-10">Couldn’t load<span class="side__tag">10</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><span class="side__item" aria-current="page">Proposal detail<span class="side__tag side__tag--new">This page</span></span></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">One screen, ten states, one ballot idiom</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">10 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>Before voting</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back to the voting rail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Voting</h2>
+    <button class="icon-btn" type="button" aria-label="Share this proposal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M8 7.5 12 3.5l4 4M5 14v5.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V14"/></svg>
+    </button>
+  </div>
+
+  <div class="phead">
+    <div class="pline">
+      <p class="eyebrow">Voting stage</p>
+      <span class="typetag">Management decision</span>
+    </div>
+    <h1>Who takes the first-team job?</h1>
+    <div class="pby">
+      <span class="avatars">
+        <span class="avatar" style="background-image:var(--av-01)" role="img" aria-label="capitan_7"></span>
+      </span>
+      <span class="pby__who">by <b>capitan_7</b> · posted 14:20</span>
+    </div>
+  </div>
+
+  <div class="clocks">
+    <div class="clock">
+      <p class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+        <span>Voting closes in</span>
+      </p>
+      <time datetime="PT2H47M6S" data-countdown="10026">02:47:06</time>
+      <small>3 h stage · closes 17:20</small>
+    </div>
+    <div class="clock">
+      <p class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V9M9.5 19V5M15 19v-6M20.5 19V11"/></svg>
+        <span>Votes cast</span>
+      </p>
+      <span class="fig">1,079</span>
+      <small>of 1,412 eligible · 76% turnout</small>
+    </div>
+  </div>
+
+  <!-- ---- the written case ---- -->
+  <h2 class="label">Details</h2>
+  <section class="section" aria-label="The proposal in full">
+    <div class="panel" style="padding:14px">
+      <p class="copy clamp" data-clamp>The manager's contract runs to June and the club has told the
+        members' council it will not open renewal talks before the window shuts. That leaves the
+        board a choice it has to make in public, so it is coming to a vote.</p>
+      <p class="copy clamp" data-clamp>Five routes are on the ballot, all of them costed by the
+        finance committee and all of them deliverable inside the current wage structure. Rank them
+        in the order you want them tried. If your first preference is eliminated your second
+        carries your vote, so ranking every option is the only way to keep a say in the last round.</p>
+      <p class="copy clamp" data-clamp>The result is advisory. An approved proposal is passed to the
+        head coach and the board in writing within 48 hours of the count, and the board has to
+        answer it at the next members' forum.</p>
+      <button class="disclose" type="button" aria-expanded="false" data-more>
+        Read more
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ---- the threshold ---- -->
+  <h2 class="label">The count</h2>
+  <section class="section" aria-label="Standing against the threshold">
+    <div class="section__bar">
+      <span class="status-pill">Counting live</span>
+      <span class="spacer"></span>
+      <button class="icon-btn icon-btn--sm" type="button" aria-label="How the threshold works">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.4"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/></svg>
+      </button>
+    </div>
+
+    <div class="gauge" data-gauge>
+      <div class="gauge__head">
+        <span class="gauge__lede">Promote from the academy is leading</span>
+        <span class="verdictpill">On track to be approved</span>
+      </div>
+
+      <div class="gauge__figs">
+        <span class="gauge__now"><b>74%</b><span>support</span></span>
+        <span class="gauge__need">70% required</span>
+      </div>
+
+      <div class="bar" style="--now:74;--req:70" role="img"
+           aria-label="The leading option holds 74% of the vote against a 70% threshold">
+        <span class="bar__fill"><span class="bar__knob"></span></span>
+        <span class="bar__tick"></span>
+      </div>
+      <div class="barfoot"><span>Support</span><span>Threshold 70%</span></div>
+
+      <p class="gaugenote"><b>74%</b> is the leading option's share once eliminated options have
+        been redistributed. The rows below show <b>first preferences</b>. Your club sets the 70%
+        separately for every proposal type.</p>
+    </div>
+
+    <!-- ---- the ballot, untouched ---- -->
+    <div class="panel" style="margin-top:12px;padding-top:12px">
+      <div class="ballot__head">
+        <span>Rank all six options</span>
+        <span data-ballot-count>0 of 6 ranked</span>
+      </div>
+
+      <p class="hint" style="margin:0 14px 4px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.4"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/></svg>
+        Tap a row to give it the next number. Tap it again to clear it.
+      </p>
+
+      <ul class="ballot" data-ballot>
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">Promote from the academy</span>
+          <span class="opt__pct">34%</span>
+        </button></li>
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">External appointment</span>
+          <span class="opt__pct">22%</span>
+        </button></li>
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">Interim to season end</span>
+          <span class="opt__pct">16%</span>
+        </button></li>
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">Keep the current manager</span>
+          <span class="opt__pct">13%</span>
+        </button></li>
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">Director-led search</span>
+          <span class="opt__pct">9%</span>
+        </button></li>
+        <li><button class="opt opt--reject" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
+            Reject all options
+          </span>
+          <span class="opt__pct">6%</span>
+        </button></li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn btn--ghost" type="button" data-ballot-cancel>Cancel</button>
+    <button class="btn btn--acid" type="button" data-ballot-submit disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4.5 4.5L19 7"/></svg>
+      Vote
+    </button>
+  </div>
+  <p class="costline">Voting costs <b>1</b> Credit. Free if the proposal is vetoed, cancelled or
+    ruled out.</p>
+
+  <div class="tailspace" aria-hidden="true"></div>
+</div><!-- ============================================================
+     PINNED COMPOSER — outside <main>, per the contract, so the
+     review builder keeps it pinned and replays it into every frame.
+     It carries the library's `tabbar` class, which is the hook the
+     builder uses for bottom-pinned chrome. There is no tab bar on a
+     pushed proposal detail: the composer owns the bottom of the
+     screen, exactly as it does in comments.html.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="700"
+                placeholder="Leave a comment" aria-label="Leave a comment"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>600 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Post comment" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Casting the ballot</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back to the voting rail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Who takes the first-team job?</h2>
+  </div>
+
+  <div class="clocks">
+    <div class="clock">
+      <p class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+        <span>Voting closes in</span>
+      </p>
+      <time datetime="PT2H44M12S" data-countdown="9852">02:44:12</time>
+      <small>Your ballot is not cast until you press Vote</small>
+    </div>
+  </div>
+
+  <h2 class="label">Your ballot</h2>
+  <section class="section" aria-label="Rank the options">
+    <div class="section__bar">
+      <span class="status-pill">Ranked ballot</span>
+      <span class="spacer"></span>
+      <button class="pill-btn" type="button" data-ballot-clear>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 6.5h17M9 6.5V4h6v2.5M6 6.5l1 13.5h10l1-13.5"/></svg>
+        Start again
+      </button>
+    </div>
+
+    <div class="panel" style="padding-top:12px">
+      <div class="ballot__head">
+        <span>Your order of preference</span>
+        <span data-ballot-count>4 of 6 ranked</span>
+      </div>
+
+      <p class="hint" style="margin:0 14px 4px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.4"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/></svg>
+        Rank every option. If your first choice is eliminated, your next one carries your vote.
+      </p>
+
+      <ul class="ballot" data-ballot data-preset="1,4,2,6,3,5">
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">Promote from the academy</span>
+          <span class="opt__pct">34%</span>
+        </button></li>
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">External appointment</span>
+          <span class="opt__pct">22%</span>
+        </button></li>
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">Interim to season end</span>
+          <span class="opt__pct">16%</span>
+        </button></li>
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">Keep the current manager</span>
+          <span class="opt__pct">13%</span>
+        </button></li>
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">Director-led search</span>
+          <span class="opt__pct">9%</span>
+        </button></li>
+        <li><button class="opt opt--reject" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
+            Reject all options
+          </span>
+          <span class="opt__pct">6%</span>
+        </button></li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn btn--ghost" type="button" data-ballot-cancel>Cancel</button>
+    <button class="btn btn--acid" type="button" data-ballot-submit>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4.5 4.5L19 7"/></svg>
+      Vote
+    </button>
+  </div>
+  <p class="costline">Voting costs <b>1</b> Credit and is confirmed on the next screen. You cannot
+    change your ballot once it is cast.</p>
+
+  <div class="tailspace" aria-hidden="true"></div>
+</div><!-- ============================================================
+     PINNED COMPOSER — outside <main>, per the contract, so the
+     review builder keeps it pinned and replays it into every frame.
+     It carries the library's `tabbar` class, which is the hook the
+     builder uses for bottom-pinned chrome. There is no tab bar on a
+     pushed proposal detail: the composer owns the bottom of the
+     screen, exactly as it does in comments.html.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="700"
+                placeholder="Leave a comment" aria-label="Leave a comment"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>600 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Post comment" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-3">
+        <figcaption class="scr__cap"><span class="scr__n">03</span>Voted · chart locked</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back to the voting rail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Sunday ticket ballot for the Copa tie</h2>
+  </div>
+
+  <div class="clocks">
+    <div class="clock">
+      <p class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+        <span>Voting closes in</span>
+      </p>
+      <time datetime="PT38M41S" data-countdown="2321">00:38:41</time>
+      <small>1 h stage · closes 16:15</small>
+    </div>
+    <div class="clock">
+      <p class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V9M9.5 19V5M15 19v-6M20.5 19V11"/></svg>
+        <span>Votes cast</span>
+      </p>
+      <span class="fig">3</span>
+      <small>of 1,412 eligible · 0.2% turnout</small>
+    </div>
+  </div>
+
+  <h2 class="label">The count</h2>
+  <section class="section" aria-label="Count and your ballot">
+    <div class="section__bar">
+      <span class="status-pill status-pill--inert">Chart locked</span>
+      <span class="spacer"></span>
+      <button class="icon-btn icon-btn--sm" type="button" aria-label="Why the chart is locked">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.4"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/></svg>
+      </button>
+    </div>
+
+    <!-- the gate stands in the chart's slot -->
+    <div class="gate">
+      <svg class="gate__art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3.5 19h17"/><path d="M4 15.2l4.6-4.6 3.4 3.4 6.4-6.6"/><path d="M14.6 7.4H19v4.4"/>
+      </svg>
+      <h3>The count chart opens at 5 votes</h3>
+      <p>Below five, a live chart would identify how individual members voted. The tally under it is
+        already running.</p>
+      <div class="pips" role="img" aria-label="3 of 5 votes cast">
+        <span class="pip pip--on"></span>
+        <span class="pip pip--on"></span>
+        <span class="pip pip--on"></span>
+        <span class="pip"></span>
+        <span class="pip"></span>
+      </div>
+      <p class="gate__count">3 of 5 votes cast <span>· 2 to go</span></p>
+    </div>
+
+    <!-- the member's own ballot, in order, with its plates intact -->
+    <div class="panel" style="margin-top:12px">
+      <div class="receipt">
+        <div class="receipt__top">
+          <p class="eyebrow">Your ballot · cast 15:32</p>
+          <span class="receipt__lock">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+            Locked
+          </span>
+        </div>
+        <ol class="mine mine--top">
+          <li><span class="slot slot--set">1</span><span class="mine__name">Members' allocation first</span><span class="mine__was">42%</span></li>
+          <li><span class="slot slot--set">2</span><span class="mine__name">Season-ticket ballot</span><span class="mine__was">31%</span></li>
+          <li><span class="slot slot--set">3</span><span class="mine__name">Open general sale</span><span class="mine__was">27%</span></li>
+        </ol>
+        <p class="hint" style="margin:12px 0 13px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.4"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/></svg>
+          A cast ballot cannot be changed or withdrawn. It is counted again in every elimination round.
+        </p>
+      </div>
+    </div>
+
+    <!-- the tally is live even while the chart is gated -->
+    <div class="panel tally" style="margin-top:12px">
+      <div class="tally__head">
+        <span>3 votes counted</span>
+        <span>First preferences</span>
+      </div>
+      <div class="trow">
+        <span class="swatch swatch--win"></span>
+        <span class="trow__name">Members' allocation first<i class="you">Your first preference</i></span>
+        <span class="tval tval--win">42%</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.34"></span>
+        <span class="trow__name">Season-ticket ballot</span>
+        <span class="tval">31%</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.24"></span>
+        <span class="trow__name">Open general sale</span>
+        <span class="tval">27%</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.14"></span>
+        <span class="trow__name">Reject all options<i>Added by the club</i></span>
+        <span class="tval">0%</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="tailspace" aria-hidden="true"></div>
+</div><!-- ============================================================
+     PINNED COMPOSER — outside <main>, per the contract, so the
+     review builder keeps it pinned and replays it into every frame.
+     It carries the library's `tabbar` class, which is the hook the
+     builder uses for bottom-pinned chrome. There is no tab bar on a
+     pushed proposal detail: the composer owns the bottom of the
+     screen, exactly as it does in comments.html.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="700"
+                placeholder="Leave a comment" aria-label="Leave a comment"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>600 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Post comment" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-4">
+        <figcaption class="scr__cap"><span class="scr__n">04</span>Voted · count open</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back to the voting rail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Who takes the first-team job?</h2>
+    <button class="icon-btn" type="button" aria-label="Share this proposal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M8 7.5 12 3.5l4 4M5 14v5.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V14"/></svg>
+    </button>
+  </div>
+
+  <div class="clocks">
+    <div class="clock">
+      <p class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+        <span>Voting closes in</span>
+      </p>
+      <time datetime="PT44M18S" data-countdown="2658">00:44:18</time>
+      <small>3 h stage · closes 17:20</small>
+    </div>
+    <div class="clock">
+      <p class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V9M9.5 19V5M15 19v-6M20.5 19V11"/></svg>
+        <span>Votes cast</span>
+      </p>
+      <span class="fig">1,079</span>
+      <small>of 1,412 eligible · 76% turnout</small>
+    </div>
+  </div>
+
+  <h2 class="label">The count</h2>
+  <section class="section" aria-label="Count and your ballot">
+    <div class="section__bar">
+      <span class="status-pill">Counting live</span>
+      <span class="spacer"></span>
+      <button class="icon-btn icon-btn--sm" type="button" aria-label="How the threshold works">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.4"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/></svg>
+      </button>
+    </div>
+
+    <div class="gauge" data-gauge>
+      <div class="gauge__head">
+        <span class="gauge__lede">Promote from the academy is leading</span>
+        <span class="verdictpill">On track to be approved</span>
+      </div>
+      <div class="gauge__figs">
+        <span class="gauge__now"><b>74%</b><span>support</span></span>
+        <span class="gauge__need">70% required</span>
+      </div>
+      <div class="bar" style="--now:74;--req:70" role="img"
+           aria-label="The leading option holds 74% of the vote against a 70% threshold">
+        <span class="bar__fill"><span class="bar__knob"></span></span>
+        <span class="bar__tick"></span>
+      </div>
+      <div class="barfoot"><span>Support</span><span>Threshold 70%</span></div>
+    </div>
+
+    <!-- ---- the chart ---- -->
+    <div class="panel chartpanel" style="margin-top:12px">
+      <p class="eyebrow">Support · time remaining</p>
+
+      <svg class="chart" viewBox="0 0 300 170" role="img"
+           aria-label="Support for the leading option against time remaining. It rises from 61% with three hours left to 74% now, crossing the 70% approval threshold with about 45 minutes left. The runner-up falls from 39% to 26%. You voted with 1 hour 30 minutes remaining.">
+
+        <!-- the approve band: everything at or above the threshold -->
+        <rect class="band" x="36" y="16" width="236" height="36.6"/>
+        <line class="thresh" x1="36" y1="52.6" x2="272" y2="52.6"/>
+        <text class="zonelab zonelab--pass" x="40" y="28">APPROVE · 70% AND OVER</text>
+
+        <!-- gridlines: 100 / 80 / 60 / 40 / 20 / 0, the live build's interval of 20 -->
+        <line class="grid" x1="36" y1="16"    x2="272" y2="16"/>
+        <line class="grid" x1="36" y1="40.4"  x2="272" y2="40.4"/>
+        <line class="grid" x1="36" y1="64.8"  x2="272" y2="64.8"/>
+        <line class="grid" x1="36" y1="89.2"  x2="272" y2="89.2"/>
+        <line class="grid" x1="36" y1="113.6" x2="272" y2="113.6"/>
+        <line class="ax"   x1="36" y1="138"   x2="272" y2="138"/>
+
+        <text class="axnum" x="30" y="19.5"  text-anchor="end">100</text>
+        <text class="axnum" x="30" y="43.9"  text-anchor="end">80</text>
+        <text class="axnum" x="30" y="68.3"  text-anchor="end">60</text>
+        <text class="axnum" x="30" y="92.7"  text-anchor="end">40</text>
+        <text class="axnum" x="30" y="117.1" text-anchor="end">20</text>
+        <text class="axnum" x="30" y="141"   text-anchor="end">0</text>
+
+        <!-- the moment this member voted -->
+        <line class="marker" x1="154" y1="16" x2="154" y2="138"/>
+        <text class="markerlab" x="158" y="134">YOU VOTED</text>
+
+        <!-- runner-up -->
+        <polyline class="series series--sub" points="36,90.4 95,92.9 154,96.5 213,101.4 272,106.3"/>
+        <circle cx="272" cy="106.3" r="2.4" fill="none" stroke="#FFF" stroke-width="1.6" opacity=".5"/>
+        <text class="valnum valnum--sub" x="272" y="119" text-anchor="end">26%</text>
+
+        <!-- leading option -->
+        <polyline class="series series--lead" points="36,63.6 95,61.1 154,57.5 213,52.6 272,47.7"/>
+        <circle class="ldot" cx="36"  cy="63.6" r="2.1"/>
+        <circle class="ldot" cx="95"  cy="61.1" r="2.1"/>
+        <circle class="ldot" cx="154" cy="57.5" r="2.1"/>
+        <circle class="ldot" cx="213" cy="52.6" r="2.1"/>
+        <circle class="ltip" cx="272" cy="47.7" r="3.6"/>
+        <text class="valnum" x="272" y="38" text-anchor="end">74%</text>
+
+        <!-- x axis: remaining time, counting down left to right -->
+        <text class="xlab" x="36"  y="153" text-anchor="start">3h left</text>
+        <text class="xlab" x="95"  y="153" text-anchor="middle">2h 15</text>
+        <text class="xlab" x="154" y="153" text-anchor="middle">1h 30</text>
+        <text class="xlab" x="213" y="153" text-anchor="middle">45m</text>
+        <text class="xlab xlab--now" x="272" y="153" text-anchor="end">Now</text>
+      </svg>
+
+      <p class="chartfoot">Redistribution runs on every new vote, so the line can fall as well as
+        rise. Turnout is shown above the chart, not on it.</p>
+    </div>
+
+    <!-- the member's own ballot -->
+    <div class="panel" style="margin-top:12px">
+      <div class="receipt">
+        <div class="receipt__top">
+          <p class="eyebrow">Your ballot · cast 15:47</p>
+          <span class="receipt__lock">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>
+            Locked
+          </span>
+        </div>
+        <ol class="mine mine--top">
+          <li><span class="slot slot--set">1</span><span class="mine__name">Promote from the academy</span><span class="mine__was">Leading</span></li>
+          <li><span class="slot slot--out">2</span><span class="mine__name">Interim to season end</span><span class="mine__was">Out · R4</span></li>
+          <li><span class="slot slot--set">3</span><span class="mine__name">External appointment</span><span class="mine__was">2nd</span></li>
+          <li><span class="slot slot--out">4</span><span class="mine__name">Director-led search</span><span class="mine__was">Out · R2</span></li>
+          <li><span class="slot slot--out">5</span><span class="mine__name">Keep the current manager</span><span class="mine__was">Out · R3</span></li>
+          <li><span class="slot slot--out">6</span><span class="mine__name">Reject all options</span><span class="mine__was">Out · R1</span></li>
+        </ol>
+        <p class="hint" style="margin:12px 0 13px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.4"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/></svg>
+          Your first preference is still in, so your later preferences have not been used yet.
+        </p>
+      </div>
+    </div>
+
+    <!-- the live tally -->
+    <div class="panel tally" style="margin-top:12px">
+      <div class="tally__head">
+        <span>1,079 votes counted</span>
+        <span>First preferences</span>
+      </div>
+      <div class="trow">
+        <span class="swatch swatch--win"></span>
+        <span class="trow__name">Promote from the academy<i class="you">Your first preference</i></span>
+        <span class="tval tval--win">34%</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.34"></span>
+        <span class="trow__name">External appointment</span>
+        <span class="tval">22%</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.28"></span>
+        <span class="trow__name">Interim to season end</span>
+        <span class="tval">16%</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.22"></span>
+        <span class="trow__name">Keep the current manager</span>
+        <span class="tval">13%</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.17"></span>
+        <span class="trow__name">Director-led search</span>
+        <span class="tval">9%</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.13"></span>
+        <span class="trow__name">Reject all options<i>Added by the club</i></span>
+        <span class="tval">6%</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- the discussion ---- -->
+  <div class="thead">
+    <h2>Discussion</h2>
+    <span class="thead__n">4 comments</span>
+  </div>
+
+  <p class="hint" style="margin:0 var(--gutter) 11px">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.7v.01"/></svg>
+    Agreeing with a comment does not change the ballot. It has no effect on the count, the
+    threshold or the result.
+  </p>
+
+  <ol class="thread">
+    <li>
+      <article class="cm cm--club">
+        <span class="crest-av" role="img" aria-label="FC Barcelona crest">BAR</span>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">FC Barcelona</span>
+            <span class="badge">Club</span>
+            <span class="cm__when">2 h</span>
+            <button class="cm__of" type="button" aria-label="More options for FC Barcelona's comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/></svg>
+            </button>
+          </div>
+          <p class="cm__text">For the record: appointments sit with the board under article 41. An
+            approved proposal is advisory and is answered in writing at the next members' forum,
+            within 48 hours of the count.</p>
+          <div class="cm__acts" data-sig>
+            <button class="sig sig--agree" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              Agree <b>58</b>
+            </button>
+            <button class="sig sig--against" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Disagree <b>11</b>
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+
+    <li>
+      <article class="cm cm--you">
+        <div class="avatar cm__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">You · dylan_n</span>
+            <span class="cm__when">51 m</span>
+            <button class="cm__of" type="button" aria-label="More options for your comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/></svg>
+            </button>
+          </div>
+          <p class="cm__text">Ranked the academy first because we already pay for the coaching staff.
+            Put the interim second so there's a bridge if the board won't move before the window.</p>
+          <div class="cm__acts">
+            <span class="sig" style="cursor:default">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              <b>24</b> agree
+            </span>
+            <button class="sig" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L20.4 7.6a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="M15 6.1 18.5 9.6"/></svg>
+              Edit
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+
+    <li>
+      <article class="cm">
+        <div class="avatar cm__av" style="background-image:var(--av-03)" role="img" aria-label="scout_mode"></div>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">scout_mode</span>
+            <span class="cm__when">1 h</span>
+            <button class="cm__of" type="button" aria-label="More options for scout_mode's comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/></svg>
+            </button>
+          </div>
+          <p class="cm__text">The academy route only works if we also fund an assistant with senior
+            experience. Rank it first by all means, but the proposal as written doesn't say who pays
+            for that.</p>
+          <div class="cm__acts" data-sig>
+            <button class="sig sig--agree" type="button" aria-pressed="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              Agree <b>37</b>
+            </button>
+            <button class="sig sig--against" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Disagree <b>6</b>
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+
+    <li>
+      <article class="cm">
+        <div class="avatar cm__av" style="background-image:var(--av-05)" role="img" aria-label="dons_mode"></div>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">dons_mode</span>
+            <span class="cm__when">26 m</span>
+            <button class="cm__of" type="button" aria-label="More options for dons_mode's comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/></svg>
+            </button>
+          </div>
+          <p class="cm__text">Whatever finishes top, rank Reject last rather than leaving it blank.
+            A blank row is a wasted preference in the final round.</p>
+          <div class="cm__acts" data-sig>
+            <button class="sig sig--agree" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              Agree <b>19</b>
+            </button>
+            <button class="sig sig--against" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Disagree <b>2</b>
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+  </ol>
+
+  <div class="tailspace" aria-hidden="true"></div>
+</div><!-- ============================================================
+     PINNED COMPOSER — outside <main>, per the contract, so the
+     review builder keeps it pinned and replays it into every frame.
+     It carries the library's `tabbar` class, which is the hook the
+     builder uses for bottom-pinned chrome. There is no tab bar on a
+     pushed proposal detail: the composer owns the bottom of the
+     screen, exactly as it does in comments.html.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="700"
+                placeholder="Leave a comment" aria-label="Leave a comment"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>600 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Post comment" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-5">
+        <figcaption class="scr__cap"><span class="scr__n">05</span>Veto hold</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back to the voting rail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Cancel the Japan pre-season tour</h2>
+  </div>
+
+  <div class="holdbar held">
+    <span class="holdbar__disc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>
+    </span>
+    <span class="holdbar__id">
+      <b>Veto hold · nothing decided</b>
+      <span>Counting is paused. Club management filed a veto at 14:02.</span>
+    </span>
+  </div>
+
+  <div class="phead">
+    <div class="pline">
+      <p class="eyebrow">Posted by you</p>
+      <span class="typetag">Off-field decision</span>
+    </div>
+    <h1>Cancel the Japan pre-season tour</h1>
+    <div class="pby">
+      <span class="avatars">
+        <span class="avatar" style="background-image:var(--av-11)" role="img" aria-label="You"></span>
+      </span>
+      <span class="pby__who">by <b>you</b> · posted 11:15</span>
+    </div>
+  </div>
+
+  <!-- two clocks: one held, one running. The held one keeps white digits. -->
+  <div class="clocks">
+    <div class="clock clock--held">
+      <p class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M10.4 11.4v4.2M13.6 11.4v4.2M9.5 2.5h5M12 2.5V6"/></svg>
+        <span>Voting paused at</span>
+      </p>
+      <time datetime="PT41M12S">00:41:12</time>
+      <small>Resumes here if the veto is overturned</small>
+    </div>
+    <div class="clock">
+      <p class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+        <span>Appeal window</span>
+      </p>
+      <time datetime="PT29M41S" data-countdown="1781">00:29:41</time>
+      <small>Post an Idea to Reject the Veto before this ends</small>
+    </div>
+  </div>
+
+  <h2 class="label">Where the count stopped</h2>
+  <section class="section" aria-label="The frozen count">
+    <div class="section__bar">
+      <span class="status-pill status-pill--held">Frozen at 14:02</span>
+      <span class="spacer"></span>
+    </div>
+
+    <div class="gauge gauge--held" data-gauge>
+      <div class="gauge__head">
+        <span class="gauge__lede">Cancel the tour was leading when counting stopped</span>
+        <span class="verdictpill verdictpill--null">Veto hold</span>
+      </div>
+      <div class="gauge__figs">
+        <span class="gauge__now"><b>75%</b><span>frozen</span></span>
+        <span class="gauge__need">70% required</span>
+      </div>
+      <div class="bar bar--held" style="--now:75;--req:70" role="img"
+           aria-label="Frozen at 75% support against a 70% threshold; counting is paused">
+        <span class="bar__fill"><span class="bar__knob"></span></span>
+        <span class="bar__tick"></span>
+      </div>
+      <div class="barfoot"><span>Held at 14:02</span><span>Threshold 70%</span></div>
+      <p class="gaugenote">The bar had cleared the threshold. A veto does not reverse that — it
+        stops the clock and the count until the appeal window closes.</p>
+    </div>
+
+    <!-- the chart stops where the veto landed: dashed after the freeze -->
+    <div class="panel chartpanel" style="margin-top:12px">
+      <p class="eyebrow">Support · frozen at 14:02</p>
+      <svg class="chart" viewBox="0 0 300 170" role="img"
+           aria-label="Support rose from 58% to 75%, above the 70% threshold, and the series stops where counting was paused at 14:02.">
+        <rect class="band" x="36" y="16" width="236" height="36.6"/>
+        <line class="thresh" x1="36" y1="52.6" x2="272" y2="52.6"/>
+        <text class="zonelab zonelab--pass" x="40" y="28">APPROVE · 70% AND OVER</text>
+
+        <line class="grid" x1="36" y1="16"    x2="272" y2="16"/>
+        <line class="grid" x1="36" y1="40.4"  x2="272" y2="40.4"/>
+        <line class="grid" x1="36" y1="64.8"  x2="272" y2="64.8"/>
+        <line class="grid" x1="36" y1="89.2"  x2="272" y2="89.2"/>
+        <line class="grid" x1="36" y1="113.6" x2="272" y2="113.6"/>
+        <line class="ax"   x1="36" y1="138"   x2="272" y2="138"/>
+        <text class="axnum" x="30" y="19.5"  text-anchor="end">100</text>
+        <text class="axnum" x="30" y="43.9"  text-anchor="end">80</text>
+        <text class="axnum" x="30" y="68.3"  text-anchor="end">60</text>
+        <text class="axnum" x="30" y="92.7"  text-anchor="end">40</text>
+        <text class="axnum" x="30" y="117.1" text-anchor="end">20</text>
+        <text class="axnum" x="30" y="141"   text-anchor="end">0</text>
+
+        <!-- the series stops dead at 41:12 remaining; a dashed stroke is the
+             contract's mark for a figure that has stopped moving -->
+        <polyline class="series series--held" points="36,67.2 61,61.1 86,53.8 111,46.5"/>
+        <circle class="ltip--held" cx="111" cy="46.5" r="3.6"/>
+        <text class="valnum valnum--held" x="118" y="43">75%</text>
+        <line class="marker" x1="111" y1="16" x2="111" y2="138"/>
+        <text class="markerlab" x="115" y="134">PAUSED · 41M LEFT</text>
+
+        <text class="xlab" x="36"  y="153" text-anchor="start">1h left</text>
+        <text class="xlab" x="95"  y="153" text-anchor="middle">45m</text>
+        <text class="xlab" x="154" y="153" text-anchor="middle">30m</text>
+        <text class="xlab" x="213" y="153" text-anchor="middle">15m</text>
+        <text class="xlab" x="272" y="153" text-anchor="end">End</text>
+      </svg>
+      <p class="chartfoot">No votes are counted while the hold is on, so the line has no live end.</p>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <div class="reason">
+        <p class="eyebrow">Reason for the veto</p>
+        <h3>Contractual commitment already signed</h3>
+        <p>The tour is contracted with a third-party promoter and cancellation triggers a fee the
+          club has not budgeted for. Filed by <b>Club management</b> at 14:02.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn btn--flat" type="button">Read the veto</button>
+    <button class="btn btn--acid" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Appeal
+    </button>
+  </div>
+  <p class="costline">An Idea to Reject the Veto needs a <b>25</b> Credit deposit, refunded if it
+    becomes a Proposal. <b>80%</b> Support removes the veto.</p>
+
+  <div class="tailspace" aria-hidden="true"></div>
+</div><!-- ============================================================
+     PINNED COMPOSER — outside <main>, per the contract, so the
+     review builder keeps it pinned and replays it into every frame.
+     It carries the library's `tabbar` class, which is the hook the
+     builder uses for bottom-pinned chrome. There is no tab bar on a
+     pushed proposal detail: the composer owns the bottom of the
+     screen, exactly as it does in comments.html.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="700"
+                placeholder="Leave a comment" aria-label="Leave a comment"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>600 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Post comment" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-6">
+        <figcaption class="scr__cap"><span class="scr__n">06</span>Settled · approved</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back to the voting rail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Who takes the first-team job?</h2>
+  </div>
+
+  <div class="phead">
+    <div class="pline">
+      <p class="eyebrow">Closed 12 Jul</p>
+      <span class="typetag">Management decision</span>
+    </div>
+    <h1>Who takes the first-team job?</h1>
+    <div class="pby">
+      <span class="avatars">
+        <span class="avatar" style="background-image:var(--av-01)" role="img" aria-label="capitan_7"></span>
+      </span>
+      <span class="pby__who">by <b>capitan_7</b> · closed 17:20</span>
+    </div>
+  </div>
+
+  <h2 class="label">The verdict</h2>
+  <section class="section" aria-label="The settled result">
+    <div class="verdict verdict--pos">
+      <span class="verdict__badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4.5 4.5L19 7"/></svg>
+      </span>
+      <span class="verdict__body">
+        <span class="verdict__word">Approved</span>
+        <span class="verdict__sub">Promote from the academy · 74% of 1,079 votes · 70% needed</span>
+      </span>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <div class="receipt">
+        <div class="receipt__top">
+          <p class="eyebrow">Your ballot · cast 15:47</p>
+          <span class="receipt__lock">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4.5 4.5L19 7"/></svg>
+            Outcome backed
+          </span>
+        </div>
+        <ol class="mine mine--top">
+          <li><span class="slot slot--set">1</span><span class="mine__name">Promote from the academy</span><span class="mine__was">Won · 74%</span></li>
+          <li><span class="slot slot--out">2</span><span class="mine__name">Interim to season end</span><span class="mine__was">Out · R4</span></li>
+          <li><span class="slot slot--out">3</span><span class="mine__name">External appointment</span><span class="mine__was">2nd · 26%</span></li>
+          <li><span class="slot slot--out">4</span><span class="mine__name">Director-led search</span><span class="mine__was">Out · R2</span></li>
+          <li><span class="slot slot--out">5</span><span class="mine__name">Keep the current manager</span><span class="mine__was">Out · R3</span></li>
+          <li><span class="slot slot--out">6</span><span class="mine__name">Reject all options</span><span class="mine__was">Out · R1</span></li>
+        </ol>
+        <p class="hint" style="margin:12px 0 13px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.4"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/></svg>
+          Your first preference won in round 5, so preferences 2 to 6 were never needed.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel tally" style="margin-top:12px">
+      <div class="tally__head">
+        <span>Final round · R5 of 5</span>
+        <span>Final share</span>
+      </div>
+      <div class="trow">
+        <span class="swatch swatch--win"></span>
+        <span class="trow__name">Promote from the academy<i class="you">Outcome · your first preference</i></span>
+        <span class="tval tval--win">74%</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.34"></span>
+        <span class="trow__name">External appointment</span>
+        <span class="tval">26%</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.24"></span>
+        <span class="trow__name">Interim to season end</span>
+        <span class="tval">Out · R4</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.18"></span>
+        <span class="trow__name">Keep the current manager</span>
+        <span class="tval">Out · R3</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.14"></span>
+        <span class="trow__name">Director-led search</span>
+        <span class="tval">Out · R2</span>
+      </div>
+      <div class="trow">
+        <span class="swatch" style="--o:.11"></span>
+        <span class="trow__name">Reject all options<i>Added by the club</i></span>
+        <span class="tval">Out · R1</span>
+      </div>
+    </div>
+  </section>
+
+  <button class="btn btn--acid btn--wide" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6.5 18.5 12 13 17.5"/></svg>
+    Open the full result
+  </button>
+  <p class="costline">Round-by-round counting, the action it created and the club's written answer
+    all live on the Result.</p>
+
+  <div class="tailspace" aria-hidden="true"></div>
+</div><!-- ============================================================
+     PINNED COMPOSER — outside <main>, per the contract, so the
+     review builder keeps it pinned and replays it into every frame.
+     It carries the library's `tabbar` class, which is the hook the
+     builder uses for bottom-pinned chrome. There is no tab bar on a
+     pushed proposal detail: the composer owns the bottom of the
+     screen, exactly as it does in comments.html.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="700"
+                placeholder="Leave a comment" aria-label="Leave a comment"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>600 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Post comment" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-7">
+        <figcaption class="scr__cap"><span class="scr__n">07</span>Settled · rejected</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back to the voting rail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Shirt sponsor renewal</h2>
+  </div>
+
+  <div class="phead">
+    <div class="pline">
+      <p class="eyebrow">Closed 12 Jul</p>
+      <span class="typetag">Off-field decision</span>
+    </div>
+    <h1>Renew with the current shirt sponsor?</h1>
+    <div class="pby">
+      <span class="avatars">
+        <span class="avatar" style="background-image:var(--av-03)" role="img" aria-label="scout_mode"></span>
+        <span class="avatar" style="background-image:var(--av-05)" role="img" aria-label="dons_mode"></span>
+      </span>
+      <span class="pby__who">by <b>scout_mode</b> &amp; <b>dons_mode</b> · closed 09:40</span>
+    </div>
+  </div>
+
+  <h2 class="label">The verdict</h2>
+  <section class="section" aria-label="The settled result">
+    <div class="verdict verdict--neg">
+      <span class="verdict__badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </span>
+      <span class="verdict__body">
+        <span class="verdict__word">Rejected</span>
+        <span class="verdict__sub">Renew for three years · 41% of 864 votes · 70% needed</span>
+      </span>
+    </div>
+
+    <div class="gauge gauge--off" style="margin-top:12px" data-gauge>
+      <div class="gauge__head">
+        <span class="gauge__lede">Renew for three years led, but never reached the threshold</span>
+        <span class="verdictpill verdictpill--off">29 points short</span>
+      </div>
+      <div class="gauge__figs">
+        <span class="gauge__now"><b>41%</b><span>final</span></span>
+        <span class="gauge__need">70% required</span>
+      </div>
+      <div class="bar" style="--now:41;--req:70" role="img"
+           aria-label="Closed on 41% support against a 70% threshold">
+        <span class="bar__fill"><span class="bar__knob"></span></span>
+        <span class="bar__tick"></span>
+      </div>
+      <div class="barfoot"><span>Final support</span><span>Threshold 70%</span></div>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <div class="receipt">
+        <div class="receipt__top">
+          <p class="eyebrow">Your ballot · cast 09:02</p>
+        </div>
+        <ol class="mine">
+          <li><span class="slot slot--out">1</span><span class="mine__name">Open the slot to new bidders</span><span class="mine__was">2nd · 34%</span></li>
+          <li><span class="slot slot--out">2</span><span class="mine__name">Renew for one year only</span><span class="mine__was">Out · R2</span></li>
+          <li><span class="slot slot--out">3</span><span class="mine__name">Renew for three years</span><span class="mine__was">Led · 41%</span></li>
+        </ol>
+        <p class="hint" style="margin:12px 0 13px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.4"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/></svg>
+          Nothing was approved, so the sponsor slot stays as it is until a new proposal is posted.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <button class="btn btn--flat btn--wide" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6.5 18.5 12 13 17.5"/></svg>
+    Open the full result
+  </button>
+  <p class="costline">A rejected proposal creates no action. Your Credit is spent either way.</p>
+
+  <div class="tailspace" aria-hidden="true"></div>
+</div><!-- ============================================================
+     PINNED COMPOSER — outside <main>, per the contract, so the
+     review builder keeps it pinned and replays it into every frame.
+     It carries the library's `tabbar` class, which is the hook the
+     builder uses for bottom-pinned chrome. There is no tab bar on a
+     pushed proposal detail: the composer owns the bottom of the
+     screen, exactly as it does in comments.html.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="700"
+                placeholder="Leave a comment" aria-label="Leave a comment"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>600 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Post comment" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-8">
+        <figcaption class="scr__cap"><span class="scr__n">08</span>Cancelled by the club</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back to the voting rail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Voting</h2>
+  </div>
+
+  <div class="phead">
+    <div class="pline">
+      <p class="eyebrow">Posted by you</p>
+      <span class="typetag">Off-field decision</span>
+    </div>
+    <h1>Rename the north stand after the 2011 side</h1>
+    <div class="pby">
+      <span class="avatars">
+        <span class="avatar" style="background-image:var(--av-11)" role="img" aria-label="You"></span>
+      </span>
+      <span class="pby__who">by <b>you</b> · posted 09:30</span>
+    </div>
+  </div>
+
+  <h2 class="label">The verdict</h2>
+  <section class="section" aria-label="Cancelled">
+    <div class="verdict verdict--inert">
+      <span class="verdict__badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 10.5h9a5 5 0 0 1 0 10H8.5"/><path d="M8 6.5 4.5 10.5 8 14.5"/></svg>
+      </span>
+      <span class="verdict__body">
+        <span class="verdict__word">Cancelled</span>
+        <span class="verdict__sub">Withdrawn by club management at 10:12 · 25.0 Credits refunded</span>
+      </span>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <div class="reason">
+        <p class="eyebrow">Reason for cancellation</p>
+        <h3>Naming rights are already contracted to 2031</h3>
+        <p>The north stand's naming rights sit with a commercial partner until 2031, so the club
+          cannot act on this proposal whatever the members decide. Cancelled by
+          <b>Club management</b>.</p>
+        <p>Your <b>25.0</b> Credit deposit has been refunded in full. Please check the posting
+          guidelines before your next Idea so this does not happen again.</p>
+      </div>
+    </div>
+  </section>
+
+  <button class="btn btn--flat btn--wide" type="button">Read the posting guidelines</button>
+  <p class="costline">No count was taken, so nothing was decided and no action was created.</p>
+
+  <div class="tailspace" aria-hidden="true"></div>
+</div><!-- ============================================================
+     PINNED COMPOSER — outside <main>, per the contract, so the
+     review builder keeps it pinned and replays it into every frame.
+     It carries the library's `tabbar` class, which is the hook the
+     builder uses for bottom-pinned chrome. There is no tab bar on a
+     pushed proposal detail: the composer owns the bottom of the
+     screen, exactly as it does in comments.html.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="700"
+                placeholder="Leave a comment" aria-label="Leave a comment"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>600 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Post comment" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-9">
+        <figcaption class="scr__cap"><span class="scr__n">09</span>Nothing cast yet</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back to the voting rail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Move the derby kick-off to 20:00</h2>
+  </div>
+
+  <div class="clocks">
+    <div class="clock">
+      <p class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+        <span>Voting closes in</span>
+      </p>
+      <time datetime="PT59M52S" data-countdown="3592">00:59:52</time>
+      <small>Posted 30 seconds ago · you are first here</small>
+    </div>
+  </div>
+
+  <h2 class="label">The count</h2>
+  <section class="section" aria-label="No votes cast yet">
+    <div class="gate">
+      <svg class="gate__art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3.5 19h17"/><path d="M4 15.2l4.6-4.6 3.4 3.4 6.4-6.6"/><path d="M14.6 7.4H19v4.4"/>
+      </svg>
+      <h3>No votes cast yet</h3>
+      <p>The count chart opens at 5 votes. Cast the first one and the tally starts moving straight
+        away.</p>
+      <div class="pips" role="img" aria-label="0 of 5 votes cast">
+        <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+        <span class="pip"></span><span class="pip"></span>
+      </div>
+      <p class="gate__count">0 of 5 votes cast</p>
+    </div>
+
+    <div class="panel" style="margin-top:12px;padding-top:12px">
+      <div class="ballot__head">
+        <span>Rank all three options</span>
+        <span data-ballot-count>0 of 3 ranked</span>
+      </div>
+      <ul class="ballot" data-ballot>
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">Move to 20:00</span>
+          <span class="opt__pct">—</span>
+        </button></li>
+        <li><button class="opt" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">Keep the 16:15 slot</span>
+          <span class="opt__pct">—</span>
+        </button></li>
+        <li><button class="opt opt--reject" type="button" aria-pressed="false">
+          <span class="slot" aria-hidden="true"></span>
+          <span class="opt__name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
+            Reject all options
+          </span>
+          <span class="opt__pct">—</span>
+        </button></li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn btn--ghost" type="button" data-ballot-cancel>Cancel</button>
+    <button class="btn btn--acid" type="button" data-ballot-submit disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4.5 4.5L19 7"/></svg>
+      Vote
+    </button>
+  </div>
+
+  <div class="thead">
+    <h2>Discussion</h2>
+    <span class="thead__n">0 comments</span>
+  </div>
+  <p class="emptyquiet">No comments yet. Make the first argument.</p>
+
+  <div class="tailspace" aria-hidden="true"></div>
+</div><!-- ============================================================
+     PINNED COMPOSER — outside <main>, per the contract, so the
+     review builder keeps it pinned and replays it into every frame.
+     It carries the library's `tabbar` class, which is the hook the
+     builder uses for bottom-pinned chrome. There is no tab bar on a
+     pushed proposal detail: the composer owns the bottom of the
+     screen, exactly as it does in comments.html.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="700"
+                placeholder="Leave a comment" aria-label="Leave a comment"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>600 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Post comment" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-10">
+        <figcaption class="scr__cap"><span class="scr__n">10</span>Couldn’t load</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back to the voting rail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Voting</h2>
+  </div>
+
+  <div style="height:96px" aria-hidden="true"></div>
+
+  <div class="empty empty--bad">
+    <svg class="empty__art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3.4 22 20.6H2L12 3.4Z"/><path d="M12 10v4.6M12 17.6v.01"/>
+    </svg>
+    <h3>We couldn’t load this proposal</h3>
+    <p>The count, the ballot and the discussion all come from the same request, so none of them
+      could be shown. Your vote has not been affected.</p>
+    <button class="btn btn--acid" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.8 4.5v3.6h-3.6"/></svg>
+      Try again
+    </button>
+    <p style="margin-top:16px"><code>PROPOSAL_FETCH_FAILED</code> · 12 Jul 16:04</p>
+  </div>
+
+  <div class="tailspace" aria-hidden="true"></div>
+</div><!-- ============================================================
+     PINNED COMPOSER — outside <main>, per the contract, so the
+     review builder keeps it pinned and replays it into every frame.
+     It carries the library's `tabbar` class, which is the hook the
+     builder uses for bottom-pinned chrome. There is no tab bar on a
+     pushed proposal detail: the composer owns the bottom of the
+     screen, exactly as it does in comments.html.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="700"
+                placeholder="Leave a comment" aria-label="Leave a comment"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>600 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Post comment" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One screen, ten states, one ballot idiom</h2>
+
+  <p>This is a rebuild of the largest page in the app — <code>lib/pages/voting/vote_count.dart</code>,
+    <code>1,493</code> lines — which has never been redesigned. It is where a proposal is read,
+    argued over and decided, so it carries more state than any other screen: before the vote,
+    mid-ballot, after the vote with the count locked, after the vote with the count running, on veto
+    hold, approved, rejected, cancelled, empty and failed.</p>
+
+  <p>Nothing about the ballot is new here. The threshold bar, the ranked option rows and the rank
+    plate are the ones already signed off on the <b>Voting card</b>, shown at full scale instead of
+    squeezed into a <code>268 px</code> rail card. The verdict bar and the count chart come from
+    <b>Results &amp; actions</b>. The discussion thread and the pinned composer come from
+    <b>Comments</b>. The hatch, the hold banner and the struck bar fill come from <b>Veto</b>. There
+    is exactly one way to express a ballot in this library and this screen uses it.</p>
+
+  <p>Three things in the live build are fixed rather than reproduced. The build's ranked ballot ships
+    an instruction banner telling members that clicking numbers the choices, and then renders
+    <b>no rank affordance at all</b> — no number, no badge, no handle, nothing to indicate the row is
+    even tappable. Here every row carries a visible numbered slot, filled or empty, and the numbers
+    appear in it. The build's post-vote receipt prints one uppercased word (<code>PEP</code>) in a
+    centred lockup, <code>60 pt</code> above a tally that renders the same name in title case, with
+    no link between them and every rank stripped out; here the member's ballot is restated in full,
+    in order, with its plates intact. And the build's chart-gate panel reads
+    <code>Current: 1 votes</code> — the plural noun against the quantity one, with no pluralisation
+    anywhere in the string table. That is now a pip row and a sentence.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Reading order on the Before-voting frame. Values as built. Regions marked
+        <em>state</em> appear only on the frames that need them.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Header</td><td>Top bar</td><td class="t-note">Back disc, screen or proposal name, share disc. <code>38 px</code> circles on <code>--surface</code>, white <code>1.9</code>-stroke glyphs, each with the contract's invisible <code>::after{inset:-3px}</code> expansion to a <code>44 px</code> hit area. The title is <code>15/600</code> <code>--muted</code>, truncating — it is context, not the headline.</td></tr>
+        <tr><td>Head</td><td>Stage eyebrow + type tag</td><td class="t-note">One row: tracked micro-label <code>10.5/700/.14em</code> <code>--dim</code> on the left, the proposal type as a <code>24 px</code> <code>--sunken</code> pill on the right. Type values are the real ones from <code>CFunc.getTypePost</code> — <code>POSITION</code>, <code>ON-FIELD DECISION</code>, <code>OFF-FIELD DECISION</code>, <code>MANAGEMENT DECISION</code>, <code>REJECT VETO</code>.</td></tr>
+        <tr><td>Head</td><td>Title</td><td class="t-note"><code>24/700/-.025em</code>, sentence case, wrapping to two lines. Not the <code>34 px</code> screen title — this is a pushed detail, so the proposal is the headline and <code>VOTING</code> is demoted to the bar.</td></tr>
+        <tr><td>Head</td><td>Byline</td><td class="t-note"><code>22 px</code> avatar stack (overlapping <code>-9 px</code>, <code>1.5 px</code> canvas ring) + <code>12.5px</code> <code>--muted</code> line with the author in <code>600</code> white.</td></tr>
+        <tr><td>Head</td><td>Clock pair</td><td class="t-note">Two <code>--sunken</code> <code>R12</code> tiles from <code>veto.html</code>: the countdown and the votes-cast figure, both <code>24/700/-.03em</code> <code>tabular-nums</code>. Tracked cap label above, plain-English line below. The countdown is live from <code>votingRemainDuration</code>.</td></tr>
+        <tr><td>Details</td><td>Body + disclosure</td><td class="t-note"><code>13.5/1.55</code> <code>--muted</code>, clamped to <b>4 lines</b> — the build's own clamp (<code>maxLines: flag ? 4 : 10</code>). <code>Read more</code> / <code>Read less</code> in accent <code>12.5/700</code> with a rotating chevron; both strings exist in <code>en.json</code>.</td></tr>
+        <tr><td>Count</td><td>Section container</td><td class="t-note"><code>--section</code> fill, <code>1 px --line</code>, <code>R16</code>, <code>12 px</code> padding, holding a status pill and a <code>34 px</code> info disc above its panels.</td></tr>
+        <tr><td>Count</td><td>Threshold panel</td><td class="t-note">The Voting card's panel at detail scale. Lede + verdict pill; the standing at <code>34/800/-.04em</code>; the requirement as a <code>--surface</code> pill in accent; bar track <code>10 px</code> (rail card: <code>8</code>) on <code>#2E3F1F</code> with an accent fill, a <code>16 px</code> knob riding the leading edge and a <b>white <code>2 px</code> threshold tick</b> that now runs the full bar height instead of dropping below it. Tracked legend under the bar.</td></tr>
+        <tr><td>Count</td><td>Which-number line</td><td class="t-note">New. A hairline-separated <code>11.5px</code> note stating that the big figure is the leading option <em>after redistribution</em>, that the rows below are <em>first preferences</em>, and that the club sets the percentage per type. Without it the two figures look like a contradiction.</td></tr>
+        <tr><td>Ballot</td><td>Head row</td><td class="t-note">Instruction on the left, live <code>n of m ranked</code> counter on the right as a tracked <code>--dim</code> micro-label.</td></tr>
+        <tr><td>Ballot</td><td>Option row</td><td class="t-note"><code>54 px</code>, full-bleed inside the panel with <code>14 px</code> internal padding, divided by <code>1 px --line-soft</code>. Rank slot <code>28 px</code> circle (rail card: <code>25</code>), <code>1.5 px</code> ring at <code>rgba(255,255,255,.18)</code>; when ranked it fills <code>--acid</code> with an <code>--acid-ink</code> numeral. Name <code>14.5/600</code>, share <code>14/700</code> <code>tabular-nums</code>. Ranked rows take <code>--acid-wash</code> plus a <code>3 px</code> inset accent bar.</td></tr>
+        <tr><td>Ballot</td><td>Reject-all row</td><td class="t-note">Same shell, name in <code>--muted</code>, leading <code>14 px</code> <code>#E2564A</code> cross glyph. The club-added option, marked by a glyph and a tone, not by a different shape or hue.</td></tr>
+        <tr><td>Ballot</td><td>Action pair</td><td class="t-note"><code>Cancel</code> (ghost, <code>1 px</code> white hairline, <code>39%</code>) + <code>Vote</code> (accent fill, <code>--acid-ink</code>), both <code>52 px</code> — <code>forms.html</code>'s height. <code>Vote</code> is disabled until every row is ranked. Below it the cost line: <code>1</code> Credit, free if the proposal is vetoed, cancelled or ruled out (verbatim from <code>en.json</code>).</td></tr>
+        <tr><td><em>state</em></td><td>Chart gate</td><td class="t-note"><code>--sunken</code> <code>R12</code> panel in the chart's slot: a <code>34 px</code> accent chart glyph, <code>17/600</code> headline, a five-pip progress row (<code>26 × 5 px</code>, accent when filled) and a count line. Replaces the build's pure-black panel with a near-white keyline — the only white-bordered surface in the whole capture set.</td></tr>
+        <tr><td><em>state</em></td><td>Count chart</td><td class="t-note"><code>--surface</code> <code>R12</code> panel, SVG on a <code>300 × 170</code> viewBox. Y is <b>support share</b>, <code>0–100</code>, gridlines every <code>20</code> — the live build's <code>CNum.valueYVote</code> interval. X is <b>time remaining</b>, counting down left to right, five labels, matching <code>CFunc.findChartElement</code>'s quartering of the stage. An <code>rgba(155,226,34,.07)</code> band covers everything at or above the threshold with a dashed <code>1.2 px</code> accent line at its foot; the leading series is <code>2.4 px</code> accent with a <code>3.6 px</code> tip, the runner-up <code>1.8 px</code> white at <code>.34</code>. A dashed vertical marker records when this member voted.</td></tr>
+        <tr><td><em>state</em></td><td>Your ballot</td><td class="t-note">New. The member's ranking in order, each row a rank plate + name + what became of that preference. A live preference keeps the filled accent plate; an eliminated one takes the contract's <b>dashed</b> plate at <code>--muted</code>. Header carries the cast time and a <code>Locked</code> badge.</td></tr>
+        <tr><td><em>state</em></td><td>Tally rows</td><td class="t-note"><code>Results &amp; actions</code>' rows: opacity-graded white swatch, name, value. Values are <code>--muted</code> (<code>~5:1</code>) or accent for the leader. The build's own tally rows measured <code>~2.4:1</code>; nothing here goes below <code>--muted</code>.</td></tr>
+        <tr><td><em>state</em></td><td>Verdict bar</td><td class="t-note"><code>Results &amp; actions</code>' component at <code>--lg</code> scale, <code>70 px</code>: <code>34 px</code> badge, word in <code>16/700/.05em</code> caps, sub-line naming the outcome, the share, the vote count and the requirement. Filled accent plate = approved, <code>#E2564A</code> = rejected, inert <code>--sunken</code> = cancelled.</td></tr>
+        <tr><td><em>state</em></td><td>Hold banner</td><td class="t-note"><code>veto.html</code>'s <code>.holdbar</code>, verbatim: <code>--sunken</code> under static accent bars at <code>135°</code> (<code>5 px</code> on, <code>6 px</code> off, <code>rgba(155,226,34,.11)</code>), a <code>rgba(155,226,34,.30)</code> ring and a <code>⊘</code> disc.</td></tr>
+        <tr><td>Pinned</td><td>Composer</td><td class="t-note"><code>comments.html</code>'s composer, unchanged: <code>44 px</code> minimum growing one <code>23 px</code> line at a time to a <code>112 px</code> cap, <code>16 px</code> value text so iOS does not zoom on focus, accent border + <code>3 px --acid-wash</code> focus ring, counter from <code>80</code> characters remaining, <code>44 px</code> accent send disc. Placeholder is <code>Leave a comment</code>, the live string. Lives <b>outside <code>&lt;main&gt;</code></b> per the contract.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Each row is its own frame, so each gets its own phone in the review above.</caption>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Before voting</td><td class="t-note">The proposal in full. Threshold panel live, ballot untouched — every slot empty, counter <code>0 of 6 ranked</code>, <code>Vote</code> disabled. The standings are visible before the member votes, as in the build.</td></tr>
+        <tr><td>Casting the ballot</td><td class="t-note">Ranks filled in tap order. Ranked rows take the accent wash and the <code>3 px</code> inset bar, the slot fills accent with an <code>--acid-ink</code> numeral, the counter tracks live, <code>Vote</code> enables at <code>6 of 6</code>. Tapping a ranked row clears it and the later ranks close up. <code>Start again</code> empties the ballot.</td></tr>
+        <tr><td>Voted · chart locked</td><td class="t-note">The gate panel stands in the chart's slot at <code>3 of 5 votes</code>. The receipt and the tally are already live — only the chart waits.</td></tr>
+        <tr><td>Voted · count open</td><td class="t-note">Chart, receipt and full tally. The ballot rows are gone entirely; there is no control to change a cast vote. The discussion sits below the count.</td></tr>
+        <tr><td>Veto hold</td><td class="t-note">The canonical hatch on the banner, the status pill, the frozen threshold panel and the clock. Two clocks: the paused one keeps <b>full-contrast white digits</b> — greying it would read as disabled, and held is loud while finished is quiet — and the appeal window runs. The bar's accent fill is struck through with dark <code>135°</code> bars (<code>--struck</code>); the chart series turns <code>--muted</code> and <b>dashed</b>, the contract's mark for a figure that has stopped moving, and simply ends where counting stopped.</td></tr>
+        <tr><td>Settled · approved</td><td class="t-note">Accent verdict bar, the member's ballot annotated with what happened to each preference, the final-round tally, and an accent CTA handing off to the Result.</td></tr>
+        <tr><td>Settled · rejected</td><td class="t-note"><code>#E2564A</code> verdict bar with a cross glyph and the word <code>Rejected</code> — never colour alone. The threshold panel switches to its <code>--off</code> tones and the verdict pill states the gap in points rather than repeating the percentage. The hand-off CTA drops to <code>--surface</code>: nothing was approved, so nothing is being celebrated.</td></tr>
+        <tr><td>Cancelled by the club</td><td class="t-note">The <code>buildCancelSection</code> branch. Inert verdict bar — no hue at all, because cancelled is finished, not held — plus a reason panel and the refund. No count is shown because none was taken.</td></tr>
+        <tr><td>Nothing cast yet</td><td class="t-note">Gate at <code>0 of 5</code>, all shares rendered as <code>—</code> rather than <code>0%</code>, ballot ready, and <code>No comments yet</code> as a quiet <code>--sunken</code> line rather than a bordered panel.</td></tr>
+        <tr><td>Couldn't load</td><td class="t-note"><code>VotingStatus.fails</code>. The build fans three requests out in one <code>Future.wait</code> and treats any non-200 as a whole-page failure, so the copy says so honestly, reassures the member their vote is unaffected, and offers one <code>Try again</code>. Error code and timestamp are shown for support.</td></tr>
+        <tr><td>Loading</td><td class="t-note">Not drawn. The build ships a bespoke <code>180</code>-line grey shimmer here (<code>buildShimmerEffect</code>). It should be replaced by the library's shared skeleton — see the questions.</td></tr>
+        <tr><td>Stage ends while open</td><td class="t-note">Not drawn. At <code>Duration.zero</code> the build calls <code>onDoneNavigatorAction</code> and replaces the route with the Result detail with no warning. Flagged below.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused, unchanged in kind</h3>
+      <ul>
+        <li><b>Threshold bar</b> — track, accent fill, marker knob and threshold tick from <code>voting-card.html</code>, scaled from <code>8</code> to <code>10 px</code></li>
+        <li><b>Ranked option row and rank plate</b> — <code>voting-card.html</code>, scaled from <code>25</code> to <code>28 px</code>, with the same accent wash and <code>3 px</code> inset bar for a ranked row</li>
+        <li><b>Verdict bar</b> — <code>results-actions.html</code>, four tones and two hues, at its <code>--lg</code> detail scale</li>
+        <li><b>Count chart panel</b> — <code>results-actions.html</code>'s SVG chart, its axis classes, its threshold dash and its intersection-triggered draw-in</li>
+        <li><b>Tally rows</b> — <code>results-actions.html</code>'s swatch / name / value row</li>
+        <li><b>Thread, agree-disagree pills and composer</b> — <code>comments.html</code>, including the rule that agreement is <em>ink, never a fill</em></li>
+        <li><b>The hold treatment</b> — <code>veto.html</code>'s <code>--hold-bars</code>, <code>--hold-ring</code> and <code>--struck</code>, copied token for token</li>
+        <li><b>Clock tiles</b> — <code>veto.html</code>, including the rule that a held clock keeps white digits</li>
+        <li><b>Buttons and controls at <code>52 px</code></b> — <code>forms.html</code></li>
+        <li><b>Hit-area expansion</b> — the contract's <code>::after{inset:-3px}</code> on every <code>38 px</code> and <code>34 px</code> disc</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>A visible rank affordance</b> — every row carries a numbered slot. The build describes clicking to number the choices and renders nothing at all</li>
+        <li><b>The member's own ballot, restated in order</b> — replacing a single uppercased word floating <code>60 pt</code> above an unlinked tally. Eliminated preferences take the contract's dashed plate</li>
+        <li><b>The which-number line</b> — one sentence separating the redistributed leading share from the first-preference rows. Two percentages that mean different things previously sat together unlabelled</li>
+        <li><b>Turnout as its own figure</b> — a clock tile reading <code>1,079 of 1,412 eligible · 76% turnout</code>, so the chart is free to plot support</li>
+        <li><b>The gate as a pip row</b> — <code>3 of 5 votes cast</code> with five pips, replacing <code>Chart will appear after 5 votes</code> / <code>Current: 1 votes</code>, a ghosted watermark and a white keyline. Pluralisation fixed</li>
+        <li><b>A frozen chart</b> — the series turns dashed and stops at the freeze instead of the panel simply vanishing</li>
+        <li><b>An error state</b> — the build has none; a failed fetch shows an internal-error dialog over an empty screen</li>
+        <li><b>An honest empty state</b> — em-dashes rather than <code>0%</code> where no vote has been cast, so nothing looks like a measured zero</li>
+        <li><b>The action pair clears the composer</b> — in the build the pinned composer overlays the <code>Cancel</code> / <code>Vote</code> buttons and only <code>~10 pt</code> of them is reachable</li>
+        <li><b>Cost and refund copy on the ballot</b> — the build hides the price behind a confirmation dialog after the member commits</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>What is the real quorum before the chart opens?</h3>
+      <p><code>Chart will appear after 5 votes</code> and <code>Current: 1 votes</code> appear in the
+        screenshots and <b>nowhere else</b> — zero matches across <code>lib/</code> and
+        <code>en.json</code>, and <code>ConfigClub</code> has no minimum-vote field. In the supplied
+        code there is no gate at all: <code>ChartCommon</code> renders as soon as
+        <code>getListChart</code> returns, and that function has an explicit branch for an empty vote
+        history. We have reproduced the gate at <span class="flag">5 votes, hard-coded</span>. It
+        should become a club-config threshold beside the five existing vote targets, and we need to
+        know whether it counts <em>votes</em> or <em>distinct voters</em>.</p></li>
+
+    <li><h3>Should the chart plot support or turnout?</h3>
+      <p>The live chart is handed <code>y = voted / count_member_participants</code> — that is
+        <b>turnout</b> — and then draws a green <code>APPROVE</code> band at the <b>approval</b>
+        threshold. Those are two different quantities on one plate: a proposal with 100% turnout and
+        20% support would draw a line deep inside the approve band. We have plotted
+        <span class="flag">support share</span> against the band, because that is what the band
+        means, and moved turnout to its own figure above the chart. Confirm, because it changes the
+        API the chart reads.</p></li>
+
+    <li><h3>Is the headline percentage the redistributed share or first preferences?</h3>
+      <p>The Voting card shows <code>74%</code> against a <code>70%</code> threshold while its ballot
+        rows read <code>34 / 28 / 22 / 16</code>. Both can be true — one is the leading option after
+        eliminations, the other is first preferences — but nothing says so. We have assumed
+        <span class="flag">the bar measures the leading option after redistribution</span> and added
+        a line saying it. If the bar is meant to measure first preferences, the verdict pill is
+        wrong on both screens.</p></li>
+
+    <li><h3>Is the ballot ranked or binary?</h3>
+      <p>The supplied code implements a <b>binary Support / Reject</b> vote:
+        <code>voteProposal(status: true|false)</code>, one boolean, and a chart with
+        <code>APPROVE</code> / <code>REJECT</code> bands. The screenshots implement
+        <b>ranked-choice with instant runoff</b> and a <code>Reject all options</code> row. They
+        cannot both be right. We have built <span class="flag">ranked choice</span>, because that is
+        the newer build and it is what the Results screen's round-by-round chart already assumes —
+        but the vote endpoint in this checkout cannot carry a ranking.</p></li>
+
+    <li><h3>Can a member vote without ranking every option?</h3>
+      <p>The build's instruction says to rank until all are numbered, so <code>Vote</code> stays
+        disabled until the ballot is <span class="flag">complete</span>. If a partial ranking is
+        valid, the button should enable on the first rank and we need to know what happens to the
+        blank rows in the final round.</p></li>
+
+    <li><h3>Which option set is canonical?</h3>
+      <p>The library now ships two for the same proposal: <code>voting-card.html</code> lists three
+        real managers by name plus <code>Reject all options</code>, and
+        <code>results-actions.html</code> lists six role-based routes. We have used
+        <span class="flag">the role-based set</span> here so the detail, the result and the round
+        chart agree, and because naming real individuals on a live appointment ballot is a legal
+        question, not a design one. The rail card needs bringing onto whichever set wins.</p></li>
+
+    <li><h3>Should the screen redirect itself when the clock hits zero?</h3>
+      <p>The build calls <code>onDoneNavigatorAction</code> at <code>Duration.zero</code> and
+        <code>pushReplacementNamed</code>s straight to the Result — so a member mid-sentence in the
+        composer loses the screen without warning. We have not drawn that. Our recommendation is
+        <span class="flag">an in-place transition to the settled state with the count frozen and a
+        <code>See the result</code> CTA</span>, never an automatic route change.</p></li>
+
+    <li><h3>The composer appears on frames it should not</h3>
+      <p>Bottom-pinned chrome has to live outside <code>&lt;main&gt;</code> per the contract, and the
+        review page replays it into every frame — so the composer also shows on
+        <b>Couldn't load</b> and, arguably, on <b>Cancelled</b>. In the real build it should be
+        <span class="flag">hidden when the proposal failed to load and disabled once the proposal is
+        cancelled or vetoed</span>. Confirm the second one: a veto hold is exactly when members most
+        want to argue.</p></li>
+
+    <li><h3>Is the shimmer worth <code>180</code> lines?</h3>
+      <p><code>vote_count.dart</code> spends roughly <code>180</code> of its <code>1,493</code> lines
+        hand-building a grey placeholder for this one screen. We have not drawn a loading state
+        because <span class="flag">the library's shared skeleton should serve it</span>. Confirm we
+        can retire the bespoke one.</p></li>
+
+    <li><h3>Two library-wide items this screen inherits</h3>
+      <p>Control height is still open: <code>52 px</code> here, from <code>forms.html</code>, against
+        <code>auth.html</code>'s better-sourced <code>64 px</code>. And the
+        <code>34 px</code>/<code>38 px</code> discs keep their measured size with the invisible
+        <code>44 px</code> hit-area expansion rather than growing — <span class="flag">the
+        <code>::after</code> pattern</span>, applied consistently. Both need settling once, for the
+        whole library, not per screen.</p></li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  /* ---------- draw the threshold fills and the chart lines in ------ */
+  var draws = Array.prototype.slice.call(document.querySelectorAll('[data-gauge]'));
+  var panels = Array.prototype.slice.call(document.querySelectorAll('.chartpanel'));
+  if (still) { panels = []; }
+  panels.forEach(function(p){ p.classList.add('is-armed'); });
+
+  var watched = draws.concat(panels);
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){ e.target.classList.add('is-drawn'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.25 });
+    watched.forEach(function(el){ io.observe(el); });
+  } else {
+    watched.forEach(function(el){ el.classList.add('is-drawn'); });
+  }
+
+  /* ---------- READ MORE / READ LESS ------------------------------- */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-more]'), function(btn){
+    var host = btn.parentNode;
+    btn.addEventListener('click', function(){
+      var open = btn.getAttribute('aria-expanded') === 'true';
+      Array.prototype.forEach.call(host.querySelectorAll('[data-clamp]'), function(p){
+        p.classList.toggle('clamp', open);
+      });
+      btn.setAttribute('aria-expanded', String(!open));
+      btn.childNodes[0].nodeValue = open ? 'Read more' : 'Read less';
+    });
+  });
+
+  /* ---------- the ranked ballot ------------------------------------
+     Tap assigns the next rank; tap again clears it and every later
+     rank closes up. The slot is the affordance: it always exists,
+     it just fills. Vote stays disabled until every row is ranked.  */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-ballot]'), function(list){
+    var frame   = list.closest('.frame') || document;
+    var opts    = Array.prototype.slice.call(list.querySelectorAll('.opt'));
+    var counter = frame.querySelector('[data-ballot-count]');
+    var cancel  = frame.querySelector('[data-ballot-cancel]');
+    var clear   = frame.querySelector('[data-ballot-clear]');
+    var submit  = frame.querySelector('[data-ballot-submit]');
+    var order   = [];
+
+    var preset = list.getAttribute('data-preset');
+    if (preset) {
+      preset.split(',').map(Number).forEach(function(rank, i){
+        if (rank) { order[rank - 1] = opts[i]; }
+      });
+      order = order.filter(Boolean);
+    }
+
+    function render(){
+      opts.forEach(function(btn){
+        var i    = order.indexOf(btn);
+        var slot = btn.querySelector('.slot');
+        var name = btn.querySelector('.opt__name').textContent.trim();
+        btn.setAttribute('aria-pressed', i > -1 ? 'true' : 'false');
+        slot.textContent = i > -1 ? String(i + 1) : '';
+        btn.setAttribute('aria-label', i > -1
+          ? name + ', ranked ' + (i + 1) + ' of ' + opts.length + '. Tap to clear.'
+          : name + ', not ranked. Tap to give it rank ' + (order.length + 1) + '.');
+      });
+      var txt = order.length + ' of ' + opts.length + ' ranked';
+      if (counter) { counter.textContent = txt; }
+      if (submit && !submit.hasAttribute('data-sent')) {
+        submit.disabled = order.length !== opts.length;
+      }
+    }
+
+    opts.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var i = order.indexOf(btn);
+        if (i > -1) { order.splice(i, 1); } else { order.push(btn); }
+        render();
+      });
+    });
+
+    if (cancel) { cancel.addEventListener('click', function(){ order = []; render(); }); }
+    if (clear)  { clear.addEventListener('click',  function(){ order = []; render(); }); }
+    if (submit) {
+      submit.addEventListener('click', function(){
+        if (submit.disabled) return;
+        submit.setAttribute('data-sent','1');
+        submit.disabled = true;
+        submit.textContent = 'Ballot cast';
+      });
+    }
+
+    render();
+  });
+
+  /* ---------- agree / disagree (comments.html) --------------------- */
+  function bump(btn, d){
+    var n = btn.querySelector('b'); if(!n) return;
+    var v = parseInt(n.textContent, 10); if (isNaN(v)) return;
+    n.textContent = String(Math.max(0, v + d));
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-sig]'), function(group){
+    group.addEventListener('click', function(e){
+      var b = e.target.closest('.sig[aria-pressed]');
+      if(!b || !group.contains(b)) return;
+      var on = b.getAttribute('aria-pressed') === 'true';
+      if(!on){
+        Array.prototype.forEach.call(group.querySelectorAll('.sig[aria-pressed="true"]'), function(o){
+          if(o !== b){ o.setAttribute('aria-pressed','false'); bump(o,-1); }
+        });
+      }
+      b.setAttribute('aria-pressed', String(!on));
+      bump(b, on ? -1 : 1);
+    });
+  });
+
+  /* ---------- the composer (comments.html) ------------------------- */
+  var box = document.querySelector('[data-cmp]');
+  if (box) {
+    var MAX = 600, WARN = 80, GROW = 112;
+    var field = box.querySelector('.cmp__field');
+    var ta    = box.querySelector('.cmp__in');
+    var send  = box.querySelector('.send');
+    var count = box.querySelector('.cmp__count');
+    var ctext = box.querySelector('[data-count-text]');
+
+    function sync(){
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, GROW) + 'px';
+      var left = MAX - ta.value.length, over = left < 0, show = left <= WARN;
+      count.hidden = !show;
+      if (show) { ctext.textContent = over ? '−' + Math.abs(left) + ' over' : left + ' left'; }
+      count.classList.toggle('is-over', over);
+      field.classList.toggle('is-over', over);
+      send.disabled = ta.value.trim() === '' || over;
+    }
+    ta.addEventListener('input', sync);
+    sync();
+
+    send.addEventListener('click', function(){
+      if (send.disabled) return;
+      send.classList.add('is-busy');
+      send.disabled = true;
+      send.setAttribute('aria-busy','true');
+      window.setTimeout(function(){
+        send.classList.remove('is-busy');
+        send.removeAttribute('aria-busy');
+        ta.value = '';
+        sync();
+      }, 900);
+    });
+  }
+
+  /* ---------- countdowns ------------------------------------------- */
+  function pad(n){ return String(n).padStart(2,'0'); }
+  var clocks = Array.prototype.slice.call(document.querySelectorAll('[data-countdown]'))
+    .map(function(el){ return { el: el, left: parseInt(el.dataset.countdown, 10) || 0 }; });
+
+  if (clocks.some(function(c){ return c.left > 0; })) {
+    window.setInterval(function(){
+      clocks.forEach(function(c){
+        if (c.left <= 0) return;
+        c.left -= 1;
+        var h = Math.floor(c.left / 3600),
+            m = Math.floor((c.left % 3600) / 60),
+            s = c.left % 60;
+        c.el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+        c.el.setAttribute('datetime', 'PT' + h + 'H' + m + 'M' + s + 'S');
+      });
+    }, 1000);
+  }
+})();
+</script>

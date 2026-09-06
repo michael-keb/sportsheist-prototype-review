@@ -1,0 +1,2308 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Dialogs · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; --surface: #1C2129; --sunken: #13171E; --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); --acid-line: rgba(155,226,34,.30); /* derived, as sheets.html / all-locker-rooms.html */ /* semantic red — the only other hue in the system */ --red: #E2564A; --red-wash: rgba(226,86,74,.12); --red-line: rgba(226,86,74,.28); /* neutral wash — used where a state must NOT read as red or acid */ --neutral-wash: rgba(255,255,255,.06); /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; /* dialog shell */ --dlg-inset: 20px; --dlg-max: 340px; --dlg-pad: 20px; /* scrim */ --scrim: rgba(3,4,1,.72); --scrim-blur: 10px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+.mk .top{margin:6px var(--gutter) 0}
+.mk .eyebrow{margin:0 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .title{margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em; line-height:1;text-transform:uppercase;}
+.mk .sub{margin:10px 0 0;font-size:13px;color:var(--muted)}
+.mk .label{margin:26px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .note{margin:8px var(--gutter) 0;font-size:12px;line-height:1.45;color:var(--muted)}
+.mk .note b{color:var(--text);font-weight:600}
+.mk code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+.mk .dlg:focus{outline:none}
+.mk .dlg:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .note--tight{margin-top:6px}
+.mk .section{margin:0 var(--gutter);padding:12px; border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);}
+.mk .status-pill{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 14px; border-radius:var(--r-pill);background:var(--acid-wash); font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--acid);white-space:nowrap;}
+.mk .status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mk .kv{margin:0;padding:0;list-style:none}
+.mk .kv li{display:flex;align-items:baseline;gap:12px;padding:9px 2px; border-top:1px solid var(--line-soft);font-size:12.5px;}
+.mk .kv li:first-child{border-top:0}
+.mk .kv span{flex:0 0 106px;color:var(--muted)}
+.mk .kv b{flex:1;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.mk .kv b em{font-style:normal;color:var(--muted);font-weight:400}
+.mk .spec{margin-top:20px}
+.mk .spec__label{display:flex;align-items:center;gap:9px;margin:0 var(--gutter) 9px; font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);}
+.mk .spec__label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.mk .spec__note{margin:9px var(--gutter) 0;font-size:11.5px;line-height:1.45;color:var(--dim)}
+.mk .tile{display:inline-flex;align-items:center;justify-content:center; width:44px;height:44px;border-radius:var(--r-panel);flex:0 0 auto;}
+.mk .tile svg{width:22px;height:22px}
+.mk .tile--acid{background:var(--acid-wash);color:var(--acid)}
+.mk .tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.mk .tile--warn{background:var(--neutral-wash);color:var(--red)}
+.mk .tile--neutral{background:var(--neutral-wash);color:var(--text)}
+.mk .tile--lg{width:52px;height:52px;border-radius:14px}
+.mk .tile--lg svg{width:25px;height:25px}
+.mk .dlg{position:relative; width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max); margin:0 auto;padding:var(--dlg-pad); border-radius:var(--r-card);background:var(--surface); border:1px solid var(--line); box-shadow:0 24px 60px rgba(0,0,0,.55);}
+.mk .dlg__close{position:absolute;top:12px;right:12px; display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;border-radius:50%; background:var(--sunken);border:1px solid var(--line-soft);color:var(--muted); cursor:pointer;transition:color .18s var(--ease),background .18s var(--ease);}
+.mk .dlg__close svg{width:15px;height:15px}
+.mk .dlg__close:hover{color:var(--text);background:#1A1F27}
+.mk .dlg__title{margin:14px 0 0;padding-right:26px; font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.2;}
+.mk .dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .dlg__body b{color:var(--text);font-weight:600}
+.mk .act{display:flex;gap:10px;margin-top:18px}
+.mk .act--single .btn{width:100%}
+.mk .btn{position:relative;flex:1 1 0;min-width:0; display:inline-flex;align-items:center;justify-content:center;gap:8px; height:46px;padding:0 14px;border:0;border-radius:var(--r-pill); font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em; cursor:pointer;transition:background .18s var(--ease),opacity .18s var(--ease); white-space:nowrap;}
+.mk .btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .btn--acid:hover{background:#A8EC33}
+.mk .btn--danger{background:var(--red);color:var(--acid-ink)}
+.mk .btn--danger:hover{background:#E9675C}
+.mk .btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .btn--ghost:hover{background:#181D25}
+.mk .btn:focus-visible,.mk .dlg__close:focus-visible,.mk .pill-btn:focus-visible,.mk .toast__act:focus-visible{outline:2px solid var(--acid);outline-offset:2px;}
+.mk .btn__label{display:inline-block}
+.mk .btn__spin{position:absolute;inset:0;display:none;align-items:center;justify-content:center}
+.mk .btn[aria-busy="true"]{pointer-events:none;opacity:.85}
+.mk .btn[aria-busy="true"] .btn__label{visibility:hidden}
+.mk .btn[aria-busy="true"] .btn__spin{display:flex}
+.mk .pill-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:12.5px;font-weight:600;cursor:pointer; transition:background .18s var(--ease);}
+.mk .pill-btn:hover{background:#222833}
+.mk .pill-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .pill-btn--acid:hover{background:#A8EC33}
+.mk .pill-btn svg{width:15px;height:15px}
+.mk .icons{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mk .icons figure{margin:0;padding:12px 8px;min-width:0; display:flex;flex-direction:column;align-items:center;gap:8px; border-radius:var(--r-panel);background:var(--surface);}
+.mk .icons figcaption{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase; color:var(--dim);text-align:center;}
+.mk .overlay{position:fixed;inset:0;z-index:60; display:none;align-items:center;justify-content:center;}
+.mk .overlay.is-open{display:flex}
+.mk .overlay .dlg{z-index:1; opacity:0;transform:translateY(10px) scale(.985); transition:opacity .2s var(--ease),transform .28s var(--ease);}
+.mk .overlay.is-in .dlg{opacity:1;transform:none}
+.mk .scrim{position:absolute;inset:0; background:var(--scrim); -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9); backdrop-filter:blur(var(--scrim-blur)) saturate(.9); opacity:0;transition:opacity .2s var(--ease);}
+.mk .overlay.is-in .scrim{opacity:1}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .mk .scrim{background:rgba(3,4,1,.86)}
+}
+.mk .toast{display:flex;align-items:center;gap:11px; margin:0 var(--gutter);padding:9px 10px 9px 12px;min-height:52px; border-radius:var(--r-card);background:var(--surface); border:1px solid var(--line);box-shadow:0 14px 34px rgba(0,0,0,.5);}
+.mk .toast::before{content:"";flex:0 0 auto;width:3px;height:22px;border-radius:2px; background:var(--mark-color,var(--acid));}
+.mk .toast__icon{display:inline-flex;flex:0 0 auto;color:var(--mark-color,var(--acid))}
+.mk .toast__icon svg{width:19px;height:19px}
+.mk .toast__msg{flex:1;min-width:0;font-size:13px;font-weight:500;line-height:1.35}
+.mk .toast__act{flex:0 0 auto;height:32px;padding:0 12px;border:0;border-radius:var(--r-pill); background:var(--acid-wash);color:var(--acid); font:inherit;font-size:12.5px;font-weight:700;cursor:pointer; transition:background .18s var(--ease);}
+.mk .toast__act:hover{background:rgba(155,226,34,.2)}
+.mk .toast--error{--mark-color:var(--red)}
+.mk .toast--error .toast__act{background:var(--red-wash);color:var(--red)}
+.mk .toast--error .toast__act:hover{background:rgba(226,86,74,.2)}
+.mk .toast--info{--mark-color:rgba(255,255,255,.34)}
+.mk .toast--info .toast__icon{color:var(--muted)}
+.mk .toaster{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;pointer-events:auto}
+.mk .toaster .toast{margin:0;opacity:0;transform:translateY(10px); transition:opacity .22s var(--ease),transform .28s var(--ease);}
+.mk .toaster .toast.is-in{opacity:1;transform:none}
+.mk .loadbay{display:flex;align-items:center;justify-content:center;gap:14px; height:104px;border-radius:var(--r-panel);background:var(--surface);}
+.mk .loader{display:flex;flex-direction:column;align-items:center;gap:11px;color:var(--acid)}
+.mk .loader svg{display:block}
+.mk .loader__cap{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);}
+.mk .spins{display:flex;align-items:center;gap:18px;margin-top:10px;padding:14px 12px; border-radius:var(--r-panel);background:var(--surface)}
+.mk .spins .ring{color:var(--acid)}
+.mk .spins p{margin:0;flex:1;font-size:11.5px;line-height:1.45;color:var(--dim)}
+.mk .btnpair{display:flex;gap:10px;margin-top:10px}
+.mk .empty{margin:0 var(--gutter);padding:26px 20px 22px; border:1px solid var(--line);border-radius:var(--r-card);background:var(--section); display:flex;flex-direction:column;align-items:center;text-align:center;}
+.mk .empty h3{margin:14px 0 0;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.mk .empty p{margin:6px 0 16px;font-size:12.5px;line-height:1.5;color:var(--muted);max-width:26ch}
+.mk .banner{display:flex;align-items:flex-start;gap:10px; margin:0 var(--gutter);padding:12px; border-radius:var(--r-panel);background:var(--sunken); border:1px solid var(--line);}
+.mk .banner__icon{flex:0 0 auto;color:var(--muted);margin-top:1px}
+.mk .banner__icon svg{width:18px;height:18px}
+.mk .banner__txt{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .banner__txt b{display:block;color:var(--text);font-size:13px;font-weight:600;margin-bottom:2px}
+.mk .banner__link{align-self:center;flex:0 0 auto;border:0;background:transparent;padding:0 2px; font:inherit;font-size:12.5px;font-weight:700;color:var(--acid);cursor:pointer;}
+.mk .banner--warn{background:var(--red-wash);border-color:var(--red-line)}
+.mk .banner--warn .banner__icon{color:var(--red)}
+.mk .banner--warn .banner__txt{color:#D9BDB9}
+.mk .banner--warn .banner__link{color:var(--red)}
+.mk .tryit{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.mk .tryit .pill-btn{background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .tryit .pill-btn:hover{background:#181D25}
+.mk .dock{position:fixed;left:0;right:0;bottom:0;max-width:420px;margin:0 auto;z-index:40; padding:0 var(--gutter) calc(14px + env(safe-area-inset-bottom,0px)); pointer-events:none;}
+.mk .tabbar__inner{display:flex;align-items:center;justify-content:space-between; height:58px;padding:0 10px;border-radius:var(--r-pill);background:var(--surface); box-shadow:0 10px 30px rgba(0,0,0,.6);pointer-events:auto;}
+.mk .tab{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 12px; border:0;border-radius:var(--r-pill);background:transparent;color:var(--text); font:inherit;font-size:13px;font-weight:600;cursor:pointer; transition:background .18s var(--ease),color .18s var(--ease);}
+.mk .tab svg{width:19px;height:19px;flex:0 0 auto}
+.mk .tab__label{display:none}
+.mk .tab[aria-current="page"]{background:var(--acid);color:var(--acid-ink)}
+.mk .tab[aria-current="page"] .tab__label{display:inline}
+.mk .tab:not([aria-current="page"]):hover{color:var(--acid)}
+.mk .ref{display:flex;align-items:center;gap:10px;margin-top:14px; padding:9px 9px 9px 12px; border-radius:var(--r-panel);background:var(--sunken); border:1px solid var(--line-soft);}
+.mk .ref__body{flex:1;min-width:0}
+.mk .ref__k{display:block;font-size:10px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .ref__v{display:block;margin-top:3px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;color:var(--text);font-variant-numeric:tabular-nums; white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .ref__copy{position:relative;flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; width:32px;height:32px;border-radius:50%; background:transparent;border:0;color:var(--muted); cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);}
+.mk .ref__copy::after{content:"";position:absolute;inset:-6px;border-radius:inherit}
+.mk .ref__copy:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.mk .ref__copy:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.mk .ref__copy svg{width:17px;height:17px}
+.mk .field{display:block;margin-top:16px}
+.mk .field__label{display:block;margin-bottom:8px; font-size:12.5px;font-weight:600;letter-spacing:-.005em;color:var(--text);}
+.mk .ctl{display:flex;align-items:center;gap:10px; height:52px;padding:0 14px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--sunken);color:var(--text); transition:border-color .16s var(--ease),box-shadow .16s var(--ease);}
+.mk .ctl__in{flex:1;min-width:0;height:100%; border:0;background:transparent;color:inherit; font:inherit;font-size:16px; /* 16px: below it iOS zooms on focus */ padding:0;margin:0;outline:none;}
+.mk .ctl__in::placeholder{color:var(--dim);opacity:1}
+.mk .ctl:focus-within{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.mk .ctl--area{height:auto;flex-direction:column;align-items:stretch;gap:6px;padding:12px 14px 10px}
+.mk .ctl--area .ctl__in{height:auto;min-height:72px;resize:vertical;line-height:1.5}
+.mk .counter{align-self:flex-end;font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.mk .inv{margin:0 var(--gutter); border:1px solid var(--line);border-radius:var(--r-card); background:var(--section);overflow:hidden;}
+.mk .inv table{width:100%;border-collapse:collapse}
+.mk .inv caption{padding:12px 12px 10px;text-align:left; font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .inv th{padding:0 8px 7px;text-align:left; font-size:9.5px;font-weight:700;letter-spacing:.12em; text-transform:uppercase;color:var(--dim); border-bottom:1px solid var(--line);}
+.mk .inv th:nth-child(2){text-align:right}
+.mk .inv td{padding:8px;border-top:1px solid var(--line-soft); font-size:11.5px;line-height:1.3;vertical-align:top;}
+.mk .inv tbody tr:first-child td{border-top:0}
+.mk .inv td:first-child{padding-left:12px}
+.mk .inv td:last-child{padding-right:12px}
+.mk .inv__n{display:block;font-size:11.5px;font-weight:600;letter-spacing:-.005em;word-break:break-word}
+.mk .inv__l{display:block;margin-top:2px;font-size:9.5px;font-weight:700;letter-spacing:.1em;color:var(--dim)}
+.mk .inv__c{width:36px;text-align:right;font-weight:700; font-variant-numeric:tabular-nums;color:var(--text);}
+.mk .inv__r{width:102px;color:var(--muted);font-size:11px}
+.mk .inv tr.is-dead .inv__n{text-decoration:line-through;color:var(--dim)}
+.mk .inv tr.is-dead .inv__c{color:var(--dim)}
+.mk .inv tr.is-dead .inv__r{color:var(--red);font-weight:700}
+.mk .inv tr.is-new .inv__r{color:var(--acid);font-weight:700}
+.mk .legend{margin:0;padding:11px 12px 12px;border-top:1px solid var(--line);list-style:none}
+.mk .legend li{font-size:11px;line-height:1.5;color:var(--dim)}
+.mk .legend b{color:var(--text);font-weight:700}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Dialogs</h1>
+    <p class="dek">The interruption kit: one modal shell in eleven specimens, plus toasts, loaders, the empty state and the
+inline banner. These are the components that tell a member something happened, ask them to confirm
+something, or make them wait. It now also carries an inventory of all 19 dialogs the app ships, and
+which of them should be deleted rather than redesigned.</p>
+    <div class="meta">
+      <span><b>Component</b> dialogs</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><span class="side__item" aria-current="page">Dialogs<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">One shell replacing three, and a warning w…</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="stagecol">
+      <div class="stage">
+        <div class="device" id="device">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk">
+<div class="mk__scroll"><main class="screen">
+
+  <header class="top">
+    <p class="eyebrow">Component kit</p>
+    <h1 class="title">Dialogs<br>&amp; feedback</h1>
+    <p class="sub">
+      One dialog shell, eleven specimens. The specimens below are laid out in the page rather than
+      overlaid, so every variant can be read at once; the live example near the foot opens
+      properly, over the real scrim. The inventory table beneath the shell spec lists all 19
+      dialogs the app actually ships and what happens to each.
+    </p>
+  </header>
+
+  <!-- ===================== SHELL SPEC ===================== -->
+  <h2 class="label">The shell</h2>
+  <div class="section">
+    <ul class="kv">
+      <li><span>Width</span><b>100% − 40, max 340 <em>· 335 at 375</em></b></li>
+      <li><span>Inset</span><b>20 a side <em>· 45 at 430</em></b></li>
+      <li><span>Radius</span><b>16 <em>· --r-card</em></b></li>
+      <li><span>Padding</span><b>20 all round</b></li>
+      <li><span>Fill</span><b>#1C2129 <em>· --surface</em></b></li>
+      <li><span>Border</span><b>1px rgba(255,255,255,.075)</b></li>
+      <li><span>Shadow</span><b>0 24 60 rgba(0,0,0,.55)</b></li>
+      <li><span>Position</span><b>vertically centred</b></li>
+      <li><span>Stack</span><b>tile 44 · 18/600 · 13/400</b></li>
+      <li><span>Dismiss</span><b>30px close, top right, always</b></li>
+      <li><span>Scrim</span><b>rgba(3,4,1,.72) + blur 10</b></li>
+    </ul>
+    <p class="note note--tight">
+      The current app has three shells inside four screens: <b>AU-08</b> at ~78% width with no
+      border and no shadow, <b>UDialog.customSimpleDialog</b> at a 16pt inset with a raster
+      behind the title, and the untouched <b>OS alert</b> on AU-13. This is the one shell that
+      replaces all three. Variants change the icon, the title, the body and the action row.
+      Nothing else moves.
+    </p>
+  </div>
+
+  <!-- ===================== PRESENTER INVENTORY ===================== -->
+  <h2 class="label">Presenter inventory</h2>
+  <div class="inv">
+    <table>
+      <caption>UDialog · dialogs.dart · 19 presenters + stopLoading</caption>
+      <thead>
+        <tr>
+          <th scope="col">Presenter</th>
+          <th scope="col">Refs</th>
+          <th scope="col">Ruling</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="inv__n">startLoading</span><span class="inv__l">L19</span></td>
+          <td class="inv__c">12</td>
+          <td class="inv__r">Keep · peaks</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">stopLoading</span><span class="inv__l">L44</span></td>
+          <td class="inv__c">27</td>
+          <td class="inv__r">Keep</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">showCustomDialog<wbr>WithCustomContent</span><span class="inv__l">L50 · 1 caller</span></td>
+          <td class="inv__c">3</td>
+          <td class="inv__r">Fold into shell</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">showNormalDialog</span><span class="inv__l">L76 · 1 file</span></td>
+          <td class="inv__c">4</td>
+          <td class="inv__r">Fold · Confirm</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">startLoadingHori</span><span class="inv__l">L223</span></td>
+          <td class="inv__c">5</td>
+          <td class="inv__r">Delete</td>
+        </tr>
+        <tr class="is-new">
+          <td><span class="inv__n">reminderDialog</span><span class="inv__l">L244</span></td>
+          <td class="inv__c">10</td>
+          <td class="inv__r">Drawn here ×3</td>
+        </tr>
+        <tr class="is-new">
+          <td><span class="inv__n">showError</span><span class="inv__l">L420</span></td>
+          <td class="inv__c">30</td>
+          <td class="inv__r">Reconciled here</td>
+        </tr>
+        <tr class="is-new">
+          <td><span class="inv__n">showInternal</span><span class="inv__l">L430</span></td>
+          <td class="inv__c">27</td>
+          <td class="inv__r">Drawn here</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">showSuccess</span><span class="inv__l">L441 · 1 caller</span></td>
+          <td class="inv__c">2</td>
+          <td class="inv__r">Delete → toast</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">showCustomize<wbr>ConfirmDialog</span><span class="inv__l">L454</span></td>
+          <td class="inv__c">21</td>
+          <td class="inv__r">Keep · Confirm</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">showDialogNoButton</span><span class="inv__l">L797 · 0 callers</span></td>
+          <td class="inv__c">1</td>
+          <td class="inv__r">Delete</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">customSimpleDialog</span><span class="inv__l">L906</span></td>
+          <td class="inv__c">4</td>
+          <td class="inv__r">Keep · shell</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">customActionSheet</span><span class="inv__l">L1054 · 0 callers</span></td>
+          <td class="inv__c">1</td>
+          <td class="inv__r">Delete</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">showDialogConfirm<wbr>NoButton</span><span class="inv__l">L1175</span></td>
+          <td class="inv__c">11</td>
+          <td class="inv__r">Keep · Confirm</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">customGeneralPopup</span><span class="inv__l">L1323</span></td>
+          <td class="inv__c">11</td>
+          <td class="inv__r">Keep · Error</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">customModal<wbr>BottomSheet</span><span class="inv__l">L1408</span></td>
+          <td class="inv__c">31</td>
+          <td class="inv__r">sheets.html</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">common</span><span class="inv__l">L1431 · 0 ext. callers</span></td>
+          <td class="inv__c">3</td>
+          <td class="inv__r">Delete</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">showConfirm</span><span class="inv__l">L1487</span></td>
+          <td class="inv__c">6</td>
+          <td class="inv__r">Fold · Confirm</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">showConfirmSP</span><span class="inv__l">L1569 · 0 callers</span></td>
+          <td class="inv__c">1</td>
+          <td class="inv__r">Delete</td>
+        </tr>
+        <tr class="is-new">
+          <td><span class="inv__n">showForm</span><span class="inv__l">L1651</span></td>
+          <td class="inv__c">2</td>
+          <td class="inv__r">Shell drawn here</td>
+        </tr>
+      </tbody>
+    </table>
+    <ul class="legend">
+      <li><b>Refs</b> counts every non-comment reference in <code>lib/</code> including the
+        declaration, so call sites are always one fewer. Five presenters are struck through and
+        marked <b>Delete</b>: they have no caller at all, or their only caller becomes a toast.
+        Deleting them is cheaper than rebranding them, and it takes 5 of 19 presenters off the
+        build.</li>
+    </ul>
+  </div>
+  <p class="note">
+    <b>Four corrections to the audit table.</b> It is headed “19 distinct presenter methods” but
+    lists <b>20</b> rows — the twentieth is <code>stopLoading</code>, which presents nothing and
+    only dismisses, so the count holds if you read it as 19 presenters plus a dismisser. That is
+    how the table above is captioned.
+    <code>startLoadingHori</code> is listed at one
+    call site; it has <b>four</b> — <code>login.dart:40</code>,
+    <code>cubit/profile/profile.dart:277</code> and <code>:376</code>,
+    <code>notification_setting.dart:57</code>. <code>showError</code> is listed at 27 references
+    and has <b>30</b>. And <code>showSuccess</code> is listed as dead but has one live caller,
+    <code>cubit/bloc.dart:204</code>, which is the generic “API returned a message” path — so it
+    is the single most reachable dialog in the app by code path, and it is a modal where a toast
+    belongs. Also: <code>showError</code> and <code>showInternal</code> do not route through
+    <code>customGeneralPopup</code> as the table says — <code>showError</code> calls
+    <code>common</code> (L1431) and <code>showInternal</code> calls
+    <code>customSimpleDialog</code> (L906).
+  </p>
+
+  <!-- ===================== FIVE VARIANTS ===================== -->
+  <h2 class="label">The five core variants</h2>
+
+  <!-- 1 · SUCCESS -->
+  <div class="spec">
+    <p class="spec__label">Success</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--acid">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5"/><path d="m8.3 12.3 2.6 2.6 4.8-5.4"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Reset link sent</h3>
+      <p class="dlg__body">
+        We emailed a password reset link to <b>dylan.n@sportsheist.app</b>. It expires in 60
+        minutes.
+        Nothing in your account has changed yet.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Resend</button>
+        <button class="btn btn--acid" type="button">Open mail</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      Replaces AU-08. The 120pt system 👍 becomes a drawn 22px check in a 44px acid wash tile;
+      the copy names the address and calls the message a reset link, not a “verification email”;
+      the missing dismiss control and the missing resend both appear.
+    </p>
+  </div>
+
+  <!-- 2 · ERROR -->
+  <div class="spec">
+    <p class="spec__label">Error</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Couldn’t send the link</h3>
+      <p class="dlg__body">
+        We couldn’t reach the server. Your connection dropped partway through the request —
+        nothing was sent.
+      </p>
+      <div class="act act--single">
+        <button class="btn btn--acid" type="button">Try again</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      Error is the loudest step on the ladder: red icon on red wash with a 1px red ring. The
+      primary stays acid — the button is the way out, not the danger. Replaces
+      <b>UDialog.showError</b>, whose only control was a 5-second timeout and a button reading
+      <b>Thoát</b>.
+    </p>
+  </div>
+
+  <!-- 3 · WARNING -->
+  <div class="spec">
+    <p class="spec__label">Warning</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--warn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">This idea has no deadline</h3>
+      <p class="dlg__body">
+        Proposals without a deadline never reach a vote, so the club won’t see it in the War
+        Room. Add a date before you publish.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Publish anyway</button>
+        <button class="btn btn--acid" type="button">Add a date</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      Warning sits one step below error, made with the same two hues: red icon on the
+      <b>neutral</b> wash, no ring. The old <code>CColor.warning</code> <b>#E08A09</b> amber is
+      dropped — the contract permits no third hue.
+    </p>
+  </div>
+
+  <!-- 4 · CONFIRM -->
+  <div class="spec">
+    <p class="spec__label">Confirm · two button</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5"/>
+          <path d="M9.7 9.5A2.4 2.4 0 1 1 13 11.8c-.7.4-1 1-1 1.7v.3"/><path d="M12 16.8h.01"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Publish to Barcelona?</h3>
+      <p class="dlg__body">
+        All 1,284 members can read and vote on this idea. You can edit it until the first vote
+        is cast, then it locks.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Cancel</button>
+        <button class="btn btn--acid" type="button">Publish idea</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      Question in the title, consequence in the body, the verb repeated on the button. Secondary
+      left, primary right, equal widths, 10px gap.
+    </p>
+  </div>
+
+  <!-- 5 · DESTRUCTIVE CONFIRM -->
+  <div class="spec">
+    <p class="spec__label">Destructive confirm</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4.6 7h14.8M9.6 7V5.3A1.3 1.3 0 0 1 10.9 4h2.2a1.3 1.3 0 0 1 1.3 1.3V7"/>
+          <path d="M6.5 7l.8 11.4A1.7 1.7 0 0 0 9 20h6a1.7 1.7 0 0 0 1.7-1.6L17.5 7"/>
+          <path d="M10.4 11v5.4M13.6 11v5.4"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Delete this idea?</h3>
+      <p class="dlg__body">
+        <b>Bring back the 1pm kick-off</b> and its 34 comments go for good. This can’t be
+        undone.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Keep it</button>
+        <button class="btn btn--danger" type="button">Delete idea</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      The only place a filled red button is allowed. Ink on red is <b>--acid-ink</b>, the same
+      near-black used on the acid fill, so saturated fills behave identically. The secondary
+      names the safe outcome — “Keep it”, not “Cancel” — because it is the recommended choice.
+    </p>
+  </div>
+
+  <!-- ===================== SERVER ERROR ===================== -->
+  <h2 class="label">Server error</h2>
+
+  <div class="spec">
+    <p class="spec__label">5xx · replaces showInternal</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2.8" y="4.3" width="18.4" height="6.1" rx="2.1"/>
+          <rect x="2.8" y="13.6" width="18.4" height="6.1" rx="2.1"/>
+          <path d="M6 7.35h.01M9 7.35h.01"/>
+          <path d="M12 15.4v2.1M12 18.8h.01"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Something broke on our side</h3>
+      <p class="dlg__body">
+        Barcelona's War Room didn't load. This is a fault on our servers, not your connection —
+        <b>your vote was not cast</b> and nothing was saved. Try again in a moment; if it keeps
+        happening, send support the reference below.
+      </p>
+      <div class="ref">
+        <span class="ref__body">
+          <span class="ref__k">Reference</span>
+          <span class="ref__v">SH-500 · 4F2A9C · 18:24 CET</span>
+        </span>
+        <button class="ref__copy" type="button" aria-label="Copy the reference">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="11" height="11" rx="2.4"/>
+            <path d="M15 5.6A2.4 2.4 0 0 0 12.6 4H6.4A2.4 2.4 0 0 0 4 6.4v6.2A2.4 2.4 0 0 0 5.6 15"/>
+          </svg>
+        </button>
+      </div>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Get help</button>
+        <button class="btn btn--acid" type="button">Try again</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      <b>Replaces <code>UDialog.showInternal</code></b> — <code>dialogs.dart:430</code>,
+      27 references, never drawn. It shows a member the literal string <b>INTERNAL SERVER</b> in
+      34&nbsp;pt Bebas recoloured to <code>#E04A09</code> over a raster, with one OK button. This
+      answers the four questions that dialog doesn't: cause, consequence, one next step, and a
+      reference support can search on. Error tile, not a sixth variant.
+    </p>
+  </div>
+
+  <!-- ===================== ERROR, RECONCILED ===================== -->
+  <h2 class="label">Error, reconciled</h2>
+
+  <div class="spec">
+    <p class="spec__label">Relayed server message · showError</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Couldn't cast your vote</h3>
+      <p class="dlg__body">
+        Voting on <b>Bring back the 1pm kick-off</b> closed at 18:00, four minutes before you
+        tapped. The result is already published.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">See the result</button>
+        <button class="btn btn--acid" type="button">Got it</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      <b>The kit's error specimen did not match this presenter; this one does.</b>
+      <code>showError</code> (<code>dialogs.dart:420</code>, <b>30 references</b> — the app's
+      most-used dialog) has nullable <code>title</code> and <code>text</code>, and six of its
+      callers are <code>utils/src/api.dart</code>, so the body is <b>a relayed server string</b>
+      of unknown length and language, not authored copy. The variant is built to survive one.
+      Null-title fallback is <b>Something went wrong</b>, not the current <b>Cảnh báo</b>
+      (Vietnamese for “Warning”), which mislabels every error.
+    </p>
+    <p class="spec__note">
+      ⚠️ Two flags. The one control reads <b>Thoát</b> — Vietnamese for “Exit” — and is not a
+      button: <code>common</code> (<code>dialogs.dart:1431</code>) draws it as a full-width
+      <code>InkWell</code> of tinted text under a hairline. And <code>secondTimeOut: 5</code>
+      auto-pops it, which is under the reading time of the body above, so an error can vanish
+      mid-sentence. <b>Nothing in this kit auto-dismisses.</b> A message that may go unread is a
+      toast — which times out honestly, because it never blocked anything.
+    </p>
+  </div>
+
+  <!-- ===================== REMINDER ===================== -->
+  <h2 class="label">Reminder</h2>
+
+  <div class="spec">
+    <p class="spec__label">Set · SET LOCKER ROOM REMINDER?</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.6 6.6h4.4M20.8 4.4v4.4"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Set a reminder for this room?</h3>
+      <p class="dlg__body">
+        We'll nudge you ten minutes before <b>Pre-match build-up : Barcelona v Arsenal</b> opens
+        on Sunday 19 April at 6:00&nbsp;PM. You can remove it any time from the bell.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Not now</button>
+        <button class="btn btn--acid" type="button">Set reminder</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Already set · CANCEL REMINDER?</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.9 4.7l4 4M22.9 4.7l-4 4"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Remove this reminder?</h3>
+      <p class="dlg__body">
+        You've a reminder set for <b>Pre-match build-up : Barcelona v Arsenal</b> on Sunday at
+        6:00&nbsp;PM. Remove it and we won't nudge you before it opens.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Keep it</button>
+        <button class="btn btn--acid" type="button">Remove reminder</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      Removing a reminder is <b>not</b> destructive — the bell puts it straight back — so this
+      takes the accent primary, not the filled red. The secondary names the safe outcome,
+      <b>Keep it</b>, exactly as the destructive confirm does, which keeps the shipped
+      <b>KEEP</b> / <b>REMOVE</b> pair intact in sentence case.
+    </p>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Confirmation · REMINDER SET!</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--acid">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.4 6.4l1.7 1.7 3.1-3.4"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Reminder set</h3>
+      <p class="dlg__body">
+        We'll tell you at <b>5:50&nbsp;PM on Sunday</b>, ten minutes before the room opens.
+      </p>
+      <div class="act act--single">
+        <button class="btn btn--acid" type="button">Got it</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      The one dialog on this page that earns the generic <b>Got it</b>: it reports, nothing is
+      being decided, and the verb convention reserves that label for exactly this case.
+      <b>We would rather it were a toast</b> — the shipped flow puts three modals in a row (ask,
+      loading, confirm) to set one reminder. Press <b>Toast · reminder set</b> in the Toast panel
+      below to compare. Drawn here because the code has it, not because we recommend it.
+    </p>
+  </div>
+
+  <div class="section" style="margin-top:20px">
+    <ul class="kv">
+      <li><span>Presenter</span><b>reminderDialog <em>· L244</em></b></li>
+      <li><span>References</span><b>10 <em>· 9 call sites</em></b></li>
+      <li><span>Callers</span><b>all_locker_rooms ×6 <em>· backchat ×3</em></b></li>
+      <li><span>Set tile</span><b>neutral · bell + plus</b></li>
+      <li><span>Remove tile</span><b>neutral · bell + cross</b></li>
+      <li><span>Done tile</span><b>acid · bell + check</b></li>
+    </ul>
+    <p class="note note--tight">
+      <b>The three glyphs are the trigger's glyphs.</b> <code>all-locker-rooms.html</code> draws
+      the per-room trigger as a glyph-only <b>30&nbsp;px</b> disc (<code>.rem</code>, with the
+      <code>create-idea.html</code> <code>::after</code> expansion to 44) that carries its state
+      in the glyph as well as the fill: unset is a <b>bell with a plus</b> in
+      <code>#9BE222</code> on the accent wash inside <code>rgba(155,226,34,.30)</code>, set is a
+      <b>bell with a check</b> in <code>#99A0AE</code> on <code>#13171E</code>. These dialogs
+      reuse those exact paths so the panel is visibly the same control the member tapped.
+      The <em>washes</em> deliberately do not match: on the trigger, accent means “you can set
+      this”; in a dialog, accent means “this succeeded”. So the two asks take the neutral tile
+      like every other ask in the kit, and only the confirmation goes accent. Glyph carries
+      continuity, wash carries the variant.
+    </p>
+    <p class="note note--tight">
+      Replaces a white <code>AlertDialog</code> whose title is a <code>Stack</code> of
+      <code>reminder_background_image.png</code> under 36&nbsp;pt Bebas Neue in
+      <code>CColor.black.shade900</code>, with <b>CANCEL</b> / <b>YES</b> shouted in caps, a
+      close cross drawn <b>top-left</b> and only when <code>showXButton: true</code> (one of the
+      three states passes it), and <code>btnXOnPress;</code> at <code>dialogs.dart:311</code> — a
+      bare statement that evaluates the callback reference and discards it, so the X's caller
+      handler never runs. In this kit the close control is present on all three states, in the
+      same place, and it closes.
+    </p>
+    <p class="note note--tight">
+      ⚠️ <b>Reconciliation with the list.</b> <code>all-locker-rooms.html</code> currently toggles
+      the bell straight from the card with no dialog, and <code>backchat.html</code>'s bell is a
+      section-bar filter (“Rooms I am reminded about”), not a per-room trigger. The code opens a
+      dialog at all nine sites. Either the list keeps the optimistic toggle and these dialogs
+      cover only the <em>remove</em> case, or the bell routes through the ask. We recommend
+      <b>toggle for set, dialog for remove, toast for both outcomes</b> — a one-tap set is worth
+      more than a confirmation nobody reads, and removal is the only one worth interrupting for.
+    </p>
+  </div>
+
+  <!-- ===================== FORM IN A DIALOG ===================== -->
+  <h2 class="label">Dialog with form controls</h2>
+
+  <div class="spec">
+    <p class="spec__label">Shell only · showForm</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3.2" y="7.2" width="17.6" height="9.6" rx="2.4"/>
+          <path d="M7.4 10.4v3.2"/><path d="M10.6 12h6.2"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Add a caption</h3>
+      <p class="dlg__body">
+        Captions show under the photo in the War Room thread. Everyone at Barcelona can read
+        them.
+      </p>
+      <label class="field">
+        <span class="field__label">Caption</span>
+        <span class="ctl ctl--area">
+          <textarea class="ctl__in" rows="3" maxlength="140"
+            placeholder="Say what's happening in the photo">Nou Camp, 18:02 — the away end filling up</textarea>
+          <span class="counter">41 / 140</span>
+        </span>
+      </label>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Cancel</button>
+        <button class="btn btn--acid" type="button">Save caption</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      <b>This defines the shell, not the screen.</b> The control block sits between the body and
+      the action row and uses <code>forms.html</code>'s <code>.ctl</code> unchanged —
+      <code>52&nbsp;px</code>, <code>R12</code>, 16&nbsp;px value, accent focus ring — with one
+      alteration: the fill drops <code>#1C2129</code> → <code>#13171E</code>, because the panel is
+      itself <code>#1C2129</code>. Two fields at most; past that it is a sheet.
+      <code>media.html</code> is being built separately and should use this shell.
+      <b>The image viewer is not drawn here.</b>
+    </p>
+    <p class="spec__note">
+      ⚠️ <b>Audit correction.</b> The single call site
+      (<code>core/src/image_widget.dart:255</code>) is listed as an “image download / share form”.
+      It is not — it is one field, <code>name: 'description'</code>, hint <b>Chú thích</b>, titled
+      <b>Thêm chú thích cho ảnh</b>: “Add a caption to the photo”. Download is a separate app-bar
+      action at <code>image_widget.dart:365</code> and there is no share surface in
+      <code>lib/</code> at all. Submit defaults to <b>'Xác nhận'</b>, and the
+      <code>required</code> <code>api</code> parameter is satisfied with
+      <code>api: (_, __, ___, ____) {}</code> — a no-op, so the presenter's endpoint path is dead
+      weight where it is used.
+    </p>
+  </div>
+
+  <!-- ===================== STATE ICONS ===================== -->
+  <h2 class="label">State icons</h2>
+  <div class="section">
+    <div class="icons">
+      <figure>
+        <span class="tile tile--acid">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.3 12.3 2.6 2.6 4.8-5.4"/></svg>
+        </span>
+        <figcaption>Success</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/></svg>
+        </span>
+        <figcaption>Error</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--warn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+        </span>
+        <figcaption>Warning</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--neutral">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.5A2.4 2.4 0 1 1 13 11.8c-.7.4-1 1-1 1.7v.3"/><path d="M12 16.8h.01"/></svg>
+        </span>
+        <figcaption>Confirm</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.6 7h14.8M9.6 7V5.3A1.3 1.3 0 0 1 10.9 4h2.2a1.3 1.3 0 0 1 1.3 1.3V7"/><path d="M6.5 7l.8 11.4A1.7 1.7 0 0 0 9 20h6a1.7 1.7 0 0 0 1.7-1.6L17.5 7"/><path d="M10.4 11v5.4M13.6 11v5.4"/></svg>
+        </span>
+        <figcaption>Destructive</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--neutral">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+        </span>
+        <figcaption>Info</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--neutral">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16M10 20.2h4"/></svg>
+        </span>
+        <figcaption>Alerts ask</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--neutral">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </span>
+        <figcaption>Dismiss</figcaption>
+      </figure>
+    </div>
+    <p class="note note--tight">
+      All eight are inline SVG on a 24 box at 1.7 stroke, round caps and joins — the same
+      construction as the tab bar and row icons. No emoji anywhere: the AU-08 👍 and the AU-09
+      flag are platform glyphs the brand cannot recolour, and they render differently on every
+      OS version.
+    </p>
+  </div>
+
+  <!-- ===================== ACTION ROW ===================== -->
+  <h2 class="label">Action row</h2>
+  <div class="section">
+    <ul class="kv">
+      <li><span>Order</span><b>secondary left · primary right</b></li>
+      <li><span>Widths</span><b>equal, flex 1 · 10px gap</b></li>
+      <li><span>One action</span><b>full width primary</b></li>
+      <li><span>Height</span><b>46 · radius 999</b></li>
+      <li><span>Label</span><b>14.5/700, sentence case</b></li>
+      <li><span>Primary</span><b>acid fill, --acid-ink label</b></li>
+      <li><span>Secondary</span><b>--sunken fill, 1px --line</b></li>
+      <li><span>Destructive</span><b>red fill, --acid-ink label</b></li>
+    </ul>
+    <p class="note note--tight">
+      <b>Verb convention — the affirmative button repeats the verb from the title.</b>
+      “Publish to Barcelona?” → <b>Publish idea</b>. “Delete this idea?” → <b>Delete idea</b>.
+      Imperative, sentence case, three words at most, never a bare generic. The single
+      permitted generic is <b>Got it</b>, and only where the dialog is an acknowledgement with
+      nothing to decide. The secondary is <b>Cancel</b>, or <b>Not now</b> where the ask can
+      come back later, or the named safe outcome where one side is recommended
+      (<b>Keep it</b>), or a second named action where the dialog only reports
+      (<b>Resend</b>).
+      This retires <b>AGREE</b>, <b>Publish</b>, <b>CONFIRM</b>, <b>Đồng ý</b> and
+      <b>Thoát</b> — five affirmatives across four dialogs, three of them shouted in caps.
+      Tracked uppercase belongs to micro-labels and status pills only, never to a button.
+    </p>
+  </div>
+
+  <!-- ===================== LIVE ===================== -->
+  <h2 class="label">Scrim, live</h2>
+  <div class="section">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="status-pill">Interactive</span>
+    </div>
+    <ul class="kv" style="margin-top:12px">
+      <li><span>Fill</span><b>rgba(3,4,1,.72) <em>· canvas at 72%</em></b></li>
+      <li><span>Blur</span><b>backdrop 10px + saturate .9</b></li>
+      <li><span>Fallback</span><b>rgba(3,4,1,.86), no blur</b></li>
+      <li><span>Covers</span><b>full canvas, incl. tab bar</b></li>
+      <li><span>Dismiss</span><b>close · scrim tap · Esc</b></li>
+    </ul>
+    <div class="tryit">
+      <button class="pill-btn" type="button" data-open="alerts">Open the alerts ask</button>
+      <button class="pill-btn" type="button" data-open="delete">Open destructive confirm</button>
+    </div>
+    <p class="note note--tight">
+      Opening one moves focus to the dialog, holds Tab inside it, and returns focus to the
+      button that opened it. AU-08's scrim is a flat ~45% with no blur, which leaves the form
+      behind it fully legible and competing with the dialog for attention; 72% plus a 10px
+      blur reduces the backdrop to shape and colour only. The blur is also what separates the
+      #1C2129 panel from the canvas without a heavier border.
+    </p>
+  </div>
+
+  <!-- ===================== TOAST ===================== -->
+  <h2 class="label">Toast</h2>
+
+  <div class="spec">
+    <p class="spec__label">Success</p>
+    <div class="toast">
+      <span class="toast__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.6l4.4 4.4L19 7.4"/></svg>
+      </span>
+      <span class="toast__msg">Profile saved</span>
+    </div>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Error, with action</p>
+    <div class="toast toast--error">
+      <span class="toast__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/></svg>
+      </span>
+      <span class="toast__msg">Vote didn’t register</span>
+      <button class="toast__act" type="button">Retry</button>
+    </div>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Info, with action</p>
+    <div class="toast toast--info">
+      <span class="toast__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+      </span>
+      <span class="toast__msg">3 new proposals in the War Room</span>
+      <button class="toast__act" type="button">View</button>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:20px">
+    <ul class="kv">
+      <li><span>Inset</span><b>16 each side <em>· --gutter</em></b></li>
+      <li><span>Radius</span><b>16 <em>· --r-card</em></b></li>
+      <li><span>Height</span><b>52 min, grows with the message</b></li>
+      <li><span>Marker</span><b>3 × 22 rounded bar, semantic</b></li>
+      <li><span>Clearance</span><b>10 above the tab bar</b></li>
+      <li><span>Bottom</span><b>82 from the screen edge</b></li>
+      <li><span>Life</span><b>4s · 6s when it has an action</b></li>
+    </ul>
+    <div class="tryit">
+      <button class="pill-btn" type="button" data-toast="success">Toast · success</button>
+      <button class="pill-btn" type="button" data-toast="error">Toast · error</button>
+      <button class="pill-btn" type="button" data-toast="info">Toast · info</button>
+      <button class="pill-btn" type="button" data-toast="remind">Toast · reminder set</button>
+    </div>
+    <p class="note note--tight">
+      Fires a real toast into the dock at the foot of the screen, above the tab bar. The AU-13
+      snackbar is the only full-bleed square-cornered element in the whole captured set: flat
+      green, ~90pt tall, no icon, no action, sitting directly on top of the floating tab bar it
+      overlaps. This one is inset to the gutter, shares the card radius, carries a semantic
+      marker and an icon, and clears the bar by 10px. Its green is the accent, not a fourth
+      hue.
+    </p>
+  </div>
+
+  <!-- ===================== LOADING ===================== -->
+  <h2 class="label">Loading</h2>
+  <div class="section">
+    <div class="loadbay">
+      <div class="loader">
+        <svg class="anim" viewBox="0 0 62 26" width="62" height="26" aria-hidden="true">
+          <path d="M2 24 L11 6 L20 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin="0s" repeatCount="indefinite"/>
+          </path>
+          <path d="M22 24 L31 3 L40 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".16s" repeatCount="indefinite"/>
+          </path>
+          <path d="M42 24 L51 8 L60 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".32s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+        <span class="loader__cap">Loading standings</span>
+      </div>
+    </div>
+
+    <div class="spins">
+      <span class="ring">
+        <svg class="anim" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4" opacity=".18"/>
+          <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+      </span>
+      <span class="ring">
+        <svg class="anim" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".18"/>
+          <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+      </span>
+      <p>Ring, 28 and 20. Track is white at 18%, sweep is a 90° arc in the accent. Used inline
+        and in controls; the peaks are used where a whole panel is waiting.</p>
+    </div>
+
+    <div class="btnpair">
+      <button class="btn btn--acid" type="button" data-busy>
+        <span class="btn__label">Publish idea</span>
+        <span class="btn__spin" aria-hidden="true">
+          <svg class="anim" viewBox="0 0 24 24" width="20" height="20">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".3"/>
+            <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+            </path>
+          </svg>
+        </span>
+      </button>
+      <button class="btn btn--ghost" type="button" aria-busy="true">
+        <span class="btn__label">Casting vote</span>
+        <span class="btn__spin" aria-hidden="true">
+          <svg class="anim" viewBox="0 0 24 24" width="20" height="20">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".22"/>
+            <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+            </path>
+          </svg>
+        </span>
+      </button>
+    </div>
+    <p class="note note--tight">
+      Press <b>Publish idea</b> to see the in-button state: the label is hidden but keeps its
+      box, so the control cannot change width; the spinner takes the label's ink
+      (<b>--acid-ink</b> on the acid fill, white on the ghost); <code>aria-busy="true"</code>
+      goes on the button and pointer events stop, so it can't be double-submitted. The one on
+      the right is parked in that state so both can be compared.
+      This replaces <b>WLoading</b>, whose <code>color ?? Colors.blue</code> default paints a
+      Material <b>#2196F3</b> dot-ring — a hue that appears nowhere else in the brand.
+    </p>
+  </div>
+
+  <div class="section" style="margin-top:20px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="status-pill">One loader</span>
+    </div>
+    <ul class="kv" style="margin-top:12px">
+      <li><span>Blocking</span><b>peaks 62×26 <em>· in a 104 bay</em></b></li>
+      <li><span>Inline</span><b>ring 28 · 20 <em>· in controls</em></b></li>
+      <li><span>Retired</span><b>startLoadingHori <em>· L223</em></b></li>
+      <li><span>Retired</span><b>WLoadingHori <em>· loading.dart:22</em></b></li>
+      <li><span>Lottie files</span><b>2 → 0</b></li>
+    </ul>
+    <p class="note note--tight">
+      <b>Ruling: one loader, in two sizes. The second treatment goes.</b>
+      <code>startLoadingHori</code> (<code>dialogs.dart:223</code>, 5 references) is a
+      character-for-character copy of <code>startLoading</code> — same
+      <code>barrierDismissible:false</code>, same <code>CColor.black.withOpacity(0.2)</code>
+      barrier, same transparent <code>SimpleDialog</code>, same 3-second timeout — differing only
+      in which Lottie file it plays: <code>trail_loading.json</code> at a fixed 150×150 versus
+      <code>loading_hori.json</code> scaled to fit. Both are <code>ColorFiltered</code> with a
+      hardcoded default, and the two defaults <em>disagree</em>: <code>Colors.blue</code> for one,
+      <code>Colors.black</code> for the other — so the app's two loaders are Material blue and
+      pure black, and neither is a brand colour. All four of the horizontal loader's callers
+      (<code>login.dart:40</code>, <code>cubit/profile/profile.dart:277</code> and
+      <code>:376</code>, <code>notification_setting.dart:57</code>) are full-screen blocking
+      waits on an API call — the identical job to <code>startLoading</code>'s eleven. There is no
+      second behaviour to preserve, only a second asset.
+    </p>
+    <p class="note note--tight">
+      The split that <em>is</em> real is <b>blocking versus inline</b>, and this kit already has
+      it: the peaks own a panel that is waiting, the ring owns a line of text or the inside of a
+      control. <code>WLoadingHori</code>'s three <em>non</em>-modal uses —
+      <code>vote_count.dart:319</code>, <code>pick_club.dart:147</code>,
+      <code>like_count.dart:709</code> — become the 20&nbsp;px ring, which is what a horizontal
+      bar inside a row was reaching for. So: delete <code>startLoadingHori</code>, delete both
+      Lottie assets, one mark in two sizes.
+    </p>
+    <p class="note note--tight">
+      ⚠️ <b>Two bugs to fix on the way, not design questions.</b> Both loaders end
+      <code>.timeout(const Duration(seconds: 3), onTimeout: () { stopLoading(); })</code> — the
+      loader dismisses <em>itself</em> after three seconds whether or not the request finished,
+      leaving the member on an unchanged screen with no spinner, no error and no result. Any call
+      slower than 3&nbsp;s silently looks like nothing happened. And <code>_isDialog</code>
+      (<code>dialogs.dart:17</code>) is a single <code>static bool</code> shared by both
+      presenters, so a second loader opened over a first overwrites the flag and
+      <code>stopLoading</code> pops one route for two dialogs. Collapsing to one presenter removes
+      half of that; the flag still needs to become a counter or a route reference.
+    </p>
+  </div>
+
+  <!-- ===================== EMPTY STATE ===================== -->
+  <h2 class="label">Empty state</h2>
+  <div class="empty">
+    <span class="tile tile--neutral tile--lg">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 4h8a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6a2 2 0 0 1 2-2Z"/>
+        <path d="M9.5 9.5h5M9.5 13h5M9.5 16.5h3"/>
+      </svg>
+    </span>
+    <h3>No proposals yet</h3>
+    <p>Nobody at Barcelona has put an idea forward this week. Be the first.</p>
+    <button class="pill-btn pill-btn--acid" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      New idea
+    </button>
+  </div>
+  <p class="note">
+    Replaces <b>C-21</b> / <code>EmptyContainer</code>: a pure <b>#000000</b> panel with a lilac
+    border and one line of shouted Bebas, <b>NO PROPOSALS AT THE MOMENT</b>, with nothing to do
+    next. The panel now uses the section fill and border like every other container, and the
+    dead end gets an exit.
+  </p>
+
+  <!-- ===================== BANNERS ===================== -->
+  <h2 class="label">Inline banner</h2>
+
+  <div class="spec">
+    <p class="spec__label">Info</p>
+    <div class="banner">
+      <span class="banner__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+      </span>
+      <span class="banner__txt">
+        <b>Voting closes Friday, 18:00</b>
+        Ideas published after Wednesday roll into next week's ballot.
+      </span>
+    </div>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Warning</p>
+    <div class="banner banner--warn">
+      <span class="banner__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+      </span>
+      <span class="banner__txt">
+        <b>Your email isn't confirmed</b>
+        You can read the War Room, but you can't vote until it is.
+      </span>
+      <button class="banner__link" type="button">Resend</button>
+    </div>
+    <p class="spec__note">
+      Banners are in-flow, so they use <b>--r-panel</b> and the sunken fill, not the card
+      radius. Warning takes the red wash and a red hairline; info stays neutral. Neither
+      ever carries a state colour on its body text at less than 4.5:1.
+    </p>
+  </div>
+
+</main></div>
+
+<!-- ================= DOCK: live toasts + tab bar =================
+     `tabbar` on the wrapper is the review-shell hook: the review page
+     rewrites `.tabbar` to position:absolute so anything pinned to the
+     screen stays inside the device frame. -->
+<div class="dock tabbar">
+  <div class="toaster" id="toaster" role="status" aria-live="polite"></div>
+  <nav class="tabbar__inner" aria-label="Primary">
+    <button class="tab" type="button" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/>
+        <path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/>
+      </svg><span class="tab__label">War Room</span>
+    </button>
+    <button class="tab" type="button" aria-label="Merits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/>
+      </svg><span class="tab__label">Merits</span>
+    </button>
+    <button class="tab" type="button" aria-label="Backchat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>
+      </svg><span class="tab__label">Backchat</span>
+    </button>
+    <button class="tab" type="button" aria-label="Alerts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16"/>
+      </svg><span class="tab__label">Alerts</span>
+    </button>
+    <button class="tab" type="button" aria-label="Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>
+      </svg><span class="tab__label">Profile</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ================= LIVE OVERLAY ================= -->
+<div class="overlay tabbar" id="overlay">
+  <div class="scrim" id="scrim"></div>
+
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="live-t" aria-describedby="live-b" data-pane="alerts" hidden>
+    <button class="dlg__close" type="button" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+    </button>
+    <span class="tile tile--neutral">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16M10 20.2h4"/>
+      </svg>
+    </span>
+    <h3 class="dlg__title" id="live-t">Turn on match alerts?</h3>
+    <p class="dlg__body" id="live-b">
+      We'll tell you when an idea goes to a vote and when Barcelona decides. Two or three a
+      week, nothing else. iOS will ask next.
+    </p>
+    <div class="act">
+      <button class="btn btn--ghost" type="button" data-close>Not now</button>
+      <button class="btn btn--acid" type="button" data-close data-then="alerts">Turn on alerts</button>
+    </div>
+  </div>
+
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="live-t2" aria-describedby="live-b2" data-pane="delete" hidden>
+    <button class="dlg__close" type="button" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+    </button>
+    <span class="tile tile--red">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4.6 7h14.8M9.6 7V5.3A1.3 1.3 0 0 1 10.9 4h2.2a1.3 1.3 0 0 1 1.3 1.3V7"/>
+        <path d="M6.5 7l.8 11.4A1.7 1.7 0 0 0 9 20h6a1.7 1.7 0 0 0 1.7-1.6L17.5 7"/>
+        <path d="M10.4 11v5.4M13.6 11v5.4"/>
+      </svg>
+    </span>
+    <h3 class="dlg__title" id="live-t2">Delete this idea?</h3>
+    <p class="dlg__body" id="live-b2">
+      <b>Bring back the 1pm kick-off</b> and its 34 comments go for good. This can't be undone.
+    </p>
+    <div class="act">
+      <button class="btn btn--ghost" type="button" data-close>Keep it</button>
+      <button class="btn btn--danger" type="button" data-close data-then="deleted">Delete idea</button>
+    </div>
+  </div>
+</div>
+</div>
+          </div>
+        </div>
+        <div class="stage__controls">
+          <div class="seg" role="group" aria-label="Device width">
+            <button type="button" data-w="375" aria-pressed="true">375</button>
+            <button type="button" data-w="414" aria-pressed="false">414</button>
+            <button type="button" data-w="430" aria-pressed="false">430</button>
+          </div>
+        </div>
+        <p class="stage__hint">Live and interactive — scroll the screen, tap the controls, switch width.</p>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One shell replacing three, and a warning without amber</h2>
+  <p>
+    The app currently has three different modal shells across four screens — a hand-built dialog at
+    about 78% width with no border and no shadow, a shared <code>customSimpleDialog</code> at a
+    16&nbsp;pt inset with a raster image behind its title, and an untouched operating-system alert. It
+    also has a full-bleed square-cornered snackbar sitting on top of the floating tab bar, and a loader
+    that defaults to Material blue. This page defines one of each.
+  </p>
+  <p>
+    That is mostly a tidying job. The interesting problem is <em>warning</em>. Every other design system
+    solves it with a third colour — amber — and the palette here has exactly two hues. So warning is
+    built from the same red as error and separated from it by <b>wash and ring alone</b>: error is a red
+    glyph on a red wash inside a red hairline ring; warning is the same red glyph on the neutral white
+    wash with no ring. Same hue, one step quieter, and the words in the title carry the rest.
+  </p>
+  <p>
+    Everything on the page is a specimen laid out in the flow rather than overlaid, so every variant
+    can be read at once. Two live examples open properly over the real scrim, four buttons fire real
+    toasts into the dock, and one button demonstrates the in-button busy state.
+  </p>
+  <p>
+    <b>Extended after the coverage audit.</b> A count of the dialog layer found the kit was covering the
+    wrong five. The app declares <b>19</b> dialog presenters and the two most-used of them were not in
+    this kit at all: the generic server-error surface, referenced <b>27</b> times, which shows a member
+    the words “INTERNAL SERVER”; and the general error, referenced <b>30</b> times, whose one control is
+    a Vietnamese text link and which dismisses itself after five seconds. A third, the locker-room
+    reminder, has ten references across two screens and had never been drawn. All three are now here,
+    along with a shell for dialogs that carry form controls and a table listing every presenter, its
+    reference count and whether it should be built or deleted. That table is the most useful thing on
+    the page for scoping: five of the nineteen have no caller worth keeping.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Shell</td><td>Panel</td>
+          <td class="t-note"><code>100%&nbsp;−&nbsp;40&nbsp;px</code> capped at <code>340&nbsp;px</code>
+            — so <code>335&nbsp;px</code> at a 375 screen and a <code>45&nbsp;px</code> inset at 430 —
+            <code>R16</code>, <code>20&nbsp;px</code> padding all round, fill <code>#1C2129</code>,
+            1&nbsp;px <code>rgba(255,255,255,.075)</code> border,
+            <code>0 24px 60px rgba(0,0,0,.55)</code> lift, vertically centred.</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Dismiss</td>
+          <td class="t-note"><code>30&nbsp;px</code> circle pinned top-right on <code>#13171E</code>
+            with a <code>rgba(255,255,255,.045)</code> hairline and a 15&nbsp;px cross in
+            <code>#99A0AE</code>. Present on <em>every</em> variant — the dialog it replaces had no way
+            out except the primary action.</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Stack</td>
+          <td class="t-note">Fixed order: <code>44&nbsp;px</code> icon tile, title at
+            18/600/<code>-.015em</code> with <code>26&nbsp;px</code> right padding to clear the close
+            button, body at 13/400 line-height <code>1.5</code> in <code>#99A0AE</code> with white 600
+            for the object being acted on, then the action row at <code>18&nbsp;px</code>.</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Icon tile</td>
+          <td class="t-note"><code>44&nbsp;px</code> at <code>R12</code> holding a 22&nbsp;px glyph.
+            Four variants, differing only in wash and glyph colour: <b>acid</b>
+            <code>rgba(155,226,34,.12)</code> wash with <code>#9BE222</code> glyph; <b>red</b>
+            <code>rgba(226,86,74,.12)</code> wash, <code>#E2564A</code> glyph, plus an
+            <code>inset 0 0 0 1px rgba(226,86,74,.28)</code> ring; <b>warn</b> the same red glyph on
+            <code>rgba(255,255,255,.06)</code> with no ring; <b>neutral</b> that same wash with a white
+            glyph. A <code>52&nbsp;px</code> step at <code>R14</code> with a 25&nbsp;px glyph is used by
+            the empty state.</td>
+        </tr>
+        <tr>
+          <td>Action row</td><td>Layout</td>
+          <td class="t-note">Secondary left, primary right, equal widths at <code>flex:1</code>,
+            <code>10&nbsp;px</code> gap. A single action goes full width. Every button is
+            <code>46&nbsp;px</code> at <code>R&nbsp;pill</code>, label 14.5/700, sentence case,
+            <code>white-space:nowrap</code>.</td>
+        </tr>
+        <tr>
+          <td>Action row</td><td>Button variants</td>
+          <td class="t-note">Primary: accent fill, <code>#0B0E06</code> ink, hover
+            <code>#A8EC33</code>. Secondary: <code>#13171E</code> with a 1&nbsp;px inset hairline.
+            Destructive: <code>#E2564A</code> fill with <em>the same</em> <code>#0B0E06</code> ink, so
+            saturated fills behave identically — white on that red is <code>3.71:1</code> and never
+            used.</td>
+        </tr>
+        <tr>
+          <td>Action row</td><td>Busy state</td>
+          <td class="t-note"><code>aria-busy="true"</code> hides the label with
+            <code>visibility</code> so it keeps its box and the control cannot change width, overlays a
+            20&nbsp;px ring in the label's own ink, drops opacity to <code>.85</code> and stops pointer
+            events, so it cannot be double-submitted.</td>
+        </tr>
+        <tr>
+          <td>Variants</td><td>The five core</td>
+          <td class="t-note"><b>Success</b> acid tile, two actions. <b>Error</b> red tile with the ring,
+            one action — and the primary stays accent, because the button is the way out, not the danger.
+            <b>Warning</b> red glyph on neutral wash, two actions, the recommended one primary.
+            <b>Confirm</b> neutral tile, cancel and a named verb. <b>Destructive confirm</b> red tile and
+            the only filled red button in the system, with the secondary naming the safe outcome
+            (<code>Keep it</code>) rather than saying <code>Cancel</code>.</td>
+        </tr>
+        <tr>
+          <td>Variants</td><td>Server error</td>
+          <td class="t-note">The error tile — red glyph, red wash,
+            <code>rgba(226,86,74,.28)</code> ring — over a two-rack server glyph with a bang where the
+            lower LEDs sit. Body carries cause, consequence and next step in that order. Then a
+            <b>reference row</b>: <code>R12</code> on <code>#13171E</code> with a
+            <code>rgba(255,255,255,.045)</code> hairline, a 10/700/<code>.14em</code> tracked
+            <code>REFERENCE</code> label over a 12&nbsp;px monospace tabular value
+            (<code>SH-500 · 4F2A9C · 18:24 CET</code>), and a <code>32&nbsp;px</code> copy disc with a
+            <code>-6&nbsp;px</code> <code>::after</code> expansion to a 44&nbsp;px target. Actions
+            <code>Get help</code> / <code>Try again</code>, accent primary.</td>
+        </tr>
+        <tr>
+          <td>Variants</td><td>Error, relayed</td>
+          <td class="t-note">The same error tile with no ring change, but written for a body that is an
+            <em>arbitrary server string</em> rather than authored copy — the presenter's six heaviest
+            callers are the API layer. Fallback title when the server sends none is
+            <code>Something went wrong</code>. Two actions where the failure has somewhere to go
+            (<code>See the result</code> / <code>Got it</code>). <b>No timeout</b> on any variant.</td>
+        </tr>
+        <tr>
+          <td>Variants</td><td>Reminder ×3</td>
+          <td class="t-note">Three states of one variant, all in the standard shell. Tiles reuse the
+            <em>exact</em> glyph paths from <code>all-locker-rooms.html</code>'s <code>.rem</code>
+            trigger so the panel is visibly the control that opened it: <b>set</b> neutral tile with a
+            bell + plus, <b>remove</b> neutral tile with a bell + cross, <b>confirmed</b> acid tile with
+            a bell + check. Asks take the neutral wash like every other ask; only the report goes accent.
+            Actions <code>Not now</code>/<code>Set reminder</code>,
+            <code>Keep it</code>/<code>Remove reminder</code> — accent, not red, because the bell puts it
+            straight back — and a single <code>Got it</code> on the report.</td>
+        </tr>
+        <tr>
+          <td>Variants</td><td>Form controls</td>
+          <td class="t-note">Control block sits between the body and the action row.
+            <code>forms.html</code>'s <code>.ctl</code> shell unchanged — <code>52&nbsp;px</code>,
+            <code>R12</code>, 1&nbsp;px hairline, 16&nbsp;px value so iOS does not zoom on focus, accent
+            border plus a 3&nbsp;px <code>rgba(155,226,34,.12)</code> focus ring — with <b>one</b>
+            alteration: the fill drops <code>#1C2129</code> → <code>#13171E</code>, because the panel is
+            itself <code>#1C2129</code>. Textarea variant is <code>auto</code> height with a
+            <code>72&nbsp;px</code> minimum (three 16/1.5 line boxes) and a trailing
+            <code>11.5&nbsp;px</code> tabular counter. Two fields maximum — past that it is a sheet.</td>
+        </tr>
+        <tr>
+          <td>Inventory</td><td>Presenter table</td>
+          <td class="t-note">All 19 <code>UDialog</code> presenters plus <code>stopLoading</code>, each
+            with line number, reference count and
+            a one-phrase ruling, inside the standard bordered <code>#080A0C</code> container at
+            <code>R16</code>. Counts are non-comment references in <code>lib/</code>
+            <em>including</em> the declaration, so call sites are always one fewer. Rows to be deleted
+            carry a <b>strikethrough on the name</b> and the word <code>Delete</code> in
+            <code>#E2564A</code> — never the dimmed colour alone.</td>
+        </tr>
+        <tr>
+          <td>Scrim</td><td>Backdrop</td>
+          <td class="t-note"><code>rgba(3,4,1,.72)</code> — the canvas at 72% — with a
+            <code>10&nbsp;px</code> backdrop blur and <code>saturate(.9)</code>, falling back to a flat
+            <code>rgba(3,4,1,.86)</code> where <code>backdrop-filter</code> is unsupported. Covers the
+            full canvas including the tab bar. The panel enters on opacity plus
+            <code>translateY(10px) scale(.985)</code> over <code>.2/.28s</code>.</td>
+        </tr>
+        <tr>
+          <td>Scrim</td><td>Focus behaviour</td>
+          <td class="t-note">Opening moves focus into the dialog, holds Tab inside it, and returns focus
+            to the button that opened it. Dismissible by the close button, a scrim tap or
+            <code>Esc</code>.</td>
+        </tr>
+        <tr>
+          <td>Toast</td><td>Construction</td>
+          <td class="t-note">Inset <code>16&nbsp;px</code> each side, <code>R16</code>,
+            <code>#1C2129</code> with a 1&nbsp;px hairline and a
+            <code>0 14px 34px rgba(0,0,0,.5)</code> lift, minimum height <code>52&nbsp;px</code> growing
+            with the message. Message at 13/500. Leading semantic marker is a
+            <code>3&nbsp;×&nbsp;22&nbsp;px</code> rounded bar plus a 19&nbsp;px glyph in the same
+            colour — accent for success, <code>#E2564A</code> for error, white 34% for info. Optional
+            <code>32&nbsp;px</code> action pill on the matching wash. Clears the tab bar by
+            <code>10&nbsp;px</code>, sitting <code>82&nbsp;px</code> off the screen edge. Lives
+            <code>4s</code>, or <code>6s</code> when it carries an action.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>Peaks</td>
+          <td class="t-note">A <code>62&nbsp;×&nbsp;26</code> three-peak mark — the brand silhouette —
+            pulsing each triangle from <code>.22</code> to full opacity over <code>1.15s</code>, staggered
+            <code>0</code>&nbsp;/&nbsp;<code>.16s</code>&nbsp;/&nbsp;<code>.32s</code>, in a
+            <code>104&nbsp;px</code> bay. Used where a whole panel is waiting, under a tracked caption
+            naming what is loading.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>Ring</td>
+          <td class="t-note">Two sizes, <code>28&nbsp;px</code> and <code>20&nbsp;px</code>: a track in
+            white at <code>18%</code> and a 90° accent sweep with round caps rotating over
+            <code>.9s</code>, at <code>2.4</code> and <code>2.8</code> stroke respectively — heavier as
+            the size drops, per the optical stroke rule. Used inline and inside controls.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>One mark, not two</td>
+          <td class="t-note">The peaks and the ring are two <em>sizes</em> of one loader, split by
+            blocking versus inline — not two loaders. The app's second loading treatment is retired:
+            <code>startLoadingHori</code> is a character-for-character copy of <code>startLoading</code>
+            differing only in which Lottie file it plays, and the two files' hardcoded default colours
+            disagree — <code>Colors.blue</code> against <code>Colors.black</code>, neither a brand
+            colour. Both Lottie assets go.</td>
+        </tr>
+        <tr>
+          <td>Empty state</td><td>Panel</td>
+          <td class="t-note">Bordered <code>#080A0C</code> card at <code>R16</code>,
+            <code>52&nbsp;px</code> neutral tile, headline at 16/600, one line of body at 12.5/400 muted
+            capped at <code>26ch</code>, and an accent <code>34&nbsp;px</code> pill giving the member
+            something to do.</td>
+        </tr>
+        <tr>
+          <td>Banner</td><td>In-flow variant</td>
+          <td class="t-note"><code>R12</code> on <code>#13171E</code> with a 1&nbsp;px hairline —
+            <em>panel</em> radius, not card, because it sits in the flow rather than floating. Headline
+            at 13/600 white over body at 12.5/400 muted, with an optional accent text action.
+            The warning variant takes the red wash and the <code>rgba(226,86,74,.28)</code> hairline, its
+            glyph and action go red, and its body copy warms to <code>#D9BDB9</code>.</td>
+        </tr>
+        <tr>
+          <td>Icons</td><td>The set</td>
+          <td class="t-note">Eight drawn glyphs — success, error, warning, confirm, destructive, info,
+            alerts-ask and dismiss — all inline SVG on a 24 box at <code>1.7</code> stroke with round
+            caps and joins, matching the tab bar and row icons. No emoji: the platform thumbs-up and flag
+            currently used are glyphs the brand cannot recolour and which render differently on every OS
+            version.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Success</td><td class="t-note">Acid tile, acid primary. The only variant that reports rather than asks.</td></tr>
+        <tr><td>Error</td><td class="t-note">Red tile with the red ring — the loudest step. Single accent action, because the way out should not look dangerous.</td></tr>
+        <tr><td>Warning</td><td class="t-note">Same red glyph, neutral wash, no ring. Distinguished from error by wash and ring alone, with the recommended action as the primary.</td></tr>
+        <tr><td>Confirm</td><td class="t-note">Neutral tile. Question in the title, consequence in the body, the title's verb repeated on the button.</td></tr>
+        <tr><td>Destructive</td><td class="t-note">Red tile and a filled red button — the one place it is permitted — with the safe outcome named on the secondary.</td></tr>
+        <tr><td>Server error (5xx)</td><td class="t-note">Error tile plus a sunken reference row the member can quote to support. Says which side failed, whether the action went through, and gives one way forward. Never says “internal”.</td></tr>
+        <tr><td>Error, relayed message</td><td class="t-note">Body is a server string of unknown length and language, so the variant is written to survive one rather than to read well. Title falls back to <code>Something went wrong</code> when the server sends none — <em>not</em> to the current default <code>Cảnh báo</code>, which mislabels every error as a warning and does it in Vietnamese.</td></tr>
+        <tr><td>Reminder · not set</td><td class="t-note">Neutral tile, bell + plus, names the room and the exact time it opens, and says where the reminder can be removed. <code>Not now</code> / <code>Set reminder</code>.</td></tr>
+        <tr><td>Reminder · already set</td><td class="t-note">Neutral tile, bell + cross. Accent primary, not red: removal is reversible from the bell, so it does not qualify for the filled red. Secondary names the safe outcome, <code>Keep it</code>.</td></tr>
+        <tr><td>Reminder · confirmed</td><td class="t-note">Acid tile, bell + check, single <code>Got it</code> — the one dialog in the kit that earns the generic label. Recommended as a <b>toast</b> instead; the shipped flow stacks three modals to set one reminder.</td></tr>
+        <tr><td>Form · filled / empty</td><td class="t-note">Control on <code>#13171E</code> with a 1&nbsp;px hairline; placeholder in <code>#5B606B</code>; focus takes the accent border and the 3&nbsp;px accent wash ring; counter in <code>#5B606B</code> tabular. Submit repeats the verb, secondary is <code>Cancel</code> because nothing is recommended.</td></tr>
+        <tr><td>Auto-dismiss</td><td class="t-note"><b>Removed.</b> No dialog in this kit times out. The presenter it replaces auto-popped after 5&nbsp;s, which is under the reading time of the messages it carries. A message that may go unread is a toast or a banner, not a modal.</td></tr>
+        <tr><td>Presenter · dead</td><td class="t-note">Struck-through name and the word <code>Delete</code>. Five of nineteen: no caller, or one caller that becomes a toast.</td></tr>
+        <tr><td>Opening / closing</td><td class="t-note">Scrim fades over <code>.2s</code>; the panel lifts <code>10&nbsp;px</code> and settles from <code>scale(.985)</code> over <code>.28s</code>.</td></tr>
+        <tr><td>Button busy</td><td class="t-note">Label hidden but boxed, ring in the label's ink, opacity <code>.85</code>, pointer events off, <code>aria-busy</code> set.</td></tr>
+        <tr><td>Toast success / error / info</td><td class="t-note">Marker bar, glyph and action wash all change together; nothing else does. Error and info carry an action, success does not.</td></tr>
+        <tr><td>Banner info / warning</td><td class="t-note">Neutral hairline and muted body, versus the red wash, red hairline, red glyph and warmed body copy.</td></tr>
+        <tr><td>No backdrop-filter support</td><td class="t-note">Scrim falls back to a flat <code>rgba(3,4,1,.86)</code>, dark enough to do the separating on its own.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">Transitions suppressed and every SVG animation paused with <code>pauseAnimations()</code>, so the loaders hold a static frame rather than disappearing.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <p>
+    This is a system kit, and it is <b>almost entirely proposed</b>. No dialog, toast, loader, empty
+    state or banner is designed in the new brand. What exists is the shipped behaviour and its copy —
+    which screens interrupt, what they say, what they do next — and the shipped implementations are the
+    thing being replaced rather than the thing being reproduced.
+  </p>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Tokens, surfaces and radii</b> — sampled, not approximated</li>
+        <li><b>Section container</b> — the bordered <code>#080A0C</code> wrapper, used for the spec panels and the empty state</li>
+        <li><b>Status pill</b> — the <code>LIVE NOW</code> treatment, reused to mark the interactive panel</li>
+        <li><b>Tab bar</b> — reconstructed from the active-state frames, so the toast clearance can be shown honestly</li>
+        <li><b>Icon construction</b> — 24-box, round caps, optical stroke weight</li>
+        <li><b>Three-peak mark</b> — the hero range silhouette, reused as the panel loader</li>
+        <li><b>Dialog content</b> — the situations, addresses, counts and consequences come from the shipped flows</li>
+        <li><b>Reminder glyphs</b> — the bell + plus and bell + check are lifted straight from <code>all-locker-rooms.html</code>'s reminder trigger, so the dialog reads as the control that opened it</li>
+        <li><b>Reminder copy</b> — the shipped <code>KEEP</code> / <code>REMOVE</code> pair and the three shipped states (set, cancel, set-confirmed) are preserved, in sentence case</li>
+        <li><b>Form control shell</b> — <code>forms.html</code>'s <code>.ctl</code>, unchanged but for the fill</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The dialog shell</b> — one construction replacing the three the app ships</li>
+        <li><b>Five variants</b> — success, error, warning, confirm, destructive, differing only in tile, title, body and action row</li>
+        <li><b>Warning without a third hue</b> — the amber <code>#E08A09</code> in the current colour file is dropped; warning is red on the neutral wash</li>
+        <li><b>Always-present dismiss</b> — the shell it replaces offered no way out but the action, and one variant relied on a 5-second timeout</li>
+        <li><b>The verb convention</b> — the affirmative repeats the title's verb, imperative, sentence case, three words at most; <code>Got it</code> is the only permitted generic, and only for an acknowledgement</li>
+        <li><b>Ink on red</b> — <code>#0B0E06</code>, so both saturated fills behave the same way</li>
+        <li><b>Scrim</b> — 72% plus a 10&nbsp;px blur, against the flat ~45% no-blur backdrop that currently leaves the form behind the dialog fully legible</li>
+        <li><b>Focus trap and focus return</b></li>
+        <li><b>Toast</b> — inset, card radius, semantic marker bar, icon, optional action, timed life. The shipped snackbar is the only full-bleed square-cornered element in the captured set: flat green, ~90&nbsp;pt tall, no icon, no action, overlapping the floating tab bar</li>
+        <li><b>Loaders</b> — the peaks and the two ring sizes, replacing a loader whose default paints a Material <code>#2196F3</code> dot-ring, a hue that appears nowhere else in the brand</li>
+        <li><b>In-button busy state</b></li>
+        <li><b>Empty state</b> — replacing a pure <code>#000000</code> panel with a lilac border and one line of shouted display type, which offered nothing to do next</li>
+        <li><b>Inline banner</b> — both variants; nothing like it exists</li>
+        <li><b>Eight drawn state icons</b> — in place of two platform emoji</li>
+        <li><b>Server-error variant</b> — the app's generic 5xx surface, referenced 27 times and never drawn. Cause, consequence, one next step and a quotable reference, replacing the words <code>INTERNAL SERVER</code> in 34&nbsp;pt display type coloured <code>#E04A09</code> over a raster</li>
+        <li><b>A reference code the member can quote</b> — the 5xx surface currently gives support nothing to search on</li>
+        <li><b>Reminder dialog, all three states</b> — ten references across Backchat and All Locker Rooms, never captured or drawn</li>
+        <li><b>A dialog that carries form controls</b> — a shape the kit did not have; <code>media.html</code> should use this shell</li>
+        <li><b>One loader, not two</b> — the second treatment and both Lottie assets are retired</li>
+        <li><b>No auto-dismissing dialogs</b> — the 5-second timeout on the app's most-used error goes</li>
+        <li><b>Presenter inventory</b> — all 19 presenters counted and ruled on, with five marked for deletion</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Can we delete five dialogs instead of rebranding them?</h3>
+      <p>The app declares <b>19</b> dialog presenters. Counting every non-comment reference in the code,
+      <span class="flag">five of them are not worth building</span>, and the inventory table on the page
+      marks each with a struck-through name and the word <code>Delete</code>. Four have <b>no caller at
+      all</b> — <code>showDialogNoButton</code>, <code>customActionSheet</code>,
+      <code>showConfirmSP</code>, and <code>common</code>, which has no external caller and is only
+      reached through the two presenters we are replacing anyway. The fifth,
+      <code>showSuccess</code>, has one caller and it should be a toast. Two more,
+      <code>showCustomDialogWithCustomContent</code> and <code>showNormalDialog</code>, exist only to
+      serve a single file and fold into the standard shell. <code>customActionSheet</code> is worth
+      naming separately: it is the <b>only Cupertino surface in the entire codebase</b>, so deleting it
+      removes the last iOS-styled component from an app that is otherwise Material throughout, at the
+      cost of nothing, because nothing calls it. We need agreement that deleting is in scope — it takes
+      roughly a quarter of the dialog layer off the build, and the alternative is paying to restyle code
+      that never runs.</p>
+    </li>
+    <li>
+      <h3>Should the app's most-used error stop dismissing itself?</h3>
+      <p><code>showError</code> is referenced <b>30</b> times, more than any other dialog. Its one
+      control is a full-width text link reading <b>Thoát</b> — Vietnamese for “Exit” — and it calls
+      <code>.timeout(Duration(seconds: 5))</code>, which pops the dialog whether or not the member has
+      finished reading. Six of its callers are the API layer, so the body is a relayed server string
+      whose length nobody controls. We have assumed <span class="flag">no dialog auto-dismisses</span>,
+      the label becomes a real button in English, and the null-title fallback becomes
+      <code>Something went wrong</code> rather than the current <b>Cảnh báo</b> (“Warning”), which
+      mislabels every error. If any of the 30 sites genuinely wants a message that disappears, that site
+      wants a toast, and we should list them.</p>
+    </li>
+    <li>
+      <h3>How much should a member be told about a 5xx?</h3>
+      <p><code>showInternal</code> is referenced <b>27</b> times and shows a member the words
+      <b>INTERNAL SERVER</b>. We have replaced it with cause, consequence, one next step and a
+      <span class="flag">support reference — <code>SH-500 · 4F2A9C · 18:24 CET</code></span>. Two things
+      need confirming: that the reference format is something your support process can actually search
+      on, and that <code>Get help</code> has somewhere to go. If there is no support channel behind that
+      button, the dialog should be single-action and the reference should still be copyable.</p>
+    </li>
+    <li>
+      <h3>Does setting a reminder need a dialog at all?</h3>
+      <p>The shipped flow puts <b>three modals in a row</b> — ask, loading, confirm — so a member taps a
+      bell and dismisses two panels to end up where the bell already showed them they were. Meanwhile
+      <code>all-locker-rooms.html</code> toggles the bell optimistically with no dialog. We recommend
+      <span class="flag">toggle for set, dialog only for remove, toast for both outcomes</span>, and have
+      built all three states so you can see what is being given up. Whichever way this goes, the list and
+      the dialog kit have to agree, because the bell is the only entry point.</p>
+    </li>
+    <li>
+      <h3>Is warning distinguishable enough from error?</h3>
+      <p>This is the one genuinely uncomfortable decision in the kit. With two hues available, warning
+      and error share a colour and differ only by <span class="flag">wash and ring</span> — red glyph on
+      a red wash inside a red ring for error, red glyph on the neutral wash with no ring for warning. It
+      reads correctly side by side, and the title always says which it is, but they are two steps of one
+      signal rather than two signals. The alternative is admitting a third hue for warning alone, which
+      the contract forbids and which we would rather not open. We need you to look at the two specimens
+      together and tell us it holds.</p>
+    </li>
+    <li>
+      <h3>What should each dialog's affirmative actually say?</h3>
+      <p>The app currently uses five different affirmatives across four dialogs — three of them shouted
+      in caps, and two of them still in Vietnamese from the source project. We have replaced them with a
+      convention: repeat the title's verb, imperative, sentence case. Someone who owns the product
+      language needs to sign off the resulting labels, because the convention is only as good as the
+      titles it derives from.</p>
+    </li>
+    <li>
+      <h3>Toast, or dialog?</h3>
+      <p>Several flows currently interrupt with a modal where a toast would do — a saved profile does not
+      need a dismissal. We have assumed <span class="flag">dialogs are for decisions and failures a
+      member must act on; toasts are for confirmations and recoverable errors</span>. Applying that rule
+      will change which control several existing screens use, so it should be agreed before build rather
+      than screen by screen.</p>
+    </li>
+    <li>
+      <h3>How long should a toast live?</h3>
+      <p><span class="flag">4 seconds</span>, or <span class="flag">6</span> when it carries an action,
+      are our numbers — long enough to read, short enough not to block the tab bar. If a toast can be
+      the only notification of a failed vote, it is the wrong component for that message and it should be
+      a banner that persists.</p>
+    </li>
+    <li>
+      <h3>Does anything besides delete get a red button?</h3>
+      <p>We have restricted the filled red to irreversible destruction of something the member owns.
+      Leaving a locker room, withdrawing an idea and cancelling a vote are all arguably destructive and
+      all currently use it. Drawing that line narrowly is what keeps the red meaningful.</p>
+    </li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce){
+    Array.prototype.forEach.call(document.querySelectorAll('svg.anim'), function(s){
+      if (s.pauseAnimations) s.pauseAnimations();
+    });
+  }
+
+  /* ---------------- toasts ---------------- */
+  var toaster = document.getElementById('toaster');
+
+  var ICON = {
+    success:'<path d="M5 12.6l4.4 4.4L19 7.4"/>',
+    error:  '<circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/>',
+    info:   '<circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/>',
+    /* the bell + check from all-locker-rooms.html's reminder trigger */
+    remind: '<path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2' +
+            'M18.4 6.4l1.7 1.7 3.1-3.4"/>'
+  };
+  var COPY = {
+    success:{ msg:'Profile saved' },
+    error:  { msg:'Vote didn’t register', act:'Retry' },
+    info:   { msg:'3 new proposals in the War Room', act:'View' },
+    remind: { msg:'Reminder set for Sunday, 5:50 PM', act:'Undo' }
+  };
+
+  function toast(kind, override){
+    var conf = COPY[kind] || COPY.info;
+    var msg  = (override && override.msg) || conf.msg;
+    var act  = override && 'act' in override ? override.act : conf.act;
+
+    var el = document.createElement('div');
+    el.className = 'toast' + (kind === 'success' ? '' : ' toast--' + kind);
+    el.innerHTML =
+      '<span class="toast__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="' + (kind === 'success' ? '1.9' : '1.7') + '" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true">' + (ICON[kind] || ICON.info) + '</svg></span>' +
+      '<span class="toast__msg"></span>' +
+      (act ? '<button class="toast__act" type="button"></button>' : '');
+    el.querySelector('.toast__msg').textContent = msg;
+    if (act) el.querySelector('.toast__act').textContent = act;
+
+    while (toaster.children.length > 1) toaster.removeChild(toaster.firstChild);
+    toaster.appendChild(el);
+    requestAnimationFrame(function(){ el.classList.add('is-in'); });
+
+    var life = act ? 6000 : 4000;
+    var t = setTimeout(drop, life);
+    function drop(){
+      clearTimeout(t);
+      el.classList.remove('is-in');
+      setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+    }
+    if (act) el.querySelector('.toast__act').addEventListener('click', drop);
+  }
+
+  document.addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-toast]') : null;
+    if (b) toast(b.getAttribute('data-toast'));
+  });
+
+  /* ---------------- in-button loading ---------------- */
+  document.addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-busy]') : null;
+    if (!b || b.getAttribute('aria-busy') === 'true') return;
+    b.setAttribute('aria-busy','true');
+    setTimeout(function(){
+      b.removeAttribute('aria-busy');
+      toast('success', { msg:'Idea published to Barcelona', act:'View' });
+    }, 1700);
+  });
+
+  /* ---------------- dialog ---------------- */
+  var overlay = document.getElementById('overlay');
+  var scrim   = document.getElementById('scrim');
+  var main    = document.querySelector('main.screen');
+  var dock    = document.querySelector('.dock');
+  var opener  = null;
+  var pane    = null;
+
+  function focusables(root){
+    return Array.prototype.filter.call(
+      root.querySelectorAll('button, [href], input, select, textarea, [tabindex]'),
+      function(el){ return !el.hasAttribute('disabled') && el.getAttribute('tabindex') !== '-1'; }
+    );
+  }
+
+  function open(name, trigger){
+    pane = overlay.querySelector('[data-pane="' + name + '"]');
+    if (!pane) return;
+    opener = trigger || null;
+    pane.hidden = false;
+    overlay.classList.add('is-open');
+    if (main) main.setAttribute('aria-hidden','true');
+    if (dock) dock.setAttribute('aria-hidden','true');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function(){ overlay.classList.add('is-in'); });
+    /* focus the dialog itself, not an action — the destructive variant must
+       never open with "Delete idea" primed under the return key */
+    pane.setAttribute('tabindex','-1');
+    pane.focus();
+    document.addEventListener('keydown', onKey, true);
+  }
+
+  function close(then){
+    if (!pane) return;
+    var closing = pane;
+    overlay.classList.remove('is-in');
+    document.removeEventListener('keydown', onKey, true);
+    if (main) main.removeAttribute('aria-hidden');
+    if (dock) dock.removeAttribute('aria-hidden');
+    document.body.style.overflow = '';
+    setTimeout(function(){
+      overlay.classList.remove('is-open');
+      closing.hidden = true;
+    }, 200);
+    pane = null;
+    if (opener) opener.focus();
+    opener = null;
+    if (then === 'alerts')  toast('success', { msg:'Match alerts are on', act:null });
+    if (then === 'deleted') toast('success', { msg:'Idea deleted', act:'Undo' });
+  }
+
+  function onKey(e){
+    if (!pane) return;
+    if (e.key === 'Escape'){ e.preventDefault(); close(); return; }
+    if (e.key !== 'Tab') return;
+    var f = focusables(pane);
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    else if (!pane.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+  }
+
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+    var o = e.target.closest('[data-open]');
+    if (o){ open(o.getAttribute('data-open'), o); return; }
+    var c = e.target.closest('[data-close]');
+    if (c){ close(c.getAttribute('data-then')); return; }
+    if (e.target === scrim) close();
+  });
+
+  /* ---------------- tab bar ---------------- */
+  var bar = document.querySelector('.tabbar__inner');
+  bar.addEventListener('click', function(e){
+    var b = e.target.closest('.tab'); if (!b) return;
+    Array.prototype.forEach.call(bar.querySelectorAll('.tab'), function(x){
+      if (x === b){ x.setAttribute('aria-current','page'); x.removeAttribute('aria-label'); }
+      else { x.removeAttribute('aria-current'); }
+    });
+  });
+})();
+</script>

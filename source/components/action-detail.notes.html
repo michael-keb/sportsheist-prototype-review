@@ -1,0 +1,370 @@
+<p class="dek">The screen behind an Action card — where a member checks whether the club actually did
+the thing everyone voted for. It carries the verdict, what was decided, what the club committed to,
+the dates, and the chain back to the vote that carried it.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Where the promise is kept, or isn't</h2>
+
+  <p>SportsHeist's whole pitch is that members decide and the club follows through. Every other
+  screen in the library builds up to that: an idea gathers likes, becomes a proposal, gets voted on,
+  gets a result. This is the screen after the result — the one where a member finds out whether any
+  of it mattered. It has had no design until now. The Actions <em>card</em> was rebuilt in
+  <code>results-actions.html</code>; the detail behind it, a 505-line file on its own route
+  (<code>CRoute.actionDetail</code>, referenced five times), was missed.</p>
+
+  <p>The screen reads top to bottom as one argument. <b>The verdict</b> — what the club decided, in
+  the settled seven-word vocabulary. <b>The subject</b> — what was actually proposed, at full length.
+  <b>The instruction</b> — what the club committed to doing about it, and who is accountable.
+  <b>Follow-through</b> — six dated steps, five of which the data can prove. <b>How it got here</b> —
+  the idea, the vote with its real counts, the result, and one plain sentence: <em>this is happening
+  because 1,079 of the club's 1,284 members voted for it</em>. Then the discussion, because an action
+  going quiet is the thing members will want to talk about.</p>
+
+  <p><b>The one thing this screen cannot do is the thing it exists for.</b> There is no field
+  anywhere in the app for whether an action was carried out — no owner, no due date, no completion
+  flag, no evidence, and no endpoint to record any of it. So the last step of the timeline is drawn
+  as an unresolved dashed mark reading <em>Carried out · Not confirmed</em>, rather than faked as a
+  progress bar. Three fields close the loop and they are named in the Decisions section. Until they
+  exist, the accountability loop is open by construction, not by accident.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. Field names in
+        <code>code</code> are the real JSON keys <code>MProposal.fromJson</code> parses.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Hero</td><td>Banner</td><td class="t-note"><code>138px</code>, <code>--r-card</code>,
+          gradient <code>#0D3617</code>→<code>#17481C</code> at <code>112deg</code>, white triangles at
+          <code>2.4–3%</code>, three acid peaks bottom-right at <code>54% × 38%</code>. The knockout
+          athlete prop is <b>omitted</b> — <code>merit-detail.html</code> established that pushed
+          routes drop it, and it saves <code>113KB</code> of inline base64.</td></tr>
+        <tr><td>Hero</td><td>Back disc</td><td class="t-note"><code>36px</code> circle,
+          <code>rgba(255,255,255,.12)</code>, white <code>1.9</code>-stroke chevron, with an
+          <code>::after</code> expansion to a <code>44px</code> target.</td></tr>
+        <tr><td>Hero</td><td>Eyebrow + title</td><td class="t-note"><code>WAR ROOM · ACTIONS</code> at
+          <code>10.5/700/.14em</code> on <code>rgba(255,255,255,.6)</code>, then
+          <code>ACTION</code> at <code>34/800/-.025em</code> uppercase.</td></tr>
+        <tr><td>Verdict</td><td>Verdict bar, detail scale</td><td class="t-note">The parent's component
+          at its <code>--lg</code> size: <code>70px</code> min-height, <code>14/16px</code> padding,
+          <code>34px</code> badge, word at <code>16/700/.05em</code>. Tone <code>--pos</code>:
+          <code>--acid-wash</code> fill, <code>rgba(155,226,34,.22)</code> inset ring, acid word,
+          acid badge with <code>--acid-ink</code> tick. Sub-line carries the count.</td></tr>
+        <tr><td>Subject</td><td>Type chip + reference</td><td class="t-note">From <code>type</code>.
+          <code>22px</code> pill, <code>--sunken</code>, <code>10/700/.12em</code>. Reference
+          <code>#4182</code> is <code>id</code>, right-aligned in <code>--dim</code>.</td></tr>
+        <tr><td>Subject</td><td>Title</td><td class="t-note">From <code>title</code>.
+          <code>20/700/-.02em</code>, <code>1.2</code> line-height — a notch above the card's
+          <code>17px</code>, because on the detail the title is the headline.</td></tr>
+        <tr><td>Subject</td><td>Byline</td><td class="t-note"><code>30px</code> avatar from
+          <code>author_avatar</code>, name from <code>author_name</code>, date from
+          <code>posted_at</code>. <b>One author, not two</b> — the parent card showed a two-avatar
+          stack and the model has no field for a second author.</td></tr>
+        <tr><td>Subject</td><td>Detail + Read more</td><td class="t-note">From
+          <code>description</code>. Real <code>-webkit-line-clamp:4</code> with a
+          <code>Read more / Read less</code> toggle, matching
+          <code>action_detail.dart</code>'s <code>maxLines: flag ? 4 : 10</code>. The live build uses
+          <code>softWrap:false</code> with a single-line ellipsis, which truncates mid-sentence.</td></tr>
+        <tr><td>Instruction</td><td>The instruction word</td><td class="t-note">From
+          <code>status</code>: <code>let_push_it</code> renders <code>Publish it!</code>,
+          <code>let_do_it</code> renders <code>Let's do it!</code>. <code>19/800/-.02em</code> in
+          <code>--acid</code> with a <code>20px</code> glyph. This is the <em>instruction</em>, kept
+          out of the verdict bar, which carries the <em>verdict</em>.</td></tr>
+        <tr><td>Instruction</td><td>Owner row</td><td class="t-note">Canonical club crest plate at
+          <code>40px</code> — <code>rgba(255,255,255,.94)</code>, radius <code>11.2px</code>
+          (<code>40×.28</code>), padding <code>5px</code> (<code>40×.125</code>), club code at
+          <code>12/800/-.03em</code> in <code>--acid-ink</code>. Carries a hairline
+          <code>Proposed</code> tag: there is no owner field.</td></tr>
+        <tr><td>Instruction</td><td>Two clocks</td><td class="t-note"><code>veto.html</code>'s
+          <code>.clock</code>. Left: <b>Committed by</b> <code>Fri 18:00</code> — proposed. Right:
+          <b>Verdict recorded</b> <code>12 Jul 20:45</code> — real, from <code>updated_at</code>.
+          Neither takes the hold hatch; a deadline is not a hold.</td></tr>
+        <tr><td>Follow&#8209;through</td><td>Section container</td><td class="t-note">
+          <code>--section</code> fill, <code>1px --line</code>, <code>--r-card</code>,
+          <code>12px</code> padding, holding a status pill reading <code>5 of 6 recorded</code> and a
+          <code>38px</code> alert icon button.</td></tr>
+        <tr><td>Follow&#8209;through</td><td>Timeline, 5 proven steps</td><td class="t-note">
+          <code>21px</code> acid disc with an <code>--acid-ink</code> tick, joined by a
+          <code>1px --line</code> connector. Each step is one timestamp:
+          <code>posted_at</code> · <code>idea_end_at</code> + <code>idea_duration</code> ·
+          vote open · <code>voting_end_at</code> + <code>vote_duration</code> ·
+          <code>updated_at</code>.</td></tr>
+        <tr><td>Follow&#8209;through</td><td>The 6th step — unrecorded</td><td class="t-note">
+          <code>Carried out · Not confirmed</code>. A <code>1.6px</code> <b>dashed</b>
+          <code>#9BE222</code> ring on a transparent ground, above a dashed accent connector. This is
+          <code>states.html</code>'s "should exist and does not yet" rule, <b>not</b> the hold hatch —
+          an unrecorded outcome is not a paused one. Carries the needed field names in mono
+          <code>10.5px --dim</code>.</td></tr>
+        <tr><td>Provenance</td><td>Chain, 4 rows</td><td class="t-note">Idea → Vote → Result → Action.
+          Stage labels at <code>10/700/.14em</code> with a <code>13px</code> glyph. The current row
+          takes <code>--acid-wash</code> and an accent label and is marked
+          <code>aria-current="step"</code>.</td></tr>
+        <tr><td>Provenance</td><td>The count</td><td class="t-note"><code>veto.html</code>'s readout:
+          <code>1,079</code> at <code>32/800/-.04em</code> tabular, a <code>70% needed</code> pill,
+          and a <code>12px</code> bar with the acid fill at <code>84%</code> and a <code>2px</code>
+          white threshold mark at <code>70%</code>. Both figures are real —
+          <code>voted</code> and <code>total_member_participants</code>.</td></tr>
+        <tr><td>Provenance</td><td>The accountability sentence</td><td class="t-note">
+          <code>--sunken</code> panel, <code>12.5/1.5</code> in <code>--muted</code> with white
+          tabular figures: <em>"This is happening because 1,079 of the club's 1,284 members voted for
+          it, and 70% was the bar. Nobody at the club chose this on your behalf."</em> This is the
+          screen's thesis in one line.</td></tr>
+        <tr><td>Discussion</td><td>Thread</td><td class="t-note"><code>comments.html</code>'s
+          <code>.thread</code> / <code>.cm</code> / <code>.sig</code>, reused unchanged: club row on
+          <code>--sunken</code> with the monochrome crest tile and a <code>CLUB</code> badge, member
+          rows on <code>--surface</code>, agreement as <b>accent ink with a hairline ring, never a
+          fill</b>, counts as raw integers. Endpoint
+          <code>/proposals/{uuid}/comments/</code> is keyed by proposal, so an action-stage proposal
+          has a thread — the live Action detail simply never renders it.</td></tr>
+        <tr><td>Chrome</td><td>Bottom action bar</td><td class="t-note"><b>Outside
+          <code>&lt;main&gt;</code></b>. <code>52px</code> acid button, <code>--acid-ink</code> label,
+          over a <code>--bg</code> gradient with a <code>0 10px 30px</code> lift. Carries the one real
+          write action at this stage: <code>POST /proposals/{uuid}/post-comment/</code>. On a Veto hold
+          it carries the appeal instead, which is also real
+          (<code>POST .../reject-veto/</code>). <code>.screen</code> padding is
+          <code>12px 0 128px</code> to clear it.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <p>Five of the parent's seven verdicts can reach this screen. An action exists because a proposal
+  <em>passed</em>, so the verdict here is either that pass or something that struck it out afterwards.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Approved</td><td class="t-note"><code>--pos</code> bar with the tick badge, the full
+          instruction panel, owner, both clocks, and the six-step timeline. The only state with
+          follow-through to show.</td></tr>
+        <tr><td>Ruled out</td><td class="t-note"><code>--neg</code> bar,
+          <code>circle + minus</code> badge, sub-line <code>Passed the vote · not executable</code>.
+          Adds the written reason from <code>reason</code> in a blockquote with a <code>2px</code>
+          <code>rgba(226,86,74,.28)</code> rule. The instruction panel is replaced by an empty-state
+          panel: <code>There is no follow-through on this one</code>. This is the only extra branch
+          the live build implements (<code>buildReasonRuleOuted</code>).</td></tr>
+        <tr><td>Vetoed</td><td class="t-note"><code>--neg</code> bar, <code>circle + slash</code>
+          badge, appeal-closed timestamp. Reason comes from <code>veto.reason</code> and is attributed
+          to the board, not the club generally.</td></tr>
+        <tr><td>Veto hold</td><td class="t-note"><b>The canonical hatch.</b> Static
+          <code>135°</code> bars, <code>rgba(155,226,34,.11)</code> at <code>5px</code> on /
+          <code>6px</code> off over <code>--sunken</code>, <code>rgba(155,226,34,.30)</code> ring,
+          <code>⊘</code> badge — copied from <code>veto.html</code> through the parent, byte for byte.
+          The appeal clock keeps <b>full-contrast white digits</b>, because held is loud and finished
+          is quiet. The reject-the-veto bar takes the same hatch inverted to
+          <code>rgba(3,4,1,.62)</code> over its acid fill. Adds two numbered steps and swaps the
+          bottom bar for the appeal.</td></tr>
+        <tr><td>Cancelled</td><td class="t-note"><code>--inert</code> — no hue at all.
+          <code>--sunken</code> fill, <code>--line</code> ring, white word, refund glyph. Finished and
+          quiet, never the hatch.</td></tr>
+        <tr><td>Rejected · Lapsed</td><td class="t-note"><b>Cannot reach this screen and are not
+          drawn.</b> A rejected proposal ends at the Result; a lapsed idea ends before there is a
+          proposal at all. Any link to either should land on the Result detail.</td></tr>
+        <tr><td>No detail written</td><td class="t-note"><code>description</code> is nullable, and the
+          live build renders <code>state.proposal!.description.toString()</code> — so a member is
+          currently shown the literal string <code>null</code>. Replaced by a <code>--sunken</code>
+          strip with a document glyph: <em>No detail was written for this one.</em></td></tr>
+        <tr><td>Empty · no discussion</td><td class="t-note"><code>states.html</code>'s
+          <code>.empty</code> panel with a <code>132 × 88</code> peak illustration — solid
+          <code>#1C2129</code> peaks for context, one dashed accent peak for the thing that isn't
+          there — and a real action: <code>Write the first comment</code>.</td></tr>
+        <tr><td>Error · didn't load</td><td class="t-note"><code>.state</code> panel with the
+          <code>52px</code> red tile, <code>role="alert"</code>, and a retry. Says what happened, that
+          <b>the verdict has not changed</b>, and one thing to do. Replaces
+          <code>UDialog().showInternal()</code>, which is the <code>OOPS!</code> modal.</td></tr>
+        <tr><td>Error · not found</td><td class="t-note">Same panel, neutral tile — a missing action is
+          a condition, not a fault. Withdrawn by its author, or a club the member has left.</td></tr>
+        <tr><td>Loading</td><td class="t-note"><code>--bone</code> skeleton at
+          <code>rgba(255,255,255,.055)</code> with one <code>1.5s</code> sheen, in the exact geometry
+          of the verdict bar and the two cards it replaces. Replaces the live
+          <code>grey-300 / grey-100</code> shimmer, which is a light-theme skeleton running on a dark
+          screen.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused, unchanged</h3>
+      <ul>
+        <li><b>Verdict bar</b> — <code>results-actions.html</code>, at its <code>--lg</code> detail
+          scale. Same four tones, same two hues, same seven words.</li>
+        <li><b>The hold hatch</b> — <code>veto.html</code> via the parent. Same
+          <code>5px</code>&nbsp;/&nbsp;<code>6px</code> rhythm, same
+          <code>rgba(155,226,34,.30)</code> ring, same <code>⊘</code>, still static.</li>
+        <li><b>Comment thread</b> — <code>comments.html</code>'s <code>.thread</code>,
+          <code>.cm</code>, <code>.sig</code>, club row, crest tile and <code>CLUB</code> badge.</li>
+        <li><b>Empty, error and skeleton panels</b> — <code>states.html</code>'s <code>.empty</code>,
+          <code>.state</code>, <code>.tile</code>, <code>.ill</code>, <code>.bone</code>.</li>
+        <li><b>Clocks, count readout, threshold bar, numbered steps, attribution row</b> —
+          <code>veto.html</code>.</li>
+        <li><b>Club crest plate</b> — the canonical <code>40px</code> fallback form from
+          <code>club-selection.html</code>.</li>
+        <li><b>Hero, section container, status pill, icon button, card shell, type chip</b> —
+          <code>merits.html</code> / <code>merit-detail.html</code> / <code>idea-card.html</code>.</li>
+        <li><b>Content</b> — the same action the parent's first Actions card shows, so the card and
+          its detail are the same object.</li>
+      </ul>
+    </div>
+
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The follow-through timeline</b> — six steps, five built from timestamps already on the
+          record. New composition, no new tokens.</li>
+        <li><b>The unrecorded mark</b> — a <code>1.6px</code> dashed <code>#9BE222</code> ring and a
+          dashed accent connector, for the one step no field can prove. Drawn under
+          <code>states.html</code>'s existing dashed-outline rule, deliberately not the hatch.</li>
+        <li><b>The <code>Proposed</code> tag</b> — a hairline <code>19px</code> chip, no hue, marking
+          on-screen every value that has no field behind it.</li>
+        <li><b>The provenance chain</b> — Idea → Vote → Result → Action, with the real counts and the
+          threshold marked. Nothing in the live build reads <code>parent_id</code>, so no chain
+          exists today.</li>
+        <li><b>The accountability sentence</b> — one plain line naming the number of members who
+          caused this. New copy.</li>
+        <li><b>Three proposed fields</b> — <code>owner</code>, <code>committed_by</code>,
+          <code>confirmed_at</code>. Everything on this screen tagged <code>Proposed</code> maps to
+          one of them.</li>
+        <li><b>Bottom action bar</b> — the live Action detail has no bottom chrome at all.</li>
+        <li><b>Discussion on an action</b> — the endpoint supports it; the live screen omits it.</li>
+        <li><b>Real 4-line clamp, and the null-description empty</b> — both are bug fixes as much as
+          design.</li>
+        <li><b><code>.screen</code> bottom padding at <code>128px</code></b> — a departure from the
+          contract's <code>110px</code>, to clear the pinned bar. <code>states.html</code> took the
+          same liberty at <code>176px</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li>
+      <h3>Can the club record that an action was carried out?</h3>
+      <p>This is the only question on the page that matters. Nothing in the app can express
+      follow-through: <code>MProposal</code> has no owner, no due date, no completion flag, no
+      evidence and no confirmation timestamp, and there is no endpoint to set any of them. The only
+      <code>valueProgress</code> in the repository sits on three dead mock classes
+      (<code>MAction</code>, <code>Result</code>, <code>Voting</code>) that have no
+      <code>fromJson</code> and are never fetched, hard-defaulted to <span class="flag">0.5</span>.
+      <code>task_id</code> is a scheduler handle, not a piece of work. So the product can currently
+      tell a member <em>what was decided</em> and never <em>what was done</em> — the accountability
+      loop it is sold on cannot be closed.</p>
+      <p>We have <b>not</b> invented a tracker. We have designed the honest minimum: a timeline of
+      the five steps the timestamps prove, and a sixth drawn as an unresolved dashed mark reading
+      <span class="flag">Carried out · Not confirmed</span>. Three fields close it —
+      <code>owner</code>, <code>committed_by</code> and <code>confirmed_at</code> — plus one write
+      endpoint for the club. Confirm those and we will draw the confirmed state; refuse them and the
+      dashed mark is the permanent truth of the screen, which is worth knowing before build.</p>
+    </li>
+    <li>
+      <h3>Who is accountable for an action — and can a member see it?</h3>
+      <p>We have shown <span class="flag">FC Barcelona · club media</span> against the crest plate.
+      There is no field for it. The <em>member</em> who raised the idea is on the record
+      (<code>author_name</code>, <code>author_avatar</code>) and appears in the byline, but the member
+      is not the person who carries it out — the club is. If accountability is going to be per
+      department, per named officer, or simply "the club", we need to know which, because it changes
+      whether <code>owner</code> is a string, an enum or a user reference.</p>
+    </li>
+    <li>
+      <h3><code>status</code> carries a verdict at one stage and an instruction at another. Split it?</h3>
+      <p>At the result stage <code>status</code> holds <code>approved</code> /
+      <code>rejected</code> / <code>vetoed</code> / <code>rule_outed</code>. At the action stage it
+      holds <code>let_push_it</code> (<em>Publish it!</em>) or <code>let_do_it</code> (<em>Let's do
+      it!</em>) — those are instructions, not verdicts. One field cannot be both, which means an
+      action's verdict is <b>not stored anywhere</b>: this screen has to infer <em>Approved</em> from
+      the fact that a proposal reached <code>stage: action</code> at all. We have drawn it that way —
+      verdict in the bar, instruction in its own panel — but the clean fix is a second field. And
+      nobody has told us the difference between <em>Publish it!</em> and <em>Let's do it!</em>; we
+      assumed <span class="flag">Publish it!</span> here because the parent's card did.</p>
+    </li>
+    <li>
+      <h3>There is no "against" count. Is 84% support really derivable?</h3>
+      <p>The record carries exactly two figures: <code>voted</code> and
+      <code>total_member_participants</code>. There is no field for votes against and no field for
+      abstentions, so <code>84%</code> can only mean <em>votes for, over the whole membership</em> —
+      it cannot mean <em>share of votes cast</em>. We have written it as
+      <span class="flag">1,079 of 1,284 members</span> so the denominator is explicit rather than
+      implied. If a member can vote against and that is counted, the field is missing; if the
+      threshold is a share of turnout rather than of membership, every percentage in the library is
+      wrong.</p>
+    </li>
+    <li>
+      <h3>Is the threshold 70%, and does it move by type?</h3>
+      <p>We show <span class="flag">70%</span>, marked on the bar rather than merely stated.
+      <code>Thresholds</code> in the club config carries four separate values — positions, on-field,
+      off-field and management decisions — plus a fifth for rejecting a veto. If they differ, the
+      figure and the mark both have to read from config per <code>type</code>, and inherited from
+      the parent: the same question is open on <code>results-actions.html</code>'s chart.</p>
+    </li>
+    <li>
+      <h3><code>parent_id</code> is an integer, but routing needs a <code>uuid</code>.</h3>
+      <p>The chain back to the originating idea is the point of the Provenance block, and
+      <code>parent_id</code> is already on every record — nothing in the live build reads it. But
+      navigation is by <code>uuid</code> (<code>GET /proposals/{uuid}/</code>), and
+      <code>parent_id</code> is an <code>int</code>, so <b>Open the idea cannot currently be wired</b>
+      without either a <code>parent_uuid</code> or an id-based lookup. Related: the counts on a record
+      are current-stage only, so the idea's <em>like</em> count is not retrievable from the action
+      payload. We have shown dates and authorship on the idea row rather than fabricate a like count.</p>
+    </li>
+    <li>
+      <h3>Does a ruled-out or vetoed action cost the member anything?</h3>
+      <p>We have followed the parent and the live string table: the deposit is forfeited <em>only</em>
+      when an idea lapses, and <code>proposalPage.free when proposal vetoed</code> says outright
+      "This will be free when the Proposal is Vetoed, Cancelled or Ruled Out". Every state that can
+      reach this screen therefore reads <span class="flag">Deposit already returned · 25 Credits</span>.
+      <b>But the taxonomy tooltip contradicts it:</b>
+      <code>CLString.listExplainTitleIDea[0]</code> tells members on-field decisions "may be Vetoed or
+      Ruled Out, <em>and deposit forfeited</em>, when it is not executable". One of those two strings
+      is wrong and members are reading both. The <code>25</code> itself remains invented — no pricing
+      exists in the repo.</p>
+    </li>
+    <li>
+      <h3>Two build bugs decide whether any of this is visible.</h3>
+      <p>Inherited from the parent and worth repeating because they land hardest here.
+      <code>func.dart::findStatusAction</code> matches <code>case "rule_outed&nbsp;"</code>
+      <b>with a trailing space</b> while the enum emits it without one, so every status that is not
+      <code>let_do_it</code> or <code>let_push_it</code> falls through to the default and renders as
+      <b>Ruled out, in the danger colour</b> — an approved action is currently shown to members as
+      rejected. <code>findTypeAction</code> has the same trailing space on
+      <code>case "on_field_decisions&nbsp;"</code>. Separately, <code>is_danger</code> is declared on
+      <code>MProposal</code> and in its constructor but <b>never parsed in
+      <code>fromJson</code></b>, so it is always null — if it was meant to flag anything on this
+      screen, it does not.</p>
+    </li>
+    <li>
+      <h3>Should the discussion live on the Action detail at all?</h3>
+      <p>We have put it there. The comments endpoint is keyed by proposal rather than by stage, so
+      the data already supports it, and an action going quiet is exactly what members will want to
+      argue about. The live screen shows no comments. If the thread should stay on the voting detail
+      only, say so — the section lifts out cleanly and the bottom bar loses its purpose with it.</p>
+    </li>
+    <li>
+      <h3>Two open library-wide decisions apply here.</h3>
+      <p><b>Control height.</b> The pinned bar's button is <span class="flag">52px</span>, following
+      <code>forms.html</code>; <code>auth.html</code> measured <code>64px</code> off the Figma
+      button component. <b>Tap targets.</b> Every <code>38px</code> and <code>28px</code> control on
+      this screen carries the contract's <code>::after</code> hit-area expansion to
+      <code>44px</code>, which is the pattern we recommend adopting library-wide rather than
+      inflating the sampled visual sizes.</p>
+    </li>
+  </ol>
+</section>

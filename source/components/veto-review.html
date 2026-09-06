@@ -1,0 +1,1608 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Veto · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; /* bordered section container */ --surface: #1C2129; /* cards, controls, tab bar */ --sunken: #13171E; /* inner panels, dark pills */ --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); /* hero */ --hero-a: #0D3617; --hero-b: #17481C; /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* ---- derived, not invented: the hold treatment ------------- every value below is either the accent #9BE222 or the canvas #13171E at an alpha. No new hue enters the palette. */ --hold-ring: rgba(155,226,34,.30); /* ring on a held object */ --hold-under: rgba(155,226,34,.05); /* wash beneath the bars */ --hold-bars: repeating-linear-gradient(135deg, rgba(155,226,34,.11) 0 5px, rgba(155,226,34,0) 5px 11px); /* acid bars on a dark plane */ --struck: repeating-linear-gradient(135deg, rgba(3,4,1,.62) 0 4px, rgba(3,4,1,0) 4px 9px); /* dark bars on an acid plate */ /* red, used only for the destructiveness of an *action* */ --red: #E2564A; --red-wash: rgba(226,86,74,.11); --red-ring: rgba(226,86,74,.30); /* photography extracted from the Figma exports */ --av-you:url(data:image/jpeg;base64,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); --av-c7:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAHAAAAQQDAQAAAAAAAAAAAAAABgEDBAcAAgUI/8QAOhAAAQMCBAMFBQYFBQAAAAAAAQACAwQRBRIhMQYiQRMjUWFxFTJCgZEHFBYlsdEkM0NSwVNzoeHx/8QAGAEAAwEBAAAAAAAAAAAAAAAAAAECAwT/xAAgEQEBAQACAwACAwAAAAAAAAAAAQIRIQMSMRNBIlFh/9oADAMBAAIRAxEAPwCoRskSjZIUGwbLEo2SIJiwAnZdXCsI+9s7eV2WIG3qp7oYoXEQMbE1u7iwklHKplzKDC5pMtRI5sUbTcZ9z6BTTURtdlJPrZRat8WjmSMlcd77/ooefrcj/lRZyfUEeHgOkDmkEXFkSwgdl0QPh1eYZml+rb6hHVM5kkLXglwdqCOuiiml4GHDiKjuA05wrgk/lFVBgQP4io/9wK3pP5ZWs+M/2D6+QMqnDqXWAvvqtZoy6AAGxy2KgY9VinxaFp2Ml1OIDKQEEuDmaDbUnYKaqPPAGiRKNkismDZbwxGaZsbd3Gy1GykUL2x1kbyL2Og8T0QBUymNKOziuImCzBmt8yuTiNWLOj5nPB6HlXXqZ3MYJhJcvFg21rjqT5J/BOEKrHpBPL3dMDq49fQKbeGszddQE5JJHaAn5J6OgqJPht6q0sT4SoMLpAaeIcu5O5QxUwtiILRa6xvk/pt+CTuhc4fVxa5L+iL+HKxhpGUcji2dgLsjm7joojHWUOqmdTYpR1UfvZspHiE5r26rPeJmcwc4ELcR0eod3g2VtyHuiVUuBi3EVHpYiRWw890VtPjn/ap+NKgx8QU1j7rhfy1RRmz0TXu0L23ItuP/ABBXHjnfiFoGwc0g/PVHAP8ABiRozgxjTxU6OPOo2SJRskVgo2W0LxHK15F7LUbJOqYFUdNJMxrjz5mgn0HQK1sOFPgOAQurZWx5mgn1IvYeKFsEwejl4QwyqZkjquzBa0O1mbpmuPHU/RG+JUJq6ZjAcpa3Q220XNrUrtxi5+gvG+NMIcx0AleSduQ6ISlxGKqcTG64PkpfFWFVQxhwiEk12ANDW25up0XYj4adQcGuqa+Mfe3OaQbat8lNmZOlfzt4oRfikMLiwtc4jwCyB0eJ4hSxgObaYXDh03/wotVTSuqr5iGA7NXXwCA+0IidA1xcCdbDKVc4nbDXtRjgljxDR2/1Oqtd57r6qqMF14hpObaTdWo4919VtPjmv1TPHTicekJvyPaN0cxhxwyNgA1YD4oE49H529wNuYXHiQf+0dxuIw2KR1rNiFtLJaPLzyNlhSt2SFUGDZIlGyQphbX2dMZiXDMczXk1GGGWncwi4LH87SPA6lWHDK2WlbISNRcqheBa+spuJqOjp53xwV0zIaiMHR7Sev7q4G1r6YiNx5jyvHnsuXc9dO3x698T/HOx6aKlm7VrAXDXzW/FlWz8LxtcWgyhhaAfK65dXjD6rH/Z0NO29yLujc7NpvohXiOSvhqHU8k4YC7Nk7Mt12upkra6nCM9oz69VMwezcQFhpldf0suF200MdiWyXOh1uuvw4502JSvvYRxW+pVScVzb1OBZg4txBS9Of8AZWkT3P1VW4RlGPUtnXGff6Kz83cBdE+OT9qb4+u3GZXAj4TZHMDsuF09mnSJpN9gbIH+0IBuKFxdr4DfdG9G8OwiB5O0IBtsp0cefhskKxuoShj3Gwa4/JWCDZIU4IJD8NvUqRHSMjcH1BzMHwt6/NPgnY4Kib+KMEc4huata658r2VpcTQOpD7RZfJm5z0YfE+Sp+Ug0Uc7H9m+GTlLdMpB0sjzhz7QG1Efs3GmgkjIXuHveqx8svPLp8GpxYyLFZ2kTRlgIdt18briY/M+trDM2qzX+G+yl8UNo8Oj+80EndSHVma4B8kFVGJvc64JUZzz3GmvJ69VPqajI3I3medPNFfD2GS0FEXzWE83M8X90W0Crw1bzI1+1je6sLBcdpsYiDW2bUtbmkjN9PMHqrueI57v2rs4XpjtNa3v/srLY69OD6qssOP51TnLl59vorJidemb6FXPjK/VS/aCA7Fha1yAD5ao3YfyyBjQDaJvXZBPHIbLjjGfFcHffVGsQDaBlhdwZp9UtHFHPZHC05WgXbfRNtlL7k313807Uxk0+cG4Dsn+UzG0ga7De36LVLG8zibJ4vDo7/E1RXucwlrRclOsaWHsyddMyIDbn2wt7HHUzZm+aZ7R8zTKL3afHZOTU+ZpeNR+mqazZIOzAHNrfrZKnGS1csjA17y621zeyYBJJulDCRokOh01SO3ll07Tzy08olhkdG9puHNNiE2GnZONj1I/tGqCF2CcZmGuhkxJjnhjhmlYNbenVXPguL0OM4U2qw+pZPFcglu7T4EbgrzY7SMgddF0cCx/EeHK1tVh0xYf6kbtWSDwcOv6jojgDviTv+Koo/CQX9CjSUfwjGhrXWYAdbeSrSn4hixziOlqGxdk98rQ9hN8pJ6HqFZZb2dEG2bmLLGwsFGjij6Vxkwws3IJcPkU5TQh9MB1zElRMKlOd0Z2Aup57pzi3S4sAtolFlh7KXtgQbAmyZpnGzpH63N1Km0ppTfplChyPDGBregskbRsndzsHRot63WuR1gSNPdGiykAMjg7bS/1XQEIOUkWDBconYQKkNhaGN1cdymo4vid6p+MCeR8xFwNGhbgAuudjbQeCQNRxguAPiSVs3lqXX6vykJCbP8AkQlc4CuB6FwcgGnaODP7SVvYBuq1gZ2rnPO10spsbIBygqHU2I007TYxzMd9HBXxM4GmDicvLcghefSbajpqr+Dm+z4XF3vxtdrr0UaOP//Z); --av-sm:url(data:image/jpeg;base64,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); --av-fp:url(data:image/jpeg;base64,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);}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+.mk .caption{margin:26px var(--gutter) 9px; font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);}
+.mk .caption:first-child{margin-top:4px}
+.mk .caption b{color:var(--muted);font-weight:700}
+.mk .frame{width:375px;max-width:100%;margin:0 auto; border:1px solid var(--line);border-radius:22px; background:var(--bg);overflow:hidden;}
+.mk .topbar{display:flex;align-items:center;gap:10px; height:52px;padding:0 12px;}
+.mk .topbar h2{flex:1;margin:0;text-align:center; font-size:15px;font-weight:600;letter-spacing:-.01em;}
+.mk .icon-btn{display:inline-flex;align-items:center;justify-content:center; width:36px;height:36px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease);}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn svg{width:17px;height:17px}
+.mk .label{margin:22px var(--gutter) 10px; font-size:18px;font-weight:600;letter-spacing:-.015em;}
+.mk .eyebrow{margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .card{margin:0 var(--gutter);padding:16px; border-radius:var(--r-card);background:var(--surface);}
+.mk .card p{margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .card p:last-child{margin-bottom:0}
+.mk .card p strong{color:var(--text);font-weight:600}
+.mk .avatar{border-radius:50%;flex:0 0 auto; background-color:#20262F;background-size:cover;background-position:center 22%;}
+.mk .tabular{font-variant-numeric:tabular-nums}
+.mk .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px; height:52px;padding:0 18px; border:0;border-radius:var(--r-pill); font:inherit;font-size:14.5px;font-weight:600;letter-spacing:-.005em; cursor:pointer;transition:background .18s var(--ease),transform .12s var(--ease);}
+.mk .btn svg{width:17px;height:17px;flex:0 0 auto}
+.mk .btn:active{transform:translateY(1px)}
+.mk .btn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .btn--acid:hover{background:#A8EC33}
+.mk .btn--flat{background:var(--surface);color:var(--text)}
+.mk .btn--flat:hover{background:#222833}
+.mk .btn--danger{background:var(--red);color:var(--acid-ink)}
+.mk .btn--danger:hover{background:#E86A5F}
+.mk .btn--danger:focus-visible{outline-color:var(--red)}
+.mk .actions{display:flex;gap:10px;margin:22px var(--gutter) 20px}
+.mk .actions .btn--flat{flex:0 0 41%}
+.mk .actions .btn--acid,.mk .actions .btn--danger{flex:1}
+.mk .held{background-color:var(--sunken); background-image:var(--hold-bars); border:1px solid var(--hold-ring);}
+.mk .held-flat{/* same bars, no ring, for inner strips */ background-color:var(--hold-under); background-image:var(--hold-bars);}
+.mk .holdbar{display:flex;align-items:center;gap:12px; margin:4px var(--gutter) 0;padding:13px 14px; border-radius:var(--r-panel);}
+.mk .holdbar__disc{display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto;border-radius:50%; background:var(--sunken);box-shadow:inset 0 0 0 1px var(--hold-ring); color:var(--acid);}
+.mk .holdbar__disc svg{width:21px;height:21px}
+.mk .holdbar__id{flex:1;min-width:0}
+.mk .holdbar__id b{display:block;font-size:11px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--acid);}
+.mk .holdbar__id span{display:block;margin-top:3px;font-size:11.5px;color:var(--muted)}
+.mk .holdbar__side{flex:0 0 auto;text-align:right;font-size:11.5px;color:var(--muted);}
+.mk .holdbar__side b{display:block;font-size:14px;font-weight:700;color:var(--text); font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.mk .clocks{display:flex;gap:10px;margin:12px var(--gutter) 0}
+.mk .clock{flex:1;min-width:0;padding:12px 13px 11px;border-radius:var(--r-panel); background:var(--sunken);border:1px solid transparent;}
+.mk .clock--held{background-color:var(--sunken);background-image:var(--hold-bars); border-color:var(--hold-ring);}
+.mk .clock__top{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.mk .clock__top svg{width:13px;height:13px;flex:0 0 auto;color:var(--dim)}
+.mk .clock--held .clock__top svg{color:var(--acid)}
+.mk .clock__top span{font-size:9.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase; color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .clock--held .clock__top span{color:var(--acid)}
+.mk .clock time{display:block;font-size:24px;font-weight:700;letter-spacing:-.03em; line-height:1;color:var(--text);font-variant-numeric:tabular-nums;}
+.mk .clock small{display:block;margin-top:5px;font-size:11px;color:var(--muted)}
+.mk .count{display:flex;align-items:flex-end;gap:12px;margin-bottom:14px}
+.mk .count__fig{display:flex;align-items:baseline;gap:6px;flex:1}
+.mk .count__fig b{font-size:38px;font-weight:800;letter-spacing:-.04em;line-height:.9; font-variant-numeric:tabular-nums;}
+.mk .count__fig span{font-size:12.5px;font-weight:600;color:var(--muted)}
+.mk .count__need{flex:0 0 auto;padding:5px 10px;border-radius:var(--r-pill); background:var(--sunken); font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase; color:var(--muted);font-variant-numeric:tabular-nums;}
+.mk .bar{position:relative;height:12px;border-radius:var(--r-pill); background:rgba(255,255,255,.08);overflow:hidden}
+.mk .bar__fill{position:absolute;inset:0 auto 0 0;border-radius:var(--r-pill);background:var(--acid)}
+.mk .bar--held .bar__fill::after{content:"";position:absolute;inset:0;background-image:var(--struck)}
+.mk .bar__mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text);border-radius:1px}
+.mk .bar-legend{display:flex;justify-content:space-between;margin-top:7px;font-size:10.5px; font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.mk .split{list-style:none;margin:16px 0 0;padding:0;border-top:1px solid var(--line-soft)}
+.mk .split li{display:flex;align-items:center;gap:10px;padding:11px 0; border-bottom:1px solid var(--line-soft)}
+.mk .split li:last-child{border-bottom:0}
+.mk .split__key{flex:1;min-width:0;font-size:13.5px;font-weight:600}
+.mk .split__pct{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.mk .split li:first-child .split__pct{color:var(--acid)}
+.mk .split__n{flex:0 0 66px;text-align:right;font-size:11.5px;color:var(--muted); font-variant-numeric:tabular-nums}
+.mk .voters{display:flex;align-items:center;gap:9px;margin-top:14px}
+.mk .stackav{display:flex;flex:0 0 auto}
+.mk .stackav > .avatar + .avatar{margin-left:-8px}
+.mk .stackav .avatar{width:24px;height:24px;box-shadow:0 0 0 1.5px var(--surface)}
+.mk .voters span{font-size:12px;color:var(--muted)}
+.mk .frozen{display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 12px; border-radius:10px;}
+.mk .frozen svg{width:15px;height:15px;flex:0 0 auto;color:var(--acid)}
+.mk .frozen p{margin:0;font-size:11.5px;line-height:1.45;color:var(--muted)}
+.mk .who{display:flex;align-items:center;gap:11px;margin-top:14px; padding-top:14px;border-top:1px solid var(--line-soft)}
+.mk .plate{display:inline-flex;align-items:center;justify-content:center; width:40px;height:40px;flex:0 0 auto; border-radius:11.2px;padding:5px; background:rgba(255,255,255,.94); box-shadow:inset 0 0 0 1px rgba(0,0,0,.13); color:var(--acid-ink); font-size:12px;font-weight:800;letter-spacing:-.03em;}
+.mk .who__id{flex:1;min-width:0}
+.mk .who__id b{display:block;font-size:13px;font-weight:600}
+.mk .who__id span{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+.mk .steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.mk .steps li{display:flex;gap:12px;padding:13px 0;border-top:1px solid var(--line-soft)}
+.mk .steps li:first-child{border-top:0;padding-top:0}
+.mk .steps li:last-child{padding-bottom:0}
+.mk .steps li::before{counter-increment:s;content:counter(s); display:flex;align-items:center;justify-content:center; width:23px;height:23px;flex:0 0 auto;border-radius:50%; background:var(--acid-wash);color:var(--acid); font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;}
+.mk .steps b{display:block;margin-bottom:4px;font-size:13.5px;font-weight:600}
+.mk .steps p{margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .frame--dlg{position:relative;min-height:812px;overflow:hidden}
+.mk .behind{position:absolute;inset:0;padding:0 0 4px;filter:blur(3px);opacity:.5; pointer-events:none;user-select:none}
+.mk .scrim{position:absolute;inset:0;z-index:2; display:flex;align-items:center;justify-content:center; padding:14px;overflow-y:auto;overscroll-behavior:contain; background:rgba(3,4,1,.72); -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);}
+.mk .scrim::-webkit-scrollbar{width:0}
+.mk .dlg{width:100%;margin:auto;padding:18px 18px 16px; border-radius:var(--r-card);background:var(--surface); border:1px solid var(--line); box-shadow:0 18px 50px rgba(0,0,0,.7);}
+.mk .dlg__disc{display:flex;align-items:center;justify-content:center; width:52px;height:52px;margin:0 auto 12px;border-radius:50%; background-color:var(--sunken);background-image:var(--hold-bars); box-shadow:inset 0 0 0 1px var(--hold-ring);color:var(--acid);}
+.mk .dlg__disc svg{width:26px;height:26px}
+.mk .dlg h3{margin:0 0 7px;text-align:center; font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.2;}
+.mk .dlg__dek{margin:0 0 14px;text-align:center;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .dlg__dek b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.mk .readback{margin:12px 0 0;border-radius:var(--r-panel);background:var(--sunken);padding:2px 13px}
+.mk .readback div{display:flex;gap:10px;align-items:baseline;padding:9px 0; border-top:1px solid var(--line-soft)}
+.mk .readback div:first-child{border-top:0}
+.mk .readback dt{flex:0 0 40%;margin:0;font-size:11px;font-weight:700;letter-spacing:.1em; text-transform:uppercase;color:var(--dim)}
+.mk .readback dd{flex:1;margin:0;font-size:12.5px;font-weight:600;text-align:right; font-variant-numeric:tabular-nums}
+.mk .reasonbox{margin-top:12px;padding:13px;border-radius:var(--r-panel)}
+.mk .reasonbox p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.mk .reasonbox__top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.mk .reasonbox__top span{flex:1;font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase; color:var(--acid);}
+.mk .txtbtn{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:11px;font-weight:600;cursor:pointer;}
+.mk .txtbtn svg{width:12px;height:12px}
+.mk .txtbtn:hover{background:#222833}
+.mk .reasonbox p{margin:0;font-size:12.5px;line-height:1.5;color:var(--text)}
+.mk .bullets{list-style:none;margin:12px 0 0;padding:0}
+.mk .bullets li{position:relative;padding:0 0 8px 15px;font-size:12px;line-height:1.4; color:var(--muted)}
+.mk .bullets li:last-child{padding-bottom:0}
+.mk .bullets li::before{content:"";position:absolute;left:2px;top:7px;width:4px;height:4px; border-radius:50%;background:var(--dim)}
+.mk .bullets b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.mk .warn{display:flex;gap:10px;margin-top:12px;padding:12px 13px;border-radius:var(--r-panel); background:var(--red-wash);box-shadow:inset 0 0 0 1px var(--red-ring);}
+.mk .warn svg{width:17px;height:17px;flex:0 0 auto;color:var(--red)}
+.mk .warn p{margin:0;font-size:12.5px;line-height:1.45;color:var(--text)}
+.mk .consent{display:flex;gap:11px;align-items:flex-start;margin:12px 0 2px;cursor:pointer}
+.mk .consent input{position:absolute;opacity:0;width:0;height:0}
+.mk .consent__box{display:flex;align-items:center;justify-content:center; width:22px;height:22px;flex:0 0 auto;margin-top:1px;border-radius:7px; background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line);color:transparent; transition:background .16s var(--ease),color .16s var(--ease);}
+.mk .consent__box svg{width:14px;height:14px}
+.mk .consent input:checked + .consent__box{background:var(--acid);color:var(--acid-ink); box-shadow:inset 0 0 0 1px var(--acid)}
+.mk .consent input:focus-visible + .consent__box{outline:2px solid var(--acid);outline-offset:2px}
+.mk .consent span{font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .dlg .actions{margin:14px 0 0}
+.mk .dlg .btn--flat{background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .dlg .btn--flat:hover{background:#1A1F27}
+.mk .behind .card{background:var(--surface)}
+.mk .rail{/* flex-start, not stretch: a vetoed card carries a reason and is legitimately taller than an approved one. Stretching leaves a dead void in the short cards. */ display:flex;gap:12px;align-items:flex-start;padding:0 var(--gutter) 6px;overflow-x:auto; scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none; -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}
+.mk .rail::-webkit-scrollbar{display:none}
+.mk .rescard{flex:0 0 auto;scroll-snap-align:start; width:268px;padding:16px;border-radius:var(--r-card);background:var(--surface); display:flex;flex-direction:column; box-shadow:inset 0 1px 0 var(--line);}
+.mk .rescard__by{display:flex;align-items:center;gap:9px;margin-bottom:13px}
+.mk .rescard__by .avatar{width:22px;height:22px}
+.mk .rescard__by span{font-size:12.5px;color:var(--muted);white-space:nowrap; overflow:hidden;text-overflow:ellipsis}
+.mk .rescard h3{margin:0 0 8px;font-size:17px;font-weight:600;line-height:1.2; letter-spacing:-.015em}
+.mk .rescard__body{margin:0;font-size:13px;line-height:1.35;color:var(--muted)}
+.mk .cardmeta{display:flex;align-items:center;justify-content:space-between;gap:8px; margin:14px 0 10px}
+.mk .cardclock{display:inline-flex;align-items:center;gap:6px}
+.mk .cardclock svg{width:14px;height:14px;flex:0 0 auto;color:var(--text)}
+.mk .cardclock time{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.mk .cardclock--held svg{color:var(--acid)}
+.mk .cardclock--over svg,.mk .cardclock--over time{color:var(--muted)}
+.mk .tagpill{display:inline-flex;align-items:center;gap:6px; font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase; white-space:nowrap;color:var(--muted);}
+.mk .tagpill::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.mk .tagpill--held{color:var(--acid)}
+.mk .gauge{display:flex;align-items:center;justify-content:space-between;gap:10px; padding:12px 14px;border-radius:var(--r-panel);}
+.mk .gauge__label{font-size:13.5px;font-weight:600;line-height:1.25}
+.mk .gauge__label small{display:block;margin-top:3px;font-size:11px;font-weight:500;color:var(--muted)}
+.mk .gauge__ring{position:relative;width:64px;height:64px;flex:0 0 auto}
+.mk .gauge__ring svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+.mk .gauge__track{fill:none;stroke:rgba(255,255,255,.10);stroke-width:7}
+.mk .gauge__dash{fill:none;stroke:var(--acid);stroke-width:7;stroke-linecap:butt}
+.mk .gauge__value{position:absolute;inset:0;display:flex;align-items:center;justify-content:center; font-size:14.5px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.mk .verdict{display:flex;align-items:center;gap:10px; padding:11px 13px;border-radius:var(--r-panel);}
+.mk .verdict__badge{display:inline-flex;align-items:center;justify-content:center; width:26px;height:26px;flex:0 0 auto;border-radius:50%;}
+.mk .verdict__badge svg{width:15px;height:15px}
+.mk .verdict b{flex:1;font-size:15px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;}
+.mk .verdict span{flex:0 0 auto;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums; opacity:.72}
+.mk .verdict--yes{background:var(--acid);color:var(--acid-ink)}
+.mk .verdict--yes .verdict__badge{background:rgba(11,14,6,.16);color:var(--acid-ink)}
+.mk .verdict--no{background:var(--red);color:var(--acid-ink)}
+.mk .verdict--no .verdict__badge{background:rgba(11,14,6,.16);color:var(--acid-ink)}
+.mk .verdict--held{background-color:var(--sunken);background-image:var(--hold-bars); box-shadow:inset 0 0 0 1px var(--hold-ring);color:var(--acid);}
+.mk .verdict--held .verdict__badge{background:rgba(155,226,34,.13);color:var(--acid)}
+.mk .verdict--held span{color:var(--muted);opacity:1}
+.mk .because{display:flex;gap:8px;margin-top:10px;padding:10px 11px;border-radius:10px; background:var(--sunken);}
+.mk .because svg{width:14px;height:14px;flex:0 0 auto;color:var(--acid);margin-top:1px}
+.mk .because p{margin:0;font-size:11.5px;line-height:1.45;color:var(--muted)}
+.mk .because p b{color:var(--text);font-weight:600}
+.mk .cardcta{display:inline-flex;align-items:center;justify-content:center;gap:8px; /* margin-top:auto pins the CTA to the card floor so a stretched rail stays level */ width:100%;height:46px;margin-top:auto; border:0;border-radius:var(--r-pill);background:var(--sunken);color:var(--text); font:inherit;font-size:13.5px;font-weight:600;cursor:pointer; transition:background .18s var(--ease);}
+.mk .cardcta svg{width:14px;height:14px}
+.mk .cardcta:hover{background:#1A1F27}
+.mk .cardcta--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .cardcta--acid:hover{background:#A8EC33}
+.mk .released{display:flex;align-items:center;gap:12px; margin:0 var(--gutter);padding:13px 14px;border-radius:var(--r-panel); background:var(--acid);color:var(--acid-ink);}
+.mk .released__badge{display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:rgba(11,14,6,.16)}
+.mk .released__badge svg{width:17px;height:17px}
+.mk .released div{flex:1;min-width:0}
+.mk .released b{display:block;font-size:12.5px;font-weight:800;letter-spacing:.1em; text-transform:uppercase}
+.mk .released span{display:block;margin-top:3px;font-size:11.5px;font-weight:500;opacity:.78; font-variant-numeric:tabular-nums}
+.mk .note{margin:14px var(--gutter) 0;font-size:11.5px;line-height:1.5;color:var(--muted)}
+.mk .note b{color:var(--text);font-weight:600}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Veto</h1>
+    <p class="dek">Veto is the club's power to stop a member decision it cannot legally or contractually
+carry out. These four frames cover the moment a member is told their proposal has been frozen, the
+full rationale behind it, the club-side confirmation that places it, and how a veto sits alongside
+approved and rejected in the results cards.</p>
+    <div class="meta">
+      <span><b>Component</b> veto</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 4</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">Voting<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Veto detail<span class="side__tag">02</span></a></li>
+      <li><a class="side__item" href="#scr-3">Review proposal<span class="side__tag">03</span></a></li>
+      <li><a class="side__item" href="#scr-4">Results<span class="side__tag">04</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><span class="side__item" aria-current="page">Veto<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">A veto is a hold, not a verdict</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">4 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>Voting</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Voting</h2>
+    <button class="icon-btn" type="button" aria-label="How the veto works">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.6M12 7.6h.01"/></svg>
+    </button>
+  </div>
+
+  <!-- the hold banner -->
+  <div class="holdbar held">
+    <span class="holdbar__disc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>
+    </span>
+    <span class="holdbar__id">
+      <b>Veto hold</b>
+      <span>Club Management · today, 14:02</span>
+    </span>
+    <span class="holdbar__side">
+      <b class="tabular">41:12</b>
+      held
+    </span>
+  </div>
+
+  <!-- the proposal -->
+  <div style="margin:20px var(--gutter) 0">
+    <p class="eyebrow">Your proposal · Voting stage</p>
+    <h1 style="margin:0;font-size:24px;font-weight:700;letter-spacing:-.025em;line-height:1.15">Cancel the Japan pre-season tour</h1>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p>Club Management has placed a veto on this proposal. Voting is paused with
+      <strong class="tabular">41:12</strong> still to run.</p>
+    <p><strong>Nothing has been decided.</strong> Every ballot already cast stays on the record
+      and the count is held exactly where it stood.</p>
+  </div>
+
+  <!-- two clocks: one stopped, one running -->
+  <div class="clocks">
+    <div class="clock clock--held">
+      <span class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10 9v6M14 9v6"/></svg>
+        <span>Voting · paused</span>
+      </span>
+      <time datetime="PT41M12S">41:12</time>
+      <small>Resumes here if lifted</small>
+    </div>
+    <div class="clock">
+      <span class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+        <span>Appeal window</span>
+      </span>
+      <time datetime="PT29M41S" data-countdown="1781">29:41</time>
+      <small>Counting down now</small>
+    </div>
+  </div>
+
+  <!-- reason -->
+  <h2 class="label">Reason for the veto</h2>
+  <div class="card">
+    <p>The tour is contracted with the tournament organiser until July 2027. Withdrawing this
+      summer triggers a <strong>&euro;4.2m penalty</strong> and puts the club in breach of the
+      broadcast agreement covering both Japan fixtures.</p>
+    <p>We cannot carry out this decision as voted. We will bring a shortened three-day tour to
+      the club as a new Idea within 48 hours.</p>
+    <div class="who">
+      <span class="plate" role="img" aria-label="Barcelona">BAR</span>
+      <span class="who__id">
+        <b>Club Management · Barcelona</b>
+        <span>Published to all 1,284 members at 14:02</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- what you can do -->
+  <h2 class="label">What you can do</h2>
+  <div class="card">
+    <ol class="steps">
+      <li><div>
+        <b>Accept the veto</b>
+        <p>The hold becomes final and the proposal is recorded as Vetoed. Your deposit is not charged.</p>
+      </div></li>
+      <li><div>
+        <b>Or appeal it</b>
+        <p>Post an <em>Idea to Reject the Veto</em> before the appeal window closes. It needs a
+          deposit of 25.0 Credits, refunded as soon as the Idea becomes
+          a Proposal.</p>
+      </div></li>
+      <li><div>
+        <b>Win the appeal, and the hold lifts</b>
+        <p>If that Proposal reaches 80% Support at the end of its Voting stage, the veto is
+          removed and this proposal continues with 41:12 remaining — as though it had never been
+          held.</p>
+      </div></li>
+    </ol>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn--flat" type="button">Accept veto</button>
+    <button class="btn btn--acid" type="button">Appeal the veto</button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Veto detail</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Veto detail</h2>
+    <button class="icon-btn" type="button" aria-label="Share">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M8 7.5 12 3.5l4 4M5 14v5.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V14"/></svg>
+    </button>
+  </div>
+
+  <div class="holdbar held">
+    <span class="holdbar__disc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>
+    </span>
+    <span class="holdbar__id">
+      <b>Veto hold · on appeal</b>
+      <span>Voting paused · 29:41 left to appeal</span>
+    </span>
+  </div>
+
+  <div style="margin:20px var(--gutter) 0">
+    <p class="eyebrow">Proposal · posted by you</p>
+    <h1 style="margin:0;font-size:24px;font-weight:700;letter-spacing:-.025em;line-height:1.15">Cancel the Japan pre-season tour</h1>
+  </div>
+
+  <!-- the vote that was overridden -->
+  <h2 class="label">Where the vote stood</h2>
+  <div class="card">
+    <div class="count">
+      <span class="count__fig"><b>75%</b><span>Support</span></span>
+      <span class="count__need">70% needed</span>
+    </div>
+
+    <div class="bar bar--held" role="img" aria-label="75 per cent support, held; 70 per cent needed to approve">
+      <span class="bar__fill" style="width:75%"></span>
+      <span class="bar__mark" style="left:70%"></span>
+    </div>
+    <div class="bar-legend"><span>Held at 14:02</span><span>Threshold 70%</span></div>
+
+    <ul class="split">
+      <li>
+        <span class="split__key">Cancel the tour</span>
+        <span class="split__pct">75%</span>
+        <span class="split__n">309 votes</span>
+      </li>
+      <li>
+        <span class="split__key">Keep the tour</span>
+        <span class="split__pct">25%</span>
+        <span class="split__n">103 votes</span>
+      </li>
+    </ul>
+
+    <div class="voters">
+      <span class="stackav">
+        <span class="avatar" style="background-image:var(--av-you)" role="img" aria-label="You"></span>
+        <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+        <span class="avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+        <span class="avatar" style="background-image:var(--av-fp)" role="img" aria-label="fan_pulse"></span>
+      </span>
+      <span>You and 411 other members voted</span>
+    </div>
+
+    <div class="frozen held-flat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10 9v6M14 9v6"/></svg>
+      <p>Counting stopped at 14:02. These figures are final as at that moment — no further votes
+        are being taken while the hold stands.</p>
+    </div>
+  </div>
+
+  <!-- full rationale -->
+  <h2 class="label">Club Management's rationale</h2>
+  <div class="card">
+    <p><strong>The commitment.</strong> The two Japan fixtures are contracted with the tournament
+      organiser until July 2027. The agreement was signed before this club joined SportsHeist and
+      is not a decision the club can reopen this season.</p>
+    <p><strong>The cost of withdrawing.</strong> Cancelling now triggers a &euro;4.2m penalty and
+      leaves the club in breach of the broadcast agreement that covers both matches. The penalty
+      would come out of the same budget as the January transfer allowance.</p>
+    <p><strong>What we are doing instead.</strong> We accept the club wants a shorter summer. We
+      will bring a three-day version of the tour, with one fixture instead of two, to the club as
+      a new Idea within 48 hours. If members prefer it, it can be in place for this summer.</p>
+    <div class="who">
+      <span class="plate" role="img" aria-label="Barcelona">BAR</span>
+      <span class="who__id">
+        <b>Club Management · Barcelona</b>
+        <span>Signed and published 30 Jul, 14:02</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- the trust copy -->
+  <h2 class="label">What this means for you</h2>
+  <div class="card">
+    <p><strong>Your vote still stands.</strong> The count is held, not cancelled. All 412 ballots
+      stay on the record. If the hold is lifted, voting restarts from exactly these figures with
+      41:12 on the clock.</p>
+    <p><strong>A veto is not a rejection.</strong> Club Management can hold a decision only where
+      carrying it out would break a contract, a competition rule or the law. It cannot hold one
+      because it disagrees with the outcome, and it has to publish its reason, signed, to every
+      member.</p>
+    <p><strong>You can put it back to the club.</strong> An Idea to Reject the Veto runs through
+      the normal Ideas and Voting stages. Reach 80% Support and the veto is removed — the club
+      overrules its own management, and this proposal carries on where it left off.</p>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn--flat" type="button">Accept veto</button>
+    <button class="btn btn--acid" type="button">Appeal the veto</button>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-3">
+        <figcaption class="scr__cap"><span class="scr__n">03</span>Review proposal</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <!-- the screen underneath, blurred and scrimmed -->
+  <div class="behind" aria-hidden="true">
+    <div class="topbar">
+      <span class="icon-btn"></span>
+      <h2>Review proposal</h2>
+      <span class="icon-btn"></span>
+    </div>
+    <div style="margin:8px var(--gutter) 0">
+      <p class="eyebrow">Proposal · dylan_n</p>
+      <h1 style="margin:0;font-size:24px;font-weight:700;letter-spacing:-.025em;line-height:1.15">Cancel the Japan pre-season tour</h1>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="count">
+        <span class="count__fig"><b>75%</b><span>Support</span></span>
+        <span class="count__need">70% needed</span>
+      </div>
+      <div class="bar"><span class="bar__fill" style="width:75%"></span><span class="bar__mark" style="left:70%"></span></div>
+      <div class="bar-legend"><span>41:12 left</span><span>Threshold 70%</span></div>
+    </div>
+    <div class="actions">
+      <span class="btn btn--flat">Place veto</span>
+      <span class="btn btn--acid">Let it run</span>
+    </div>
+  </div>
+
+  <div class="scrim">
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="veto-dlg-t">
+      <span class="dlg__disc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>
+      </span>
+      <h3 id="veto-dlg-t">Veto this proposal?</h3>
+      <p class="dlg__dek">Confirming stops a live count and puts
+        <b>Cancel the Japan pre-season tour</b> on hold.</p>
+
+      <dl class="readback">
+        <div><dt>Stage</dt><dd>Voting · 41:12 unspent</dd></div>
+        <div><dt>Support</dt><dd>75% of 412 votes</dd></div>
+        <div><dt>Appeal</dt><dd>30:00</dd></div>
+      </dl>
+
+      <div class="reasonbox held">
+        <div class="reasonbox__top">
+          <span>Reason members will see</span>
+          <button class="txtbtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="M14.5 5.5l4 4"/></svg>
+            Edit
+          </button>
+        </div>
+        <p>The tour is contracted with the tournament organiser until July 2027. Withdrawing this
+          summer triggers a &euro;4.2m penalty and puts the club in breach of the broadcast
+          agreement covering both Japan fixtures.</p>
+      </div>
+
+      <ul class="bullets">
+        <li>All <b>412</b> members who voted are told their decision is on hold, not lost.</li>
+        <li><b>dylan_n</b> can appeal for <b>30:00</b>; <b>80% Support</b> removes your veto.</li>
+        <li>Your reason is published to all <b>1,284</b> members, signed.</li>
+      </ul>
+
+      <div class="warn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10v4M12 17h.01"/></svg>
+        <p>This overturns a live member decision. Only an appeal can lift it.</p>
+      </div>
+
+      <label class="consent">
+        <input type="checkbox" checked>
+        <span class="consent__box" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4.5 4.5L19 7"/></svg>
+        </span>
+        <span>I confirm this cannot be carried out as voted, and that the reason is accurate.</span>
+      </label>
+
+      <div class="actions">
+        <button class="btn btn--flat" type="button">Cancel</button>
+        <button class="btn btn--danger" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>
+          Place veto
+        </button>
+      </div>
+    </div>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-4">
+        <figcaption class="scr__cap"><span class="scr__n">04</span>Results</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Results</h2>
+    <button class="icon-btn" type="button" aria-label="Filter results">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+    </button>
+  </div>
+
+  <h2 class="label" style="margin-top:6px">Decided &amp; held</h2>
+
+  <div class="rail">
+
+    <!-- 1 · in flight, held -->
+    <article class="rescard">
+      <div class="rescard__by">
+        <span class="avatar" style="background-image:var(--av-you)" role="img" aria-label="You"></span>
+        <span>by you · dylan_n</span>
+      </div>
+      <h3>Cancel the Japan pre-season tour</h3>
+      <p class="rescard__body">Withdraw from both Japan fixtures and play the pre-season at home.</p>
+
+      <div class="cardmeta">
+        <span class="cardclock cardclock--held">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10 9v6M14 9v6"/></svg>
+          <time datetime="PT41M12S">41:12</time>
+        </span>
+        <span class="tagpill tagpill--held">Veto hold</span>
+      </div>
+
+      <div class="gauge held">
+        <span class="gauge__label">75% Support<small>held, 70% needed</small></span>
+        <span class="gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="gauge__dash" cx="32" cy="32" r="27" pathLength="100"
+              stroke-dasharray="3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 0 25"/>
+          </svg>
+          <span class="gauge__value">75%</span>
+        </span>
+      </div>
+
+      <button class="cardcta cardcta--acid" type="button">
+        Read the veto
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </button>
+    </article>
+
+    <!-- 2 · resolved: vetoed -->
+    <article class="rescard">
+      <div class="rescard__by">
+        <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+        <span>by capitan_7</span>
+      </div>
+      <h3>Move the academy to Sant Joan</h3>
+      <p class="rescard__body">Relocate the youth setup to a new site for the 2028 season.</p>
+
+      <div class="cardmeta">
+        <span class="cardclock cardclock--over">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+          <time datetime="PT0S">00:00</time>
+        </span>
+        <span class="tagpill">Position</span>
+      </div>
+
+      <div class="verdict verdict--no">
+        <span class="verdict__badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>
+        </span>
+        <b>Vetoed</b>
+        <span>81% Support</span>
+      </div>
+
+      <div class="because">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 2.5v6c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9v-6L12 3Z"/></svg>
+        <p><b>Club Management:</b> planning consent for the Sant Joan site was refused in June.
+          Not appealed.</p>
+      </div>
+
+      <button class="cardcta" type="button">
+        View details
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </button>
+    </article>
+
+    <!-- 3 · resolved: approved -->
+    <article class="rescard">
+      <div class="rescard__by">
+        <span class="avatar" style="background-image:var(--av-fp)" role="img" aria-label="fan_pulse"></span>
+        <span>by fan_pulse</span>
+      </div>
+      <h3>Safe standing pilot</h3>
+      <p class="rescard__body">Trial licensed safe-standing rails in one north-stand block.</p>
+
+      <div class="cardmeta">
+        <span class="cardclock cardclock--over">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+          <time datetime="PT0S">00:00</time>
+        </span>
+        <span class="tagpill">Position</span>
+      </div>
+
+      <div class="verdict verdict--yes">
+        <span class="verdict__badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4.5 4.5L19 7"/></svg>
+        </span>
+        <b>Approved</b>
+        <span>82% Support</span>
+      </div>
+
+      <button class="cardcta" type="button">
+        View details
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </button>
+    </article>
+
+    <!-- 4 · resolved: rejected -->
+    <article class="rescard">
+      <div class="rescard__by">
+        <span class="avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+        <span>by scout_mode</span>
+      </div>
+      <h3>Rename the North Stand</h3>
+      <p class="rescard__body">Sell the naming rights to the north stand for three seasons.</p>
+
+      <div class="cardmeta">
+        <span class="cardclock cardclock--over">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+          <time datetime="PT0S">00:00</time>
+        </span>
+        <span class="tagpill">Decision</span>
+      </div>
+
+      <div class="verdict verdict--no">
+        <span class="verdict__badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </span>
+        <b>Rejected</b>
+        <span>41% Support</span>
+      </div>
+
+      <button class="cardcta" type="button">
+        View details
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </button>
+    </article>
+  </div>
+
+  <!-- the fifth state: the hold is lifted -->
+  <h2 class="label">Hold released</h2>
+  <div class="released">
+    <span class="released__badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4.5 4.5L19 7"/></svg>
+    </span>
+    <div>
+      <b>Veto overruled</b>
+      <span>84% Support on the appeal · voting resumed 15:11 with 41:12 remaining</span>
+    </div>
+  </div>
+  <p class="note"><b>The rule the five states share.</b> A <b>filled</b> state plate means the club
+    has decided — acid for approved, red for rejected. <b>Bars struck through the accent</b> mean
+    the decision is held: nothing has been settled. A <b>dashed</b> stroke is a figure that has
+    stopped moving. Buttons are not states, so a call to action stays solid acid throughout.</p>
+
+</div></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>A veto is a hold, not a verdict</h2>
+
+  <p>This is the most delicate screen in the product. A member has posted a proposal, the club has
+    voted on it, and management is now stopping it. If that reads as <em>rejected</em>, the member
+    concludes the vote was theatre. If it reads as <em>broken</em>, they conclude the app failed.
+    It has to read as <strong>held</strong> — paused, reversible, and with a reason attached.</p>
+
+  <p>The palette gives us one accent, <code>#9BE222</code>, and one semantic red,
+    <code>#E2564A</code>. Neither is right: acid means the club decided yes, red means the club
+    decided no. So the hold is not given a third colour at all. It is given a different
+    <strong>kind of mark</strong>: the accent, struck through with 45° bars. A filled plate means a
+    decision was reached; bars across the accent mean it was interrupted. The stroke equivalent is
+    a dashed arc — the gauge on a held card is drawn in dashes rather than a solid sweep, so a
+    figure that has stopped moving looks like one.</p>
+
+  <p>Two things this replaces. The live build renders veto in amber <code>#DFAA11</code>, which is
+    also its celebration colour — the same hue says "you won" and "you have been overruled". And it
+    renders the frozen countdown in grey, which reads as disabled: the clock looks broken rather
+    than paused. Here the held clock keeps <strong>full-contrast white digits</strong> on a hatched
+    panel with a pause glyph, and it sits beside a second, plainly-drawn clock — the appeal window —
+    which is the one thing still running. Held is loud. Dead is quiet. The live build has it the
+    wrong way round.</p>
+
+  <p>The member-facing copy does three things in order: it says nothing has been decided, it names
+    who holds it and why in their own words, and it shows the way out. The words
+    <code>Veto</code>, <code>Idea to Reject the Veto</code>, <code>Participation Deposit</code> and
+    <code>Support</code> are the live build's own vocabulary and are kept.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. Four labelled
+        <code>375&nbsp;px</code> frames inside one <code>.screen</code> at
+        <code>max-width:420px</code>.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>All frames</td><td>Top bar</td><td class="t-note"><code>52&nbsp;px</code>, back
+          chevron and trailing control as <code>36&nbsp;px</code> <code>--surface</code> circles,
+          centred title <code>15/600/-.01em</code>. No banded header, no scrim — the veto screens
+          carry no tab bar in the live build either.</td></tr>
+
+        <tr><td>1 · Hold notice</td><td>Hold banner</td><td class="t-note">Full-gutter strip,
+          <code>--r-panel 12px</code>, <code>13/14&nbsp;px</code> padding. Fill
+          <code>#13171E</code> under bars of <code>rgba(155,226,34,.11)</code> at
+          <code>135deg</code>, <code>5&nbsp;px</code> on / <code>6&nbsp;px</code> off; ring
+          <code>1px rgba(155,226,34,.30)</code>. Leading <code>38&nbsp;px</code> disc holding the
+          <code>&oslash;</code> veto glyph in <code>#9BE222</code>. Label
+          <code>11/700/.14em</code> uppercase accent; sub-line <code>11.5&nbsp;px</code>
+          <code>--muted</code>; right-hand figure <code>14/700</code> tabular over the word
+          <code>held</code>.</td></tr>
+        <tr><td>↳</td><td>Proposal lockup</td><td class="t-note"><code>.eyebrow</code>
+          <code>10.5/700/.14em</code> <code>--dim</code> over the title at
+          <code>24/700/-.025em</code>. Sentence case, not the hero's uppercase — this is a member's
+          words, not a stage name.</td></tr>
+        <tr><td>↳</td><td>Notice card</td><td class="t-note"><code>--surface</code>,
+          <code>--r-card 16px</code>, <code>16&nbsp;px</code> padding, body
+          <code>13/400</code> at <code>1.5</code> in <code>--muted</code> with the figure and the
+          phrase <em>Nothing has been decided</em> lifted to <code>#FFFFFF</code>
+          <code>600</code>.</td></tr>
+        <tr><td>↳</td><td>Two clocks</td><td class="t-note">Equal pair, <code>10&nbsp;px</code>
+          gap. <b>Held:</b> hatched panel, accent pause glyph, micro-label
+          <code>VOTING · PAUSED</code> in accent, digits <code>24/700/-.03em</code> tabular
+          <strong>white</strong>. <b>Running:</b> plain <code>--sunken</code>, <code>--dim</code>
+          clock glyph and label, same white digits, live countdown. The only marked panel is the
+          one that has stopped.</td></tr>
+        <tr><td>↳</td><td>Reason card</td><td class="t-note">Section label
+          <code>18/600/-.015em</code> <em>Reason for the veto</em>, then the management text and a
+          signature row built on the canonical club crest plate at
+          <code>40&nbsp;px</code>: <code>rgba(255,255,255,.94)</code> fill,
+          <code>inset 0 0 0 1px rgba(0,0,0,.13)</code>, radius <code>11.2px</code>
+          (<code>40 × .28</code>), <code>5&nbsp;px</code> padding. No Barcelona artwork exists in
+          <code>_assets</code>, so it renders the spec'd fallback — the club code
+          <code>BAR</code> at <code>12/800/-.03em</code> (<code>40 × .30</code>) in
+          <code>--acid-ink</code>. Name <code>13/600</code>, publication line
+          <code>11.5&nbsp;px</code> <code>--muted</code>.</td></tr>
+        <tr><td>↳</td><td>Steps</td><td class="t-note">Three numbered rows separated by
+          <code>1px --line-soft</code>. Counter disc <code>23&nbsp;px</code>,
+          <code>--acid-wash</code> fill, accent numeral. Heading <code>13.5/600</code>, body
+          <code>12.5/400</code>.</td></tr>
+        <tr><td>↳</td><td>Action pair</td><td class="t-note"><code>52&nbsp;px</code>,
+          <code>--r-pill</code>. Secondary <em>Accept veto</em> <code>--surface</code> at
+          <code>41%</code> width; primary <em>Appeal the veto</em> filled <code>#9BE222</code> with
+          <code>--acid-ink #0B0E06</code>. A button is an action, not a state, so it stays solid
+          acid.</td></tr>
+
+        <tr><td>2 · Veto detail</td><td>Support readout</td><td class="t-note">Figure
+          <code>38/800/-.04em</code> tabular, <code>70% needed</code> pill in
+          <code>--sunken</code> at <code>10.5/700/.09em</code>. Bar <code>12&nbsp;px</code>
+          <code>--r-pill</code>: track <code>rgba(255,255,255,.08)</code>, fill
+          <code>#9BE222</code> to <code>75%</code> <strong>struck through with
+          <code>rgba(3,4,1,.62)</code> bars</strong> at <code>135deg</code>,
+          <code>4&nbsp;px</code> on / <code>5&nbsp;px</code> off. Threshold tick
+          <code>2&nbsp;px</code> white at <code>70%</code>.</td></tr>
+        <tr><td>↳</td><td>Split rows</td><td class="t-note">Two rows, <code>11&nbsp;px</code>
+          vertical padding, <code>1px --line-soft</code>. Option <code>13.5/600</code>, share
+          <code>14/700</code> tabular (winning share in accent), vote count
+          <code>11.5&nbsp;px</code> <code>--muted</code> &mdash; a vote count is a value, so it
+          cannot sit in <code>--dim</code> at <code>2.56:1</code>.</td></tr>
+        <tr><td>↳</td><td>Voter stack</td><td class="t-note">Four <code>24&nbsp;px</code> portraits
+          at <code>-8px</code> overlap with a <code>1.5px --surface</code> ring, plus
+          <code>12&nbsp;px</code> <code>--muted</code> caption.</td></tr>
+        <tr><td>↳</td><td>Frozen strip</td><td class="t-note">Inner hatched strip — bars over
+          <code>rgba(155,226,34,.05)</code>, no ring, radius <code>10&nbsp;px</code> — carrying the
+          pause glyph and the sentence that fixes the figures in time.</td></tr>
+        <tr><td>↳</td><td>Rationale</td><td class="t-note">Three paragraphs, each opening with a
+          white <code>600</code> lead-in (<em>The commitment</em>, <em>The cost of
+          withdrawing</em>, <em>What we are doing instead</em>), closed by the same signature
+          row.</td></tr>
+        <tr><td>↳</td><td>Trust card</td><td class="t-note">Three paragraphs, deliberately
+          <strong>not</strong> hatched: this is reassurance, not a hold marker, so it must not read
+          as part of the warning.</td></tr>
+
+        <tr><td>3 · Confirm</td><td>Backdrop</td><td class="t-note">The club-side review screen at
+          <code>blur(3px)</code> and <code>opacity:.5</code>, under a
+          <code>rgba(3,4,1,.72)</code> scrim with a further <code>backdrop-filter:blur(2px)</code>.
+          Frame set to <code>min-height:812px</code> so the dialog centres the way it will on
+          device.</td></tr>
+        <tr><td>↳</td><td>Dialog card</td><td class="t-note"><code>--surface</code>,
+          <code>--r-card 16px</code>, <code>1px --line</code>,
+          <code>18/18/16&nbsp;px</code> padding, <code>14&nbsp;px</code> inset from the frame,
+          <code>0 18px 50px rgba(0,0,0,.7)</code>. Measured height
+          <code>756&nbsp;px</code> — it fits <code>812</code> without scrolling.</td></tr>
+        <tr><td>↳</td><td>Status disc</td><td class="t-note"><code>52&nbsp;px</code> hatched circle,
+          <code>1px rgba(155,226,34,.30)</code>, accent <code>&oslash;</code> glyph at
+          <code>26&nbsp;px</code>. The dialog announces a hold, so the disc is hatched, not
+          red.</td></tr>
+        <tr><td>↳</td><td>Title &amp; restatement</td><td class="t-note">
+          <code>20/700/-.02em</code> centred, then a <code>12.5&nbsp;px</code> deck naming the
+          proposal in white. Three-row read-back in <code>--sunken</code>: keys
+          <code>11/700/.1em</code> <code>--dim</code>, values <code>12.5/600</code> tabular,
+          right-aligned.</td></tr>
+        <tr><td>↳</td><td>Reason preview</td><td class="t-note">Hatched panel holding the exact text
+          members will see, clamped to three lines with an <code>Edit</code> pill. The veto cannot
+          be placed without a published reason, so the reason is inside the confirmation, not
+          behind it.</td></tr>
+        <tr><td>↳</td><td>Consequences</td><td class="t-note">Three bullets at
+          <code>12/400</code>, <code>4&nbsp;px</code> <code>--dim</code> dots, figures in white
+          <code>600</code>. The last one — <em>your reason is published to all 1,284 members,
+          signed</em> — is the accountability line and is deliberately last.</td></tr>
+        <tr><td>↳</td><td>Warning strip</td><td class="t-note">The only red surface in the flow:
+          <code>rgba(226,86,74,.11)</code> fill, <code>1px rgba(226,86,74,.30)</code> ring,
+          <code>#E2564A</code> triangle glyph, white body. Red is attached to the
+          <em>destructiveness of the act</em>, never to the veto state itself.</td></tr>
+        <tr><td>↳</td><td>Consent &amp; actions</td><td class="t-note"><code>22&nbsp;px</code>
+          <code>7px</code>-radius checkbox, checked state <code>#9BE222</code> with
+          <code>--acid-ink</code> tick; the confirm button is disabled until it is ticked. Pair:
+          <em>Cancel</em> on <code>--sunken</code> with a <code>1px --line</code> ring (plain
+          <code>--surface</code> is invisible on a <code>--surface</code> card), and
+          <em>Place veto</em> filled <code>#E2564A</code> with <code>--acid-ink</code>
+          text.</td></tr>
+
+        <tr><td>4 · Card family</td><td>Held card</td><td class="t-note"><code>268&nbsp;px</code>
+          idea-card shell. Accent pause glyph on a white <code>41:12</code>,
+          <code>VETO HOLD</code> tag in accent, hatched gauge panel, and a
+          <strong>dashed</strong> ring: <code>r27</code>, <code>7&nbsp;px</code> accent stroke,
+          <code>pathLength="100"</code> with fifteen <code>3&nbsp;2</code> pairs then
+          <code>0&nbsp;25</code> — an exact dashed <code>75%</code> sweep. CTA
+          <em>Read the veto</em>.</td></tr>
+        <tr><td>↳</td><td>Verdict bars</td><td class="t-note">All <code>--r-panel</code>,
+          <code>11/13&nbsp;px</code> padding, <code>26&nbsp;px</code> badge, label
+          <code>15/800/.02em</code> uppercase, share right-aligned. <code>APPROVED</code> filled
+          <code>#9BE222</code>; <code>REJECTED</code> filled <code>#E2564A</code>; both take
+          <code>--acid-ink #0B0E06</code>. <code>VETOED</code> is hatched with a
+          <code>rgba(155,226,34,.30)</code> ring and accent label.</td></tr>
+        <tr><td>↳</td><td>Reason line</td><td class="t-note"><code>--sunken</code> strip on the
+          vetoed card only, shield glyph plus <code>11.5&nbsp;px</code> summary. A vetoed card
+          always carries its reason; an approved one has nothing to explain, which is why the rail
+          uses <code>align-items:flex-start</code> and lets the vetoed card be
+          taller.</td></tr>
+        <tr><td>↳</td><td>Released banner</td><td class="t-note">Solid <code>#9BE222</code> plate,
+          <code>30&nbsp;px</code> tick badge, <code>VETO OVERRULED</code> at
+          <code>12.5/800/.1em</code>. The bars resolve into a plate — the visual proof that a hold
+          is a temporary state.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Held (veto placed)</td><td class="t-note">Accent bars at <code>135deg</code> over
+          <code>--sunken</code>, <code>1px rgba(155,226,34,.30)</code> ring, accent
+          <code>&oslash;</code> glyph, accent label. Nothing filled, nothing greyed.</td></tr>
+        <tr><td>Clock held</td><td class="t-note">Hatched panel, accent pause glyph, digits stay
+          <code>#FFFFFF</code> at full weight. Explicitly not <code>--dim</code>.</td></tr>
+        <tr><td>Clock running</td><td class="t-note">Plain <code>--sunken</code>,
+          <code>--dim</code> glyph and label, white digits, live <code>MM:SS</code>
+          countdown.</td></tr>
+        <tr><td>Clock finished</td><td class="t-note"><code>00:00</code> with glyph and digits both
+          in <code>--muted</code> — on a resolved card the clock genuinely is over, so it goes quiet,
+          but it stays a readable value at <code>~5:1</code> rather than dropping to
+          <code>--dim</code>.</td></tr>
+        <tr><td>Figure held</td><td class="t-note">Linear: acid fill struck with
+          <code>rgba(3,4,1,.62)</code> bars. Circular: acid stroke drawn as dashes rather than a
+          solid sweep. Both read at a glance as "real number, no longer moving".</td></tr>
+        <tr><td>Approved</td><td class="t-note">Filled <code>#9BE222</code> plate, tick badge,
+          <code>--acid-ink</code> label.</td></tr>
+        <tr><td>Rejected</td><td class="t-note">Filled <code>#E2564A</code> plate, cross badge,
+          <code>--acid-ink</code> label. Same construction as approved — a decision either way is
+          a filled plate.</td></tr>
+        <tr><td>Vetoed (resolved)</td><td class="t-note">Hatched plate, <code>&oslash;</code> badge,
+          accent label, plus the reason strip. Stays in the hold family: the club blocked it, the
+          members did not reject it.</td></tr>
+        <tr><td>Hold released</td><td class="t-note">Bars resolve to a solid <code>#9BE222</code>
+          plate, tick badge, <code>VETO OVERRULED</code>, resume time and remaining clock.</td></tr>
+        <tr><td>Confirm, not consented</td><td class="t-note"><code>Place veto</code> disabled at
+          <code>opacity:.45</code> with <code>not-allowed</code> until the consent box is
+          ticked.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions suppressed. The hatch is
+          <strong>static by design</strong> — an animated barber-pole would read as "in progress",
+          which is the opposite of held.</td></tr>
+        <tr><td>Contrast floor</td><td class="t-note">Audited against the contract's table.
+          <code>--dim</code> survives only on tracked uppercase micro-labels
+          (<code>.caption</code>, <code>.eyebrow</code>, the read-back keys, the running-clock label
+          and the bullet dots). No value and no body copy sits in it. Both filled plates take
+          <code>--acid-ink</code>, never white.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Token block</b> — copied verbatim from <code>merits.html</code>; no value
+          changed.</li>
+        <li><b>Card shell</b> — <code>268&nbsp;px</code> / <code>16&nbsp;px</code> padding /
+          <code>--r-card</code> / <code>inset 0 1px 0</code> hairline, byline row, title, body,
+          meta row and gauge panel, all from <code>idea-card.html</code>.</li>
+        <li><b>Ring gauge</b> — <code>r27</code> in a <code>64</code> box at
+          <code>7&nbsp;px</code> stroke, rotated <code>-90deg</code>, from
+          <code>idea-card.html</code>.</li>
+        <li><b>Countdown glyph and readout</b> — the stopwatch icon and
+          <code>13.5/600</code> tabular time from <code>idea-card.html</code>.</li>
+        <li><b>Section label, eyebrow, icon button, row rules</b> — <code>18/600/-.015em</code>,
+          <code>10.5/700/.14em</code>, <code>--surface</code> circle, <code>1px
+          --line-soft</code>, all from <code>merits.html</code>.</li>
+        <li><b>Portraits</b> — four of the eighteen from <code>_assets/avatars.css</code>, inlined
+          as data URIs.</li>
+        <li><b>Vocabulary and behaviour</b> — <code>VETO HOLD</code>, <code>Idea to Reject the
+          Veto</code>, <code>Participation Deposit</code>, <code>MIN LEFT</code>, the accept /
+          appeal pair, and the deposit-refund rule, from
+          <code>lib/pages/veto/veto_hold.dart</code>, <code>confirm_page.dart</code> and
+          <code>en.json → vetoPage.*</code>.</li>
+        <li><b>The <code>&oslash;</code> verdict glyph</b> — the vetoed badge on
+          <code>WR-20</code>.</li>
+        <li><b>Club crest plate</b> — the canonical plate settled in
+          <code>club-selection.html</code>, at the <code>40&nbsp;px</code> size, in its
+          code fallback form.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The hold treatment</b> — accent bars at <code>135deg</code>,
+          <code>rgba(155,226,34,.11)</code>, <code>5&nbsp;px</code> on /
+          <code>6&nbsp;px</code> off, over <code>--sunken</code> with a
+          <code>rgba(155,226,34,.30)</code> ring. Derived entirely from <code>#9BE222</code>; no
+          new hue enters the palette. This replaces amber <code>#DFAA11</code>, which the live
+          build also uses to celebrate.</li>
+        <li><b>The struck fill</b> — <code>rgba(3,4,1,.62)</code> bars over an acid progress fill,
+          so a held figure is legible as held on a bright plate as well as a dark one.</li>
+        <li><b>The dashed arc</b> — <code>pathLength="100"</code> with an enumerated dash list
+          giving an exact <code>75%</code> dashed sweep. The stroke equivalent of the
+          hatch.</li>
+        <li><b>Held clock ≠ disabled clock</b> — full-contrast white digits on a hatched panel with
+          an accent pause glyph, paired with a plainly-drawn live appeal clock. The live build
+          greys the frozen clock, which reads as broken.</li>
+        <li><b>The category rule</b> — filled plate = decided, hatched plane = held, dashed stroke =
+          stopped. Applied to five states with no exceptions.</li>
+        <li><b>Red reserved for the act</b> — <code>#E2564A</code> appears only on the club-side
+          confirm (the warning strip and <em>Place veto</em>) and on <code>REJECTED</code>. A veto
+          state is never red, because members did not reject the proposal.</li>
+        <li><b>Two-clock layout</b> — stage clock and appeal window side by side. Not in the export;
+          the live build shows only one.</li>
+        <li><b>Reason inside the confirmation</b> — the club cannot place a veto without reading
+          back the exact wording members will see, and the consequence list ends by telling them it
+          will be published under their name.</li>
+        <li><b>Signature row</b> — crest plate, <em>Club Management · Barcelona</em>, publication
+          time. The export carries no attribution on a veto at all, which is the single biggest gap
+          in the current flow: an unsigned veto is unanswerable.</li>
+        <li><b>Hold-released banner</b> — the <code>VETO OVERRULED</code> state implied by the
+          <code>reject_veto_success</code> notification but never designed.</li>
+        <li><b>All member-facing copy</b> — every sentence in the notice, the rationale and the
+          <em>What this means for you</em> card is written for this proposal. The live build has no
+          equivalent.</li>
+        <li><b>Red hover tint</b> — <code>#E86A5F</code> on <em>Place veto</em>, derived from
+          <code>#E2564A</code> exactly as <code>#A8EC33</code> is derived from <code>#9BE222</code>
+          in <code>merits.html</code> and <code>idea-card.html</code>.</li>
+        <li><b>Frame chrome</b> — the <code>52&nbsp;px</code> top bar, and the
+          <code>375&nbsp;px</code> labelled frames, which are documentation only.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Is the bar to overturn a veto 80% Support?</h3>
+      <p><code>targetPercentageRejectVeto</code> is server configuration, so the real number is not
+        in the checkout. We have used <span class="flag">80%</span> throughout, quoted in the notice,
+        the steps, the trust copy and the confirm dialog. It appears in member-facing copy in four
+        places, so it needs to be right before build.</p></li>
+
+    <li><h3>How long is the appeal window?</h3>
+      <p>Also server config — <code>ideaStageAppealVeto</code> and
+        <code>votingStageAppealVeto</code>. We have shown <span class="flag">30:00</span>, counting
+        down live, beside a stage clock frozen at <span class="flag">41:12</span>. If the real
+        window is measured in hours rather than minutes the two-clock pairing still works, but the
+        <code>MM:SS</code> format and the <code>24&nbsp;px</code> digit size will
+        change.</p></li>
+
+    <li><h3>Should a veto be signed by a named person?</h3>
+      <p>We attribute it to <span class="flag">Club Management · Barcelona</span>, matching the live
+        strings. Our view is that a named officer would make the power far more accountable and the
+        signature row is already built to take a portrait instead of a crest. This is a governance
+        decision, not a design one.</p></li>
+
+    <li><h3>Do we keep the phrase "Idea to Reject the Veto"?</h3>
+      <p>It is the live build's term and the mechanic's real name, so we keep it in body copy. But
+        as a button label it is opaque, so the primary action reads
+        <span class="flag">Appeal the veto</span>. Confirm you are happy with the two coexisting —
+        one as the product noun, one as the verb.</p></li>
+
+    <li><h3>Is the Participation Deposit really not charged on a veto?</h3>
+      <p><code>en.json</code> says <em>"This will be free when the Proposal is Vetoed, Cancelled or
+        Ruled Out"</em>, so step 1 tells the member their deposit is
+        <span class="flag">not charged</span> if they accept. If that is wrong it is the single most
+        damaging sentence on the screen.</p></li>
+
+    <li><h3>Can a veto ever be placed on a completed vote?</h3>
+      <p>We have built the mid-stage case the code describes: the clock pauses, the count holds, and
+        both resume on release. We have written the copy to say <em>where the vote stood</em> rather
+        than <em>the result</em>, which is accurate for a paused count. If management can also veto
+        a <em>published</em> result, that is a different screen and different copy, and we would
+        need to design it.</p></li>
+
+    <li><h3>Is the hatch reserved for veto alone?</h3>
+      <p>We would like to lock it to <em>held</em> and nothing else — not loading, not disabled, not
+        pending, not scheduled. Its force comes from meaning exactly one thing. If Alerts or Actions
+        need a "paused" state, they should use this same treatment; if they need "waiting", they
+        should not.</p></li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  /* the appeal window is the one clock that is still running */
+  function pad(n){return String(n).padStart(2,'0');}
+  var clocks = Array.prototype.slice.call(document.querySelectorAll('[data-countdown]'))
+    .map(function(el){return {el:el,left:parseInt(el.dataset.countdown,10)||0};});
+
+  if (clocks.some(function(c){return c.left>0;})){
+    setInterval(function(){
+      clocks.forEach(function(c){
+        if (c.left<=0) return;
+        c.left -= 1;
+        var m = Math.floor(c.left/60), s = c.left%60;
+        c.el.textContent = pad(m)+':'+pad(s);
+        c.el.setAttribute('datetime','PT'+m+'M'+s+'S');
+      });
+    },1000);
+  }
+
+  /* the club-side confirm is gated on the consent box */
+  var box = document.querySelector('.consent input');
+  var go  = document.querySelector('.btn--danger');
+  if (box && go){
+    var sync = function(){
+      go.disabled = !box.checked;
+      go.style.opacity = box.checked ? '' : '.45';
+      go.style.cursor  = box.checked ? '' : 'not-allowed';
+    };
+    box.addEventListener('change', sync);
+    sync();
+  }
+})();
+</script>

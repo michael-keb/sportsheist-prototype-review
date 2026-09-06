@@ -1,0 +1,1030 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Idea card · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* surfaces */ --sh-bg: #030401; /* screen canvas */ --sh-surface: #1C2129; /* card */ --sh-sunken: #13171E; /* inner panel · dark pill · controls */ --sh-hairline: rgba(255,255,255,.06); /* accent */ --sh-accent: #9BE222; /* acid green */ --sh-accent-ink: #0B0E06; /* text/icon on accent */ --sh-accent-dim: #689524; --sh-accent-track: #2E3F1F; /* text */ --sh-text: #FFFFFF; --sh-text-muted: #99A0AE; --sh-text-dim: #5B606B; /* misc */ --sh-ring-track: #3D424B; /* geometry */ --sh-card-w: 268px; --sh-card-pad: 16px; --sh-r-card: 16px; --sh-r-panel: 12px; --sh-r-pill: 999px; /* motion */ --sh-ease: cubic-bezier(.16,1,.3,1); --av-c7: url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAHAAAAQQDAQAAAAAAAAAAAAAABgEDBAcAAgUI/8QAOhAAAQMCBAMFBQYFBQAAAAAAAQACAwQRBRIhMQYiQRMjUWFxFTJCgZEHFBYlsdEkM0NSwVNzoeHx/8QAGAEAAwEBAAAAAAAAAAAAAAAAAAECAwT/xAAgEQEBAQACAwACAwAAAAAAAAAAAQIRIQMSMRNBIlFh/9oADAMBAAIRAxEAPwCoRskSjZIUGwbLEo2SIJiwAnZdXCsI+9s7eV2WIG3qp7oYoXEQMbE1u7iwklHKplzKDC5pMtRI5sUbTcZ9z6BTTURtdlJPrZRat8WjmSMlcd77/ooefrcj/lRZyfUEeHgOkDmkEXFkSwgdl0QPh1eYZml+rb6hHVM5kkLXglwdqCOuiiml4GHDiKjuA05wrgk/lFVBgQP4io/9wK3pP5ZWs+M/2D6+QMqnDqXWAvvqtZoy6AAGxy2KgY9VinxaFp2Ml1OIDKQEEuDmaDbUnYKaqPPAGiRKNkismDZbwxGaZsbd3Gy1GykUL2x1kbyL2Og8T0QBUymNKOziuImCzBmt8yuTiNWLOj5nPB6HlXXqZ3MYJhJcvFg21rjqT5J/BOEKrHpBPL3dMDq49fQKbeGszddQE5JJHaAn5J6OgqJPht6q0sT4SoMLpAaeIcu5O5QxUwtiILRa6xvk/pt+CTuhc4fVxa5L+iL+HKxhpGUcji2dgLsjm7joojHWUOqmdTYpR1UfvZspHiE5r26rPeJmcwc4ELcR0eod3g2VtyHuiVUuBi3EVHpYiRWw890VtPjn/ap+NKgx8QU1j7rhfy1RRmz0TXu0L23ItuP/ABBXHjnfiFoGwc0g/PVHAP8ABiRozgxjTxU6OPOo2SJRskVgo2W0LxHK15F7LUbJOqYFUdNJMxrjz5mgn0HQK1sOFPgOAQurZWx5mgn1IvYeKFsEwejl4QwyqZkjquzBa0O1mbpmuPHU/RG+JUJq6ZjAcpa3Q220XNrUrtxi5+gvG+NMIcx0AleSduQ6ISlxGKqcTG64PkpfFWFVQxhwiEk12ANDW25up0XYj4adQcGuqa+Mfe3OaQbat8lNmZOlfzt4oRfikMLiwtc4jwCyB0eJ4hSxgObaYXDh03/wotVTSuqr5iGA7NXXwCA+0IidA1xcCdbDKVc4nbDXtRjgljxDR2/1Oqtd57r6qqMF14hpObaTdWo4919VtPjmv1TPHTicekJvyPaN0cxhxwyNgA1YD4oE49H529wNuYXHiQf+0dxuIw2KR1rNiFtLJaPLzyNlhSt2SFUGDZIlGyQphbX2dMZiXDMczXk1GGGWncwi4LH87SPA6lWHDK2WlbISNRcqheBa+spuJqOjp53xwV0zIaiMHR7Sev7q4G1r6YiNx5jyvHnsuXc9dO3x698T/HOx6aKlm7VrAXDXzW/FlWz8LxtcWgyhhaAfK65dXjD6rH/Z0NO29yLujc7NpvohXiOSvhqHU8k4YC7Nk7Mt12upkra6nCM9oz69VMwezcQFhpldf0suF200MdiWyXOh1uuvw4502JSvvYRxW+pVScVzb1OBZg4txBS9Of8AZWkT3P1VW4RlGPUtnXGff6Kz83cBdE+OT9qb4+u3GZXAj4TZHMDsuF09mnSJpN9gbIH+0IBuKFxdr4DfdG9G8OwiB5O0IBtsp0cefhskKxuoShj3Gwa4/JWCDZIU4IJD8NvUqRHSMjcH1BzMHwt6/NPgnY4Kib+KMEc4huata658r2VpcTQOpD7RZfJm5z0YfE+Sp+Ug0Uc7H9m+GTlLdMpB0sjzhz7QG1Efs3GmgkjIXuHveqx8svPLp8GpxYyLFZ2kTRlgIdt18briY/M+trDM2qzX+G+yl8UNo8Oj+80EndSHVma4B8kFVGJvc64JUZzz3GmvJ69VPqajI3I3medPNFfD2GS0FEXzWE83M8X90W0Crw1bzI1+1je6sLBcdpsYiDW2bUtbmkjN9PMHqrueI57v2rs4XpjtNa3v/srLY69OD6qssOP51TnLl59vorJidemb6FXPjK/VS/aCA7Fha1yAD5ao3YfyyBjQDaJvXZBPHIbLjjGfFcHffVGsQDaBlhdwZp9UtHFHPZHC05WgXbfRNtlL7k313807Uxk0+cG4Dsn+UzG0ga7De36LVLG8zibJ4vDo7/E1RXucwlrRclOsaWHsyddMyIDbn2wt7HHUzZm+aZ7R8zTKL3afHZOTU+ZpeNR+mqazZIOzAHNrfrZKnGS1csjA17y621zeyYBJJulDCRokOh01SO3ll07Tzy08olhkdG9puHNNiE2GnZONj1I/tGqCF2CcZmGuhkxJjnhjhmlYNbenVXPguL0OM4U2qw+pZPFcglu7T4EbgrzY7SMgddF0cCx/EeHK1tVh0xYf6kbtWSDwcOv6jojgDviTv+Koo/CQX9CjSUfwjGhrXWYAdbeSrSn4hixziOlqGxdk98rQ9hN8pJ6HqFZZb2dEG2bmLLGwsFGjij6Vxkwws3IJcPkU5TQh9MB1zElRMKlOd0Z2Aup57pzi3S4sAtolFlh7KXtgQbAmyZpnGzpH63N1Km0ppTfplChyPDGBregskbRsndzsHRot63WuR1gSNPdGiykAMjg7bS/1XQEIOUkWDBconYQKkNhaGN1cdymo4vid6p+MCeR8xFwNGhbgAuudjbQeCQNRxguAPiSVs3lqXX6vykJCbP8AkQlc4CuB6FwcgGnaODP7SVvYBuq1gZ2rnPO10spsbIBygqHU2I007TYxzMd9HBXxM4GmDicvLcghefSbajpqr+Dm+z4XF3vxtdrr0UaOP//Z); --av-fp: url(data:image/jpeg;base64,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); --av-sm: url(data:image/jpeg;base64,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); --av-tt: url(data:image/jpeg;base64,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); --sh-font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk{margin:0; background:var(--sh-bg); color:var(--sh-text); font-family:var(--sh-font); font-size:14px; line-height:1.4; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+.mk .sh-stage{max-width:420px;margin:0 auto;padding:28px 0 56px}
+.mk .sh-section-head{display:flex;align-items:center;gap:8px; padding:0 16px 14px;}
+.mk .sh-section-title{flex:1;margin:0; font-size:19px;font-weight:700;letter-spacing:-.01em;color:var(--sh-text);}
+.mk .sh-iconbtn{display:inline-flex;align-items:center;justify-content:center; width:34px;height:34px;flex:0 0 auto; border:0;border-radius:var(--sh-r-pill); background:var(--sh-sunken);color:var(--sh-text-muted); cursor:pointer;transition:background .18s var(--sh-ease);}
+.mk .sh-iconbtn:hover{background:#1A1F27}
+.mk .sh-iconbtn--accent{background:var(--sh-accent);color:var(--sh-accent-ink)}
+.mk .sh-iconbtn--accent:hover{background:#A8EC33}
+.mk .sh-textbtn{display:inline-flex;align-items:center;gap:5px; height:34px;padding:0 13px; border:0;border-radius:var(--sh-r-pill); background:var(--sh-sunken);color:var(--sh-text); font:inherit;font-size:12.5px;font-weight:500; cursor:pointer;transition:background .18s var(--sh-ease);}
+.mk .sh-textbtn:hover{background:#1A1F27}
+.mk .frame{width:375px;max-width:100%;margin:0 auto; border:1px solid var(--sh-line);border-radius:22px; background:var(--sh-bg);overflow:hidden;}
+.mk .frame + .frame{margin-top:26px}
+.mk .sh-rail{display:flex;gap:12px; padding:0 16px 6px; scroll-padding-left:16px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none;-ms-overflow-style:none; -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}
+.mk .sh-rail::-webkit-scrollbar{display:none}
+.mk .sh-idea-card{flex:0 0 auto; scroll-snap-align:start; width:var(--sh-card-w); padding:var(--sh-card-pad); border-radius:var(--sh-r-card); background:var(--sh-surface); display:flex;flex-direction:column; box-shadow:inset 0 1px 0 var(--sh-hairline);}
+.mk .sh-idea-card__author{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.mk .sh-avatars{display:flex;flex:0 0 auto}
+.mk .sh-avatars > .sh-avatar + .sh-avatar{margin-left:-9px}
+.mk .sh-avatar{width:22px;height:22px;border-radius:50%; border:1.5px solid var(--sh-surface); background-color:#20262F;background-size:cover;background-position:center 22%;}
+.mk .sh-idea-card__byline{min-width:0; font-size:12.5px;color:var(--sh-text-muted); white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .sh-idea-card__title{margin:0 0 8px; font-size:17px;font-weight:600;line-height:1.2;letter-spacing:-.015em; color:var(--sh-text);}
+.mk .sh-idea-card__body{margin:0 0 7px;font-size:13px;line-height:1.35;color:var(--sh-text-muted)}
+.mk .sh-idea-card__body:last-of-type{margin-bottom:0}
+.mk .sh-idea-card__meta{display:flex;align-items:center;justify-content:space-between;gap:8px; margin:14px 0 10px;}
+.mk .sh-timer{display:inline-flex;align-items:center;gap:6px;color:var(--sh-text)}
+.mk .sh-timer svg{width:14px;height:14px;flex:0 0 auto;color:var(--sh-text)}
+.mk .sh-timer time{font-size:13.5px;font-weight:600;letter-spacing:.01em; font-variant-numeric:tabular-nums;}
+.mk .sh-tag{display:inline-flex;align-items:center;gap:6px; font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase; color:var(--sh-accent);white-space:nowrap;}
+.mk .sh-tag::before{content:"";width:5px;height:5px;border-radius:50%; background:currentColor;flex:0 0 auto;}
+.mk .sh-gauge{display:flex;align-items:center;justify-content:space-between;gap:10px; padding:12px 14px; border-radius:var(--sh-r-panel); background:var(--sh-sunken);}
+.mk .sh-gauge__label{font-size:13.5px;font-weight:600;line-height:1.25;color:var(--sh-text)}
+.mk .sh-gauge__ring{position:relative;width:64px;height:64px;flex:0 0 auto}
+.mk .sh-gauge__ring svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+.mk .sh-gauge__track{fill:none;stroke:var(--sh-ring-track);stroke-width:7}
+.mk .sh-gauge__fill{fill:none;stroke:var(--sh-accent);stroke-width:7;stroke-linecap:round; stroke-dasharray:var(--c); stroke-dashoffset:var(--c); transition:stroke-dashoffset 1.1s var(--sh-ease);}
+.mk .sh-idea-card.is-drawn .sh-gauge__fill{stroke-dashoffset:calc(var(--c) * (1 - var(--pct)));}
+.mk .sh-gauge__value{position:absolute;inset:0; display:flex;align-items:center;justify-content:center; font-size:14.5px;font-weight:600;letter-spacing:-.01em; font-variant-numeric:tabular-nums;pointer-events:none;}
+.mk .sh-like{display:inline-flex;align-items:center;justify-content:center;gap:9px; width:100%;height:52px;margin-top:10px; border:0;border-radius:var(--sh-r-pill); background:var(--sh-accent);color:var(--sh-accent-ink); font:inherit;font-size:15px;font-weight:600;letter-spacing:-.005em; cursor:pointer; transition:background .18s var(--sh-ease), transform .12s var(--sh-ease);}
+.mk .sh-like svg{width:19px;height:19px;flex:0 0 auto}
+.mk .sh-like:hover{background:#A8EC33}
+.mk .sh-like:active{transform:translateY(1px)}
+.mk .sh-like:focus-visible{outline:2px solid var(--sh-accent);outline-offset:3px}
+.mk .sh-like[aria-pressed="true"]{background:var(--sh-sunken);color:var(--sh-accent);}
+.mk .sh-like[aria-pressed="true"]:hover{background:#1A1F27}
+.mk .sh-like__icon--outline{display:block}
+.mk .sh-like__icon--solid{display:none}
+.mk .sh-like[aria-pressed="true"] .sh-like__icon--outline{display:none}
+.mk .sh-like[aria-pressed="true"] .sh-like__icon--solid{display:block}
+.mk .sh-idea-card--empty{align-items:center;justify-content:center;text-align:center; min-height:250px;gap:16px;}
+.mk .sh-idea-card--empty p{margin:0;font-size:13.5px;color:var(--sh-text-muted)}
+.mk .sh-idea-card--empty svg{width:52px;height:52px;color:var(--sh-accent);opacity:.9}
+@media (prefers-reduced-motion: reduce){
+  .mk .sh-gauge__fill{transition:none}
+  .mk .sh-like{transition:none}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Idea card</h1>
+    <p class="dek">The card a member sees for every idea in the War Room. It carries who proposed it,
+what it is, how long is left, and how close it is to the support it needs to become a Proposal —
+then gives the member the one action that moves it forward.</p>
+    <div class="meta">
+      <span><b>Component</b> idea-card</span>
+      <span><b>Figma</b> In Figma</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 2</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">Ideas rail<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Empty state<span class="side__tag">02</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><span class="side__item" aria-current="page">Idea card<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">The most-repeated component in the product</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">2 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>Ideas rail</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <!-- ===== context: section header ===== -->
+  <div class="sh-section-head">
+    <h1 class="sh-section-title">Ideas</h1>
+
+    <button class="sh-iconbtn sh-iconbtn--accent" type="button" aria-label="New idea">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" width="17" height="17">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+    </button>
+
+    <button class="sh-iconbtn" type="button" aria-label="Filter ideas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" width="17" height="17">
+        <path d="M4 7h16M6.5 12h11M10 17h4"/>
+      </svg>
+    </button>
+
+    <button class="sh-textbtn" type="button">
+      View all
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13">
+        <path d="M7 17 17 7M9 7h8v8"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ===== the component ===== -->
+  <div class="sh-rail">
+
+    <!-- ---- card 1 · unliked, 50% ---- -->
+    <article class="sh-idea-card" data-pct="50">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-tt)" role="img" aria-label="taythaytu"></span>
+        </span>
+        <span class="sh-idea-card__byline">by taythaytu</span>
+      </div>
+
+      <h2 class="sh-idea-card__title">First-Team Manager</h2>
+      <p class="sh-idea-card__body">Members pick the next first-team manager from the club’s official shortlist.</p>
+      <p class="sh-idea-card__body">The hire only counts if this vote clears the 80% yes bar.</p>
+
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT1H9M12S" data-countdown="4152">01:09:12</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+
+      <div class="sh-gauge">
+        <span class="sh-gauge__label">50% of<br>required likes</span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill"  cx="32" cy="32" r="27" style="--c:169.6;--pct:.5"/>
+          </svg>
+          <span class="sh-gauge__value">50%</span>
+        </span>
+      </div>
+
+      <button class="sh-like" type="button" aria-pressed="false">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">Like</span>
+      </button>
+    </article>
+
+    <!-- ---- card 2 · liked, 75% ---- -->
+    <article class="sh-idea-card" data-pct="75">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+          <span class="sh-avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+        </span>
+        <span class="sh-idea-card__byline">by capitan_7 &amp; scout_mode</span>
+      </div>
+
+      <h2 class="sh-idea-card__title">Girona Loan Window</h2>
+      <p class="sh-idea-card__body">Lease four academy graduates to Girona for consistent first-team.</p>
+      <p class="sh-idea-card__body">Recall windows stay open for January and emergencies.</p>
+
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT0S" data-countdown="0">00:00:00</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+
+      <div class="sh-gauge">
+        <span class="sh-gauge__label">75% of<br>required likes</span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill"  cx="32" cy="32" r="27" style="--c:169.6;--pct:.75"/>
+          </svg>
+          <span class="sh-gauge__value">75%</span>
+        </span>
+      </div>
+
+      <button class="sh-like" type="button" aria-pressed="true">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">Liked</span>
+      </button>
+    </article>
+
+    <!-- ---- card 3 · position variant ---- -->
+    <article class="sh-idea-card" data-pct="32">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-fp)" role="img" aria-label="fan_pulse"></span>
+        </span>
+        <span class="sh-idea-card__byline">by fan_pulse</span>
+      </div>
+
+      <h2 class="sh-idea-card__title">Safe standing pilot</h2>
+      <p class="sh-idea-card__body">Trial licensed safe-standing rails in one north-stand block next season.</p>
+      <p class="sh-idea-card__body">Safety and stadium teams already signed off the rollout plan.</p>
+
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT33M12S" data-countdown="1992">00:33:12</time>
+        </span>
+        <span class="sh-tag">Position</span>
+      </div>
+
+      <div class="sh-gauge">
+        <span class="sh-gauge__label">32% of<br>required likes</span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill"  cx="32" cy="32" r="27" style="--c:169.6;--pct:.32"/>
+          </svg>
+          <span class="sh-gauge__value">32%</span>
+        </span>
+      </div>
+
+      <button class="sh-like" type="button" aria-pressed="false">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">Like</span>
+      </button>
+    </article>
+  </div>
+
+  <div style="height:28px" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Empty state</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="sh-section-head">
+    <h1 class="sh-section-title">Ideas</h1>
+
+    <button class="sh-iconbtn sh-iconbtn--accent" type="button" aria-label="New idea">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" width="17" height="17">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+    </button>
+
+    <button class="sh-iconbtn" type="button" aria-label="Filter ideas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" width="17" height="17">
+        <path d="M4 7h16M6.5 12h11M10 17h4"/>
+      </svg>
+    </button>
+
+    <button class="sh-textbtn" type="button">
+      View all
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13">
+        <path d="M7 17 17 7M9 7h8v8"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="sh-rail">
+    <article class="sh-idea-card sh-idea-card--empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 2h10M7 22h10M7 2v3.5a5 5 0 0 0 2.6 4.4L11 11l-1.4.9A5 5 0 0 0 7 16.5V22M17 2v3.5a5 5 0 0 1-2.6 4.4L13 11l1.4.9a5 5 0 0 1 2.6 4.4V22"/>
+      </svg>
+      <p>Waiting for Ideas</p>
+    </article>
+  </div>
+
+  <div style="height:28px" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The most-repeated component in the product</h2>
+  <p>
+    Ideas are the entry point to everything the War Room does. A member posts one, other members
+    like it, and if it clears its like threshold before the clock runs out it becomes a Proposal
+    and goes to a vote. This card is how that whole mechanic is expressed, and it appears in a
+    horizontal rail on the War Room home, in the Ideas list, and again inside search results.
+  </p>
+  <p>
+    Because it recurs so often, its geometry sets the standard for every other card in the
+    system — the voting card, the result card and the action card are all the same shell with the
+    middle panel swapped. Every value on it was sampled from the Figma export rather than
+    approximated: the card measures <code>268&nbsp;px</code> wide with <code>16&nbsp;px</code>
+    padding at <code>R16</code>, and the panel and pill inside it are <code>R12</code> and fully
+    rounded respectively.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <p>Two screens, each on its own phone above: <b>01 Ideas rail</b> — the section header and the
+    carousel, with the card in three readings side by side — and <b>02 Empty rail</b>, the same screen
+    with no open ideas. The empty screen repeats the section header, so it stands on its own.</p>
+  <div class="tablewrap">
+    <table>
+      <caption>Grouped by screen and region. Order matches the reading order within each screen. Values
+        as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Rail</td><td>Section header</td>
+          <td class="t-note">Label <code>Ideas</code> at 19/700, then a <code>34&nbsp;px</code>
+            accent circle carrying <code>+</code>, a dark circular filter button, and a
+            <code>View all ↗</code> pill on <code>#13171E</code>.</td>
+        </tr>
+        <tr>
+          <td>Rail</td><td>Carousel</td>
+          <td class="t-note">Horizontal scroll with <code>scroll-snap-type:x mandatory</code>,
+            <code>12&nbsp;px</code> between cards and a <code>16&nbsp;px</code> gutter, so the next
+            card peeks. Scrollbar hidden.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Shell</td>
+          <td class="t-note"><code>268&nbsp;px</code> × content height, <code>16&nbsp;px</code>
+            padding, <code>R16</code>, fill <code>#1C2129</code>, with a 1&nbsp;px inset highlight
+            at white 6% along the top edge.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Author row</td>
+          <td class="t-note">One or two <code>22&nbsp;px</code> portraits, overlapped by
+            <code>9&nbsp;px</code> and ringed 1.5&nbsp;px in the card fill so they read as a stack,
+            then <code>by capitan_7 &amp; scout_mode</code> at 12.5&nbsp;px in
+            <code>#99A0AE</code>, truncating with an ellipsis.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Title</td>
+          <td class="t-note">17/600, white, tracking <code>-.015em</code>, line-height 1.2.
+            Sentence case, not caps.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Body</td>
+          <td class="t-note">Up to two paragraphs at 13/400 in <code>#99A0AE</code>,
+            line-height 1.35, <code>7&nbsp;px</code> apart.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Meta row</td>
+          <td class="t-note">Left: a 14&nbsp;px stopwatch glyph and a live countdown at 13.5/600
+            in <code>tabular-nums</code> so the digits don't jitter as it ticks. Right: the type
+            tag — <code>DECISION</code> or <code>POSITION</code> — at 11/700, tracking
+            <code>.09em</code>, uppercase, accent, with a 5&nbsp;px leading dot.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Gauge panel</td>
+          <td class="t-note"><code>R12</code> panel on <code>#13171E</code>, <code>12/14&nbsp;px</code>
+            padding. Left: <code>75% of required likes</code> at 13.5/600 white on two lines.
+            Right: a <code>64&nbsp;px</code> ring, 7&nbsp;px stroke, track
+            <code>#3D424B</code>, fill accent with round caps, drawn clockwise from twelve
+            o'clock, with the percentage centred at 14.5/600.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Action</td>
+          <td class="t-note">Full-width pill, <code>52&nbsp;px</code> tall. Unliked: accent fill
+            with a black outline thumb glyph and the label <code>Like</code>. Liked: fill drops to
+            <code>#13171E</code>, glyph switches to a filled thumb, label becomes
+            <code>Liked</code>, both in accent.</td>
+        </tr>
+        <tr>
+          <td>Screen 02</td><td>Empty card</td>
+          <td class="t-note">Its own screen, under the same section header. Same shell at a
+            <code>250&nbsp;px</code> minimum height, centred
+            hourglass glyph in accent and the line <code>Waiting for Ideas</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <p>The three cards in the rail are one screen — variants side by side, not screens of their own. Only
+    the empty rail is a second screen, and it repeats the section header rather than borrowing it from
+    the rail above.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Not yet liked</td><td class="t-note">Accent-filled action pill, black label and outline glyph.</td></tr>
+        <tr><td>Liked</td><td class="t-note">Dark pill, accent label, filled glyph, label reads <code>Liked</code>.</td></tr>
+        <tr><td>Gauge drawing</td><td class="t-note">Ring animates from zero to its value over 1.1&nbsp;s on scroll-into-view, then holds. Suppressed under <code>prefers-reduced-motion</code>.</td></tr>
+        <tr><td>Counting down</td><td class="t-note">Countdown ticks once a second; tabular figures hold the layout steady.</td></tr>
+        <tr><td>Expired</td><td class="t-note">Countdown reads <code>00:00:00</code>. Captured because the Figma frame shows it — see the decisions below.</td></tr>
+        <tr><td>Off-centre in the rail</td><td class="t-note">Cards keep full opacity and scale; only the peek of the next card signals more content.</td></tr>
+        <tr><td>Empty rail</td><td class="t-note">Screen 02: the section header, then a single card carrying the hourglass and <code>Waiting for Ideas</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>The whole card</b> — this component is drawn in the War Room frames; the build reproduces it</li>
+        <li><b>Card geometry</b> — 268&nbsp;px, 16&nbsp;px padding, R16, measured off the export</li>
+        <li><b>Both action states</b> — the accent <code>Like</code> and dark <code>Liked</code> pills are both in the frames</li>
+        <li><b>Gauge</b> — ring size, stroke weight, round caps and clockwise-from-top direction</li>
+        <li><b>Type tag and countdown</b> — including the leading dot and the stopwatch glyph</li>
+        <li><b>Section header</b> — accent <code>+</code>, filter button and <code>View all ↗</code> pill</li>
+        <li><b>Photography</b> — the author portraits are lifted from the same exports</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Gauge draw-in</b> — the ring animates on scroll-into-view; the Figma frames are static</li>
+        <li><b>Like ⇄ Liked as a live toggle</b> — the frames show the two states separately, not the transition</li>
+        <li><b>Ticking countdown</b> — a real clock rather than a fixed string</li>
+        <li><b>Avatar stacking rule</b> — overlap and ring weight for multi-author ideas, inferred from a two-avatar frame</li>
+        <li><b>Focus states</b> — visible keyboard focus on the action, absent from the frames</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>What happens to an idea when the clock hits zero?</h3>
+      <p>One Figma frame shows a card at <code>00:00:00</code> that is still in its
+      <span class="flag">Liked</span> state, which reads as a live card with a dead timer. An
+      expired idea needs its own treatment — lapsed, promoted, or held — and none exists yet.</p>
+    </li>
+    <li>
+      <h3>Can a member un-like an idea?</h3>
+      <p>The card is built so the action toggles both ways, because that is the honest reading of
+      two states on one control. If likes are final once cast, the
+      <span class="flag">Liked</span> state should be inert and styled as a confirmation rather
+      than a button.</p>
+    </li>
+    <li>
+      <h3>Is the gauge a percentage of a threshold, or of a target?</h3>
+      <p>The label reads <code>75% of required likes</code>, so the ring fills toward a bar rather
+      than a total. If the threshold can move as membership changes, the card should show the
+      count as well as the proportion.</p>
+    </li>
+    <li>
+      <h3>Title case for card titles?</h3>
+      <p>Titles are set sentence case here, matching the Figma. The live build generates some
+      titles automatically as <code>Auto Position Proposal &lt;epoch-ms&gt;</code>, which will
+      look broken in this card at any casing — worth fixing at the source.</p>
+    </li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function () {
+  'use strict';
+
+  /* draw the gauges once the cards are on screen */
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.sh-idea-card'));
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('is-drawn'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.25 });
+    cards.forEach(function (c) { io.observe(c); });
+  } else {
+    cards.forEach(function (c) { c.classList.add('is-drawn'); });
+  }
+
+  /* Like ⇄ Liked */
+  document.querySelectorAll('.sh-like').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') === 'true';
+      btn.setAttribute('aria-pressed', String(!on));
+      btn.querySelector('.sh-like__label').textContent = on ? 'Like' : 'Liked';
+    });
+  });
+
+  /* countdowns */
+  function pad(n) { return String(n).padStart(2, '0'); }
+  var clocks = Array.prototype.slice.call(document.querySelectorAll('[data-countdown]'))
+    .map(function (el) { return { el: el, left: parseInt(el.dataset.countdown, 10) || 0 }; });
+
+  if (clocks.some(function (c) { return c.left > 0; })) {
+    setInterval(function () {
+      clocks.forEach(function (c) {
+        if (c.left <= 0) return;
+        c.left -= 1;
+        var h = Math.floor(c.left / 3600),
+            m = Math.floor((c.left % 3600) / 60),
+            s = c.left % 60;
+        c.el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+        c.el.setAttribute('datetime', 'PT' + h + 'H' + m + 'M' + s + 'S');
+      });
+    }, 1000);
+  }
+})();
+</script>

@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en" data-component="clubs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Clubs</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — CLUBS  (CL-01 … CL-07)
+   The club-management screens reached from Profile: the list of
+   clubs you are registered with, adding one, the guest/member
+   fork, the fee terms, the two dialogs either side of payment,
+   and the sheet that switches your active club.
+
+   ⚠️ FRAME 12 IS THE ONLY FRAME HERE THAT EXISTS IN CODE.
+   Frames 04-10 build an in-app registration and payment journey
+   that the app does not have: addUserClub (club.dart:46) has zero
+   callers, there is no payment SDK in pubspec.yaml and no card
+   capture anywhere in lib/. What the member actually reaches is
+   add_club.dart:9 — crest, one line of copy telling them to use
+   the desktop site, and an OK button whose handler is
+   routes.pop(). That is frame 12. Read it before the others.
+
+   Tokens, type scale and patterns are copied verbatim from
+   merits.html / _assets/CONTRACT.md. Nothing new is invented:
+     · the CREST PLATE is club-selection.html's, unchanged
+     · the DIALOG SHELL is dialogs.html's, unchanged
+     · the SHEET SHELL is sheets.html's, unchanged
+     · the CONTROL SHELL and the TOGGLE are forms.html's, unchanged
+   No stylesheet link tag, no webfont, no external request.
+
+   WHAT THE CURRENT BUILD GETS WRONG, AND WHAT IS DONE HERE
+   1. Crests sit loose on the card fill at four different sizes
+      (56 / 48x48 / 35x47 / 76x80). One container renders a ~10x
+      contrast spread — Dortmund yellow ~15:1, Barcelona blue
+      ~1.4:1. Every crest here is on the plate, three sizes only.
+   2. Nothing marks the current club. CL-02's only tell is that
+      the Barcelona card is missing its Remove link, which is a
+      side effect, not a signal. Here the current club carries a
+      `Current` pill and its Remove is explicitly disabled with a
+      reason.
+   3. The 3-club limit is stated as prose on two screens in two
+      different wordings and never as a readout. Here it is a
+      counted control, above the button it constrains, on both
+      the list and the picker.
+   4. Auto renewal is Material's stock switch, whose OFF state
+      renders LIGHTER than its ON state. forms.html already fixed
+      that: accent on the track, knob white in both states.
+   5. Six overlay/button fills across seven screens (#542BE2,
+      #34167D, #361F59, #190A31, borderless, ghost), five radii,
+      four control heights. One shell each here.
+   6. The success modal's only success signal is the word
+      "Successfully" — no mark at all. It gets the kit's acid
+      tick tile.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;
+  --surface:       #1C2129;
+  --sunken:        #13171E;
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+  --acid-line:     rgba(155,226,34,.30);   /* derived, as sheets.html */
+
+  /* semantic red — the only other hue in the system */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.12);
+  --red-line:      rgba(226,86,74,.28);
+
+  /* neutral wash — where a state must NOT read as red or acid */
+  --neutral-wash:  rgba(255,255,255,.06);
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  /* control height — forms.html */
+  --h-field:       52px;
+
+  /* dialog shell — dialogs.html */
+  --dlg-inset:     20px;
+  --dlg-max:       340px;
+  --dlg-pad:       20px;
+
+  /* sheet shell — sheets.html */
+  --r-sheet:       18px;
+  --grab-w:        40px;
+  --grab-h:        4px;
+  --h-row:         48px;
+
+  /* scrim — dialogs.html / sheets.html */
+  --scrim:         rgba(3,4,1,.72);
+  --scrim-blur:    10px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* ---- crest plate — club-selection.html, verbatim ---------- */
+  --plate:         rgba(255,255,255,.94);
+  --plate-edge:    rgba(0,0,0,.13);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+/* author `display` rules below would otherwise beat the UA rule for
+   the hidden attribute, and hidden is how filtered rows come off */
+[hidden]{display:none!important}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ============================================================
+   FRAME
+   `.frame` itself is discarded by the review builder, so every
+   screen's geometry lives on `.fr` inside it. `.fr` is the
+   positioning context for that screen's dock, scrim and sheet,
+   which is what keeps each overlay inside its own device.
+   ============================================================ */
+.frame{position:relative}
+/* flex column so a docked action can sit at the foot of a short screen
+   and stay pinned on a long one — see .dock */
+.fr{position:relative;display:flex;flex-direction:column;min-height:812px;padding-bottom:28px}
+.fr--dock{padding-bottom:0}
+/* breathing room between the last content block and the docked bar */
+.fr--dock>*:nth-last-child(2){margin-bottom:22px}
+/* The review device is 326 x 684, not 375 x 812, so a hard 812 px frame
+   would push a bottom-docked action and a bottom-anchored sheet 128 px
+   below the visible screen. Inside the review shell the frame's inner
+   wrapper is a direct child of the scroll container, which has a definite
+   height, so 100% resolves to the real device height. The rule is inert
+   in the standalone file, where 812 px stands. */
+.mk__scroll>.fr{min-height:100%}
+
+/* ============================================================
+   SHARED FURNITURE — merits.html
+   ============================================================ */
+.eyebrow{
+  margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+/* device-island clearance: 34 px, the library value (ideas-list.html) */
+.bar{display:flex;align-items:center;gap:11px;margin:34px var(--gutter) 14px}
+.bar__sp{flex:1}
+.title{
+  margin:0 var(--gutter);
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.intro{margin:11px var(--gutter) 0;max-width:33ch;font-size:13px;line-height:1.5;color:var(--muted)}
+.label{margin:26px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.label--tight{margin-top:20px}
+.note{margin:10px var(--gutter) 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.note b{color:var(--text);font-weight:600}
+.hint{margin:8px 0 0;font-size:12px;line-height:1.45;color:var(--dim)}
+
+.icon-btn{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+/* invisible expansion to the 44 px platform minimum — the pattern
+   the contract nominates (create-idea.html) */
+.icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.pill-btn{
+  position:relative;
+  display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:background .18s var(--ease);
+}
+.pill-btn::after{content:"";position:absolute;inset:-5px;border-radius:inherit}
+.pill-btn:hover{background:#222833}
+.pill-btn svg{width:15px;height:15px}
+.pill-btn[disabled]{color:var(--dim);cursor:not-allowed}
+.pill-btn[disabled]:hover{background:var(--surface)}
+.pill-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 14px;
+  border-radius:var(--r-pill);background:var(--acid-wash);
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+.status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.status-pill--sm{height:24px;padding:0 10px;font-size:10px;letter-spacing:.1em}
+.status-pill--quiet{background:var(--neutral-wash);color:var(--muted)}
+
+.section{
+  margin:0 var(--gutter);padding:12px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+}
+
+/* icon tile — dialogs.html */
+.tile{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;border-radius:var(--r-panel);flex:0 0 auto;
+}
+.tile svg{width:22px;height:22px}
+.tile--acid{background:var(--acid-wash);color:var(--acid)}
+.tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.tile--neutral{background:var(--neutral-wash);color:var(--text)}
+.tile--sm{width:34px;height:34px;border-radius:10px}
+.tile--sm svg{width:18px;height:18px}
+
+/* ============================================================
+   CREST PLATE — club-selection.html, verbatim.
+   Fixed light ground, crest fitted to the padded SQUARE so a
+   roundel and a shield carry identical optical weight. The plate,
+   not the crest, is what is measured against our surface:
+     rgba(255,255,255,.94) on --surface ~14.4:1, on --bg ~18.3:1,
+     identically for every club in the catalogue.
+   Three sizes only: 28 dense rows · 40 selects and club rows ·
+   64 headers and confirmation lockups.
+   Fallback = the plate holding the club's 2–4 char code, which is
+   also the LOADING placeholder, so a row never reflows.
+   ============================================================ */
+.plate{
+  --plate-size:40px;
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  width:var(--plate-size);height:var(--plate-size);
+  padding:calc(var(--plate-size) * .125);
+  border-radius:calc(var(--plate-size) * .28);
+  background:var(--plate);
+  box-shadow:inset 0 0 0 1px var(--plate-edge);
+  overflow:hidden;
+  font-size:calc(var(--plate-size) * .30);
+  font-weight:800;letter-spacing:-.03em;line-height:1;
+  color:var(--acid-ink);text-transform:uppercase;
+  -webkit-user-select:none;user-select:none;
+}
+.plate--sm{--plate-size:28px}
+.plate--md{--plate-size:40px}
+.plate--lg{--plate-size:64px}
+.plate__art{width:100%;height:100%;object-fit:contain;display:block}
+
+/* ------------------------------------------------------------
+   THIRD-PARTY ARTWORK STAND-INS — NOT BRAND COLOUR.
+   Identical to club-selection.html. No crest image assets exist
+   yet, so these four blocks stand in for artwork the app does not
+   own, purely to prove the plate contains it. They are the only
+   non-token colours in this file. Nothing in the product may
+   reuse them.
+   ------------------------------------------------------------ */
+.art--stripe-light{background:repeating-linear-gradient(90deg,#FDE100 0 22%,#141414 22% 33%);border-radius:14%}
+.art--stripe-dark{background:repeating-linear-gradient(90deg,#A50044 0 25%,#004D98 25% 50%);border-radius:14%}
+/* club-selection.html draws this one as a flat pale shield with an inset
+   keyline, but clip-path clips box-shadow, so at 64 px on the plate it
+   renders as a blank white square. The keyline is redrawn here as a dark
+   upper band inside the fill, which survives the clip and keeps the case
+   it exists to test — pale artwork on a light plate. */
+.art--shield-light{
+  background:linear-gradient(180deg,#16202B 0 27%,#F2F4F7 27% 100%);
+  clip-path:polygon(10% 0,90% 0,90% 52%,50% 100%,10% 52%);
+}
+.art--roundel-dark{background:#0B1E3A;box-shadow:inset 0 0 0 1.5px #2E4666;border-radius:50%}
+
+/* ============================================================
+   THE CLUB CARD  (replaces C-26)
+   Three stacked rails inside one --surface card, each separated
+   by the kit's --line-soft hairline:
+     head  plate + club name + league codes. The name gets the whole
+           column — "Borussia Dortmund" and "Manchester United" both
+           need it, and nothing else competes for the row.
+     body  the auto-renewal switch row
+     foot  current / make-current, then Remove
+   The shipped card put name, switch and Remove on one 99 pt rail
+   with the switch floating near the horizontal centre, so the
+   switch had no owning label and Remove sat 8 pt from it.
+   ============================================================ */
+.cards{margin:12px var(--gutter) 0;display:flex;flex-direction:column;gap:12px}
+.card{
+  padding:14px;border-radius:var(--r-card);background:var(--surface);
+  border:1px solid var(--line);
+}
+.card.is-current{box-shadow:inset 3px 0 0 var(--acid)}
+.card__head{display:flex;align-items:center;gap:12px}
+.card__id{flex:1;min-width:0}
+.card__name{
+  margin:0;font-size:17px;font-weight:600;letter-spacing:-.015em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.card__sub{
+  margin:3px 0 0;font-size:11.5px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.card__rail{
+  display:flex;align-items:center;gap:12px;
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft);
+}
+.card__rail--foot{margin-top:11px;padding-top:11px}
+.card__meta{
+  flex:1;min-width:0;font-size:11.5px;color:var(--dim);
+  font-variant-numeric:tabular-nums;
+}
+.card__why{margin:9px 0 0;font-size:11.5px;line-height:1.45;color:var(--dim)}
+
+/* the switch row — forms.html .sw-row */
+.sw-row{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.sw-row__id{flex:1;min-width:0}
+.sw-row__name{display:block;font-size:14px;font-weight:600}
+.sw-row__sub{display:block;margin-top:2px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* the toggle — forms.html, verbatim. Accent on the TRACK; the knob
+   stays white in both states, so OFF is the darkest thing in the
+   row and ON the brightest. Material's default inverts this. */
+.toggle{
+  position:relative;flex:0 0 auto;
+  width:46px;height:28px;padding:0;border:0;
+  border-radius:var(--r-pill);background:var(--sunken);
+  box-shadow:inset 0 0 0 1px var(--line);
+  cursor:pointer;transition:background .18s var(--ease),box-shadow .18s var(--ease);
+}
+.toggle::after{
+  content:"";position:absolute;top:3px;left:3px;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.55);
+  transition:transform .18s var(--ease),background .18s var(--ease);
+}
+.toggle[aria-checked="true"]{background:var(--acid);box-shadow:inset 0 0 0 1px var(--acid)}
+.toggle[aria-checked="true"]::after{transform:translateX(18px)}
+.toggle:focus-visible{outline:0;box-shadow:inset 0 0 0 1px var(--acid),0 0 0 3px var(--acid-wash)}
+.toggle[disabled]{cursor:not-allowed;background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line-soft)}
+.toggle[disabled]::after{background:var(--dim);box-shadow:none}
+
+/* Remove. Deliberately NOT red at 11.5 px: #E2564A on --surface is
+   4.36:1, which passes AA large only, and the contract forbids red
+   as small body copy. The destructive moment is the confirm dialog,
+   where red is a 44 px tile plus the word "Remove" — icon, word and
+   colour together, never colour alone. */
+.link-btn{
+  position:relative;flex:0 0 auto;
+  display:inline-flex;align-items:center;gap:6px;
+  border:0;background:transparent;padding:2px;margin:0;
+  color:var(--muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:color .16s var(--ease);
+}
+.link-btn::after{content:"";position:absolute;inset:-11px -8px;border-radius:8px}
+.link-btn svg{width:14px;height:14px}
+.link-btn:hover{color:var(--text)}
+.link-btn[disabled]{color:var(--dim);cursor:not-allowed}
+.link-btn[disabled]:hover{color:var(--dim)}
+.link-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.link-btn--acid{color:var(--acid)}
+.link-btn--acid:hover{color:#B4EC5A}
+
+/* ============================================================
+   THE 3-PER-LEAGUE LIMIT — club-selection.html
+   A counted readout, placed above the control it constrains.
+   The shipped app states it as a 3-line prose footnote in the
+   lowest-contrast text colour on the screen, in two different
+   wordings on two screens, and never as a number.
+   ============================================================ */
+.limit__ticks{display:flex;gap:5px;margin-top:11px}
+.limit__ticks i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.14)}
+.limit__ticks i.on{background:var(--acid)}
+.limit__ticks i.pending{background:var(--acid);opacity:.45}
+.limit--full .limit__ticks i.on{background:var(--muted)}
+.limit__note{margin:9px 0 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.limit__used{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:11px;padding-top:11px;border-top:1px solid var(--line-soft);
+}
+.limit__used>span:first-child{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin-right:2px;
+}
+.used{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted)}
+
+/* ============================================================
+   EMPTY / LOADING / FAILURE
+   ============================================================ */
+.blank{
+  margin:12px var(--gutter) 0;padding:30px 20px 26px;text-align:center;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+}
+.blank__art{margin:0 auto 16px;display:block;width:74px;height:74px;color:var(--dim)}
+.blank h3{margin:0;font-size:17px;font-weight:600;letter-spacing:-.015em}
+.blank p{margin:8px auto 0;max-width:29ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.blank .btn{margin-top:18px}
+
+/* skeleton — the crest slot is the CODE PLATE, not a grey box, so
+   the row does not reflow or flash when artwork lands */
+.sk{border-radius:6px;background:rgba(255,255,255,.07);animation:sk 1.4s var(--ease) infinite}
+.sk--name{width:56%;height:15px}
+.sk--sub{width:38%;height:10px;margin-top:7px}
+.sk--label{width:34%;height:13px}
+.sk--meta{width:44%;height:10px}
+.sk--track{width:46px;height:28px;border-radius:var(--r-pill);flex:0 0 auto}
+.sk--link{width:52px;height:12px;flex:0 0 auto}
+.sk--pill{width:82px;height:24px;border-radius:var(--r-pill);flex:0 0 auto}
+@keyframes sk{0%,100%{opacity:.45}50%{opacity:.95}}
+.card.is-loading{pointer-events:none}
+.card.is-loading .plate{opacity:.55}
+
+/* failure banner — red is a tile plus a word, never a fill of copy */
+.fail{
+  display:flex;gap:12px;margin:12px var(--gutter) 0;padding:14px;
+  border-radius:var(--r-card);background:var(--surface);
+  border:1px solid var(--red-line);
+}
+.fail__id{flex:1;min-width:0}
+.fail__id h3{margin:0;font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.fail__id p{margin:5px 0 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.fail__acts{display:flex;gap:8px;margin-top:12px}
+
+/* ============================================================
+   THE CASCADE — club-selection.html
+   Four numbered steps on one rail; the rail above a step is acid
+   once that step is satisfied. The shipped screen renders all four
+   selects identically whether or not their prerequisite is met, so
+   the dependency is invisible until you tap.
+   ============================================================ */
+.cascade{list-style:none;margin:22px 0 0;padding:0}
+.step{position:relative;margin-bottom:18px;padding:0 var(--gutter) 0 calc(var(--gutter) + 38px)}
+.step:last-child{margin-bottom:0}
+.step::before{
+  content:"";position:absolute;left:calc(var(--gutter) + 12px);
+  top:30px;bottom:-18px;width:2px;border-radius:1px;background:var(--line);
+}
+.step:last-child::before{display:none}
+.step.is-done::before{background:var(--acid);opacity:.5}
+.step__mk{
+  position:absolute;left:var(--gutter);top:1px;
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line);
+  font-size:12px;font-weight:800;color:var(--dim);
+  font-variant-numeric:tabular-nums;
+}
+.step__mk svg{width:13px;height:13px;display:none}
+.step.is-active .step__mk{color:var(--acid);box-shadow:inset 0 0 0 1.5px var(--acid)}
+.step.is-done .step__mk{background:var(--acid);color:var(--acid-ink);box-shadow:none}
+.step.is-done .step__mk b{display:none}
+.step.is-done .step__mk svg{display:block}
+.step.is-locked .step__mk{opacity:.5}
+.step__lb{
+  display:flex;align-items:center;gap:8px;
+  margin:3px 0 9px;font-size:15px;font-weight:600;letter-spacing:-.01em;
+}
+.step.is-locked .step__lb{color:var(--muted)}
+.step__lock{width:13px;height:13px;color:var(--dim);flex:0 0 auto}
+.step:not(.is-locked) .step__lock{display:none}
+
+/* select field — replaces C-06 */
+.sel{
+  display:flex;align-items:center;gap:10px;width:100%;
+  min-height:var(--h-field);padding:8px 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  font:inherit;text-align:left;cursor:pointer;
+  transition:border-color .18s var(--ease),background .18s var(--ease);
+}
+.sel:hover{background:#20262F}
+.sel:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.sel__val{
+  flex:1;min-width:0;font-size:15px;font-weight:600;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sel--empty .sel__val{font-weight:400;color:var(--muted)}
+.sel__chev{width:18px;height:18px;flex:0 0 auto;color:var(--muted)}
+.sel__lock{width:16px;height:16px;flex:0 0 auto;color:var(--dim);display:none}
+.sel[aria-disabled="true"]{background:var(--sunken);border-color:var(--line-soft);cursor:not-allowed}
+.sel[aria-disabled="true"]:hover{background:var(--sunken)}
+.sel[aria-disabled="true"] .sel__val{font-weight:400;color:var(--dim)}
+.sel[aria-disabled="true"] .sel__chev{display:none}
+.sel[aria-disabled="true"] .sel__lock{display:block}
+
+.panel{padding:12px;border:1px solid var(--line);border-radius:var(--r-card);background:var(--section)}
+.panel--locked{padding:14px}
+.panel--locked .hint{margin:0}
+
+/* search — club-selection.html */
+.search{position:relative;margin-top:12px}
+.search input{
+  width:100%;height:44px;padding:0 14px 0 40px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--text);font:inherit;font-size:14px;
+}
+.search input::placeholder{color:var(--dim)}
+.search input:focus{outline:none;border-color:var(--acid-line)}
+.search svg{position:absolute;left:14px;top:13.5px;width:17px;height:17px;color:var(--dim)}
+
+/* club rows */
+.clist{list-style:none;margin:10px 0 0;padding:0;border-radius:var(--r-panel);background:var(--surface);overflow:hidden}
+.crow{
+  display:flex;align-items:center;gap:11px;width:100%;padding:9px 12px;
+  border:0;border-top:1px solid var(--line-soft);background:transparent;color:inherit;
+  font:inherit;text-align:left;cursor:pointer;
+  transition:background .16s var(--ease);
+}
+.crow:first-child{border-top:0}
+.crow:hover{background:rgba(255,255,255,.035)}
+.crow:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.crow__id{flex:1;min-width:0}
+.crow__name{display:block;font-size:14px;font-weight:600;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow__sub{display:block;margin-top:2px;font-size:11.5px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow__end{flex:0 0 auto;display:inline-flex;align-items:center;
+  font-size:10.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.crow__end svg{width:18px;height:18px;color:var(--acid)}
+.crow__end svg.is-locked{width:16px;height:16px;color:var(--dim)}
+.crow[aria-selected="true"]{background:var(--acid-wash);box-shadow:inset 3px 0 0 var(--acid)}
+.crow[aria-selected="true"]:hover{background:var(--acid-wash)}
+.crow[aria-selected="true"] .crow__sub{color:var(--acid)}
+.crow[aria-disabled="true"]{cursor:not-allowed}
+.crow[aria-disabled="true"]:hover{background:transparent}
+.crow[aria-disabled="true"] .plate,.crow[aria-disabled="true"] .crow__id{opacity:.38}
+.clist__none{padding:22px 12px;text-align:center;font-size:13px;color:var(--dim)}
+
+/* ============================================================
+   CLUB LOCKUP — replaces the four sizes of C-24 with one.
+   Plate 64, name 22/700, sub 12 muted. Crest and name are one
+   element with a real container; the shipped lockup relies on a
+   20 pt gap alone to group them and height-fits the crest, so a
+   roundel outweighs a shield in the same slot.
+   ============================================================ */
+.lockup{
+  display:flex;align-items:center;gap:14px;
+  margin:0 var(--gutter);padding:14px;
+  border-radius:var(--r-card);background:var(--surface);border:1px solid var(--line);
+}
+.lockup__id{flex:1;min-width:0}
+.lockup__id h2{
+  margin:0;font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.lockup__sub{margin:5px 0 0;font-size:12px;color:var(--muted)}
+
+/* ============================================================
+   TIER COMPARISON  (replaces C-34's two prose paragraphs)
+   The shipped guest screen delivers the difference as 9 lines of
+   body copy in which every word is capitalised — the shape of a
+   .toTitleCase() over sentence-case strings. Same claims, as a
+   row-per-capability table, so the fork is legible at a glance.
+   Yes / no is a TICK against a DASH, not colour alone.
+   ============================================================ */
+.tiers{margin:0 var(--gutter);border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);overflow:hidden}
+.tiers__head{display:flex;align-items:flex-end;padding:12px 12px 10px;gap:10px;
+  border-bottom:1px solid var(--line)}
+.tiers__head>span:first-child{flex:1;min-width:0;font-size:10.5px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.tiers__col{
+  flex:0 0 62px;text-align:center;
+  font-size:10.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);
+}
+.tiers__col.is-acid{color:var(--acid)}
+.trow{display:flex;align-items:center;gap:10px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.trow:first-of-type{border-top:0}
+.trow__t{flex:1;min-width:0;font-size:13.5px}
+.trow__c{flex:0 0 62px;display:flex;align-items:center;justify-content:center}
+.trow__c svg{width:17px;height:17px;color:var(--acid)}
+.trow__c i{display:block;width:11px;height:2px;border-radius:1px;background:var(--dim)}
+
+/* ============================================================
+   PAYMENT + FEE  (replaces C-29 and C-30)
+   C-30 is a navy #202461 panel — the one navy surface in the app
+   and outside the two-hue palette. It becomes the kit's --sunken
+   panel with an acid-wash info tile.
+   ============================================================ */
+.fee{display:flex;align-items:flex-end;gap:12px;margin:0 var(--gutter);padding:14px;
+  border-radius:var(--r-card);background:var(--surface);border:1px solid var(--line)}
+.fee__amt{margin:0;font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:.95;
+  font-variant-numeric:tabular-nums}
+.fee__per{margin:0 0 4px;font-size:12.5px;color:var(--muted)}
+.fee__gets{flex:1;min-width:0;text-align:right}
+.fee__gets b{display:block;font-size:17px;font-weight:700;letter-spacing:-.015em;color:var(--acid);
+  font-variant-numeric:tabular-nums}
+.fee__gets span{display:block;margin-top:2px;font-size:11px;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--dim)}
+
+.pay{display:flex;align-items:center;gap:12px;margin:0 var(--gutter);padding:14px;
+  border-radius:var(--r-card);background:var(--surface);border:1px solid var(--line)}
+.pay__id{flex:1;min-width:0}
+.pay__num{margin:0;font-size:14.5px;font-weight:600;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.pay__exp{margin:3px 0 0;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.disc{display:flex;gap:12px;margin:0 var(--gutter);padding:14px;
+  border-radius:var(--r-card);background:var(--sunken);border:1px solid var(--line)}
+.disc p{margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.disc p b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   BUTTONS + DOCK — dialogs.html action row, one shell
+   ============================================================ */
+.btn{
+  position:relative;flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em;
+  cursor:pointer;white-space:nowrap;
+  transition:background .18s var(--ease),opacity .18s var(--ease);
+}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--danger{background:var(--red);color:var(--acid-ink)}
+.btn--danger:hover{background:#E9675C}
+.btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.btn--ghost:hover{background:#181D25}
+.btn--wide{width:100%;flex:0 0 auto}
+.btn[disabled]{opacity:.38;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.act{display:flex;gap:10px;margin-top:18px}
+.act--stack{flex-direction:column}
+.act--stack .btn{width:100%;flex:0 0 auto}
+
+/* Docked action. Sticky, not fixed: a fixed dock would have to live
+   outside <main>, and the review shell replays everything outside <main>
+   into all twelve frames — only five of them want one. `margin-top:auto`
+   inside the flex column puts it at the foot of a screen shorter than the
+   device; `position:sticky;bottom:0` keeps it pinned to the bottom of the
+   scrollport on a screen taller than the device. Both behaviours, one rule,
+   scoped to the frame that declares it. */
+.dock{
+  position:sticky;bottom:0;z-index:40;margin-top:auto;
+  padding:13px var(--gutter) calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--bg);border-top:1px solid var(--line);
+}
+.dock__note{margin:0 0 10px;font-size:12px;color:var(--muted);text-align:center}
+
+/* ============================================================
+   OVERLAYS — dialogs.html + sheets.html shells.
+   Each overlay is absolute inside its own .fr, so it belongs to
+   one device and needs no script to be reviewable.
+   ============================================================ */
+.ov{position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center}
+.ov--sheet{align-items:flex-end}
+.scrim{
+  position:absolute;inset:0;background:var(--scrim);
+  -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+  backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .scrim{background:rgba(3,4,1,.86)}
+}
+.dlg{
+  position:relative;z-index:1;
+  width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max);
+  margin:0 auto;padding:var(--dlg-pad);
+  border-radius:var(--r-card);background:var(--surface);border:1px solid var(--line);
+  box-shadow:0 24px 60px rgba(0,0,0,.55);
+}
+.dlg__title{margin:14px 0 0;font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.2}
+.dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.dlg__body b{color:var(--text);font-weight:600}
+.dlg--mid{text-align:center}
+.dlg--mid .dlg__title{margin-top:16px}
+.dlg--mid .plate{margin:0 auto}
+.dlg__lockup{display:flex;align-items:center;gap:12px}
+.dlg__lockup h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dlg__lockup p{margin:3px 0 0;font-size:11.5px;color:var(--muted)}
+.dlg__tick{position:relative;display:inline-flex;margin:0 auto}
+/* The badge overlaps the white crest plate, where --acid-wash all but
+   disappears and an acid glyph would sit at 1.58:1. It is therefore a
+   SOLID accent disc with --acid-ink on it — the only ink the contract
+   allows on an accent fill, at 12.31:1 wherever the badge lands. */
+.dlg__tick .tile{
+  position:absolute;right:-7px;bottom:-7px;width:28px;height:28px;border-radius:50%;
+  background:var(--acid);color:var(--acid-ink);
+  box-shadow:0 0 0 3px var(--surface);
+}
+.dlg__tick .tile svg{width:15px;height:15px}
+.dlg__figs{margin:14px 0 0;padding:12px;border-radius:var(--r-panel);background:var(--sunken)}
+.dlg__figs b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em;color:var(--acid);
+  font-variant-numeric:tabular-nums}
+.dlg__figs span{display:block;margin-top:3px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim)}
+
+/* the form inside a dialog — forms.html control shell, verbatim */
+.field{display:block;margin-top:16px;text-align:left}
+.field__label{display:block;margin-bottom:8px;font-size:12.5px;font-weight:600;
+  letter-spacing:-.005em;color:var(--text);line-height:1.44}
+.field__help{margin:8px 0 0;font-size:12px;line-height:1.35;color:var(--muted)}
+.ctl{
+  display:flex;align-items:center;gap:10px;
+  height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+}
+.ctl.is-focus{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.ctl__in{flex:1;min-width:0;height:100%;border:0;background:transparent;color:inherit;
+  font:inherit;font-size:16px;padding:0;margin:0;outline:none;font-variant-numeric:tabular-nums;
+  letter-spacing:.02em}
+.ctl__in::placeholder{color:var(--dim);opacity:1}
+
+/* the sheet — sheets.html shell, verbatim */
+.sheet{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;width:100%;max-width:420px;
+  max-height:calc(100% - 34px);
+  border:1px solid var(--line);border-bottom:0;
+  border-radius:var(--r-sheet) var(--r-sheet) 0 0;
+  background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%);
+  box-shadow:0 -20px 50px rgba(0,0,0,.6);
+  overflow:hidden;
+}
+.sheet__grab{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  height:26px;width:100%;padding:0;margin:0;border:0;background:transparent;cursor:grab}
+.sheet__grab::before{content:"";width:var(--grab-w);height:var(--grab-h);
+  border-radius:var(--r-pill);background:rgba(255,255,255,.18)}
+.sheet__head{flex:0 0 auto;display:flex;align-items:center;gap:9px;
+  padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line)}
+.sheet__title{margin:0;flex:1;min-width:0;font-size:11px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--text)}
+.sheet__body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:12px var(--gutter)}
+.sheet__body::-webkit-scrollbar{width:0}
+.sheet__body{scrollbar-width:none}
+.sheet__lede{margin:0 0 12px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.sheet__foot{flex:0 0 auto;padding:12px var(--gutter);
+  padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);background:var(--sunken)}
+
+/* option row — sheets.html .opt. Selection carries three markers:
+   accent wash, accent rim, accent label, plus the tick. */
+.opt{
+  display:flex;align-items:center;gap:12px;width:100%;
+  min-height:var(--h-row);padding:10px 12px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background-color:var(--sunken);background-image:none;
+  color:var(--text);font:inherit;text-align:left;cursor:pointer;
+  transition:background-color .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);
+}
+.opt + .opt{margin-top:8px}
+.opt:hover{border-color:rgba(255,255,255,.14)}
+.opt:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.opt__text{flex:1;min-width:0}
+.opt__text b{display:block;font-size:14px;font-weight:600;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.opt__text small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.opt[aria-checked="true"]{
+  background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash));
+  border-color:var(--acid-line);color:var(--acid);
+}
+.opt[aria-checked="true"] .opt__text small{color:rgba(155,226,34,.72)}
+.opt__tick{flex:0 0 auto;width:20px;height:20px;opacity:0;color:var(--acid)}
+.opt[aria-checked="true"] .opt__tick{opacity:1}
+
+/* close disc in the sheet head — sheets.html .sheet__x, verbatim, plus the
+   contract's invisible ::after expansion to the 44 px platform minimum, the
+   same expansion .icon-btn / .pill-btn / .link-btn already carry in this file.
+   The visual stays the sampled 30 px. */
+.sheet__x{
+  position:relative;
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-4px;
+  border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.sheet__x::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.sheet__x:hover{background:rgba(255,255,255,.11);color:var(--text)}
+.sheet__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.sheet__x svg{width:16px;height:16px}
+
+/* ============================================================
+   THE DESKTOP PUNT — frame 12 only, and the only frame in this
+   file that shows CODE RATHER THAN PROPOSAL.
+   One line of copy is the entire content of the shipped screen,
+   so it is set at body-primary contrast (white on --sunken) and
+   not as a --muted footnote. Same --sunken panel shell as .disc.
+   ============================================================ */
+.punt{
+  display:flex;gap:12px;margin:16px 0 0;padding:14px;
+  border-radius:var(--r-card);background:var(--sunken);border:1px solid var(--line);
+}
+.punt p{margin:0;font-size:14px;line-height:1.5;color:var(--text)}
+
+/* profile stub behind the switcher sheet — enough context for the
+   frame to stand alone at 375 x 812, nothing more */
+.stub{opacity:.9}
+.stub__id{display:flex;align-items:center;gap:12px;margin:0 var(--gutter);padding:14px;
+  border-radius:var(--r-card);background:var(--surface);border:1px solid var(--line)}
+.stub__av{width:52px;height:52px;border-radius:50%;flex:0 0 auto;
+  background:radial-gradient(circle at 50% 34%,#2A313C,#141922)}
+.stub__id h3{margin:0;font-size:16px;font-weight:600;letter-spacing:-.015em}
+.stub__id p{margin:3px 0 0;font-size:11.5px;color:var(--muted)}
+.stub__two{display:flex;gap:10px;margin:12px var(--gutter) 0}
+.stub__two>div{flex:1;padding:12px;border-radius:var(--r-panel);background:var(--surface)}
+.stub__two b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums}
+.stub__two span{display:block;margin-top:3px;font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.sk{animation:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+<!-- ==========================================================
+     FRAME 1 — YOUR CLUBS  (CL-02)
+     ========================================================== -->
+<section class="frame" data-title="Your clubs" aria-label="Your clubs">
+ <div class="fr fr--dock">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="bar__sp"></span>
+  </div>
+
+  <h1 class="title">Your clubs</h1>
+  <p class="intro">Three registrations. The current one drives your war room, your Backchat and your standings.</p>
+
+  <!-- the limit, as a readout, above the button it constrains -->
+  <div class="section" style="margin-top:20px" id="limitBox">
+    <span class="status-pill" role="status">2 of 3 used · champions league</span>
+    <div class="limit__ticks" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i></div>
+    <p class="limit__note">You can register with up to 3 clubs in any one league per season. A registration counts even if you leave mid-season.</p>
+  </div>
+
+  <div class="cards">
+
+    <!-- current club -->
+    <article class="card is-current" aria-label="Barcelona">
+      <div class="card__head">
+        <span class="plate plate--md" aria-hidden="true"><span class="plate__art art--stripe-dark"></span></span>
+        <div class="card__id">
+          <h2 class="card__name">Barcelona</h2>
+          <p class="card__sub">Champions League · La Liga</p>
+        </div>
+      </div>
+      <div class="card__rail">
+        <div class="sw-row">
+          <span class="sw-row__id">
+            <b class="sw-row__name">Auto renewal</b>
+            <span class="sw-row__sub">Renews 12 Aug 2026 · $30</span>
+          </span>
+          <button class="toggle" type="button" role="switch" aria-checked="true" aria-label="Auto renewal for Barcelona"></button>
+        </div>
+      </div>
+      <div class="card__rail card__rail--foot">
+        <span class="status-pill status-pill--sm">Current</span>
+        <span class="card__meta"></span>
+        <button class="link-btn" type="button" disabled aria-describedby="whyBar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+          Remove
+        </button>
+      </div>
+      <p class="card__why" id="whyBar">Your current club can't be removed. Make another club current first.</p>
+    </article>
+
+    <!-- renewal on -->
+    <article class="card" aria-label="Borussia Dortmund">
+      <div class="card__head">
+        <span class="plate plate--md" aria-hidden="true"><span class="plate__art art--stripe-light"></span></span>
+        <div class="card__id">
+          <h2 class="card__name">Borussia Dortmund</h2>
+          <p class="card__sub">Champions League</p>
+        </div>
+      </div>
+      <div class="card__rail">
+        <div class="sw-row">
+          <span class="sw-row__id">
+            <b class="sw-row__name">Auto renewal</b>
+            <span class="sw-row__sub">Renews 03 Sep 2026 · $30</span>
+          </span>
+          <button class="toggle" type="button" role="switch" aria-checked="true" aria-label="Auto renewal for Borussia Dortmund"></button>
+        </div>
+      </div>
+      <div class="card__rail card__rail--foot">
+        <button class="pill-btn" type="button">Make current</button>
+        <span class="card__meta"></span>
+        <button class="link-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M6.5 7l.8 11.2A2 2 0 0 0 9.3 20h5.4a2 2 0 0 0 2-1.8L17.5 7"/></svg>
+          Remove
+        </button>
+      </div>
+    </article>
+
+    <!-- renewal off — the expiry is the consequence, so it is stated -->
+    <article class="card" aria-label="Manchester United">
+      <div class="card__head">
+        <span class="plate plate--md" aria-hidden="true">MUN</span>
+        <div class="card__id">
+          <h2 class="card__name">Manchester United</h2>
+          <p class="card__sub">English Premier League</p>
+        </div>
+      </div>
+      <div class="card__rail">
+        <div class="sw-row">
+          <span class="sw-row__id">
+            <b class="sw-row__name">Auto renewal</b>
+            <span class="sw-row__sub">Off — ends 19 Jun 2026</span>
+          </span>
+          <button class="toggle" type="button" role="switch" aria-checked="false" aria-label="Auto renewal for Manchester United"></button>
+        </div>
+      </div>
+      <div class="card__rail card__rail--foot">
+        <button class="pill-btn" type="button">Make current</button>
+        <span class="card__meta"></span>
+        <button class="link-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M6.5 7l.8 11.2A2 2 0 0 0 9.3 20h5.4a2 2 0 0 0 2-1.8L17.5 7"/></svg>
+          Remove
+        </button>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="dock">
+    <button class="btn btn--acid btn--wide" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:17px;height:17px"><path d="M12 5v14M5 12h14"/></svg>
+      Add a club
+    </button>
+  </div>
+
+ </div>
+</section>
+
+<!-- ==========================================================
+     FRAME 2 — YOUR CLUBS · EMPTY  (new)
+     ========================================================== -->
+<section class="frame" data-title="Your clubs · empty" aria-label="Your clubs, empty">
+ <div class="fr fr--dock">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="bar__sp"></span>
+  </div>
+
+  <h1 class="title">Your clubs</h1>
+
+  <div class="blank">
+    <svg class="blank__art" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M24 5.5 38.5 10v13.5c0 8.6-5.8 16-14.5 19-8.7-3-14.5-10.4-14.5-19V10L24 5.5Z"/>
+      <path d="M17.5 23.5h13M24 17v13"/>
+    </svg>
+    <h3>No clubs yet</h3>
+    <p>Register with a partner club to unlock your war room, your standings and your locker rooms.</p>
+    <button class="btn btn--acid" type="button" style="width:100%;flex:0 0 auto">Add your first club</button>
+  </div>
+
+  <p class="note">Registration costs <b>$30 a year</b> and gives you 30 participation credits to start. You can register with up to 3 clubs in any one league.</p>
+
+  <div class="dock">
+    <p class="dock__note">You have no clubs to manage yet.</p>
+    <button class="btn btn--acid btn--wide" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:17px;height:17px"><path d="M12 5v14M5 12h14"/></svg>
+      Add a club
+    </button>
+  </div>
+
+ </div>
+</section>
+
+<!-- ==========================================================
+     FRAME 3 — YOUR CLUBS · LOADING  (new)
+     The crest slot holds the CODE PLATE, not a grey square, so a
+     row keeps its exact height and the plate never flashes.
+     ========================================================== -->
+<section class="frame" data-title="Your clubs · loading" aria-label="Your clubs, loading">
+ <div class="fr fr--dock">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="bar__sp"></span>
+  </div>
+
+  <h1 class="title">Your clubs</h1>
+  <p class="intro" role="status" aria-live="polite">Loading your registrations…</p>
+
+  <div class="section" style="margin-top:20px">
+    <span class="sk sk--pill" style="display:block;width:150px;height:32px"></span>
+    <div class="limit__ticks" aria-hidden="true"><i></i><i></i><i></i></div>
+  </div>
+
+  <div class="cards" aria-hidden="true">
+    <article class="card is-loading">
+      <div class="card__head">
+        <span class="plate plate--md">BAR</span>
+        <div class="card__id"><span class="sk sk--name" style="display:block"></span><span class="sk sk--sub" style="display:block"></span></div>
+      </div>
+      <div class="card__rail">
+        <div class="sw-row"><span class="sw-row__id"><span class="sk sk--label" style="display:block"></span><span class="sk sk--meta" style="display:block;margin-top:7px"></span></span><span class="sk sk--track"></span></div>
+      </div>
+      <div class="card__rail card__rail--foot"><span class="sk sk--pill"></span><span class="card__meta"></span><span class="sk sk--link"></span></div>
+    </article>
+    <article class="card is-loading">
+      <div class="card__head">
+        <span class="plate plate--md">BVB</span>
+        <div class="card__id"><span class="sk sk--name" style="display:block;width:68%"></span><span class="sk sk--sub" style="display:block"></span></div>
+      </div>
+      <div class="card__rail">
+        <div class="sw-row"><span class="sw-row__id"><span class="sk sk--label" style="display:block"></span><span class="sk sk--meta" style="display:block;margin-top:7px"></span></span><span class="sk sk--track"></span></div>
+      </div>
+      <div class="card__rail card__rail--foot"><span class="sk sk--pill"></span><span class="card__meta"></span><span class="sk sk--link"></span></div>
+    </article>
+    <article class="card is-loading">
+      <div class="card__head">
+        <span class="plate plate--md">MUN</span>
+        <div class="card__id"><span class="sk sk--name" style="display:block;width:62%"></span><span class="sk sk--sub" style="display:block"></span></div>
+      </div>
+      <div class="card__rail">
+        <div class="sw-row"><span class="sw-row__id"><span class="sk sk--label" style="display:block"></span><span class="sk sk--meta" style="display:block;margin-top:7px"></span></span><span class="sk sk--track"></span></div>
+      </div>
+      <div class="card__rail card__rail--foot"><span class="sk sk--pill"></span><span class="card__meta"></span><span class="sk sk--link"></span></div>
+    </article>
+  </div>
+
+  <div class="dock">
+    <button class="btn btn--acid btn--wide" type="button" disabled>Add a club</button>
+  </div>
+
+ </div>
+</section>
+
+<!-- ==========================================================
+     FRAME 4 — ADD A CLUB  (CL-05)
+     ========================================================== -->
+<section class="frame" data-title="Add a club" aria-label="Add a club">
+ <div class="fr fr--dock">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="bar__sp"></span>
+  </div>
+
+  <h1 class="title">Add a club</h1>
+  <p class="intro">Narrow the catalogue, then pick your club. Each step unlocks the next.</p>
+
+  <ol class="cascade">
+
+    <li class="step is-done">
+      <span class="step__mk"><b>1</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__lb">Sport</span>
+      <button class="sel" type="button">
+        <span class="sel__val">Football</span>
+        <svg class="sel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+      </button>
+    </li>
+
+    <li class="step is-done">
+      <span class="step__mk"><b>2</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__lb">Competition level</span>
+      <button class="sel" type="button">
+        <span class="sel__val">National</span>
+        <svg class="sel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+      </button>
+    </li>
+
+    <li class="step is-done">
+      <span class="step__mk"><b>3</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__lb">League</span>
+      <button class="sel" type="button">
+        <span class="plate plate--sm" aria-hidden="true">EPL</span>
+        <span class="sel__val">English Premier League</span>
+        <svg class="sel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+      </button>
+    </li>
+
+    <li class="step is-active">
+      <span class="step__mk"><b>4</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__lb">Club</span>
+
+      <div class="panel">
+        <div class="limit">
+          <span class="status-pill" role="status">1 of 3 used · premier league</span>
+          <div class="limit__ticks" aria-hidden="true"><i class="on"></i><i></i><i></i></div>
+          <p class="limit__note">This registration counts towards your 3-club limit in this league, even if you leave mid-season.</p>
+          <div class="limit__used">
+            <span>Already registered</span>
+            <span class="used"><span class="plate plate--sm">MUN</span>Manchester United</span>
+          </div>
+        </div>
+
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+          <input id="q4" type="search" autocomplete="off" placeholder="Search Premier League clubs" aria-label="Search Premier League clubs">
+        </div>
+
+        <ul class="clist" id="clist4" role="listbox" aria-label="Premier League clubs">
+          <li role="none"><button class="crow" type="button" role="option" aria-selected="false" data-n="Arsenal">
+            <span class="plate plate--md" aria-hidden="true">ARS</span>
+            <span class="crow__id"><span class="crow__name">Arsenal</span><span class="crow__sub">London</span></span>
+          </button></li>
+          <li role="none"><button class="crow" type="button" role="option" aria-selected="false" data-n="Chelsea">
+            <span class="plate plate--md" aria-hidden="true">CHE</span>
+            <span class="crow__id"><span class="crow__name">Chelsea</span><span class="crow__sub">London</span></span>
+          </button></li>
+          <li role="none"><button class="crow" type="button" role="option" aria-selected="true" data-n="Liverpool">
+            <span class="plate plate--md" aria-hidden="true"><span class="plate__art art--shield-light"></span></span>
+            <span class="crow__id"><span class="crow__name">Liverpool</span><span class="crow__sub">Liverpool · selected</span></span>
+            <span class="crow__end"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+          </button></li>
+          <li role="none"><button class="crow" type="button" role="option" aria-selected="false" data-n="Manchester City">
+            <span class="plate plate--md" aria-hidden="true">MCI</span>
+            <span class="crow__id"><span class="crow__name">Manchester City</span><span class="crow__sub">Manchester</span></span>
+          </button></li>
+          <li role="none"><button class="crow" type="button" role="option" aria-disabled="true" data-n="Manchester United">
+            <span class="plate plate--md" aria-hidden="true">MUN</span>
+            <span class="crow__id"><span class="crow__name">Manchester United</span><span class="crow__sub">Already registered</span></span>
+            <span class="crow__end"><svg class="is-locked" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg></span>
+          </button></li>
+          <li role="none"><button class="crow" type="button" role="option" aria-selected="false" data-n="Newcastle United">
+            <span class="plate plate--md" aria-hidden="true"><span class="plate__art art--roundel-dark"></span></span>
+            <span class="crow__id"><span class="crow__name">Newcastle United</span><span class="crow__sub">Newcastle upon Tyne</span></span>
+          </button></li>
+          <li role="none"><button class="crow" type="button" role="option" aria-selected="false" data-n="Tottenham Hotspur">
+            <span class="plate plate--md" aria-hidden="true">TOT</span>
+            <span class="crow__id"><span class="crow__name">Tottenham Hotspur</span><span class="crow__sub">London</span></span>
+          </button></li>
+          <li class="clist__none" id="none4" hidden>No club in this league matches that name.</li>
+        </ul>
+      </div>
+    </li>
+  </ol>
+
+  <div class="dock">
+    <p class="dock__note">Liverpool · English Premier League</p>
+    <button class="btn btn--acid btn--wide" type="button">Continue</button>
+  </div>
+
+ </div>
+</section>
+
+<!-- ==========================================================
+     FRAME 5 — ADD A CLUB · CATALOGUE UNAVAILABLE  (new)
+     ========================================================== -->
+<section class="frame" data-title="Add a club · can’t load" aria-label="Add a club, catalogue unavailable">
+ <div class="fr fr--dock">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="bar__sp"></span>
+  </div>
+
+  <h1 class="title">Add a club</h1>
+
+  <ol class="cascade">
+    <li class="step is-done">
+      <span class="step__mk"><b>1</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__lb">Sport</span>
+      <button class="sel" type="button">
+        <span class="sel__val">Football</span>
+        <svg class="sel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+      </button>
+    </li>
+    <li class="step is-active">
+      <span class="step__mk"><b>2</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__lb">Competition level</span>
+      <div class="panel panel--locked">
+        <div class="fail" style="margin:0;border:0;padding:0;background:transparent">
+          <span class="tile tile--red tile--sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5 21 20H3L12 4.5Z"/><path d="M12 10.5v4"/><path d="M12 17.2h.01"/></svg>
+          </span>
+          <div class="fail__id">
+            <h3>Can’t load the club catalogue</h3>
+            <p>We couldn’t reach the club list. Nothing has been changed and no club has been added.</p>
+            <div class="fail__acts">
+              <button class="btn btn--ghost" type="button" style="height:38px;font-size:13px">Try again</button>
+              <button class="btn btn--ghost" type="button" style="height:38px;font-size:13px">Back to clubs</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+    <li class="step is-locked">
+      <span class="step__mk"><b>3</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__lb">League
+        <svg class="step__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </span>
+      <button class="sel" type="button" aria-disabled="true" tabindex="-1">
+        <span class="sel__val">Choose a competition level first</span>
+        <svg class="sel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+        <svg class="sel__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </button>
+    </li>
+    <li class="step is-locked">
+      <span class="step__mk"><b>4</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__lb">Club
+        <svg class="step__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </span>
+      <div class="panel panel--locked">
+        <p class="hint">Choose a league first — clubs are listed by league.</p>
+      </div>
+    </li>
+  </ol>
+
+  <div class="dock">
+    <p class="dock__note">Pick a club to continue.</p>
+    <button class="btn btn--acid btn--wide" type="button" disabled>Continue</button>
+  </div>
+
+ </div>
+</section>
+
+<!-- ==========================================================
+     FRAME 6 — GUEST OR MEMBER  (CL-06)
+     ========================================================== -->
+<section class="frame" data-title="Guest or member" aria-label="Guest or member">
+ <div class="fr fr--dock">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="bar__sp"></span>
+    <button class="icon-btn" type="button" aria-label="More">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18.5" r="1.7"/></svg>
+    </button>
+  </div>
+
+  <h1 class="title">Guest<br>or member</h1>
+  <p class="intro">You’re following Liverpool as a guest. Registering as a member is what unlocks the rest of the app.</p>
+
+  <div class="lockup" style="margin-top:20px">
+    <span class="plate plate--lg" aria-hidden="true"><span class="plate__art art--shield-light"></span></span>
+    <div class="lockup__id">
+      <h2>Liverpool</h2>
+      <p class="lockup__sub">English Premier League</p>
+    </div>
+    <span class="status-pill status-pill--sm status-pill--quiet">Guest</span>
+  </div>
+
+  <h2 class="label label--tight">What changes</h2>
+  <div class="tiers">
+    <div class="tiers__head">
+      <span>Capability</span>
+      <span class="tiers__col">Guest</span>
+      <span class="tiers__col is-acid">Member</span>
+    </div>
+    <div class="trow">
+      <span class="trow__t">Browse the app</span>
+      <span class="trow__c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+      <span class="trow__c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+    </div>
+    <div class="trow">
+      <span class="trow__t">Chat and comment</span>
+      <span class="trow__c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+      <span class="trow__c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+    </div>
+    <div class="trow">
+      <span class="trow__t">Post and like ideas</span>
+      <span class="trow__c"><i aria-hidden="true"></i></span>
+      <span class="trow__c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+    </div>
+    <div class="trow">
+      <span class="trow__t">Vote on proposals</span>
+      <span class="trow__c"><i aria-hidden="true"></i></span>
+      <span class="trow__c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+    </div>
+    <div class="trow">
+      <span class="trow__t">Host locker rooms</span>
+      <span class="trow__c"><i aria-hidden="true"></i></span>
+      <span class="trow__c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+    </div>
+    <div class="trow">
+      <span class="trow__t">Participation credits</span>
+      <span class="trow__c"><i aria-hidden="true"></i></span>
+      <span class="trow__c" style="font-size:12.5px;font-weight:700;color:var(--acid);font-variant-numeric:tabular-nums">30</span>
+    </div>
+  </div>
+
+  <p class="note">Membership is <b>$30 a year</b> per club and returns 30 participation credits, which is what posting, liking and voting are spent from. Guests pay nothing.</p>
+
+  <div class="dock">
+    <div class="act act--stack" style="margin-top:0">
+      <button class="btn btn--acid" type="button">Become a member — $30/year</button>
+      <button class="btn btn--ghost" type="button">Stay a guest</button>
+    </div>
+  </div>
+
+ </div>
+</section>
+
+<!-- ==========================================================
+     FRAME 7 — REGISTER WITH LIVERPOOL  (CL-03)
+     ========================================================== -->
+<section class="frame" data-title="Register with a club" aria-label="Register with a club">
+ <div class="fr">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="bar__sp"></span>
+  </div>
+
+  <h1 class="title">Register</h1>
+  <p class="intro">One annual fee. It becomes the credits you spend on ideas, votes and locker rooms.</p>
+
+  <div class="lockup" style="margin-top:20px">
+    <span class="plate plate--lg" aria-hidden="true"><span class="plate__art art--shield-light"></span></span>
+    <div class="lockup__id">
+      <h2>Liverpool</h2>
+      <p class="lockup__sub">English Premier League · 1 of 3 used</p>
+    </div>
+  </div>
+
+  <h2 class="label">What it costs</h2>
+  <div class="fee">
+    <div>
+      <p class="fee__amt">$30</p>
+      <p class="fee__per">a year</p>
+    </div>
+    <div class="fee__gets">
+      <b>30</b>
+      <span>credits back</span>
+    </div>
+  </div>
+  <p class="note">The fee is charged once your ID is verified. A successful payment registers you with Liverpool as a Sports Heist member.</p>
+
+  <h2 class="label">Payment method</h2>
+  <div class="pay">
+    <span class="tile tile--neutral tile--sm" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><path d="M2.5 10h19"/><path d="M6 14.5h4"/></svg>
+    </span>
+    <div class="pay__id">
+      <p class="pay__num">Visa •••• 4242</p>
+      <p class="pay__exp">Expires 12/2028</p>
+    </div>
+    <button class="pill-btn" type="button">Change</button>
+  </div>
+
+  <h2 class="label">Renewal</h2>
+  <div class="card" style="margin:0 var(--gutter)">
+    <div class="sw-row">
+      <span class="sw-row__id">
+        <b class="sw-row__name">Auto renewal</b>
+        <span class="sw-row__sub">Off — this registration ends 30 Jul 2027</span>
+      </span>
+      <button class="toggle" type="button" role="switch" aria-checked="false" aria-label="Auto renewal"></button>
+    </div>
+  </div>
+
+  <div class="disc" style="margin-top:14px">
+    <span class="tile tile--acid tile--sm" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><path d="M12 7.8h.01"/></svg>
+    </span>
+    <p><b>Top-ups draw on this card.</b> When an activity needs more credits than you hold, we charge the higher of your top-up amount or the credits the activity needs. You can reset the top-up amount in the app.</p>
+  </div>
+
+  <div style="padding:20px var(--gutter) 0">
+    <button class="btn btn--acid btn--wide" type="button">Pay $30 and register</button>
+    <p class="dock__note" style="margin:10px 0 0">You’ll be charged once. Nothing recurs while auto renewal is off.</p>
+  </div>
+
+ </div>
+</section>
+
+<!-- ==========================================================
+     FRAME 8 — CLUB MEMBERSHIP ID  (CL-01)
+     Dialog over the cascade, exactly as captured.
+     ========================================================== -->
+<section class="frame" data-title="Club membership ID" aria-label="Club membership ID required">
+ <div class="fr">
+
+  <!-- the screen behind -->
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back" tabindex="-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="bar__sp"></span>
+  </div>
+  <h1 class="title">Add a club</h1>
+  <p class="intro">Narrow the catalogue, then pick your club. Each step unlocks the next.</p>
+  <ol class="cascade" aria-hidden="true">
+    <li class="step is-done"><span class="step__mk"><b>1</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"/></svg></span>
+      <span class="step__lb">Sport</span>
+      <span class="sel"><span class="sel__val">Football</span><svg class="sel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5l6 6 6-6"/></svg></span></li>
+    <li class="step is-done"><span class="step__mk"><b>2</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"/></svg></span>
+      <span class="step__lb">Competition level</span>
+      <span class="sel"><span class="sel__val">International</span><svg class="sel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5l6 6 6-6"/></svg></span></li>
+    <li class="step is-done"><span class="step__mk"><b>3</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"/></svg></span>
+      <span class="step__lb">League</span>
+      <span class="sel"><span class="plate plate--sm">CL</span><span class="sel__val">Champions League</span><svg class="sel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5l6 6 6-6"/></svg></span></li>
+    <li class="step is-done"><span class="step__mk"><b>4</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"/></svg></span>
+      <span class="step__lb">Club</span>
+      <span class="sel"><span class="plate plate--sm">FCB</span><span class="sel__val">Bayern Munich</span><svg class="sel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5l6 6 6-6"/></svg></span></li>
+  </ol>
+
+  <!-- the dialog -->
+  <div class="ov" role="dialog" aria-modal="true" aria-labelledby="dlgIdT">
+    <div class="scrim"></div>
+    <div class="dlg">
+      <div class="dlg__lockup">
+        <span class="plate plate--lg" aria-hidden="true">FCB</span>
+        <div style="flex:1;min-width:0">
+          <h2 id="dlgIdT">Bayern Munich</h2>
+          <p>Champions League</p>
+        </div>
+      </div>
+      <p class="dlg__body">This club needs proof of an existing <b>club membership</b> before you can register on Sports Heist.</p>
+      <label class="field" for="memId">
+        <span class="field__label">Club membership ID</span>
+        <span class="ctl is-focus">
+          <input class="ctl__in" id="memId" type="text" inputmode="numeric" autocomplete="off" value="123456">
+        </span>
+        <span class="field__help">The number on your Bayern Munich membership card. We check it with the club.</span>
+      </label>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Cancel</button>
+        <button class="btn btn--acid" type="button">Verify</button>
+      </div>
+    </div>
+  </div>
+
+ </div>
+</section>
+
+<!-- ==========================================================
+     FRAME 9 — REGISTERED  (CL-04)
+     ========================================================== -->
+<section class="frame" data-title="Registered" aria-label="Registration complete">
+ <div class="fr">
+
+  <!-- the screen behind -->
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back" tabindex="-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="bar__sp"></span>
+  </div>
+  <h1 class="title">Register</h1>
+  <p class="intro">One annual fee. It becomes the credits you spend on ideas, votes and locker rooms.</p>
+  <div class="lockup" style="margin-top:20px" aria-hidden="true">
+    <span class="plate plate--lg"><span class="plate__art art--shield-light"></span></span>
+    <div class="lockup__id"><h2>Liverpool</h2><p class="lockup__sub">English Premier League · 1 of 3 used</p></div>
+  </div>
+  <h2 class="label" aria-hidden="true">What it costs</h2>
+  <div class="fee" aria-hidden="true">
+    <div><p class="fee__amt">$30</p><p class="fee__per">a year</p></div>
+    <div class="fee__gets"><b>30</b><span>credits back</span></div>
+  </div>
+
+  <!-- the dialog -->
+  <div class="ov" role="dialog" aria-modal="true" aria-labelledby="dlgOkT">
+    <div class="scrim"></div>
+    <div class="dlg dlg--mid">
+      <span class="dlg__tick">
+        <span class="plate plate--lg" aria-hidden="true"><span class="plate__art art--shield-light"></span></span>
+        <span class="tile tile--acid" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"/></svg>
+        </span>
+      </span>
+      <h2 class="dlg__title" id="dlgOkT">You’re registered with Liverpool</h2>
+      <p class="dlg__body">$30 charged to Visa •••• 4242. Auto renewal is off, so nothing recurs.</p>
+      <div class="dlg__figs">
+        <b>30</b>
+        <span>participation credits added</span>
+      </div>
+      <div class="act act--stack">
+        <button class="btn btn--acid" type="button">Make Liverpool my current club</button>
+        <button class="btn btn--ghost" type="button">Back to my clubs</button>
+      </div>
+    </div>
+  </div>
+
+ </div>
+</section>
+
+<!-- ==========================================================
+     FRAME 10 — PAYMENT DECLINED  (new)
+     ========================================================== -->
+<section class="frame" data-title="Payment declined" aria-label="Payment declined">
+ <div class="fr">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back" tabindex="-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="bar__sp"></span>
+  </div>
+  <h1 class="title">Register</h1>
+  <p class="intro">One annual fee. It becomes the credits you spend on ideas, votes and locker rooms.</p>
+  <div class="lockup" style="margin-top:20px" aria-hidden="true">
+    <span class="plate plate--lg"><span class="plate__art art--shield-light"></span></span>
+    <div class="lockup__id"><h2>Liverpool</h2><p class="lockup__sub">English Premier League · 1 of 3 used</p></div>
+  </div>
+  <h2 class="label" aria-hidden="true">What it costs</h2>
+  <div class="fee" aria-hidden="true">
+    <div><p class="fee__amt">$30</p><p class="fee__per">a year</p></div>
+    <div class="fee__gets"><b>30</b><span>credits back</span></div>
+  </div>
+
+  <div class="ov" role="alertdialog" aria-modal="true" aria-labelledby="dlgNoT" aria-describedby="dlgNoB">
+    <div class="scrim"></div>
+    <div class="dlg">
+      <span class="tile tile--red" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 21 20H3L12 4.5Z"/><path d="M12 10.5v4"/><path d="M12 17.2h.01"/></svg>
+      </span>
+      <h2 class="dlg__title" id="dlgNoT">Card declined</h2>
+      <p class="dlg__body" id="dlgNoB">Visa •••• 4242 was declined, so you have <b>not been charged</b> and Liverpool has <b>not</b> been added. Your 1 of 3 Premier League registrations is untouched.</p>
+      <div class="act act--stack">
+        <button class="btn btn--acid" type="button">Use a different card</button>
+        <button class="btn btn--ghost" type="button">Try again</button>
+      </div>
+    </div>
+  </div>
+
+ </div>
+</section>
+
+<!-- ==========================================================
+     FRAME 11 — YOUR CLUB · SWITCHER SHEET  (CL-07)
+     ========================================================== -->
+<section class="frame" data-title="Your club · switcher" aria-label="Your club switcher">
+ <div class="fr">
+
+  <!-- profile behind the sheet -->
+  <div class="stub">
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Back" tabindex="-1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <span class="bar__sp"></span>
+    </div>
+    <h1 class="title">Profile</h1>
+    <div class="stub__id" style="margin-top:18px">
+      <span class="stub__av" aria-hidden="true"></span>
+      <div style="flex:1;min-width:0">
+        <h3>Michael Kerr</h3>
+        <p>Emerging influencer · <span style="display:inline-flex;align-items:center;gap:5px;vertical-align:-6px"><span class="plate plate--sm" aria-hidden="true"><span class="plate__art art--stripe-dark"></span></span>Barcelona</span></p>
+      </div>
+    </div>
+    <div class="stub__two">
+      <div><b>1,284</b><span>Reputation</span></div>
+      <div><b>62</b><span>Credits</span></div>
+    </div>
+  </div>
+
+  <!-- the sheet -->
+  <div class="ov ov--sheet" role="dialog" aria-modal="true" aria-labelledby="shT">
+    <div class="scrim"></div>
+    <div class="sheet">
+      <button class="sheet__grab" type="button" aria-label="Drag to dismiss"></button>
+      <div class="sheet__head">
+        <h2 class="sheet__title" id="shT">Your current club</h2>
+        <button class="pill-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Add
+        </button>
+      </div>
+      <div class="sheet__body">
+        <p class="sheet__lede">Your current club sets the war room, the locker rooms and the standings you see. Switching takes effect straight away.</p>
+
+        <button class="opt" type="button" role="switch" aria-checked="true">
+          <span class="plate plate--md" aria-hidden="true"><span class="plate__art art--stripe-dark"></span></span>
+          <span class="opt__text"><b>Barcelona</b><small>Champions League · La Liga</small></span>
+          <svg class="opt__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+        </button>
+
+        <button class="opt" type="button" role="switch" aria-checked="false">
+          <span class="plate plate--md" aria-hidden="true"><span class="plate__art art--stripe-light"></span></span>
+          <span class="opt__text"><b>Borussia Dortmund</b><small>Champions League</small></span>
+          <svg class="opt__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+        </button>
+
+        <button class="opt" type="button" role="switch" aria-checked="false">
+          <span class="plate plate--md" aria-hidden="true">MUN</span>
+          <span class="opt__text"><b>Manchester United</b><small>English Premier League</small></span>
+          <svg class="opt__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+        </button>
+      </div>
+      <div class="sheet__foot">
+        <button class="btn btn--ghost btn--wide" type="button">Manage my clubs</button>
+      </div>
+    </div>
+  </div>
+
+ </div>
+</section>
+
+<!-- ==========================================================
+     FRAME 12 — ADD A CLUB · AS SHIPPED
+     THIS IS THE ONLY FRAME IN THIS FILE THAT SHOWS CODE THAT
+     EXISTS. Frames 04-10 are a proposal.
+
+     Source: APP/lib/pages/profile/club/add_club.dart:9
+     (AddClubBottomSheet), presented from pick_club.dart:210 via
+     UDialog().customModalBottomSheet at full screen height.
+     Reached: Profile -> Current team -> Change club
+     (profile_body.dart:510 -> change_club.dart:37) -> pick a crest.
+
+     What the member actually gets:
+       · the club crest and name (ClubChoosed, add_club.dart:50)
+       · one line of copy, en.json key
+         pages.login.home.userProfile.club adding =
+         "To add this club, kindly log in to sports heist on desktop"
+         rendered .toUpperCase() at add_club.dart:65-67
+       · one button, notification.okay = "OKAY", whose entire
+         handler is routes.pop() (add_club.dart:88)
+     No API call. addUserClub (lib/service/src/club.dart:46) is
+     never called from anywhere in lib/. There is no payment SDK
+     in pubspec.yaml and no card capture in lib/.
+     ========================================================== -->
+<section class="frame" data-title="Add a club · as shipped" aria-label="Add a club, as shipped today">
+ <div class="fr">
+
+  <!-- PICK A CLUB — the screen this sheet opens over. Stub only:
+       enough for the frame to stand alone at 375 x 812. -->
+  <div class="stub" aria-hidden="true">
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Close" tabindex="-1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="bar__sp"></span>
+    </div>
+    <h1 class="title">Pick a club</h1>
+    <div style="margin:0 var(--gutter)">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+        <input type="search" tabindex="-1" autocomplete="off" value="Liverpool" aria-label="Search for team">
+      </div>
+      <ul class="clist">
+        <li><span class="crow">
+          <span class="plate plate--md"><span class="plate__art art--shield-light"></span></span>
+          <span class="crow__id"><span class="crow__name">Liverpool</span><span class="crow__sub">English Premier League</span></span>
+        </span></li>
+        <li><span class="crow">
+          <span class="plate plate--md">MCI</span>
+          <span class="crow__id"><span class="crow__name">Manchester City</span><span class="crow__sub">English Premier League</span></span>
+        </span></li>
+        <li><span class="crow">
+          <span class="plate plate--md">TOT</span>
+          <span class="crow__id"><span class="crow__name">Tottenham Hotspur</span><span class="crow__sub">English Premier League</span></span>
+        </span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- the sheet — sheets.html shell, unchanged -->
+  <div class="ov ov--sheet" role="dialog" aria-modal="true" aria-labelledby="shipT">
+    <div class="scrim"></div>
+    <div class="sheet">
+      <button class="sheet__grab" type="button" aria-label="Drag to dismiss"></button>
+      <div class="sheet__head">
+        <h2 class="sheet__title" id="shipT">Add a club</h2>
+        <!-- REVIEW ANNOTATION, not a control in the app. It marks this
+             one frame as the behaviour that ships today. -->
+        <span class="status-pill status-pill--sm status-pill--quiet" style="flex:0 0 auto">In the app today</span>
+        <button class="sheet__x" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body">
+
+        <div class="lockup" style="margin:0">
+          <span class="plate plate--lg" aria-hidden="true"><span class="plate__art art--shield-light"></span></span>
+          <div class="lockup__id">
+            <h2>Liverpool</h2>
+            <p class="lockup__sub">English Premier League</p>
+          </div>
+        </div>
+
+        <!-- The copy is the en.json string verbatim. The shipped screen
+             renders it .toUpperCase(); it is set here in the sentence
+             case it is authored in, which is this library's convention. -->
+        <div class="punt">
+          <span class="tile tile--neutral tile--sm" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="13" rx="2.5"/><path d="M9 21h6"/><path d="M12 17.5V21"/></svg>
+          </span>
+          <p>To add this club, kindly log in to sports heist on desktop</p>
+        </div>
+
+      </div>
+      <div class="sheet__foot">
+        <button class="btn btn--acid btn--wide" type="button">Okay</button>
+      </div>
+    </div>
+  </div>
+
+ </div>
+</section>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* toggles — the switch is the control, so it owns its own state */
+  document.addEventListener('click', function(e){
+    var t = e.target.closest ? e.target.closest('.toggle') : null;
+    if(!t || t.disabled) return;
+    var on = t.getAttribute('aria-checked') === 'true';
+    t.setAttribute('aria-checked', on ? 'false' : 'true');
+  }, false);
+
+  /* single-select club rows + switcher rows */
+  document.addEventListener('click', function(e){
+    var r = e.target.closest ? e.target.closest('.crow') : null;
+    if(r && r.getAttribute('aria-disabled') !== 'true'){
+      var list = r.closest('.clist');
+      if(list){
+        list.querySelectorAll('.crow[aria-selected]').forEach(function(o){
+          o.setAttribute('aria-selected','false');
+        });
+        r.setAttribute('aria-selected','true');
+      }
+      return;
+    }
+    var o = e.target.closest ? e.target.closest('.opt') : null;
+    if(o){
+      var body = o.closest('.sheet__body');
+      if(body){
+        body.querySelectorAll('.opt').forEach(function(x){ x.setAttribute('aria-checked','false'); });
+        o.setAttribute('aria-checked','true');
+      }
+    }
+  }, false);
+
+  /* club search, frame 4 */
+  var q = document.getElementById('q4');
+  if(q){
+    var list = document.getElementById('clist4');
+    var none = document.getElementById('none4');
+    q.addEventListener('input', function(){
+      /* the shipped filter strips spaces from the QUERY but not from
+         the club name, so "manchester united" matches nothing. This
+         normalises both sides. */
+      var v = q.value.toLowerCase().replace(/\s+/g,'');
+      var hits = 0;
+      list.querySelectorAll('.crow').forEach(function(row){
+        var n = (row.getAttribute('data-n')||'').toLowerCase().replace(/\s+/g,'');
+        var show = !v || n.indexOf(v) > -1;
+        row.parentNode.hidden = !show;
+        if(show) hits++;
+      });
+      if(none) none.hidden = hits > 0;
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

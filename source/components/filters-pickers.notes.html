@@ -1,0 +1,379 @@
+<p class="dek">
+  The narrowing controls: the sheet that sorts a Results or Actions list, the state a member sees
+  when a filter is on, what happens when a filter matches nothing, the two date pickers, the date
+  range, and the small <code>?</code> explainer popover on the Decisions / Positions switch. These
+  are the last imperative surfaces in the app that no other component in this library covers.
+</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Eight surfaces that narrow a list</h2>
+  <p>
+    Every list in the War Room is filtered before it is read. Two of those filters — the ones on
+    <strong>Results</strong> and <strong>Actions</strong> — have never been designed, captured or
+    specified. They are opened by a small circular button at the head of the category strip, and
+    what opens is a sheet whose three rows do nothing at all: each row's tap handler in the
+    shipped code is an empty function. The sheet can be scrolled and admired; it cannot sort.
+  </p>
+  <p>
+    So this file does two jobs. It rebuilds the surfaces that exist — the sort sheet, the date
+    picker, the date range, the explainer popover — on the dark kit, and it fills the three holes
+    that make those surfaces unusable: there is no way to tell how many filters are on, no way to
+    clear them, and nothing on screen when a filter matches nothing. Filtering a list to zero
+    results in today's build produces a blank area under the chips.
+  </p>
+  <p>
+    Nothing here is in the Figma file. Every construction is borrowed from a component that is:
+    the sheet shell, option rows, indicators and calendar grid are <code>sheets.html</code>
+    unchanged; the screen title, taxonomy switch, category chips, result cards and verdict plates
+    are <code>results-actions.html</code> unchanged; the nothing-matched panel is
+    <code>ideas-list.html</code>'s. What is genuinely new is the count on the filter trigger, the
+    summary line that says <em>2 filters on · 3 of 14</em> with <strong>Clear all</strong>
+    beside it, the filter sheet itself, and the nothing-matched copy.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Screen</td><td>Taxonomy switch</td>
+          <td class="t-note">A <code>46px</code> <code>#13171E</code> track holding two
+            <code>38px</code> halves; the selected half is a full <code>#9BE222</code> plate with
+            <code>#0B0E06</code> ink. <code>CLString.listFilterPri</code> —
+            <strong>Decisions</strong> / <strong>Positions</strong> — sent as
+            <code>type=decisions|position</code>.</td>
+        </tr>
+        <tr>
+          <td>Screen</td><td><code>?</code> explainer trigger</td>
+          <td class="t-note">A <code>24px</code> disc sitting on the half beside the label, with an
+            invisible <code>::after</code> expansion to a <code>44px</code> hit area. The build
+            draws it at <code>16 × 16</code> and nests it <em>inside</em> the tab button; here the
+            label and the disc are two separate controls on one plate, so a screen reader is not
+            offered a button inside a button.</td>
+        </tr>
+        <tr>
+          <td>Screen</td><td>Filter trigger</td>
+          <td class="t-note">The kit's <code>38px</code> disc on <code>#1C2129</code> with a
+            1.9-stroke bar glyph. When a filter is on it takes a
+            <code>rgba(155,226,34,.30)</code> inner ring, the glyph turns accent, and an
+            <code>18px</code> accent count rides the top-right corner with a <code>2px</code>
+            <code>#030401</code> halo so it reads on any row beneath.</td>
+        </tr>
+        <tr>
+          <td>Screen</td><td>Category chips</td>
+          <td class="t-note"><code>CLString.listFilterSup</code> with index 0 dropped, because
+            index 0 <em>is</em> the trigger in the shipped list: <strong>All · On-field ·
+            Off-field · Management · My ideas</strong>. <code>34px</code>, radius pill, uppercase
+            <code>11 / 700 / .11em</code>. Active is the <code>12%</code> accent wash with the
+            <code>30%</code> rim <em>and a tick glyph</em>, so the state is never colour alone.</td>
+        </tr>
+        <tr>
+          <td>Screen</td><td>Filter summary</td>
+          <td class="t-note">New. <code>11 / 700 / .11em</code> uppercase <code>#5B606B</code>
+            with the figures in white tabular numerals: <em>2 filters on · 3 of 14</em>, and
+            <strong>Clear all</strong> in accent at the right end with an <code>✕</code>. Kept to
+            one line at <code>375px</code> — the sort order stays on the sheet that sets it.</td>
+        </tr>
+        <tr>
+          <td>Sheet</td><td>Shell</td>
+          <td class="t-note"><code>sheets.html</code> unchanged: top corners <code>18px</code>,
+            <code>#1C2129</code> → <code>#13171E</code> at 180°, 1&nbsp;px white&nbsp;7.5% on top
+            and sides, <code>0 −20 50 rgba(0,0,0,.6)</code>, a <code>40 × 4</code> grabber in a
+            <code>26px</code> strip, and <code>min(88vh, 560)</code> height.</td>
+        </tr>
+        <tr>
+          <td>Sheet</td><td>Title bar</td>
+          <td class="t-note"><code>11 / 700 / .14em</code> uppercase on a hairline. The shipped
+            title is <code>'SORT {}'.tr()</code> filled with <code>RESULTS</code> or
+            <code>ACTIONS</code>; on the filter sheet the bar also carries the count pill,
+            <strong>Clear all</strong> and a <code>30px</code> ✕.</td>
+        </tr>
+        <tr>
+          <td>Sheet</td><td>Sort row</td>
+          <td class="t-note"><code>48px</code> minimum, radius <code>12px</code>, on
+            <code>#13171E</code>. <strong>Round radio</strong>, because only one order can be
+            active — <code>ordering=recent|urgent|popular</code>. Selected is the accent wash, the
+            accent rim and an accent label. Applies on tap, so the sort sheet has no foot.</td>
+        </tr>
+        <tr>
+          <td>Sheet</td><td>Filter row</td>
+          <td class="t-note">Same row, <strong>square checkbox</strong>, because more than one can
+            be on. Grouped <code>Kind</code> / <code>Verdict</code> / <code>Mine</code> under
+            <code>10 / 700 / .14em</code> labels, and the foot carries a full-width accent
+            <strong>Apply</strong> with the count — nothing behind the sheet moves until it is
+            pressed.</td>
+        </tr>
+        <tr>
+          <td>Picker</td><td>Month grid</td>
+          <td class="t-note"><code>sheets.html</code>'s calendar: seven columns, Monday first,
+            <code>44px</code> rows, a <code>34px</code> accent disc for the selection,
+            <code>#5B606B</code> for adjacent months, and today as a 1&nbsp;px
+            <code>rgba(155,226,34,.30)</code> ring. Unselectable days are struck through, not
+            hidden.</td>
+        </tr>
+        <tr>
+          <td>Picker</td><td>Summary line</td>
+          <td class="t-note">Above the grid, on <code>#13171E</code>: the answer restated in words
+            — <em>Sunday 12 July 2026</em> — with the distance from today in accent at the right.
+            <code>12</code> on its own is not a date.</td>
+        </tr>
+        <tr>
+          <td>Picker</td><td>Range fill</td>
+          <td class="t-note">Both ends are accent discs; the days between carry the <code>12%</code>
+            wash edge to edge behind the disc so the run reads as one object rather than
+            twenty-one separate cells.</td>
+        </tr>
+        <tr>
+          <td>Picker</td><td>From / To fields</td>
+          <td class="t-note">Two <code>52px</code> read-only controls at the head of the range
+            sheet, tabular numerals, calendar glyph at the right, the one being edited ringed in
+            accent with a <code>3px</code> wash halo. Both live on the <em>same</em> surface as the
+            grid — the build opens a second dialog for each.</td>
+        </tr>
+        <tr>
+          <td>Popover</td><td>Explainer</td>
+          <td class="t-note">A <code>#1C2129</code> plate at radius <code>12px</code> with a
+            rotated-square tail pointing at the disc that opened it, an accent
+            <code>11 / 700 / .14em</code> title, <code>13px</code> <code>#99A0AE</code> body at
+            1.5 line height, a close control, and one optional onward link. The build's version is
+            radius <code>3px</code>, has no dismiss control and no title styling of its own.</td>
+        </tr>
+        <tr>
+          <td>Empty</td><td>Nothing matched</td>
+          <td class="t-note">A <strong>dashed</strong> <code>rgba(255,255,255,.075)</code> edge on
+            <code>#080A0C</code> holding a 1.5-stroke crossed-filter glyph, a sentence naming the
+            two filters that collide, a <code>44px</code> <strong>Clear filters</strong> button and
+            one cheaper alternative underneath. Dashed, not solid, because this is a filtered-out
+            state and not an empty stage.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>No filter</td>
+          <td class="t-note"><code>All</code> chip pressed, trigger plain with no ring and no
+            count, no summary line at all. Absence of the line is the signal.</td></tr>
+        <tr><td>Filter on</td>
+          <td class="t-note">Three signals at once: a tick inside the accent chip, an accent ring
+            plus a numeral on the trigger, and the summary line in words with
+            <strong>Clear all</strong>. Any one of the three could be missed; all three cannot.</td></tr>
+        <tr><td>Filter matches nothing</td>
+          <td class="t-note">The dashed panel, the two colliding filters named in the sentence, and
+            a button that clears them. The summary line still reads <em>2 filters on · 0 of 14</em>
+            so the member knows the list is not empty, the filter is.</td></tr>
+        <tr><td>Stage genuinely empty</td>
+          <td class="t-note">Not this panel. <code>No results yet</code> on the solid section edge,
+            with no button — there is nothing to undo. The build uses one string,
+            <code>'No {} yet'</code>, for both cases and shows it only on the War Room rails.</td></tr>
+        <tr><td>Sort row selected</td>
+          <td class="t-note">Round indicator filled with an accent dot, row washed at
+            <code>12%</code>, rim at <code>30%</code>, label accent and <code>600</code>. Exactly
+            one row in the group.</td></tr>
+        <tr><td>Filter row checked</td>
+          <td class="t-note">Square indicator filled <code>#9BE222</code> with an
+            <code>#0B0E06</code> tick. Any number of rows. Head count and Apply count both track
+            it live, and <strong>Clear all</strong> disables at zero.</td></tr>
+        <tr><td>Day unselectable</td>
+          <td class="t-note"><code>#5B606B</code> and struck through, cursor
+            <code>not-allowed</code>. Future days on both pickers, because
+            <code>lastDate: DateTime.now()</code>. <strong>Next month</strong> is disabled rather
+            than removed, so the edge of the window is visible instead of mysterious.</td></tr>
+        <tr><td>Today</td>
+          <td class="t-note">A 1&nbsp;px accent ring that survives under a selected disc, since
+            both ends of a range usually sit near today.</td></tr>
+        <tr><td>Range incomplete</td>
+          <td class="t-note">The unset field reads <code>Choose a date</code> in
+            <code>#5B606B</code> at <code>500</code>; <strong>Apply</strong> stays available only
+            once both ends exist. Setting <em>From</em> after <em>To</em> is prevented by the grid,
+            not by an error message.</td></tr>
+        <tr><td>Explainer open</td>
+          <td class="t-note">Trigger disc inverts — accent fill on a plain half, <code>#0B0E06</code>
+            fill on the selected half — and the popover appears with its tail under the disc.
+            Escape, the ✕ or a second tap closes it.</td></tr>
+        <tr><td>Explainer with no copy</td>
+          <td class="t-note">Unbuilt on purpose. <strong>Positions</strong> has no explainer text
+            anywhere in the codebase, and a popover containing filler is worse than a disc that is
+            not there.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Nothing.</b> None of these eight surfaces appears in the dark-mode export, in
+          Screen-Specs, or in any capture. The coverage audit lists all of them as
+          <b>uncovered</b> under "Other imperative surfaces".</li>
+      </ul>
+      <h3>Reused from this library</h3>
+      <ul>
+        <li><b>Sheet shell, option row, radio and checkbox, calendar grid, range fill</b> —
+          <code>sheets.html</code>, values unchanged</li>
+        <li><b>Screen title, taxonomy switch, category chips, result card, verdict plate</b> —
+          <code>results-actions.html</code>, unchanged</li>
+        <li><b>Nothing-matched panel and its <code>Clear filters</code> pill</b> —
+          <code>ideas-list.html</code></li>
+        <li><b>The <code>52px</code> control shell</b> for the two date fields —
+          <code>forms.html</code></li>
+        <li><b>The <code>::after</code> hit-area expansion</b> on every <code>38px</code> disc and
+          on the <code>24px</code> explainer trigger — <code>create-idea.html</code></li>
+      </ul>
+      <h3>Reused from the shipped code</h3>
+      <ul>
+        <li><b>Three sort orders</b> — <code>CLString.listSortProposal</code> →
+          <code>["recent","urgent","popular"]</code></li>
+        <li><b>Five category chips</b> — <code>CLString.listFilterSup</code>, index 0 dropped
+          exactly as the code drops it</li>
+        <li><b>Verdict values</b> — <code>StatusIdeaEnum</code>: <code>approved</code>,
+          <code>rejected</code>, <code>vetoed</code>, <code>cancelled</code></li>
+        <li><b>The date window</b> — <code>firstDate: DateTime(2022)</code>,
+          <code>lastDate: DateTime.now()</code></li>
+        <li><b>The explainer copy</b> — <code>CLString.listExplainTitleIDea[0]</code>, the only
+          real explainer sentence that exists in the codebase</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>A sort sheet that sorts</b> — every row in both shipped sheets carries
+          <code>onPress: () {}</code></li>
+        <li><b>A filter sheet</b> — the app has none; its filter-glyph trigger opens a sort
+          list</li>
+        <li><b>Verdict as a filter</b> — you cannot currently narrow Results to
+          <code>Approved</code> at all</li>
+        <li><b>The count on the filter trigger</b> and the accent ring around it</li>
+        <li><b>The filter summary line</b> — <em>2 filters on · 3 of 14 results</em> — and
+          <b>Clear all</b>, which does not exist in any form today</li>
+        <li><b>A tick inside the active chip</b>, so the state is not carried by hue alone</li>
+        <li><b>The nothing-matched panel</b> — the build renders a blank area</li>
+        <li><b>One range surface</b> instead of a dialog opening a dialog</li>
+        <li><b>Struck-through unselectable days</b> and a disabled <b>Next month</b>, so the window
+          is legible</li>
+        <li><b>A dismissible explainer</b> with a title, a tail and a <code>44px</code>
+          trigger</li>
+        <li><b>English throughout.</b> Every string on the range surface is Vietnamese in the
+          build</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:14px">
+    Five faults are corrected here rather than reproduced, and each is worth reading as a bug
+    report. <b>One</b> — both sort sheets are inert: <code>result/widget/show_filter.dart:53</code>
+    and <code>action/widget/show_filter.dart:53</code> pass an empty function as the row handler,
+    while the identical sheets on Ideas and Voting pass a real one. <b>Two</b> — the same sheet is
+    built at two row heights: Actions sets <code>height: CSpace.height * 0.08</code>
+    (<code>action/widget/show_filter.dart:49</code>), Results leaves it unset. <b>Three</b> —
+    neither list has a zero branch, so a filter that matches nothing shows nothing
+    (<code>result_screen.dart:372</code>, <code>action_screen.dart:379</code>), even though the
+    app already owns <code>EmptyContainer</code>. <b>Four</b> — the filter survives a screen change
+    visually but not actually: <code>initState</code> re-requests the default unfiltered list
+    (<code>result.dart:172</code>) without clearing the selection state, so you return to green
+    chips over unfiltered results. <b>Five</b> — the date layer is pinned to Vietnamese in an
+    English-only app: <code>Locale('vi')</code> at <code>select_date/index.dart:102</code> and
+    <code>:130</code>, <code>DateFormat(… , 'vi')</code> at <code>on_tap.dart:392</code> and
+    <code>:405</code>, and hardcoded Vietnamese labels at <code>on_tap.dart:149</code>,
+    <code>:163</code>, <code>:233</code>, <code>:252</code> and <code>:293</code>.
+  </p>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Should the taxonomy and the categories be independent?</h3>
+      <p>They are not today. <code>getFilterListIdea</code> sends a category <em>as</em> the
+      <code>type</code> parameter with <code>category: null</code>
+      (<code>cubit/proposal/result.dart:52–61</code>), so choosing <b>On-field</b> silently
+      discards your <b>Decisions / Positions</b> choice — and switching to <b>Positions</b> shrinks
+      the chip list from six entries to three while keeping the numeric index, which turns
+      <b>My ideas</b> into <b>On-field</b> without telling you. We built them as
+      <span class="flag">two independent axes</span>, which is what the sheet implies and what a
+      member will expect. If the API cannot carry both at once, the chips have to become part of
+      the taxonomy rather than sit beside it, and the sheet shrinks.</p>
+    </li>
+    <li>
+      <h3>What can actually be filtered on the server?</h3>
+      <p><code>getListIdea</code> sends exactly five query parameters —
+      <code>club_uuid</code>, <code>stage</code>, <code>category</code>, <code>type</code>,
+      <code>ordering</code> — plus <code>limit: '50'</code>
+      (<code>service/src/proposal.dart:52–59</code>). There is <b>no status parameter and no
+      is_vote parameter</b>, so the <b>Verdict</b> and <b>Mine</b> groups cannot be server-side
+      today. We built them <span class="flag">filtering the page already in memory</span>, which is
+      defensible only because the list is a single request capped at 50 and therefore complete for
+      most clubs. If a club can hold more than 50 settled Results, those two groups need real query
+      parameters or they will lie.</p>
+    </li>
+    <li>
+      <h3>Is one filter enough per category, or many?</h3>
+      <p>The chips are single-select today: tapping one replaces the last. We built the sheet as
+      <span class="flag">multi-select with Apply</span> and kept the chips as single-select
+      shortcuts to the same state, so the chip strip stays a one-tap path and the sheet is where
+      combinations are made. The alternative — chips that also multi-select — makes the strip
+      state harder to read at <code>375</code> px and needs a horizontal scroll indicator.</p>
+    </li>
+    <li>
+      <h3>Should a filter survive leaving the screen?</h3>
+      <p>Today it half-survives, which is the worst of both: the chips remember, the list forgets.
+      We assumed <span class="flag">the filter is per-visit and resets on entry</span> — so the
+      chips must reset too. The other defensible answer is that a filter is a member preference
+      and persists until cleared, which needs it written to the cubit's initial state and
+      re-applied on <code>initState</code>. Either is fine; the current mixture is not.</p>
+    </li>
+    <li>
+      <h3>What does the Positions explainer say?</h3>
+      <p>There is one real explainer sentence in the whole codebase —
+      <code>listExplainTitleIDea[0]</code>, about On-field Decisions — and it is used on one screen
+      that is not this one. Its sibling for Positions is lorem ipsum, and all four War Room list
+      screens pass lorem ipsum directly at the call site. We shipped
+      <span class="flag">the Decisions popover only</span> and left the Positions disc without one.
+      Two or three sentences on what a Position is and we will build it.</p>
+    </li>
+    <li>
+      <h3>Which date does the range filter, and does it exist?</h3>
+      <p>The range dialog in <code>on_tap.dart</code> and the <code>SelectDate</code> widget are
+      both <b>dead code</b> — nothing in <code>lib/</code> constructs either, and the only live
+      date-range field sits in an admin user-list drawer with no route into it. We built the range
+      as <span class="flag">Settled between</span>, filtering on the date a verdict was reached,
+      because that is the only date a Result carries that a member would search by. If the range
+      is meant to filter Actions by kick-off, or if it is not wanted at all, say so — it is the one
+      surface here with no live caller.</p>
+    </li>
+    <li>
+      <h3>Monday-first weeks?</h3>
+      <p>The grid starts on <span class="flag">Monday</span>, which suits AU and EU and is wrong
+      for a US audience. The build never decided, because it never drew a calendar — it asked the
+      platform, in Vietnamese. If the app ships to both, the grid must follow the device locale.</p>
+    </li>
+    <li>
+      <h3>Can we delete the Vietnamese?</h3>
+      <p><code>assets/translations/vi.json</code> still ships, <code>main.dart</code> declares
+      <code>supportedLocales: [Locale("en")]</code>, and seven date helpers in
+      <code>utils/src/convert_data.dart</code> plus both date pickers hardcode
+      <code>'vi'</code>. We built <span class="flag">English only</span>. Confirm the app is
+      English-only and we will treat every Vietnamese string and every hardcoded
+      <code>'vi'</code> locale as a defect to be removed, not a feature to be preserved.</p>
+    </li>
+  </ol>
+</section>

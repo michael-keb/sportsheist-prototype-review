@@ -1,0 +1,196 @@
+<p class="dek">The screen behind the <b>View all ↗</b> pill on the Backchat home. Backchat shows four live
+rooms and four scheduled ones; this is the whole set, with search, sort, filter and the four scope
+chips the code already ships. Any member reaches it; club staff use it most.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One list, two modes</h2>
+
+  <p><b>Live</b> and <b>Upcoming</b> are not two tabs of one list. The code carries a separate sort
+  enum for each, drops one of the four scope chips in Live, and shows a different figure in the card
+  footer — people in the room when live, people booked in when scheduled. So the segmented control at
+  the top switches mode, and everything below it re-reads: the sort options, the filter options, the
+  chips, the search sheet's title.</p>
+
+  <p>The room card is the Backchat card, unchanged — the same two-line title, the same 24 px host
+  portrait, the same <code>host : club_staff</code> line, the same footer. A room has to look like the
+  same room wherever it appears, and it now appears in seven places. The full list is not a 244 px
+  carousel cell, so the card runs the full column width and carries the two things the peek card had
+  no room for: the reminder control, and <code>EDIT</code> on a scheduled room you host.</p>
+
+  <p>Everything on the top half is live in this preview. Switch mode, tap the chips, open sort, tick
+  filters and press Apply, open search and type — <code>club_staff</code>, <code>arsenal</code>,
+  <code>sergi_gol</code> and <code>goalkeeper</code> each reach a different state. The four states
+  below the fold (first load, loading more, end of list, the three empty panels) are laid out as
+  specimens because you cannot get to them by tapping.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Header</td><td>Back</td><td class="t-note">38 px disc, <code>#1C2129</code>, 1.9-stroke arrow, with an <code>::after</code> expansion to a 44 px hit area. Eyebrow <code>BACKCHAT</code> at 10.5/700/.14em in <code>#5B606B</code>.</td></tr>
+        <tr><td>Header</td><td>Start a room</td><td class="t-note">38 px accent disc, <code>#9BE222</code> with <code>#0B0E06</code> ink — the only accent fill in the chrome. Any member can start a room, so it stays available even when the list is empty.</td></tr>
+        <tr><td>Header</td><td>Screen title</td><td class="t-note"><code>ALL LOCKER ROOMS</code>, 34/800/−.025em uppercase. One title for both modes. The code switches between <code>LOCKER ROOMS / LIVE</code> and <code>UPCOMING LOCKER ROOMS</code> in the body while hard-coding <code>LOCKER ROOMS / LIVE</code> into the app bar, so the shipped screen can show two different titles at once.</td></tr>
+        <tr><td>Mode</td><td>Live / Upcoming</td><td class="t-note">Pill track <code>#1C2129</code>, 4 px inner padding, two 40 px halves — 48 px overall. Selected = accent pill with <code>#0B0E06</code> label and a count badge; unselected = <code>#99A0AE</code> label with a <code>#13171E</code> badge.</td></tr>
+        <tr><td>Search</td><td>Field trigger</td><td class="t-note">The forms.html control shell: 52 px, R12, <code>#1C2129</code>, 1 px white 7.5%, 19 px lens. Tapping opens the search sheet with the real field focused.</td></tr>
+        <tr><td>Toolbar</td><td>Sort trigger</td><td class="t-note">44 px pill, R999, showing the applied order — <code>Sort · Most recent</code>. The shipped control is an unlabelled 32 px raster icon that gives no hint of the current order.</td></tr>
+        <tr><td>Toolbar</td><td>Filter trigger</td><td class="t-note">44 px pill carrying the <b>active-filter count</b> in an accent-wash badge, and an accent rim on the pill when anything is on. Nothing in the shipped build marks an applied filter at all.</td></tr>
+        <tr><td>Scope</td><td>Four chips</td><td class="t-note"><code>ALL · HOSTED BY ME · INVITATIONS · REMINDERS</code> — <code>AllLockerRoomButtonType</code>, in enum order. 36 px, R999, <code>#13171E</code> with an <code>#99A0AE</code> label; pressed = accent wash, 30% accent rim, accent label. <code>REMINDERS</code> is hidden in Live, exactly as the code hides it.</td></tr>
+        <tr><td>Tally</td><td>What is showing</td><td class="t-note"><code>6 ROOMS · MOST RECENT</code> at 11/700/.11em, plus a <code>Clear</code> link once a chip or a filter is on. An <code>aria-live</code> region, so the count is announced when the list changes.</td></tr>
+        <tr><td>Card</td><td>Room card</td><td class="t-note"><code>#1C2129</code>, R12, 14 px padding. Live label 10.5/700/.14em accent with a 6 px dot, or the scheduled time in the same slot. Title 15/600, clamped to two lines. Host row: 24 px portrait + <code>host : name</code> at 12 px <code>#99A0AE</code>.</td></tr>
+        <tr><td>Card</td><td>Footer</td><td class="t-note">Hairline <code>rgba(255,255,255,.045)</code>, then microphone + speaker count, person + people count, and a right-aligned <code>OPEN ROOM</code> / <code>LOCKED ROOM</code> with a padlock at 10.5/700/.13em. On a scheduled room the people figure is the number <b>booked in</b> (<code>totalReminders</code>), not the number in the room.</td></tr>
+        <tr><td>Card</td><td>Reminder control</td><td class="t-note">30 px disc top-right, accent wash with a 30% rim when off, <code>#13171E</code> when on. Glyph-only — bell-plus off, bell-tick on — as shipped, because a worded chip and a full date cannot share one 319 px line. <code>::after</code> to 44 px. Live rooms have no reminder control.</td></tr>
+        <tr><td>Card</td><td><code>EDIT</code></td><td class="t-note">Accent 10.5/700/.13em in the footer, on a scheduled room you host. Shipped as bare text with no padding; here it has a 44 px hit area.</td></tr>
+        <tr><td>List</td><td>Loading more</td><td class="t-note">One skeleton card holding the space the next card will fill, with a 18 px accent ring and <code>LOADING MORE ROOMS</code> under it.</td></tr>
+        <tr><td>List</td><td>End of list</td><td class="t-note"><code>THAT'S ALL 13 ROOMS</code> between two hairlines, at 10.5/700/.14em <code>#5B606B</code>.</td></tr>
+        <tr><td>Sheet</td><td>Sort</td><td class="t-note">The sheets.html shell: R18 top corners, grabber, 11/700/.14em title, 48 px rows. Single-select radios; tapping applies and dismisses, so there is no Apply.</td></tr>
+        <tr><td>Sheet</td><td>Filter</td><td class="t-note">Same shell with a count pill, <code>Clear all</code>, grouped checkbox rows and a full-width accent <code>Apply 2</code>. Nothing behind the sheet changes until Apply is pressed.</td></tr>
+        <tr><td>Sheet</td><td>Search</td><td class="t-note">Sticky 44 px field on <code>#181D25</code>, then one of three bodies: recent searches, <code>N results found</code> with filter and sort discs above full room cards, or the no-match panel. Scrim <code>rgba(3,4,1,.72)</code> + 10 px blur; dismiss by scrim, grabber drag, ✕ or Esc.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The sort and filter option sets are the shipped enums, not a plausible set:</p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Values as written in <code>lib/pages/back_chat/enum/</code>.</caption>
+      <thead><tr><th scope="col">Control</th><th scope="col">Live</th><th scope="col">Upcoming</th></tr></thead>
+      <tbody>
+        <tr><td>Sort</td><td class="t-note"><code>Most Recent</code>, <code>Most Popular</code></td><td class="t-note"><code>Most Recent</code>, <code>Most Immediate</code>, <code>Most Popular</code></td></tr>
+        <tr><td>Filter</td><td class="t-note"><code>All rooms</code>, <code>Open rooms only</code>, <code>Closed rooms only</code> — the live sheet renders the first 3 of the 5 values</td><td class="t-note">those three plus <code>ROOMS I'M INVITED TO</code> and <code>TO BE REMINDED ROOMS</code></td></tr>
+        <tr><td>Scope chips</td><td class="t-note"><code>ALL</code>, <code>HOSTED BY ME</code>, <code>INVITATIONS</code></td><td class="t-note">those three plus <code>REMINDERS</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><b>Two copy defects fixed here.</b> The filter enum ships <code>TO BE REMINDED ROOMS</code>, which
+  reads as a category of room rather than something you did; it is <b>Rooms I've set a reminder for</b>
+  in this build, matching the wording already agreed in the sheets kit. And the room editor's delete
+  dialog reads <code>Delete this rooms?</code> — it is <b>Delete this room?</b> Only one room is ever
+  being deleted. That string lives in
+  <code>locker_room_editor_content_view.dart</code>, so the fix has to be carried into the
+  <b>Schedule a room</b> screen; nothing on this screen can delete a room.</p>
+
+  <p>Three more strings were tightened on the way through. <code>N results found</code> is rendered for
+  every N in the shipped build, so a single hit reads <code>1 results found</code> — pluralised here.
+  The search sheet's title is hard-coded to <code>Find LIVE room</code> whichever mode you opened it
+  from — it now follows the mode. And the filter says <code>Closed rooms only</code> while the card
+  footer says <code>Locked room</code> for the same fact; <b>locked</b> wins, because that is what the
+  padlock in the footer and the room-type tiles in the editor both say.</p>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>First load</td><td class="t-note">Four skeleton cards, matching <code>CDimensions.shimmerItems = 4</code>. Bones are white at 5.5% with one 1.5 s sheen, so they sit on the card fill; the shipped shimmer is a grey <code>#C8C6CE → #DFDFDF</code> sweep, a light-theme skeleton on a dark screen, drawing four portraits and four stats regardless of the card it stands in for. No sheen under <code>prefers-reduced-motion</code>.</td></tr>
+        <tr><td>Loading more</td><td class="t-note">One skeleton card plus the accent ring. Triggered by reaching the end of the list, not by a button — see the pagination note below.</td></tr>
+        <tr><td>Refreshing</td><td class="t-note">Pull to refresh, as shipped (<code>RefreshIndicator</code>). Not drawn — the platform draws it.</td></tr>
+        <tr><td>End of list</td><td class="t-note">One line, <code>THAT'S ALL 13 ROOMS</code>. The shipped list ends with an empty box, so a member cannot tell whether it finished or stalled.</td></tr>
+        <tr><td>No live rooms</td><td class="t-note">Panel, illustration, <b>No rooms open right now</b>, when rooms usually run, how many are scheduled, and a button through to Upcoming.</td></tr>
+        <tr><td>No upcoming rooms</td><td class="t-note">Same panel, <b>Nothing scheduled yet</b>, and a promise pill instead of a button — nothing the member does moves it forward.</td></tr>
+        <tr><td>No search results</td><td class="t-note">The lens illustration, the term quoted back, what search does and does not read, and <b>Clear search</b>. The shipped sheet shows an empty white area with no message.</td></tr>
+        <tr><td>Filtered to nothing</td><td class="t-note">A quieter panel — <b>No room matches that combination</b> with one <b>Clear filters</b> button. Distinct from an empty club, because there <em>are</em> rooms and the fix is one tap. The shipped build shows the same "no rooms available" panel for both, which reads as an outage.</td></tr>
+        <tr><td>Reminder on / off</td><td class="t-note">Bell-plus in accent wash, or bell-tick on <code>#13171E</code>. The glyph changes as well as the fill, so the state never rests on colour. Toggling it also moves the room in and out of the <code>REMINDERS</code> chip and the reminder filter.</td></tr>
+        <tr><td>Filter applied</td><td class="t-note">Count badge on the trigger, accent rim on the trigger, count pill in the sheet head, count on the Apply button, and a <code>Clear</code> link beside the tally. Five places, because an invisible filter is the single most common way a list looks broken.</td></tr>
+        <tr><td>Search, empty field</td><td class="t-note">Recent searches as tappable pills, plus one line explaining the scope of search, plus <b>Clear recent searches</b>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><b>Pagination: there isn't any.</b> The list view attaches a scroll listener and calls
+  <code>loadMoreAllLockerRooms()</code> whenever the scroll position reaches the end and
+  <code>state.nextUrl</code> is not empty — a cursor, so there are no page numbers, no page size to
+  show and no pager to design. What that needs is exactly three things, all built above: a skeleton
+  holding the incoming row, a marker while the request is out, and a line when the cursor comes back
+  null.</p>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused, unchanged</h3>
+      <ul>
+        <li><b>Room card</b> — <code>backchat.html</code>, verbatim: two-line title, 24 px portrait, <code>host : name</code>, footer with mic count, people count and the padlock label</li>
+        <li><b>Sort and filter sheets</b> — <code>sheets.html</code>: R18 top corners, grabber, 48 px rows, accent-wash selected row with a 30% rim, <code>Clear all</code> + accent <code>Apply</code></li>
+        <li><b>Skeleton bone</b> — <code>states.html</code>: white 5.5% with one 1.5 s sheen</li>
+        <li><b>Empty panels and illustrations</b> — <code>states.html</code>: the "no rooms in session", "nothing scheduled" and "no search results" frames, and its rule that a state with no member action carries a promise pill rather than a button</li>
+        <li><b>Search field</b> — <code>forms.html</code> control shell, 52 px, R12, accent focus ring</li>
+        <li><b>Option sets</b> — <code>LiveLockerRoomsSort</code>, <code>UpcomingLockerRoomsSort</code>, <code>LockerRoomsFilter</code>, <code>AllLockerRoomButtonType</code>, values as shipped</li>
+        <li><b>Live / Upcoming split, and the missing chip</b> — the code's own separation, including dropping <code>REMINDERS</code> in Live</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Segmented Live / Upcoming control</b> — the code reaches this screen already set to one mode and gives no way to change it here. One control, with counts.</li>
+        <li><b>Labelled sort and filter triggers</b> — replacing three unlabelled 32 px raster icons. The sort trigger names the applied order; the filter trigger carries the active count.</li>
+        <li><b>Multi-select filter</b> — the code stores one filter index, so <code>Open rooms only</code> and <code>Rooms I'm invited to</code> cannot both be on. Ticks are OR within a group and AND across groups; <code>All rooms</code> is dropped, because "no filter" is now simply nothing ticked.</li>
+        <li><b>Radios on the sort sheet</b> — the export draws these single-select rows with a square checkbox tick, which promises "tick as many as you like". Recorded in <code>sheets.html</code> and corrected the same way here.</li>
+        <li><b>Recent searches</b> — the shipped sheet shows a blank area until you type.</li>
+        <li><b>The tally line</b>, the <b>end-of-list line</b>, and the <b>filtered-to-nothing panel</b></li>
+        <li><b>Stacked sheets</b> — the filter and sort discs in the search results header open over the search sheet instead of replacing it, so the query survives</li>
+        <li><b>Date format</b> — <code>Sunday 19 April · 6:00 PM</code>. Backchat's <code>Sunday · April 19 · 6:00 PM</code> wraps to two lines in a full-width card.</li>
+        <li><b>44 px hit areas</b> — every 30 px and 38 px disc takes the <code>create-idea.html</code> <code>::after</code> expansion; labelled controls are 44 px outright</li>
+      </ul>
+    </div>
+  </div>
+
+  <p><b>One asset defect found.</b> In <code>_assets/avatars.css</code>, <code>--av-01</code> and
+  <code>--av-17</code> are byte-identical, so on the Backchat home <code>club_staff</code> and
+  <code>taythaytu</code> render the same face. In a thirteen-room list that is unreadable, so
+  <code>club_staff</code> is on <code>--av-08</code> here. <code>backchat.html</code> needs the same
+  change.</p>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Should invitations and reminders be a chip or a filter?</h3>
+      <p>They are currently both. <code>INVITATIONS</code> and <code>REMINDERS</code> are scope chips,
+      and <code>ROOMS I'M INVITED TO</code> and <code>TO BE REMINDED ROOMS</code> are filter options —
+      the same two facts, set from two places, on the same request. The code resolves the clash with
+      <code>??</code>, so whichever the chip sets silently wins and the filter row appears to do
+      nothing. We have built <span class="flag">both, as shipped</span> so you can see the duplication.
+      Our recommendation is to keep the chips and drop the two rows from the filter sheet, leaving
+      filter to mean access only.</p></li>
+
+    <li><h3>Does search inherit the list's sort and filter, or start clean?</h3>
+      <p>The code keeps a second, separate sort and filter state for search and resets both to their
+      first option every time the sheet opens — so a member who has filtered to locked rooms searches
+      across everything without being told. We have built <span class="flag">search inherits the
+      list</span>: one filter state, one sort state, and the discs in the results header open the same
+      two sheets. If search is meant to be a fresh look at everything, the results header needs to say
+      so.</p></li>
+
+    <li><h3>Is the filter multi-select?</h3>
+      <p>The shipped control is one index into five options, which is why <code>All rooms</code> has to
+      be one of them. We have built <span class="flag">multi-select with Apply</span>, which is what
+      makes the count on the trigger meaningful and lets access and involvement combine. It is an API
+      change as well as a UI one: the endpoint currently takes a single <code>type</code>.</p></li>
+
+    <li><h3>Should search debounce?</h3>
+      <p>The shipped field fires a request on every keystroke with no debounce, so typing eight
+      characters costs eight requests and the results flicker between them. We assume
+      <span class="flag">250 ms</span> and a minimum of two characters. Confirm, and confirm whether
+      search should also cover past rooms — today it only reads the mode you opened it from.</p></li>
+
+    <li><h3>Do we keep two names for one thing?</h3>
+      <p>A room is <code>Closed</code> in the filter enum and <code>Locked</code> on the card, the
+      editor tiles and the padlock. We have standardised on <span class="flag">locked</span> and would
+      change the enum label to match. Same question for the person on the card: the byline renders a
+      username (<code>host : club_staff</code>) while other screens show a display name.</p></li>
+  </ol>
+</section>

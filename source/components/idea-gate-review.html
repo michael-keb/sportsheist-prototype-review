@@ -1,0 +1,1303 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Idea gate · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; --surface: #1C2129; --sunken: #13171E; --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); /* semantic red — the only other hue */ --red: #E2564A; --red-wash: rgba(226,86,74,.12); --red-line: rgba(226,86,74,.28); /* neutral wash — dialogs.html; where a state must read as neither */ --neutral-wash: rgba(255,255,255,.06); /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; /* dialog shell — dialogs.html */ --dlg-inset: 20px; --dlg-max: 340px; --dlg-pad: 20px; --scrim: rgba(3,4,1,.72); --scrim-blur: 10px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* portrait — _assets/avatars.css. --av-16 is dylan_n, the viewer, the same face locker-room.html and create-idea.html use for "you". */ --av-16:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAGwAAAQUBAQAAAAAAAAAAAAAABgECAwQFBwD/xAA6EAACAQMCBAQEAwcCBwAAAAABAgMABBEFIQYSMUETIjJRM2FxoRRCUgcVI4GRwdFDsSVTcoKSouH/xAAZAQADAQEBAAAAAAAAAAAAAAACAwQBAAX/xAAiEQACAgICAgMBAQAAAAAAAAAAAQIRAxIhMTJBEyJCBGH/2gAMAwEAAhEDEQA/AOSptml5196aO9ejAJNcAPEqimuwJyBvSxgZO1OGPF6Vxx7x8oFKnNE2mcStpmlFHtOZW8oJbBP0FDRjKyAjpTHfmO5yfejUmgdUx1zILi4ebk5OY5xUfkGxB/rXmbNMoA0jpPCX7V20ixtdM1K157aACMSxDzKnuR3I+9a/7S+L47nQIrbS7yC4tdQU5kQZ5gpGV+R3HUVx8bmnGRsBeY8oOQPnW2Zr6FBJOTVm29WarE5x8jVq1GZAKFmmtEn8NanUZ8g6t9q8i4iB9qWwPiSPnqPtSwwY6E02M+ansPOaZH66aASJ6jSn4gpF9ZpW9YrjB7t5lX3BpYtPubmQLDEXJ6Bd6kht2uHUKCTnG1dP4Y0OHTLJcpmZhlmPv7UrJPV8D8GLdc9AOnAmrtCshRFJ/KWrN1Hh++0wjxo8g/mXcV2iYqEGO1YmoxJMp5lBx7il/JJFPwRa4OPlGT1Aj60mcfWjHV7SBRjw1z9KGLy3WPoMU2M9ibJicCug5juavWajxQc5xVBOtaFls1G+hXs2pDyWTuOwqHQGMksxPbFSXY5dKf6U3hdc+OfoKBeIX6QPP8Q1GvrqWT4lRDaSmADx8Sn8hklRF9TEAZNM/wBSrmnwG61S0gBxzzKMjtvvXPo5K2kFGhaBdadrSJeIpUqXjdTlX26j6ZrfuNb1O0l/h6Y0ka/lU+Zh/atSQc1+q+GoihAWPbcZG4+wqLVtHS+gmZXdJXjKrg7KffHTP1qO9pWz1NNI1Er2vFlnfuLeWCe1n/TLHjP0PSkvby2gjcySAAdMmsrRuG7i0uQ88khjRfNzNnnbPXHasbjCXx9XNvAAqIoyB0Jre5UZbjC2e1DULSRifxKH/uzWBeSJMrFGBFXru3W2REhs4Hj5ATKR5i2NxWbNHypkLyl+1NikiacnLsqL1q/YDmlHyqrLAIgCH5j3wNqt6f8AEpr5RNVM2b8f8Kak4XYLFMSCxLDCjqade+bSm7bdaXhRBiUgb+9AvEL9IGpfXUJ+JU83qFQN8SmCx/5xVi3uXsruG5jxzxOGAPfHaq59Qpz+muOTp2jq+l6/pWreF+FmYXRwzwybHYbn2OPcUSSFXiG2K5LwQ6jia3VjjnR1H1x/8rqpmijhLyuEUbEscCppRUZUj0ceR5I7Mp3VzChWIyLGWyRzHc49hXN7+RZ+IZGDq4Zuo6V0DUL6wjRz+Kt3lK8oyw2B670DyWmnx6nPNaMkikkoVOwNDHsbk5ikaEhh/AjnRSwHUihO+fxLgAYG9bGo3yNByxqVGNxQ+06o7Fk5m7fKjiuSfLJdHtRb+Oq7YA7VJp5/iiqLyNLJzN1NXrD4wp1UiSTuVm7djOlvTuE/VKKWYc2mP9KXhIeeX60K8Qn5IF5u1V39dWZugqvJ6hTBSHN1FOf00xugp5BIwBknoBWmGrwvG8vEmnKjFT4wOR2A3Nda5fEcq5wynJGKA+CdHa316NrlStxHCZPD/wCWDsOb5nJ27V0O7tPFKujFJBsCKlyu3wX/AM6cY8+zF1bTJZYgYRCF7qyZzQJqFmkF3zAxk5/IMfajDXbnVbVCAiMv6gSKArm5lklYtnmJoI/4Oyz4pjLq4zzO2PfArLc5yT1NWp0Zhgnc1WZSoIYYIqmC4IMjtkY61esc+MKojrV6x+MtE+hfsJeQtpzgFd17mm8JyIJZYzkODk9xU0Sg2Tg/pNR8Hgi4uCOlLj0xr8kC0o8lV5Oxots+C7qdQ19Mtsv6F8z/AOBRFY6FpOnhfBskkkG/iTDnb710ssUZHDJnP7LRtQ1LlFrau4/WRyr/AFNGOk8Mrw/H+8b9kluRtGF3WI+/zP8AtRNbjJB6knr7fSq3EbiPSpWJ8qLk5pUsrlwiiOGMeWVuCbOQvd6pcEtJdkFSf0gmi5jlaHtAm8Ph60vEHNDEvJPynPJncNt2Bzn61tmZWiDqwYHoQdjWzjq6Dxy2imD3FeorDb+CilpZPt86CILFpGaR1OB3o31SBryXkWPJ96pNpcjlbO3TmkPUCgTGuN9gfHYm7vii7KiM5PyFVXszc27lB50GR86PdS0e14f0iZx57iRMPJ7/ACHy/wB6HNOg8C0aeQevZR70eziTOKkB5BBwRgjtV2x+KtbE2mQNcQpLHkT5AI2IOff+dQjQbq1unUleVZOVOY4Zx74pqmmid45I14jiyf8A6TT+Dl8s7+7U1kMdhKr+V1GCDTuDpAYZF781ZHoJ+SCMyn8dGhOzZ2pVDC6dcbdKgvx4V/aOOhepbyea3uWMMKSMQMczYAqQuNOFBEMnt2oU421LxLJrSI4BPn/tSXcfFF4Gf94R20Y6LCMffrWLq9hcWmnRS3MollkkKvJ3fuM++KZBK1yKyN6vgMOAtVFnJNDOsj284GCsYdQ2MHLDrt7iixNB07drG7khjJ5vCBBVfoDuPpXM9HnSMpJIEywHmkjY/wDsp3/tReLgC35xJzEbeS5K/ZqvnFPshxzceghGmWtrmR5wxx1YgVmzX1lZylLSJpZJPU8a8yj2LN7Vh3LTzJkrO2dhzQrKv9RTY7BbeAQoEWe4PKXjQoVXHmOCemNvqaDWMVYzecnVjdXY6rawSysTGXLbAAOBsMY7HGf50P3MxkvFiwAqbBR0FFF28KW7RjAjiOAAfTtsKEEPNqRJOxOaivZtlTWqSL11EqvZSscKk45j8iP8irc0DXGr24PoZfEGO+O1VNVz+6pSPy8rj+RrR06QTQ2l23+nEwY1l8WFXNFPV7JrmV1gblPI3MBuHNZPC8VxaaqnPgxzAqcHoe1EWmnx7e2mbqzM5PyJNZDukFyJU9LXKcv/AJD/ABTITa+orJBP7H//2Q==);}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk [hidden]{display:none!important}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 60px}
+.mk code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+.mk .top{margin:6px var(--gutter) 0}
+.mk .eyebrow{margin:0 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .doc-title{margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1; text-transform:uppercase;}
+.mk .doc-sub{margin:10px 0 0;font-size:13px;line-height:1.45;color:var(--muted)}
+.mk .doc-sub b{color:var(--text);font-weight:600}
+.mk .note{margin:16px var(--gutter) 0;padding:14px; border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);}
+.mk .note dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:9px 12px}
+.mk .note dt{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);white-space:nowrap;padding-top:2px;}
+.mk .note dd{margin:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .note dd b{color:var(--text);font-weight:600}
+.mk .fr-cap{display:flex;align-items:center;gap:9px;margin:34px var(--gutter) 10px}
+.mk .fr-cap__n{display:inline-flex;align-items:center;justify-content:center; min-width:26px;height:22px;padding:0 7px;border-radius:var(--r-pill); background:var(--acid-wash);color:var(--acid); font-size:10.5px;font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums;}
+.mk .fr-cap__t{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.mk .fr-cap__s{flex:1;height:1px;background:var(--line)}
+.mk .fr-note{margin:10px var(--gutter) 0;font-size:12px;line-height:1.5;color:var(--muted)}
+.mk .fr-note b{color:var(--text);font-weight:600}
+.mk .fr{position:relative;overflow:hidden; border-top:1px solid var(--line);border-bottom:1px solid var(--line); background:var(--bg);}
+.mk .fr__body{padding:0 0 22px}
+.mk .fr--dialog{min-height:760px}
+.mk .bar{display:flex;align-items:center;gap:10px; height:56px;padding:0 10px 0 8px; border-bottom:1px solid var(--line-soft);}
+.mk .bar__title{flex:1;margin:0;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.mk .icon-btn{position:relative; display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease);}
+.mk .icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .icon-btn svg{width:17px;height:17px}
+.mk .icon-btn--bare{background:transparent}
+.mk .icon-btn--bare:hover{background:var(--surface)}
+.mk .label{margin:24px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .state-tag{margin:20px var(--gutter) 8px; font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);}
+.mk .lock-up{display:flex;flex-direction:column;align-items:center; padding:26px var(--gutter) 0;text-align:center;}
+.mk .tile{display:inline-flex;align-items:center;justify-content:center; width:44px;height:44px;border-radius:var(--r-panel);flex:0 0 auto;}
+.mk .tile svg{width:22px;height:22px}
+.mk .tile--acid{background:var(--acid-wash);color:var(--acid)}
+.mk .tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.mk .tile--warn{background:var(--neutral-wash);color:var(--red)}
+.mk .tile--neutral{background:var(--neutral-wash);color:var(--text)}
+.mk .tile--hero{width:72px;height:72px;border-radius:20px}
+.mk .tile--hero svg{width:36px;height:36px}
+.mk .lock-up h1{margin:18px 0 0; font-size:30px;font-weight:800;letter-spacing:-.025em;line-height:1.04; text-transform:uppercase;}
+.mk .lock-up p{margin:11px 0 0;max-width:30em;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.mk .lock-up p b{color:var(--text);font-weight:600}
+.mk .byline{display:flex;align-items:center;gap:9px; margin:16px var(--gutter) 0;padding:9px 12px; border-radius:var(--r-pill);background:var(--sunken); box-shadow:inset 0 0 0 1px var(--line); font-size:12.5px;color:var(--muted);}
+.mk .byline b{color:var(--text);font-weight:600}
+.mk .avatar{width:26px;height:26px;border-radius:50%;flex:0 0 auto; background-color:#20262F;background-size:cover;background-position:center 22%;}
+.mk .byline__crest{margin-left:auto;flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; height:22px;padding:0 8px;border-radius:6px; background:rgba(255,255,255,.94); box-shadow:inset 0 0 0 1px rgba(0,0,0,.13); font-size:9.5px;font-weight:800;letter-spacing:-.03em;color:var(--acid-ink);}
+.mk .rail{list-style:none;margin:0 var(--gutter);padding:0}
+.mk .rail li{position:relative;display:flex;gap:13px;padding:0 0 16px}
+.mk .rail li:last-child{padding-bottom:0}
+.mk .rail__n{position:relative;z-index:1;flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;border-radius:50%; background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line); color:var(--muted); font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;}
+.mk .rail li::before{content:"";position:absolute;left:14.5px;top:30px;bottom:0;width:1px;background:var(--line);}
+.mk .rail li:last-child::before{display:none}
+.mk .rail__t{flex:1;min-width:0;padding-top:4px}
+.mk .rail__t h3{margin:0;font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.mk .rail__t p{margin:5px 0 0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .rail__t p b{color:var(--text);font-weight:600}
+.mk .rail__money{display:block;margin-top:8px; font-size:12px;font-weight:600;line-height:1.4;color:var(--muted);}
+.mk .rail__money svg{width:14px;height:14px;margin-right:6px;vertical-align:-3px;color:var(--muted);}
+.mk .rail__money.is-good{color:var(--acid)}
+.mk .rail__money.is-good svg{color:var(--acid)}
+.mk .rail__money.is-bad b{color:var(--text)}
+.mk .rail__money.is-bad svg{color:var(--red)}
+.mk .section{margin:0 var(--gutter);padding:12px; border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);}
+.mk .amount{display:flex;align-items:baseline;gap:9px; padding:14px;margin-bottom:10px; border-radius:var(--r-panel);background:var(--sunken);}
+.mk .amount b{font-size:38px;font-weight:800;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+.mk .amount span{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase; color:var(--muted);line-height:1.3;}
+.mk .amount em{margin-left:auto;align-self:center;font-style:normal;text-align:right; font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);}
+.mk .rows{list-style:none;margin:0;padding:0;border-radius:var(--r-panel);background:var(--sunken);overflow:hidden}
+.mk .rows + .rows{margin-top:10px}
+.mk .rows li{display:flex;align-items:center;gap:10px; padding:11px 13px;border-top:1px solid var(--line-soft);font-size:13px;}
+.mk .rows li:first-child{border-top:0}
+.mk .rows li svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted)}
+.mk .rows li svg.is-good{color:var(--acid)}
+.mk .rows li svg.is-bad{color:var(--red)}
+.mk .rows__k{flex:1;min-width:0;color:var(--muted)}
+.mk .rows__v{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.mk .rows__v--good{color:var(--acid)}
+.mk .rows li p{margin:0;flex:1;font-size:12.5px;line-height:1.4;color:var(--muted)}
+.mk .rows li p b{color:var(--text);font-weight:600}
+.mk .rows--total li{border-top:1px solid var(--line)}
+.mk .rows li.is-sum{background:rgba(255,255,255,.03)}
+.mk .rows li.is-sum .rows__k{color:var(--text);font-weight:600}
+.mk .consent{display:flex;align-items:flex-start;gap:13px; width:calc(100% - var(--gutter) * 2);min-height:56px;margin:12px var(--gutter) 0;padding:14px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--surface);color:var(--text); font:inherit;text-align:left;cursor:pointer;}
+.mk .consent:hover{background:#222833}
+.mk .consent:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .consent__box{display:inline-flex;align-items:center;justify-content:center; width:24px;height:24px;flex:0 0 auto;border-radius:7px; background:transparent;box-shadow:inset 0 0 0 1.6px rgba(255,255,255,.30); color:var(--acid-ink);}
+.mk .consent__box svg{width:15px;height:15px;opacity:0}
+.mk .consent[aria-checked="true"] .consent__box{background:var(--acid);box-shadow:none}
+.mk .consent[aria-checked="true"] .consent__box svg{opacity:1}
+.mk .consent__txt{font-size:13.5px;line-height:1.45}
+.mk .consent__txt b{font-weight:600}
+.mk .actions{display:flex;gap:10px;margin:20px var(--gutter) 0}
+.mk .act{display:flex;gap:10px;margin-top:18px}
+.mk .act--single .btn,.mk .actions--single .btn{width:100%}
+.mk .btn{position:relative;flex:1 1 0;min-width:0; display:inline-flex;align-items:center;justify-content:center;gap:8px; min-height:52px;padding:0 14px;border:0;border-radius:var(--r-pill); font:inherit;font-size:15px;font-weight:700;letter-spacing:-.005em; cursor:pointer;white-space:nowrap; transition:background .18s var(--ease),transform .12s var(--ease);}
+.mk .act .btn{min-height:46px;font-size:14.5px}
+.mk .btn svg{width:18px;height:18px;flex:0 0 auto}
+.mk .btn:active{transform:translateY(1px)}
+.mk .btn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .btn--acid:hover{background:#A8EC33}
+.mk .btn--ghost{background:var(--surface);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .btn--ghost:hover{background:#222833}
+.mk .btn[disabled]{background:var(--sunken);color:var(--dim);cursor:not-allowed;box-shadow:none}
+.mk .btn[disabled]:active{transform:none}
+.mk .linkbtn{border:0;background:transparent;padding:0; color:var(--acid);font:inherit;font-size:12.5px;font-weight:700; text-decoration:underline;text-underline-offset:3px;cursor:pointer;}
+.mk .linkbtn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .fine{margin:12px var(--gutter) 0;text-align:center; font-size:11.5px;line-height:1.45;color:var(--dim);}
+.mk .behind{opacity:.5;pointer-events:none;filter:saturate(.85)}
+.mk .scrim-wrap{position:absolute;inset:0;z-index:5; display:flex;align-items:center;justify-content:center;}
+.mk .scrim{position:absolute;inset:0;background:var(--scrim); -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9); backdrop-filter:blur(var(--scrim-blur)) saturate(.9);}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .mk .scrim{background:rgba(3,4,1,.86)}
+}
+.mk .dlg{position:relative;z-index:1; width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max); margin:0 auto;padding:var(--dlg-pad); border-radius:var(--r-card);background:var(--surface); border:1px solid var(--line); box-shadow:0 24px 60px rgba(0,0,0,.55);}
+.mk .dlg__close{position:absolute;top:12px;right:12px; display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;border-radius:50%; background:var(--sunken);border:1px solid var(--line-soft);color:var(--muted); cursor:pointer;transition:color .18s var(--ease),background .18s var(--ease);}
+.mk .dlg__close::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.mk .dlg__close svg{width:15px;height:15px}
+.mk .dlg__close:hover{color:var(--text);background:#1A1F27}
+.mk .dlg__close:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .dlg__title{margin:14px 0 0;padding-right:26px; font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.2;}
+.mk .dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .dlg__body b{color:var(--text);font-weight:600}
+.mk .dlg .rows{margin-top:14px}
+.mk .banner{display:flex;align-items:flex-start;gap:10px; margin:0 var(--gutter);padding:12px; border-radius:var(--r-panel);background:var(--sunken);border:1px solid var(--line);}
+.mk .banner__icon{flex:0 0 auto;color:var(--muted);margin-top:1px}
+.mk .banner__icon svg{width:18px;height:18px}
+.mk .banner__txt{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .banner__txt b{display:block;color:var(--text);font-size:13px;font-weight:600;margin-bottom:2px}
+.mk .banner__link{align-self:center;flex:0 0 auto;border:0;background:transparent;padding:0 2px; font:inherit;font-size:12.5px;font-weight:700;color:var(--acid);cursor:pointer;}
+.mk .perm li{align-items:flex-start}
+.mk .perm__k{flex:1;min-width:0}
+.mk .perm__k b{display:block;font-size:13px;font-weight:600;color:var(--text)}
+.mk .perm__k span{display:block;margin-top:2px;font-size:11.5px;line-height:1.35;color:var(--muted)}
+.mk .perm__v{flex:0 0 auto;align-self:center; display:inline-flex;align-items:center;gap:5px; font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.mk .perm__v svg{width:14px;height:14px}
+.mk .perm__v--yes{color:var(--acid)}
+.mk .perm__v--yes svg{color:var(--acid)}
+.mk .perm__v--no svg{color:var(--red)}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Idea gate</h1>
+    <p class="dek">The screen a member meets on the way to writing an Idea — the one that says whether
+they are allowed to post, and what it costs. It has been in the app since the beginning, it is
+reachable from five places in the War Room, and it has never been captured or rebuilt.</p>
+    <div class="meta">
+      <span><b>Component</b> idea-gate</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><span class="side__item" aria-current="page">Idea gate<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">A gate that currently gates nothing</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="stagecol">
+      <div class="stage">
+        <div class="device" id="device">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk">
+<div class="mk__scroll"><main class="screen">
+
+  <header class="top">
+    <p class="eyebrow">War Room · before the form</p>
+    <h1 class="doc-title">Idea gate</h1>
+    <p class="doc-sub">The screen a member meets on the way to creating an Idea — the one that
+      says whether they are allowed to and what it costs. It has a route
+      (<code>CRoute.warningIdea</code>, referenced 7 times and pushed from five) and it has never been
+      captured or
+      rebuilt. <b>The live version gates on nothing.</b></p>
+  </header>
+
+  <div class="note">
+    <dl>
+      <dt>As built</dt>
+      <dd><code>warning_create.dart</code> is a stateless screen: a raster lamp, the Bebas line
+          <b>SUBMIT YOUR IDEA!</b>, one centred paragraph, and a <b>CONTINUE</b> button that always
+          pushes the form. No permission read, no balance read, no cost figure, no branch.</dd>
+      <dt>The gap</dt>
+      <dd>The paragraph explains Likes, Proposals and lapsing accurately — and <b>never mentions
+          that posting costs 25.0 Credits</b>, which is the only thing on this screen a member
+          could get wrong at a price.</dd>
+      <dt>Now gates on</dt>
+      <dd><b>Three signals the app already fetches:</b> the club's per-category posting
+          permissions, the member's available Credits against the deposit, and whether the fixture
+          will outlast the Idea's own stages.</dd>
+      <dt>Currency</dt>
+      <dd><b>Credits</b>, one noun, always with a figure. A <b>deposit of 25.0 Credits</b>,
+          returned when the Idea becomes a Proposal, forfeited only if it lapses.</dd>
+    </dl>
+  </div>
+
+  <!-- ============================================================
+       01 · ELIGIBLE
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">01</span><span class="fr-cap__t">Eligible</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr" aria-label="Idea gate — eligible">
+    <div class="bar">
+      <button class="icon-btn icon-btn--bare" type="button" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <h2 class="bar__title">Create idea</h2>
+      <span style="width:38px"></span>
+    </div>
+
+    <div class="fr__body">
+
+      <div class="lock-up">
+        <span class="tile tile--acid tile--hero" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 17.4a6.5 6.5 0 1 1 6 0"/><path d="M9 17.4h6"/>
+            <path d="M9.7 20.4h4.6"/><path d="M10.6 17.4v-3.1a1.4 1.4 0 1 1 1.4-1.4 1.4 1.4 0 1 1 1.4 1.4v3.1"/>
+          </svg>
+        </span>
+        <h1>Start an idea</h1>
+        <p>An Idea needs <b>enough Likes before its clock runs out</b> to become a Proposal. If it
+          gets them, Barcelona votes to Support or Reject it. If it doesn't, it lapses.</p>
+      </div>
+
+      <p class="byline">
+        <span class="avatar" style="background-image:var(--av-16)" role="img" aria-label="dylan_n"></span>
+        Posting as <b>dylan_n</b>
+        <span class="byline__crest" role="img" aria-label="FC Barcelona">BAR</span>
+      </p>
+
+      <h3 class="label">What happens next</h3>
+      <ol class="rail">
+        <li>
+          <span class="rail__n">1</span>
+          <div class="rail__t">
+            <h3>You post it</h3>
+            <p>Your Idea goes into the War Room and the Ideas stage opens for <b>6 minutes</b>.</p>
+            <p class="rail__money">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.6"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
+              <b>25.0 Credits</b> are locked
+            </p>
+          </div>
+        </li>
+        <li>
+          <span class="rail__n">2</span>
+          <div class="rail__t">
+            <h3>It collects Likes</h3>
+            <p>Reach <b>120 Likes</b> before the 6 minutes end and it becomes a Proposal. The club
+              then votes for <b>3 minutes</b>.</p>
+            <p class="rail__money is-good">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>
+              <b>25.0 Credits</b> returned in full
+            </p>
+          </div>
+        </li>
+        <li>
+          <span class="rail__n">3</span>
+          <div class="rail__t">
+            <h3>Or it lapses</h3>
+            <p>Short of 120 when the clock ends, the Idea closes and never reaches a vote. This
+              is the <b>only</b> way the deposit does not come back.</p>
+            <p class="rail__money is-bad">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              <b>25.0 Credits</b> forfeited
+            </p>
+          </div>
+        </li>
+      </ol>
+
+      <h3 class="label">The deposit</h3>
+      <div class="section">
+        <div class="amount">
+          <b>25.0</b><span>Credits</span><em>Per idea<br>at Barcelona</em>
+        </div>
+        <ul class="rows rows--total">
+          <li><span class="rows__k">Available now</span><span class="rows__v">940.0</span></li>
+          <li><span class="rows__k">Locked by this Idea</span><span class="rows__v">−25.0</span></li>
+          <li class="is-sum"><span class="rows__k">Left to spend</span><span class="rows__v">915.0</span></li>
+        </ul>
+        <ul class="rows">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v4.4l3 2"/></svg>
+            <p><b>Nothing is locked yet.</b> The deposit is taken when you post, not when you open
+              the form — you can write an Idea and discard it for free.</p>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5A8 8 0 1 1 17.3 6"/><path d="M20.5 4v4.2h-4.2"/></svg>
+            <p>If the match ends while your Idea is still running, it is <b>cancelled
+              automatically</b> and the deposit is returned.</p>
+          </li>
+        </ul>
+      </div>
+
+      <h3 class="label">What Barcelona lets you post</h3>
+      <div class="section">
+        <ul class="rows perm">
+          <li>
+            <span class="perm__k">
+              <b>Positions</b>
+              <span>Who plays, who captains, who is rested.</span>
+            </span>
+            <span class="perm__v perm__v--yes">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>
+              Open
+            </span>
+          </li>
+          <li>
+            <span class="perm__k">
+              <b>On-field decisions</b>
+              <span>Instructions the coach can carry out during the match.</span>
+            </span>
+            <span class="perm__v perm__v--yes">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>
+              Open
+            </span>
+          </li>
+        </ul>
+        <p class="fr-note" style="margin-left:2px;margin-right:2px">Set by the club, per category.
+          Off-field and management decisions are never member Ideas at any club, so they are not
+          listed — a category a member can never use is not a locked door, it is somebody else's
+          building.</p>
+      </div>
+
+      <button class="consent" type="button" role="checkbox" aria-checked="false" data-consent>
+        <span class="consent__box" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+        </span>
+        <span class="consent__txt">Don't show this again. <b>I know a deposit of 25.0 Credits is
+          locked when I post, and forfeited if my Idea lapses.</b></span>
+      </button>
+
+      <div class="actions">
+        <button class="btn btn--ghost" type="button">Not now</button>
+        <button class="btn btn--acid" type="button">Start an idea</button>
+      </div>
+      <p class="fine">You'll see the deposit again on the last step, with a figure and a
+        confirmation, before anything is locked.</p>
+    </div>
+  </section>
+
+  <p class="fr-note"><b>The verb is repeated, per the dialog convention:</b> “Start an idea” →
+    <b>Start an idea</b>. It is deliberately <em>not</em> “Post idea” — that verb belongs to the
+    last step of the form, where the deposit is actually taken. The live screen's affirmative is
+    <b>CONTINUE</b>, shouted, which names neither the act nor its cost. The secondary is
+    <b>Not now</b> rather than Cancel, because the ask can come back.</p>
+
+  <!-- ============================================================
+       02 · LATE IN THE MATCH
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">02</span><span class="fr-cap__t">Late in the match</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr fr--dialog" aria-label="Idea gate — late in the match">
+    <div class="behind" aria-hidden="true">
+      <div class="bar">
+        <span class="icon-btn icon-btn--bare">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        </span>
+        <h2 class="bar__title">Create idea</h2>
+        <span style="width:38px"></span>
+      </div>
+      <div class="fr__body">
+        <div class="lock-up">
+          <span class="tile tile--acid tile--hero">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 17.4a6.5 6.5 0 1 1 6 0"/><path d="M9 17.4h6"/>
+              <path d="M9.7 20.4h4.6"/><path d="M10.6 17.4v-3.1a1.4 1.4 0 1 1 1.4-1.4 1.4 1.4 0 1 1 1.4 1.4v3.1"/>
+            </svg>
+          </span>
+          <h1>Start an idea</h1>
+          <p>An Idea needs enough Likes before its clock runs out to become a Proposal.</p>
+        </div>
+        <h3 class="label">The deposit</h3>
+        <div class="section">
+          <div class="amount"><b>25.0</b><span>Credits</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scrim-wrap">
+      <div class="scrim"></div>
+      <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="late-t" aria-describedby="late-b">
+        <button class="dlg__close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="tile tile--warn" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/>
+          </svg>
+        </span>
+        <h3 class="dlg__title" id="late-t">Start this late?</h3>
+        <p class="dlg__body" id="late-b">
+          <b>Barcelona v Girona has about 7 minutes left.</b> An Idea needs 6 minutes of Likes and
+          3 minutes of voting, so the match will almost certainly finish first.
+        </p>
+        <ul class="rows">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5A8 8 0 1 1 17.3 6"/><path d="M20.5 4v4.2h-4.2"/></svg>
+            <p>If it does, your Idea is <b>cancelled automatically</b> and your <b>25.0
+              Credits</b> come straight back. You lose the Idea, not the deposit.</p>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v4.4l3 2"/></svg>
+            <p>A <b>Position</b> Idea keeps running after the whistle. Only on-field decisions have
+              to land inside the match.</p>
+          </li>
+        </ul>
+        <div class="act">
+          <button class="btn btn--ghost" type="button">Not now</button>
+          <button class="btn btn--acid" type="button">Start it anyway</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">A <b>caution</b>, not a block — the member is eligible and the money is safe,
+    so the affirmative stays acid and stays on the right. This is the one state that earns the
+    route's name: <code>warningIdea</code> currently warns about nothing. Copy comes from the two
+    strings the build already ships —
+    <code>ideaPage.this game still run</code> and the cancellation lines in
+    <code>result/result_count.dart</code> — which are the only places the app admits the match
+    clock can outrun an Idea. Warning is red on the <b>neutral</b> wash with no ring, one step
+    below error, exactly as in the dialogs kit.</p>
+
+  <!-- ============================================================
+       03 · CATEGORY CLOSED
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">03</span><span class="fr-cap__t">Category closed</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr fr--dialog" aria-label="Idea gate — category closed">
+    <div class="behind" aria-hidden="true">
+      <div class="bar">
+        <span class="icon-btn icon-btn--bare">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        </span>
+        <h2 class="bar__title">Create idea</h2>
+        <span style="width:38px"></span>
+      </div>
+      <div class="fr__body">
+        <h3 class="label">What Barcelona lets you post</h3>
+        <div class="section">
+          <ul class="rows perm">
+            <li>
+              <span class="perm__k"><b>Positions</b><span>Who plays, who captains, who is rested.</span></span>
+              <span class="perm__v perm__v--yes">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>
+                Open
+              </span>
+            </li>
+            <li>
+              <span class="perm__k"><b>On-field decisions</b><span>Instructions the coach can carry out during the match.</span></span>
+              <span class="perm__v perm__v--no">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                Club only
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="scrim-wrap">
+      <div class="scrim"></div>
+      <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="perm-t" aria-describedby="perm-b">
+        <button class="dlg__close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="tile tile--neutral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4.5" y="10.5" width="15" height="9.5" rx="2.6"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/><path d="M12 14.4v2"/>
+          </svg>
+        </span>
+        <h3 class="dlg__title" id="perm-t">Post a Position idea instead?</h3>
+        <p class="dlg__body" id="perm-b">
+          <b>Barcelona has on-field decisions switched off for member Ideas.</b> Only the club can
+          put those forward, and that is the club's setting, not anything about your account.
+        </p>
+        <ul class="rows">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            <p><b>Positions is open to you</b> — same 6-minute Ideas stage, same 3-minute vote,
+              same deposit of 25.0 Credits.</p>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+            <p>Nothing has been locked and <b>no Credits have moved</b>.</p>
+          </li>
+        </ul>
+        <div class="act">
+          <button class="btn btn--ghost" type="button">Back</button>
+          <button class="btn btn--acid" type="button">Post a Position</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">The real gate. <code>ConfigClub.permissions</code> already carries
+    <code>member_post_idea_positions</code> and <code>member_post_idea_on_field_decision</code> per
+    club, and the app reads them in exactly one place —
+    <code>ideas/drop_down/title.dart</code> — to decide how many category tiles the compose form
+    draws. <b>That logic has a hole:</b> <code>findList()</code> returns <code>0</code> when both
+    permissions are false, and index <code>0</code> is rendered anyway, so a member with no posting
+    permission at all is still shown Positions and can still submit. Checking at the gate closes
+    it, and turns a dead end into a question with a way out. A padlock on the <b>neutral</b> tile,
+    not red: this is a rule, not a failure, and nothing has gone wrong or cost anything.</p>
+
+  <!-- ============================================================
+       04 · SHORT OF CREDITS
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">04</span><span class="fr-cap__t">Short of Credits</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr fr--dialog" aria-label="Idea gate — short of Credits">
+    <div class="behind" aria-hidden="true">
+      <div class="bar">
+        <span class="icon-btn icon-btn--bare">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        </span>
+        <h2 class="bar__title">Create idea</h2>
+        <span style="width:38px"></span>
+      </div>
+      <div class="fr__body">
+        <h3 class="label">The deposit</h3>
+        <div class="section">
+          <div class="amount"><b>25.0</b><span>Credits</span></div>
+          <ul class="rows rows--total">
+            <li><span class="rows__k">Available now</span><span class="rows__v">12.0</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="scrim-wrap">
+      <div class="scrim"></div>
+      <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="cr-t" aria-describedby="cr-b">
+        <button class="dlg__close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="tile tile--neutral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="6" width="18" height="12.5" rx="2.6"/><path d="M3 10.5h18"/><path d="M6.5 14.6h4"/>
+          </svg>
+        </span>
+        <h3 class="dlg__title" id="cr-t">Top up to start this idea?</h3>
+        <p class="dlg__body" id="cr-b">
+          Every Idea holds a deposit of <b>25.0 Credits</b> until it becomes a Proposal. You're
+          <b>13.0</b> short.
+        </p>
+        <ul class="rows rows--total">
+          <li><span class="rows__k">Deposit needed</span><span class="rows__v">25.0</span></li>
+          <li><span class="rows__k">Available now</span><span class="rows__v">12.0</span></li>
+          <li class="is-sum"><span class="rows__k">Short by</span><span class="rows__v">13.0</span></li>
+        </ul>
+        <ul class="rows">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+            <p>You have <b>300.0 Credits</b> locked on 12 live Ideas. Those come back as each one
+              becomes a Proposal — <b>they can't cover this one</b>.</p>
+          </li>
+        </ul>
+        <div class="act">
+          <button class="btn btn--ghost" type="button">Not now</button>
+          <button class="btn btn--acid" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Top up Credits
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">Derivable today and checked nowhere: <code>ConfigClub.creditPostIdea</code>
+    is the deposit and the wallet knows the balance, but the first time a member finds out they
+    can't afford to post is <b>after</b> writing the Idea, at the confirm dialog. The shortfall is
+    stated as a figure, the locked balance is explained rather than hidden, and the exit is the
+    wallet's own top-up. <b>Neutral tile again</b> — being short of money is not an error, and the
+    only red on this frame would have to be the figure, which is exactly where the contract says
+    not to put it.</p>
+
+  <!-- ============================================================
+       05 · SUPPRESSED
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">05</span><span class="fr-cap__t">Suppressed</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr" aria-label="Idea gate — suppressed">
+    <div class="bar">
+      <button class="icon-btn icon-btn--bare" type="button" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <h2 class="bar__title">Create idea</h2>
+      <span style="width:38px"></span>
+    </div>
+    <div class="fr__body">
+      <p class="state-tag">Step 1 of 3 · the form, opened directly</p>
+      <div class="banner">
+        <span class="banner__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.6"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
+        </span>
+        <span class="banner__txt">
+          <b>Deposit 25.0 Credits · 915.0 left</b>
+          Locked when you post, returned when your Idea becomes a Proposal.
+        </span>
+        <button class="banner__link" type="button">Details</button>
+      </div>
+      <p class="fr-note">Once the member has ticked <b>Don't show this again</b>, the gate stops
+        appearing and the form carries this instead — a single line at the top of step 1, with the
+        figure, the balance after it, and a route back to the full explanation. The cost never
+        disappears; only the full-screen interruption does.</p>
+    </div>
+  </section>
+
+  <p class="fr-note"><b>Why the gate should be suppressible at all:</b> the route is pushed from
+    five places and shows the same paragraph every single time, so a member who posts twice a week
+    reads it a hundred times a year. A gate that cannot be dismissed is not read — it is tapped
+    through, which is exactly how a member ends up surprised by a forfeited deposit. The
+    disclosure that matters survives as the banner and as the confirm dialog on the last step of
+    the form, both of which carry the figure.</p>
+
+</main></div>
+</div>
+          </div>
+        </div>
+        <div class="stage__controls">
+          <div class="seg" role="group" aria-label="Device width">
+            <button type="button" data-w="375" aria-pressed="true">375</button>
+            <button type="button" data-w="414" aria-pressed="false">414</button>
+            <button type="button" data-w="430" aria-pressed="false">430</button>
+          </div>
+        </div>
+        <p class="stage__hint">Live and interactive — scroll the screen, tap the controls, switch width.</p>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>A gate that currently gates nothing</h2>
+  <p>The route is called <code>warningIdea</code>. What it actually does is show a lamp
+    illustration, the shouted line <b>SUBMIT YOUR IDEA!</b>, one centred paragraph, and a
+    <b>CONTINUE</b> button whose entire body is a push to the create-idea form. There is no
+    permission check, no balance check, no match check, no cost figure and no branch of any kind.
+    <code>warningIdea</code> appears seven times in <code>lib/</code> — three of those are its own
+    route declaration; the other five are unconditional pushes from an app-bar action on the Ideas,
+    Voting, Results and War Room screens. A full-screen interruption that always says the same
+    thing and always continues.</p>
+  <p>The paragraph it shows is not wrong. It says an Idea becomes a Proposal with enough Likes in
+    time, otherwise it lapses, and that members then vote to Support or Reject. What it never
+    mentions is that <b>posting locks 25.0 Credits, and lapsing forfeits them</b> — which is the
+    only thing on this screen a member can get wrong at a price.</p>
+  <p>So this rebuild does two things. It turns the paragraph into a three-step account of what
+    happens to the Idea <em>and</em> to the money, with the figure on screen. And it gates on the
+    three signals the app already fetches before this screen is even reachable: the club's
+    per-category posting permission, the member's available Credits against the deposit, and
+    whether the fixture will outlast the Idea's own stages. Frames 02, 03 and 04 are those three
+    branches; frame 05 is what the member sees once they have asked not to be shown the gate
+    again.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Frame 01, the eligible gate. Order matches the reading order on screen.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>App bar</td><td>Back · title</td><td class="t-note"><code>56px</code> bar with a <code>1px --line-soft</code> base, <code>38px</code> bare icon button with an <code>::after</code> inset to <code>44px</code>, title <code>15/800/.08em</code> uppercase. From <code>create-idea.html</code>, so the gate and the form it leads to share one bar. No step meter: this is before step 1.</td></tr>
+        <tr><td>Lockup</td><td>Illustration tile</td><td class="t-note"><code>72px</code> tile at <code>20px</code> radius on <code>--acid-wash</code>, holding a drawn <code>24</code>-box lamp at <code>1.5</code> stroke. Replaces the live screen's raster pair — a <code>164pt</code> <code>stack_create.png</code> photograph with a <code>129 × 170</code> <code>idea_light.svg</code> laid over it, both authored for a white scaffold. See <b>Decisions</b>.</td></tr>
+        <tr><td>Lockup</td><td>Headline</td><td class="t-note"><code>30/800/-.025em</code> uppercase, <b>START AN IDEA</b>. Replaces <b>SUBMIT YOUR IDEA!</b> — the exclamation mark and the Bebas are both gone, and the verb now matches the button.</td></tr>
+        <tr><td>Lockup</td><td>Lead</td><td class="t-note"><code>13.5/1.5</code> <code>--muted</code>, centred, max <code>30em</code>. A rewrite of <code>ideaPage.info create</code> — same three facts, no hard line breaks. The shipped string carries three literal <code>\n</code>s, so it wraps twice on every screen width.</td></tr>
+        <tr><td>Byline</td><td>Posting as</td><td class="t-note"><code>--sunken</code> pill with a <code>1px --line</code> ring, a <code>26px</code> portrait (<code>--av-16</code>, dylan_n — the same face <code>locker-room.html</code> and <code>create-idea.html</code> use for "you"), and the club crest plate at <code>22px</code> in the <code>rgba(255,255,255,.94)</code> fixed plate with its <code>rgba(0,0,0,.13)</code> inner hairline, per the crest-plate spec.</td></tr>
+        <tr><td>Rail</td><td>What happens next</td><td class="t-note">Three numbered steps: <code>30px</code> <code>--sunken</code> discs on a <code>1px --line</code> connector, title <code>14.5/600</code>, body <code>12.5/1.45</code> <code>--muted</code>, and a money line under each one. Step 2's money line is accent (<b>returned in full</b>), step 3's carries the red down-arrow glyph with white text (<b>forfeited</b>) — icon plus a word, never colour alone.</td></tr>
+        <tr><td>Deposit</td><td>Amount lockup</td><td class="t-note"><code>create-idea.html</code>'s <code>.amount</code>: <code>38/800/-.035em</code> tabular figure, <code>11/700/.13em</code> caps unit, on <code>--sunken</code> at <code>--r-panel</code>. Trailing <code>--dim</code> caption names the scope — <b>per idea, at Barcelona</b> — because the figure is a club setting.</td></tr>
+        <tr><td>Deposit</td><td>Balance rows</td><td class="t-note"><code>940.0</code> available → <code>−25.0</code> → <code>915.0</code> left, tabular, with the total row on a <code>3%</code> white wash and its key in white <code>600</code>.</td></tr>
+        <tr><td>Deposit</td><td>Two caveat rows</td><td class="t-note"><b>Nothing is locked yet</b> — the deposit is taken at post, not at open, so writing and discarding is free. And the automatic refund if the match ends first, which is what <code>result/result_count.dart</code> already tells members <em>after</em> the fact.</td></tr>
+        <tr><td>Eligibility</td><td>Category rows</td><td class="t-note">One row per member-postable category, each with a name, a one-line plain-English gloss, and a state that is a <b>word plus a glyph</b> — <code>OPEN</code> with an accent tick, <code>CLUB ONLY</code> with a red cross. Off-field and management decisions are not listed at all.</td></tr>
+        <tr><td>Consent</td><td>Don't show this again</td><td class="t-note"><code>create-idea.html</code>'s <code>.consent</code> row unchanged: <code>56px</code> minimum, <code>24px</code> box at <code>7px</code> radius, <code>1.6px</code> inset ring unchecked, acid fill with <code>--acid-ink</code> tick when checked. The label restates the deposit in full, so the thing being dismissed is named in the act of dismissing it.</td></tr>
+        <tr><td>Footer</td><td>Action row</td><td class="t-note"><b>Not now</b> (ghost, left) · <b>Start an idea</b> (acid, right), equal widths, <code>10px</code> gap, <code>52px</code> tall per <code>forms.html</code>. Followed by a <code>--dim</code> line promising the deposit is confirmed again before anything is locked.</td></tr>
+        <tr><td>Dialogs</td><td>Shell</td><td class="t-note"><code>dialogs.html</code> unchanged: <code>100% − 40</code> wide capped at <code>340</code>, <code>--surface</code> at <code>--r-card</code>, <code>1px --line</code>, <code>0 24 60 rgba(0,0,0,.55)</code>, <code>20px</code> padding, <code>30px</code> close top right, over a <code>rgba(3,4,1,.72)</code> scrim with a <code>10px</code> backdrop blur. Action row at <code>46px</code>.</td></tr>
+        <tr><td>Frame 05</td><td>Inline banner</td><td class="t-note"><code>dialogs.html</code>'s info banner: <code>--sunken</code> at <code>--r-panel</code>, <code>18px</code> padlock glyph, title line <code>13/600</code> white, body <code>12.5</code> <code>--muted</code>, trailing accent <b>Details</b> link.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>01 · Eligible</td><td class="t-note">The gate in full. Both categories open, balance clears the deposit, the match has time. Primary is acid and enabled.</td></tr>
+        <tr><td>02 · Late in the match</td><td class="t-note">A <b>caution</b>, not a block. Warning dialog — red glyph on the <b>neutral</b> wash, no ring, one step below error. Names the minutes left, states that the Idea would be cancelled and the deposit returned, and offers the Position category as the alternative that survives the whistle. Primary stays acid: <b>Start it anyway</b>.</td></tr>
+        <tr><td>03 · Category closed</td><td class="t-note">A <b>block with an exit</b>. Padlock on the <b>neutral</b> tile — a club rule is not a failure and nothing has cost anything. The title is the way out (<b>Post a Position idea instead?</b>), the affirmative repeats it (<b>Post a Position</b>), and the body says explicitly that this is the club's setting, not the member's account.</td></tr>
+        <tr><td>04 · Short of Credits</td><td class="t-note">A <b>block with a purchase</b>. Neutral tile, the shortfall stated as a figure (<code>25.0</code> needed, <code>12.0</code> available, <code>13.0</code> short), an explanation of why the <code>300.0</code> already locked on 12 live Ideas cannot cover it, and the wallet's own top-up as the primary.</td></tr>
+        <tr><td>05 · Suppressed</td><td class="t-note">The gate no longer appears. Step 1 of the form carries a one-line banner with the figure, the balance after it, and a <b>Details</b> route back to the full explanation.</td></tr>
+        <tr><td>Both blocked</td><td class="t-note">Not drawn. If a club closes <em>both</em> member categories, the gate cannot offer an alternative and the correct behaviour is to remove the entry point from the app bar entirely rather than show a dead end. Flagged in <b>Decisions</b>.</td></tr>
+        <tr><td>Consent checked</td><td class="t-note">Box takes the acid fill with an <code>--acid-ink</code> tick; <code>aria-checked="true"</code>. Interactive in this file.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions off.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the library and the code</h3>
+      <ul>
+        <li><b>Dialog shell, scrim, state tiles, action row and the verb convention</b> — <code>dialogs.html</code>, unchanged</li>
+        <li><b>Inline info banner</b> — <code>dialogs.html</code></li>
+        <li><b>Frame, app bar, spec rows, amount lockup, consent row</b> — <code>create-idea.html</code>, so the gate and the form read as one flow</li>
+        <li><b>Club crest plate</b> — the <code>rgba(255,255,255,.94)</code> fixed plate from <code>club-selection.html</code></li>
+        <li><b>Credits as the one noun, and 25.0 as the deposit</b> — <code>wallet.html</code> and <code>create-idea.html</code></li>
+        <li><b>6-minute Ideas stage, 3-minute vote, 120 Likes</b> — the same figures <code>create-idea.html</code> uses</li>
+        <li><b>The lifecycle itself</b> — a rewrite of the shipped <code>ideaPage.info create</code> string, which is the live screen's entire content</li>
+        <li><b>The cancellation-and-refund rule</b> — the two strings in <code>result/result_count.dart</code></li>
+        <li><b>The late-post concern</b> — <code>ideaPage.this game still run</code>, which the build already ships</li>
+        <li><b>The permission model</b> — <code>ConfigClub.permissions.member_post_idea_positions</code> and <code>member_post_idea_on_field_decision</code>, real per-club server fields</li>
+        <li><b>The deposit figure's source</b> — <code>ConfigClub.creditPostIdea</code>, a real server field</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Any gating at all.</b> The live screen reads no permission, no balance, no match state, and has no branch. All four of frames 02–05 are new.</li>
+        <li><b>The cost on screen.</b> The live gate never mentions Credits. The amount lockup, the balance rows, the per-step money lines and the "nothing is locked yet" row are all new.</li>
+        <li><b>The permission check.</b> The two permission fields are read in exactly one place today — <code>ideas/drop_down/title.dart</code> — to size the category list on the form. Reading them at the gate is new, <b>and it closes a live hole</b>: <code>findList()</code> returns <code>0</code> when both permissions are false and index <code>0</code> is then rendered anyway, so a member with no posting permission at all is still offered Positions and can still submit.</li>
+        <li><b>The balance check.</b> Derivable from <code>creditPostIdea</code> and the wallet today, checked nowhere. As shipped, the first time a member learns they cannot afford to post is <em>after</em> writing the Idea, at the confirm dialog.</li>
+        <li><b>The match-window check.</b> The app tells a member their Idea was cancelled for running past the whistle; nothing warns them beforehand.</li>
+        <li><b>The three-step rail</b> — new; the live screen is one centred paragraph</li>
+        <li><b>The eligibility panel</b> — new; a member cannot see what their club allows anywhere in the product</li>
+        <li><b>Don't show this again, and the banner that replaces the gate</b> — new</li>
+        <li><b>Drawn lamp glyph in a 72 px tile</b> — new, replacing two rasters authored for a white scaffold. <code>72px</code> is a new tile size and only this screen uses it.</li>
+        <li><b>Verb pair.</b> <b>Start an idea</b> / <b>Not now</b>, replacing <b>CONTINUE</b> — which names neither the act nor its cost, and is shouted.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Is 25.0 Credits the deposit?</h3>
+      <p><span class="flag">25.0</span> is carried over from <code>wallet.html</code> and
+        <code>create-idea.html</code>, whose ledger arithmetic derives from it. <b>The figure is
+        invented</b> — no pricing exists anywhere in the repository; the server holds it in
+        <code>credit_post_idea</code> and the app renders whatever arrives. The number needs a
+        product answer, and if it is per-club or per-category the gate has to say which,
+        because the panel currently states one figure for both categories.</p></li>
+    <li><h3>Which balance is right — 940.0 or 340?</h3>
+      <p><code>wallet.html</code> shows <span class="flag">1,240.0 total = 940.0 available +
+        300.0 locked</span> and this gate follows it. <code>create-idea.html</code>'s confirm
+        dialog shows <b>340 → 315</b> for the same act. Two components describing the same
+        member's money with different figures will be the first thing anyone notices; one of them
+        has to move before build.</p></li>
+    <li><h3>Should the gate really check the balance up front?</h3>
+      <p>We think yes — telling somebody they can't afford it before they write 200 words is
+        plainly kinder than after. But it changes the shape of the flow: the gate becomes a screen
+        that can <em>refuse</em>, which means it needs the wallet's balance loaded before it
+        paints, and a decision about what happens if the balance changes between the gate and the
+        post. We have assumed <span class="flag">the confirm dialog on the last step re-checks and
+        is the authority</span>.</p></li>
+    <li><h3>What happens when a club closes both member categories?</h3>
+      <p>Frame 03 offers Positions as the way out of a closed On-field decisions. If a club
+        switches <em>both</em> off, there is no alternative to offer and the gate becomes a dead
+        end. We think the right answer is <span class="flag">to remove the entry point from the
+        app bar entirely</span> rather than show a screen that only says no — but that is five
+        call sites to change, and it needs confirming.</p></li>
+    <li><h3>Can the gate be dismissed permanently?</h3>
+      <p>We have proposed <span class="flag">yes</span>, with the cost surviving as a banner on the
+        form and as the existing confirm dialog. The reasoning is that a screen pushed from five
+        places, showing the same paragraph every time, is not read — it is tapped through, which is
+        exactly how somebody ends up surprised by a forfeited deposit. If legal or compliance need
+        the full disclosure every time, say so and the checkbox comes out.</p></li>
+    <li><h3>Do you want the illustrated lamp back?</h3>
+      <p>The live screen composites <code>assets/images/ideas/stack_create.png</code> (a
+        <code>164pt</code> photograph) with <code>assets/svgs/idea/idea_light.svg</code>
+        (<code>129 × 170</code>), both authored against a white scaffold. Neither has a dark-mode
+        export, so this file uses <span class="flag">a drawn 24-box lamp in a 72 px acid-wash
+        tile</span>. If the illustration is wanted, it needs re-cutting for <code>#030401</code> —
+        we would rather ask than draw a substitute.</p></li>
+    <li><h3>Are the category names right for members?</h3>
+      <p><b>Positions</b> and <b>On-field decisions</b> are the code's names. The one-line glosses
+        under them (<span class="flag">"Who plays, who captains, who is rested"</span> /
+        <span class="flag">"Instructions the coach can carry out during the match"</span>) are
+        ours, written from <code>CLString</code>'s longer definitions. They are the first plain
+        explanation of the categories anywhere in the product and they should be signed off as
+        copy, not inherited from a mock-up.</p></li>
+    <li><h3>What counts as "too late" in a match?</h3>
+      <p>Frame 02 fires when the remaining match time is under the Idea's own stage total —
+        <span class="flag">6 + 3 = 9 minutes</span> at Barcelona, so the caution appears inside the
+        last nine minutes plus stoppage. That rule is ours. Whether stoppage time is known to the
+        client, and whether the threshold should carry a margin, are open.</p></li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+  document.querySelectorAll('[data-consent]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var on = b.getAttribute('aria-checked') === 'true';
+      b.setAttribute('aria-checked', String(!on));
+    });
+  });
+})();
+</script>

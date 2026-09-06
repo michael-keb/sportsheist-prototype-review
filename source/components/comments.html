@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en" data-component="comments">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Comments</title>
+
+<style>
+/* ============================================================
+   SPORTSHEIST — COMMENTS THREAD + COMPOSER
+
+   The debate surface. Comments hang off a War Room proposal, so
+   this is where members argue a case before the ballot decides it.
+
+   Token block copied verbatim from merits.html. The field, button,
+   counter and focus-ring construction is forms.html. The segmented
+   control is the .tax control shipped in results-actions.html.
+   Row geometry, avatars and the crest tile are merits.html.
+
+   Content reference is WR-14 (voting detail, ballot + comments) and
+   lib/models/src/proposal/comment.dart. The current build ships a
+   flat MComment — user, proposal, content, created_at, updated_at.
+   No id, no parent, no reactions, no moderation flags. Threading,
+   agree/disagree, sorting and every moderation state on this sheet
+   are therefore PROPOSALS, and are called out as such in the notes.
+
+   THE ONE RULE ON THIS SCREEN
+   Agreement is INK, never a FILL. The filled acid pill, the
+   acid-wash row, the 3 px inset accent bar, the percentage and the
+   threshold bar are the ballot's signature (voting-card.html) and
+   nothing in the thread is allowed to borrow any of them. Counts
+   are raw integers — no percentage, no bar, anywhere.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls, tab bar        */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* hero */
+  --hero-a:        #0D3617;
+  --hero-b:        #17481C;
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* --- carried over from forms.html, no new value invented ------
+     --red / --red-wash  the contract's single semantic red, and the
+                         same red at .12 built exactly like --acid-wash
+     --h-field           52px, the one height forms.html gives every
+                         single-line control and every button
+     --h-cmp             44px, the composer field's MINIMUM height and
+                         the send button's diameter. 44 is the platform
+                         tap minimum; see the notes — the kit's 38 px
+                         icon button does not meet it and this is the
+                         one place that matters.
+  */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.12);
+  --h-field:       52px;
+  --h-cmp:         44px;
+
+  /* photography extracted from the Figma exports (_assets/avatars.css) */
+  --av-01:url(data:image/jpeg;base64,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);
+  --av-03:url(data:image/jpeg;base64,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);
+  --av-05:url(data:image/jpeg;base64,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);
+  --av-07:url(data:image/jpeg;base64,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);
+  --av-11:url(data:image/jpeg;base64,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);
+  --av-14:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAGwAAAgMBAQEAAAAAAAAAAAAABQYCAwQBBwD/xAA7EAACAQMBBQYFAgQEBwAAAAABAgMABBEFBhITITEiQVFhcYEUIzKRsUKhJDNSwQdi0eEVFkNEgpLw/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAH/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCUK4cVXrmrW+lQK1xciIsOyMElvQCrogeIKs1KNXtyGUMCOhGRUUgXO19x2haocn/qTYOPRRy+5NAry9ub6Xi3U7zP4s3T0HdTFdaHaTyNwxwGz+n6ftQm70W7tstwuKg/VHz/AG61UCWNcCse6jmg7OvrVySzGK2iPzJMcyf6R5/inaHZnQ7Vd34JJCBzaUlz755Cg8t3Grm6a9G1HQNFukMNvbcKY/TJboeR8+7FJF9YT6fctb3CFXXmDjkw7iPKgwYNSRiDU90VzcFBahy6+ootr0rwbSX7ROUPHbmpxWHT7OO6vbeFzuLLIqlv6cmju0ejtLtPdpDGHGVLuRgBt0Z5959KAdba9JD2Zd1x4ryP26UTS8N5CJFO8h8Riu2mi2tuAzosr+JXkPatu4O4UDRAMyCtOoL8j2qEKgOKt1Bf4f2qKTW5TN61IE91cZfnN619LvC3kKfUEOPXFUE7OREjEEKbzZz2e8nqTRJWlgXFxBCo/wA7bhP3NYtmtN+LjCzTyQQ7oZuEd15j5t1VfAL17zTN8Fb2xC6ZZQI5/UEBJ9SedQK97qFm7sH1tYlA5Qo6rj/yDA0k6rY20hmurS743aLENNGeXlg5z5Yr1HU9FvLmP+Mt4fESLjeFKk+lS2c+7JCqZ6Nu8jVHn5yOoNdUjxp5kh67yBgO/dzQnWNPhawa4ijRJEIOQMcqIr2Uijm1eCN4w/zARn/7ypm2gfh67PgE7yo33UUE2JTi6qsm7jcjJb1yAKfr7S4rm64rKMlFH2FFKMAeWPf3SBUJTJEc7hINN8WlRRjdwMVKfTImiOAM0FUTfMFaL4/I9qzQfWK03w+R7VApOvzmPnXwABGenfUn/nN61p0+O3kvEF1vcLmWCnBPLpnuqi/Zu5e71p7ONBGkaklunhmiWrbZfCKYNLtlYcxxZWC59Kv0mx0yS+u209biJ3t9w8WQP1OOyQBSpq+zk8F6Y7xGcY7G6xVXHiKC2Lau8vJiJ5EAz1STNdvLp2t5JTdKoCk5bmVPjQ/TNnOPrNtbIOEksg3sEndUcz+1FttNFt4dUxZBljUc0kIbNELVrewXEw4+o3eScbwChR7UW1G1a30yY74m+WSrAY3h5jxqdraSfDmMRwKMdeHzrvwzQwyFzlApySfKgo2Js7i3UNJbMgnYtvHA5Y5efjTbrmoNZXkaLzBjBoBs9fPd3kADmXDHtgYBULy/sKJbUH+OQ+CAfsDRWmz1P4jqcVueXERJYUowzNE2VNam1GQpu4oDUI7Yq+9/ke1Z4T2xV16fk+1QK0g+c3rXVJVgR1FdkPzW9a+FUb9BvZbK8bCF1SFjnHQZyOf2FE7zXINQtOCy8R+oY8tw+VAFZ1VlRiN4YPn30Ms7wNK0G92j0wD4+dAxaZtJZ6NNM8+nxziXs8ZvqQeA8Pao63tNpU7LcOYLieVSsaI+cDzxQGwgS6vZYLx2Rfq4m5vjr0A7qOx6ToVqu+rvLIcco4cE8vTxoMWn6rbvLwWZSD0APNf9q7rzpb6XcMpwZF3F9Ty/vWSe3lk1biqqxW4cCNCAWXxJb+1BtU1CXUtSWxQHcEo5DwHfRDJs5DBBqkMUG+2Qd5m6nl09K3bUkm9k/wAojP3DVl2ej4esRN4ZojtLGGu5T3tbo32b/eilhJTvYJrUp3hWBxuycq2wns0QyRt2xWi8Pyfas0WN8Vouz8n2qKWZP5zetSUVyQZmb1q61tpbmURQoWYnu6D1PdVFlpaT3lwsNtHvuefgAPEnuHnSvq5Nlr5kQl04n8zBAJ6d46eFNenas41W9s9PlPwVlERPIv8A3Ex6D0XBwKJa7pMGp6fBcwwK00Ma7seM76AdPMjqPegWLOVbgl0IPgwrUL25ikxI6hAPq60szyyaZcZjhkEbAnfjJYMe7kelUNqV7fIIoreRgSeSjmaIYNR1WJEMgbAAwMeNAY2msOJqbruuSFjLDxPf7Vqt9FvZ3jfUFMUQ+mM9feqNVuRf3C2kWOBCebD9RoDeyGtG715badVSQElN3owxz96Z9osHUUX+u2I/P+lKGxttCu0ck26+9FhAeW7lh+eRpz1o20usWkJkAmMO8qnqVDYP5qKUnTL5q2M7orRLamGQof0nFQMXLlVByI4cVsaCa7XchTe5cz0A963w6da2/MrvsO9qse7WNcIAoHcKgH2mzUKzLx2+IldsCNeS5/JrXtTDDoGzU5BZJplKQ8Mbig92P96JbPzHjS3IieRk7EfLpnqaBa7qdprW08GnakGZYpgBHk+HgPfr40F3+HWy76XsylxJGGurotNJIxwFBGAAfT81ksbuRraIS44ipg4PVgSOX2pqn1i4ntmjtbcrEqFRg4AAHIYH+teVy600NjBbMpW5SSQzZP0HfJAoDF9oE8Ba5tUaaPfLSxYy0eeZI8Rz9fWqbFY0DMoUH+sYxu0f0TUd+0E1zMFVYyzyNyGB3n2pUvNsNNub2SaTRVeJpCI5SSAwHewHX98UG94De2lxetmPT7eNmaY8jLgfSnvy3vtSLbp2gAMeVO+1G0VvqWzVtFZNui4fEsWRmMJjKnHnj1FJ0ShSxJwAOZqo+0bWRpesXDyEcLe3sMcAsBgZPXoT0rdrm1dhrM0E4S5guLTJglhA7JJz3nmM0pTPxHeT+tiaiuO8igf7HXItYtVdyqXQ5SJ4nxHrWoededRO0eSpII55FGLHaK6tiFkPGTwbr7Gg9Qu9RWOIEPkEZBHhWJb9WjwW7R54oRp1wbu1RWYb0XYPqOX4qKSFNTt065kBI8QOZ/FRXrWiiHTtJgheJnlK77nA+o8++lTSodNudsPjpGjDMWIBIBUgHuqrUNtri0lhVrNN6UksvEPID2pb0vabTrHadmmWVJN9wUEZY8wehHX9qD1a6urJYWCRvIcdyH8mvFNo+D/xy4ESMgJBIYAYPQ9Kaxt4L28SC3sLkxspZnYKgA7ufOk7VL+PUdXu0jt3jkjTiEl97kMZ7h459qoI67cm62VcaepWKFk4qg85E7/bOD7UDmuIxbxXMz8OOVA0ccf1EdMAdAM55n96YtEaOTQLrfjG6q9s56gYz+1JUEC3tvKIXYSiQ9lsc0z3HyGOVEELYmWATFFTidoKvcO719amiLJNFAwyJpAhGM5z1/arNwRqFX6QMAVCzuRa7S6W7c1WUsRz8MUBLU9MsFjhT4SAFeYBj3fxjPvmtttp0LQgR2QYY/TbAj9lo7da9p8rpI4iZlXALNzH3Gf2qH/NsCEKqb3opP5IopfuNCs5eJnT1VpFK7wgIIOOR5CkLmpweo5GvXjtZCw5xn/1P+teWaqix6rdKgITisVB8Ccj80R//9k=);
+  --av-16:url(data:image/jpeg;base64,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);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ============================================================
+   PAGE FURNITURE  (forms.html)
+   ============================================================ */
+.title{
+  margin:6px var(--gutter) 0;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.title-sub{margin:9px var(--gutter) 0;font-size:13px;line-height:1.45;color:var(--muted)}
+
+.label{
+  margin:28px var(--gutter) 12px;
+  font-size:18px;font-weight:600;letter-spacing:-.015em;
+}
+.state-tag{
+  margin:18px var(--gutter) 7px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.eyebrow{
+  margin:0 0 6px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.explain{margin:8px var(--gutter) 0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+
+/* documentation panel — the three rules this sheet holds to */
+.note{
+  margin:16px var(--gutter) 0;padding:14px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);
+}
+.note dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:9px 12px}
+.note dt{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);white-space:nowrap;padding-top:2px;
+}
+.note dd{margin:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.note dd b{color:var(--text);font-weight:600}
+
+.avatar{
+  border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+
+/* ============================================================
+   THE PROPOSAL THE THREAD HANGS OFF
+   A comment thread with no visible subject is unreadable once it
+   is scrolled. The subject sits in a --sunken panel so it reads as
+   context, not as another card in the list.
+   ============================================================ */
+.subj{
+  margin:16px var(--gutter) 0;padding:12px 14px;
+  border-radius:var(--r-panel);background:var(--sunken);
+  box-shadow:inset 0 0 0 1px var(--line);
+}
+.subj h2{
+  margin:0;font-size:15px;font-weight:600;line-height:1.3;letter-spacing:-.01em;
+}
+
+/* ============================================================
+   THREAD HEADER + SORTING
+   .tax is the segmented control shipped in results-actions.html,
+   reused unchanged. It is chrome — it filters, it does not express
+   an opinion — so it keeps the accent fill on its selected item.
+   ============================================================ */
+.thead{display:flex;align-items:baseline;gap:8px;margin:20px var(--gutter) 10px}
+.thead h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.thead__n{
+  font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;
+}
+
+.taxrow{display:flex;margin:0 var(--gutter) 10px}
+.tax{
+  flex:1;display:flex;gap:4px;height:46px;padding:4px;
+  border-radius:var(--r-pill);background:var(--sunken);
+}
+.tax__btn{
+  flex:1;height:38px;border:0;border-radius:var(--r-pill);
+  background:transparent;color:var(--muted);
+  font:inherit;font-size:13.5px;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;transition:background .18s var(--ease),color .18s var(--ease);
+}
+.tax__btn:hover{color:var(--text)}
+.tax__btn[aria-selected="true"]{background:var(--acid);color:var(--acid-ink);font-weight:700}
+.tax__btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* the standing disclaimer — words, not just styling, keep agreement
+   and voting apart. It sits between the sort bar and the thread. */
+.aside{
+  display:flex;align-items:flex-start;gap:7px;
+  margin:0 var(--gutter) 11px;
+  font-size:11.5px;line-height:1.35;color:var(--muted);
+}
+.aside svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:var(--dim)}
+
+/* ============================================================
+   THREAD  —  merits.html .board / .row geometry
+   A --surface panel, rows divided by a 1 px --line-soft hairline.
+   Every measured ratio in the contract is quoted against
+   --surface, so the copy sits on --surface and stays valid.
+   ============================================================ */
+.thread{
+  list-style:none;margin:0 var(--gutter);padding:0 14px;
+  border-radius:var(--r-panel);background:var(--surface);
+}
+.thread > li{position:relative}
+.cm{display:flex;gap:11px;padding:13px 0;border-top:1px solid var(--line-soft)}
+.thread > li:first-child > .cm{border-top:0}
+
+.cm__av{width:34px;height:34px}
+.cm__main{flex:1;min-width:0}
+
+.cm__by{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.cm__name{
+  font-size:13.5px;font-weight:600;letter-spacing:-.005em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.cm__when{flex:0 0 auto;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.cm__when::before{content:"·";margin-right:5px;color:var(--dim)}
+.cm__text{margin:0;font-size:13px;line-height:1.46;color:var(--text)}
+.cm__text + .cm__text{margin-top:7px}
+
+/* the overflow — the ONLY entry point to Report, so every comment
+   carries one. Holds Report · Copy text · Mute member. */
+.cm__of{
+  flex:0 0 auto;margin-left:auto;margin-right:-6px;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border:0;border-radius:50%;
+  background:transparent;color:var(--dim);cursor:pointer;
+  transition:background .16s var(--ease),color .16s var(--ease);
+}
+.cm__of:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.cm__of:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.cm__of svg{width:16px;height:16px}
+
+/* ---------- markers that are not colour ---------------------- */
+/* the monochrome tile from merits .crest / forms .iso */
+.badge{
+  flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  height:16px;padding:0 5px;border-radius:4px;
+  background:rgba(255,255,255,.10);box-shadow:inset 0 0 0 1px var(--line);
+  font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.82);
+}
+.verif{flex:0 0 auto;width:14px;height:14px;color:var(--muted)}
+.pin{
+  display:inline-flex;align-items:center;gap:4px;margin:0 0 7px;
+  font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);
+}
+.pin svg{width:11px;height:11px}
+
+/* ---------- the club / official account ----------------------
+   Five distinguishers, none of them a hue:
+   1. the portrait is replaced by the monochrome crest tile
+   2. that tile is a 8 px rounded square, not a circle — an
+      institution is not a person
+   3. a CLUB badge tile beside the name
+   4. an official shield-and-tick glyph
+   5. the row drops to the --sunken fill and carries a PINNED
+      tracked micro-label
+   ------------------------------------------------------------ */
+.cm--club{margin:0 -14px;padding:13px 14px;background:var(--sunken)}
+.crest-av{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:8px;
+  background:#20262F;box-shadow:inset 0 0 0 1px var(--line);
+  font-size:10.5px;font-weight:800;letter-spacing:.02em;color:rgba(255,255,255,.85);
+}
+
+/* ---------- the viewer's own comment -------------------------
+   No fill, no wash — those belong to the ballot. Identity is
+   carried by the literal word "You", a 1.5 px accent ring on the
+   portrait (the merits plinth device) and by the action row, which
+   swaps the agree/disagree pair for a read-only tally plus Edit
+   and Delete. A member cannot agree with themselves.
+   ------------------------------------------------------------ */
+.cm--you .cm__av{box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--acid)}
+
+/* ---------- nested replies, one level only -------------------
+   Indent to the parent's text column (34 + 11 = 45 px) and drop a
+   1 px --line rule centred under the parent portrait. One level
+   is deliberate: on a 375 pt screen a second indent leaves a
+   40-character measure.
+   ------------------------------------------------------------ */
+.sub{list-style:none;margin:0;padding:0 0 0 45px;position:relative}
+.sub::before{
+  content:"";position:absolute;left:17px;top:0;bottom:14px;
+  width:1px;background:var(--line);
+}
+.sub > li{position:relative}
+.sub .cm__av{width:26px;height:26px}
+.sub .cm{padding:11px 0}
+.sub .cm__text{font-size:12.5px}
+
+.morerow{border-top:1px solid var(--line-soft)}
+.more{
+  display:inline-flex;align-items:center;gap:7px;
+  height:38px;padding:0 8px 0 0;
+  border:0;background:transparent;color:var(--muted);
+  font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:color .16s var(--ease);
+}
+.more svg{width:14px;height:14px}
+.more:hover{color:var(--text)}
+.more:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.more b{font-variant-numeric:tabular-nums;font-weight:700}
+
+/* ============================================================
+   AGREE / DISAGREE  —  .sig
+   ------------------------------------------------------------
+   Deliberately NOT a vote. Every property below is the opposite
+   of the ballot control in voting-card.html:
+
+     ballot                        .sig
+     ----------------------------  ----------------------------
+     full-bleed 50 pt row          inline 34 px pill, auto width
+     46 pt full-width acid pill    no button wider than ~92 px
+     acid FILL                     acid INK only, 9.6:1 on --surface
+     acid-wash row + 3 px inset    no fill and no wash, ever
+     percentage + threshold bar    raw integer, tabular-nums
+     its own bordered card         trailing end of the comment
+     "Vote" / "Reject all"         "Agree" / "Disagree", spelled out
+     submitted, receipted          toggles freely, no confirmation
+
+   The pressed state carries three signals — accent ink, 700
+   weight and a hairline ring — so it never rests on colour alone.
+   The visual height is 34 px; a ::after inset extends the hit
+   area to 44 px without inflating the row.
+   ============================================================ */
+.cm__acts{display:flex;align-items:center;gap:4px;margin:9px -10px -5px;flex-wrap:wrap}
+.sig{
+  position:relative;
+  display:inline-flex;align-items:center;gap:5px;
+  height:34px;padding:0 10px;
+  border:0;border-radius:var(--r-pill);
+  background:transparent;color:var(--muted);
+  box-shadow:inset 0 0 0 1px transparent;
+  font:inherit;font-size:11.5px;font-weight:600;letter-spacing:-.002em;
+  cursor:pointer;
+  transition:color .16s var(--ease),background .16s var(--ease),box-shadow .16s var(--ease);
+}
+.sig::after{content:"";position:absolute;left:0;right:0;top:-5px;bottom:-5px}  /* 44 px hit */
+.sig svg{width:14px;height:14px;flex:0 0 auto}
+.sig b{font-weight:700;font-variant-numeric:tabular-nums}
+.sig:hover{color:var(--text);background:rgba(255,255,255,.045)}
+.sig:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+
+.sig--agree[aria-pressed="true"]{
+  color:var(--acid);font-weight:700;
+  box-shadow:inset 0 0 0 1px rgba(155,226,34,.34);
+}
+/* disagree pressed: white ink + weight + a white hairline. The red
+   is on the 14 px GLYPH only — #E2564A is 4.36:1 on --surface,
+   which clears the 3:1 non-text floor but not AA for 11.5 px copy,
+   and it is paired with the word "Disagree" either way. */
+.sig--against[aria-pressed="true"]{
+  color:var(--text);font-weight:700;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);
+}
+.sig--against[aria-pressed="true"] svg{color:var(--red)}
+.sig[disabled]{color:var(--dim);cursor:not-allowed;background:transparent;box-shadow:none}
+.sig[disabled]::after{display:none}
+
+/* read-only tally — the viewer's own comment, and any frozen one */
+.tally{
+  display:inline-flex;align-items:center;gap:5px;
+  height:34px;padding:0 10px;
+  font-size:11.5px;font-weight:600;color:var(--muted);
+}
+.tally svg{width:14px;height:14px;flex:0 0 auto;color:var(--dim)}
+.tally b{font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.tally + .tally{margin-left:-6px}
+
+/* ============================================================
+   MODERATION  —  .shroud
+   ------------------------------------------------------------
+   None of these exist in the current build. A debate feature in a
+   product with under-18 members has to have them, so they are
+   proposed here. Each is an icon + a sentence + a control; none of
+   them is carried by colour.
+   ============================================================ */
+.shroud{
+  display:flex;align-items:flex-start;gap:9px;
+  margin:3px 0 0;padding:10px 12px;
+  border-radius:10px;background:var(--sunken);
+  box-shadow:inset 0 0 0 1px var(--line);
+}
+.shroud svg{width:15px;height:15px;flex:0 0 auto;margin-top:2px;color:var(--muted)}
+.shroud__t{flex:1;min-width:0;font-size:12.5px;line-height:1.4;color:var(--muted)}
+.shroud__t b{display:block;margin-bottom:2px;color:var(--text);font-size:13px;font-weight:600}
+.shroud--report svg{color:var(--red)}
+.linkbtn{
+  border:0;background:transparent;padding:0;margin-top:6px;
+  color:var(--acid);font:inherit;font-size:12.5px;font-weight:600;
+  text-decoration:underline;text-underline-offset:3px;cursor:pointer;
+}
+.linkbtn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.linkbtn + .linkbtn{margin-left:14px}
+
+/* the deleted tombstone — the row survives so replies stay attached */
+.ghost-av{
+  flex:0 0 auto;width:34px;height:34px;border-radius:50%;
+  background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line);
+}
+.cm--gone .cm__name{color:var(--dim);font-weight:600;font-style:italic}
+
+/* a reported comment stays readable; only its counts freeze */
+.cm--held .cm__text{color:var(--muted)}
+
+/* ============================================================
+   EMPTY THREAD
+   The call to action is the SECONDARY pill, not the primary. A
+   full-width acid pill in a thread is the ballot's Vote button and
+   nothing in the discussion is allowed to look like it.
+   ============================================================ */
+.empty{
+  margin:0 var(--gutter);padding:30px 22px 24px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);text-align:center;
+}
+.empty__art{width:56px;height:56px;color:var(--acid);opacity:.92}
+.empty h3{margin:15px 0 0;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.empty p{margin:8px auto 0;max-width:27em;font-size:13px;line-height:1.5;color:var(--muted)}
+.empty .btn{width:auto;margin-top:20px;padding:0 22px}
+
+/* buttons — forms.html, unchanged */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:var(--h-field);
+  border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:15px;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;
+  transition:background .18s var(--ease),transform .12s var(--ease),color .18s var(--ease);
+}
+.btn svg{width:18px;height:18px;flex:0 0 auto}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.btn--secondary{background:var(--surface);color:var(--text)}
+.btn--secondary:hover{background:#222833}
+
+/* ============================================================
+   COMPOSER
+   ------------------------------------------------------------
+   WR-14 ships a ~41 pt pill field with a ~44 pt grey send button
+   whose glyph reads as disabled, on a band with no counter and no
+   growth. This rebuilds it on the forms.html field:
+
+     - 12 px radius, --surface fill, 1 px --line, and the same
+       accent border + 3 px --acid-wash focus ring every other
+       input on the system uses. Inputs take 12 px, actions take
+       the pill; a pill-shaped input would be the only one in the
+       kit.
+     - MINIMUM 44 px. Grows one 23 px line box at a time to a
+       112 px text cap — four full lines — and then scrolls. The
+       counter, when it appears, sits below that cap, so the field
+       tops out at 154 px and the whole band at 184 px — under a
+       quarter of an 812 pt screen.
+     - 16 px value text — below 16 px iOS zooms the page on focus.
+     - a 44 px accent send button. This is the ONE accent fill on
+       the screen, and it means "post", not "support".
+     - the counter appears at 80 characters remaining and not
+       before. Over the limit it takes a minus sign, a warning
+       glyph and the red field border, and send disables.
+
+   Pinned to the bottom, so per the contract it lives OUTSIDE
+   <main class="screen">.
+   ============================================================ */
+.composer{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  max-width:420px;margin:0 auto;
+  padding:10px var(--gutter) calc(10px + env(safe-area-inset-bottom,0px));
+  background:rgba(3,4,1,.93);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);
+}
+/* the same composer shown as a static specimen inside the screen */
+.composer--spec{
+  position:static;max-width:none;margin:0 var(--gutter);
+  padding:12px;border:1px solid var(--line);border-top:1px solid var(--line);
+  border-radius:var(--r-card);background:var(--section);
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+}
+
+.cmp__reply{
+  display:flex;align-items:center;gap:7px;
+  margin:0 0 9px;padding:0 2px 0 4px;
+  font-size:11.5px;line-height:1.3;color:var(--muted);
+}
+.cmp__reply svg{width:13px;height:13px;flex:0 0 auto;color:var(--dim)}
+.cmp__reply b{color:var(--text);font-weight:600}
+.cmp__x{
+  margin-left:auto;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border:0;border-radius:50%;
+  background:transparent;color:var(--muted);cursor:pointer;
+  transition:background .16s var(--ease),color .16s var(--ease);
+}
+.cmp__x:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.cmp__x:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.cmp__x svg{width:14px;height:14px;color:currentColor}
+
+.cmp__row{display:flex;align-items:flex-end;gap:10px}
+.cmp__av{width:30px;height:30px;margin-bottom:7px}
+.cmp__field{
+  flex:1;min-width:0;display:flex;flex-direction:column;
+  min-height:var(--h-cmp);padding:10px 12px 9px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.cmp__field:hover{border-color:rgba(255,255,255,.14)}
+.cmp__field:focus-within,.cmp__field.is-focus{
+  border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash);
+}
+.cmp__field.is-over,.cmp__field.is-over:focus-within{
+  border-color:var(--red);box-shadow:0 0 0 3px var(--red-wash);
+}
+.cmp__in{
+  display:block;width:100%;
+  min-height:23px;max-height:112px;overflow-y:auto;
+  border:0;background:transparent;color:inherit;
+  font:inherit;font-size:16px;line-height:1.44;
+  padding:0;margin:0;outline:none;resize:none;
+}
+.cmp__in::placeholder{color:var(--dim);opacity:1}
+
+/* a static specimen needs a caret the file can be reviewed with.
+   max-height matches the live control's growth cap exactly, so a
+   specimen can never show a taller field than the real one does. */
+.cmp__caret{
+  display:block;position:relative;
+  max-height:112px;overflow:hidden;
+  font-size:16px;line-height:1.44;
+}
+.cmp__caret::after{
+  content:"";display:inline-block;vertical-align:-3px;
+  width:1.5px;height:19px;margin-left:1px;background:var(--acid);
+}
+
+.cmp__count{
+  display:flex;align-items:center;gap:5px;align-self:flex-end;
+  margin-top:6px;
+  font-size:11px;font-weight:600;color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.cmp__count[hidden]{display:none}
+.cmp__count svg{display:none;width:12px;height:12px}
+.cmp__count.is-over{color:var(--red)}
+.cmp__count.is-over svg{display:block}
+
+.send{
+  flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:var(--h-cmp);height:var(--h-cmp);
+  border:0;border-radius:50%;
+  background:var(--acid);color:var(--acid-ink);cursor:pointer;
+  transition:background .18s var(--ease),transform .12s var(--ease),color .18s var(--ease);
+}
+.send svg{width:19px;height:19px}
+.send:hover{background:#A8EC33}
+.send:active{transform:translateY(1px)}
+.send:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.send[disabled]{background:var(--sunken);color:var(--dim);cursor:not-allowed;transform:none}
+.send.is-busy{background:var(--sunken);color:var(--acid);cursor:progress}
+.send.is-busy .send__plane{display:none}
+.send__spin{display:none;transform-origin:12px 12px;animation:spin .9s linear infinite}
+.send.is-busy .send__spin{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
+  .send__spin{animation:none}
+}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+  <h1 class="title">Comments</h1>
+  <p class="title-sub">The thread that hangs off a War Room proposal, and the composer that
+     feeds it. This is where members argue a case before the ballot settles it.</p>
+
+  <div class="note">
+    <dl>
+      <dt>Agreement</dt>
+      <dd><b>Ink, never a fill.</b> Nothing in the thread carries a filled accent, an
+          accent wash, a percentage or a threshold bar — those four are the ballot's
+          signature and they belong to voting alone.</dd>
+      <dt>Counts</dt>
+      <dd><b>Raw integers.</b> <b>34</b>, not <b>81%</b>. No bar, no quorum,
+          no threshold anywhere on this screen.</dd>
+      <dt>Composer</dt>
+      <dd><b>44 px minimum, growing to 112 px, with a 44 px send.</b> The live build ships
+          a ~41 pt field, no growth, no counter, and a send glyph that reads as disabled.</dd>
+    </dl>
+  </div>
+
+  <!-- ============================================================
+       1 · THREAD
+       ============================================================ -->
+  <h2 class="label">Thread</h2>
+
+  <div class="subj">
+    <p class="eyebrow">Proposal · voting closes Sunday 16:15</p>
+    <h2>Rest the first XI for the Copa third round</h2>
+  </div>
+
+  <div class="thead">
+    <h2>Discussion</h2>
+    <span class="thead__n">8 comments</span>
+  </div>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Sort comments" data-tax>
+      <button class="tax__btn" type="button" role="tab" aria-selected="true">Newest</button>
+      <button class="tax__btn" type="button" role="tab" aria-selected="false">Oldest</button>
+      <button class="tax__btn" type="button" role="tab" aria-selected="false">Most agreed</button>
+    </div>
+  </div>
+
+  <p class="aside">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.7v.01"/>
+    </svg>
+    Agreeing with a comment does not change the ballot. It has no effect on the count,
+    the threshold or the result.
+  </p>
+
+  <ol class="thread">
+
+    <!-- ---- club / official account, pinned ---- -->
+    <li>
+      <article class="cm cm--club">
+        <span class="crest-av" role="img" aria-label="FC Barcelona crest">BAR</span>
+        <div class="cm__main">
+          <p class="pin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 13.6V21"/><path d="M8 3h8l-1.1 5.7L18 12.1H6l3.1-3.4L8 3Z"/>
+            </svg>
+            Pinned by the club
+          </p>
+          <div class="cm__by">
+            <span class="cm__name">FC Barcelona</span>
+            <svg class="verif" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Verified official account">
+              <path d="M12 2.9 19.4 5.6v5.4c0 4.3-3 7.6-7.4 9.1-4.4-1.5-7.4-4.8-7.4-9.1V5.6L12 2.9Z"/>
+              <path d="m8.8 11.7 2.4 2.4 4-4.4"/>
+            </svg>
+            <span class="badge">Club</span>
+            <span class="cm__when">3 h</span>
+            <button class="cm__of" type="button" aria-label="More options for FC Barcelona's comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/>
+              </svg>
+            </button>
+          </div>
+          <p class="cm__text">For the record: the third round is played on the Wednesday, and the
+            league has confirmed the derby stays at Sunday 16:15. Selection sits with the head
+            coach — an approved proposal is advisory, and the board passes it to him in writing
+            within 48 hours of the count.</p>
+
+          <div class="cm__acts" data-sig>
+            <button class="sig sig--agree" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              Agree <b>62</b>
+            </button>
+            <button class="sig sig--against" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Disagree <b>8</b>
+            </button>
+            <button class="sig" type="button" data-reply="FC Barcelona">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 14.5 4.5 9.5l5-5"/><path d="M4.5 9.5H13a7 7 0 0 1 7 7v3"/></svg>
+              Reply
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+
+    <!-- ---- the viewer's own comment ---- -->
+    <li>
+      <article class="cm cm--you">
+        <div class="avatar cm__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">You · dylan_n</span>
+            <span class="cm__when">48 m</span>
+            <button class="cm__of" type="button" aria-label="More options for your comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/>
+              </svg>
+            </button>
+          </div>
+          <p class="cm__text">Rotate the outfield ten but keep the keeper. We've conceded from set
+            pieces in three of the last four and the reserve keeper has forty minutes of senior
+            football all season. That isn't rotation, it's a gamble on the one position we can't
+            cover.</p>
+
+          <!-- own comment: the pair becomes a read-only tally. You cannot
+               agree with yourself, so the buttons are not rendered at all. -->
+          <div class="cm__acts">
+            <span class="tally">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              <b>19</b> agree
+            </span>
+            <span class="tally">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              <b>2</b> disagree
+            </span>
+            <button class="sig" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L20.4 7.6a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="M15 6.1 18.5 9.6"/></svg>
+              Edit
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+
+    <!-- ---- a comment with a nested reply and an expander ---- -->
+    <li>
+      <article class="cm">
+        <div class="avatar cm__av" style="background-image:var(--av-01)" role="img" aria-label="capitan_7"></div>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">capitan_7</span>
+            <span class="cm__when">2 h</span>
+            <button class="cm__of" type="button" aria-label="More options for capitan_7's comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/>
+              </svg>
+            </button>
+          </div>
+          <p class="cm__text">Rotating for a third-round tie away at a second-division side isn't a
+            risk, it's arithmetic. Four games in eleven days, and the derby is the following
+            Sunday. Nine of the last twelve winners of this cup made five or more changes before
+            the quarter-finals.</p>
+
+          <!-- specimen: the viewer has agreed. Accent INK, 700 weight and a
+               hairline ring — three signals, and not one of them a fill. -->
+          <div class="cm__acts" data-sig>
+            <button class="sig sig--agree" type="button" aria-pressed="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              Agree <b>34</b>
+            </button>
+            <button class="sig sig--against" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Disagree <b>4</b>
+            </button>
+            <button class="sig" type="button" data-reply="capitan_7">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 14.5 4.5 9.5l5-5"/><path d="M4.5 9.5H13a7 7 0 0 1 7 7v3"/></svg>
+              Reply
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <ol class="sub" data-subthread>
+        <li>
+          <article class="cm">
+            <div class="avatar cm__av" style="background-image:var(--av-05)" role="img" aria-label="scout_mode"></div>
+            <div class="cm__main">
+              <div class="cm__by">
+                <span class="cm__name">scout_mode</span>
+                <span class="cm__when">1 h</span>
+                <button class="cm__of" type="button" aria-label="More options for scout_mode's reply">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                    <path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="cm__text">Arithmetic cuts both ways. We went out in the third round in 2019
+                with eight changes and still lost the derby 0–2. Rotation didn't buy us anything
+                that year — it just cost us a cup run.</p>
+              <div class="cm__acts" data-sig>
+                <button class="sig sig--agree" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+                  Agree <b>11</b>
+                </button>
+                <button class="sig sig--against" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  Disagree <b>6</b>
+                </button>
+                <button class="sig" type="button" data-reply="scout_mode">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 14.5 4.5 9.5l5-5"/><path d="M4.5 9.5H13a7 7 0 0 1 7 7v3"/></svg>
+                  Reply
+                </button>
+              </div>
+            </div>
+          </article>
+        </li>
+
+        <li data-extra hidden>
+          <article class="cm">
+            <div class="avatar cm__av" style="background-image:var(--av-03)" role="img" aria-label="fan_pulse"></div>
+            <div class="cm__main">
+              <div class="cm__by">
+                <span class="cm__name">fan_pulse</span>
+                <span class="cm__when">1 h</span>
+              </div>
+              <p class="cm__text">One season isn't a sample. Look at the injury log instead: 41
+                player-days lost to soft-tissue injuries since October, every one of them in a
+                week with three fixtures.</p>
+              <div class="cm__acts" data-sig>
+                <button class="sig sig--agree" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+                  Agree <b>14</b>
+                </button>
+                <button class="sig sig--against" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  Disagree <b>1</b>
+                </button>
+                <button class="sig" type="button" data-reply="fan_pulse">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 14.5 4.5 9.5l5-5"/><path d="M4.5 9.5H13a7 7 0 0 1 7 7v3"/></svg>
+                  Reply
+                </button>
+              </div>
+            </div>
+          </article>
+        </li>
+
+        <li data-extra hidden>
+          <article class="cm">
+            <div class="avatar cm__av" style="background-image:var(--av-14)" role="img" aria-label="dons_mode"></div>
+            <div class="cm__main">
+              <div class="cm__by">
+                <span class="cm__name">dons_mode</span>
+                <span class="cm__when">55 m</span>
+              </div>
+              <p class="cm__text">The travelling support paid £38 a ticket for that away end. Tell
+                them they're watching the under-21s and then look at the allocation we sell for
+                round four.</p>
+              <div class="cm__acts" data-sig>
+                <button class="sig sig--agree" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+                  Agree <b>22</b>
+                </button>
+                <button class="sig sig--against" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  Disagree <b>9</b>
+                </button>
+                <button class="sig" type="button" data-reply="dons_mode">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 14.5 4.5 9.5l5-5"/><path d="M4.5 9.5H13a7 7 0 0 1 7 7v3"/></svg>
+                  Reply
+                </button>
+              </div>
+            </div>
+          </article>
+        </li>
+
+        <li data-extra hidden>
+          <article class="cm">
+            <div class="avatar cm__av" style="background-image:var(--av-16)" role="img" aria-label="nou_camper"></div>
+            <div class="cm__main">
+              <div class="cm__by">
+                <span class="cm__name">nou_camper</span>
+                <span class="cm__when">40 m</span>
+              </div>
+              <p class="cm__text">Both can be true. Rest the eight who've started every league game
+                and keep the spine — captain, keeper, one centre-half. That's a changed side that
+                still knows where each other is.</p>
+              <div class="cm__acts" data-sig>
+                <button class="sig sig--agree" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+                  Agree <b>31</b>
+                </button>
+                <button class="sig sig--against" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  Disagree <b>2</b>
+                </button>
+                <button class="sig" type="button" data-reply="nou_camper">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 14.5 4.5 9.5l5-5"/><path d="M4.5 9.5H13a7 7 0 0 1 7 7v3"/></svg>
+                  Reply
+                </button>
+              </div>
+            </div>
+          </article>
+        </li>
+
+        <li class="morerow" data-morerow>
+          <button class="more" type="button" data-more>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg>
+            <b>3</b> more replies
+          </button>
+        </li>
+      </ol>
+    </li>
+
+    <!-- ---- a comment the room has mostly rejected ---- -->
+    <li>
+      <article class="cm">
+        <div class="avatar cm__av" style="background-image:var(--av-07)" role="img" aria-label="transfer_brig"></div>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">transfer_brig</span>
+            <span class="cm__when">5 h</span>
+            <button class="cm__of" type="button" aria-label="More options for transfer_brig's comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/>
+              </svg>
+            </button>
+          </div>
+          <p class="cm__text">60% isn't a mandate, it's a majority of the people who bothered. If
+            we're going to instruct the coach on selection, we should be honest that we're taking
+            his job off him one vote at a time.</p>
+
+          <!-- specimen: the viewer has disagreed. White ink, 700 weight, a white
+               hairline, and the red is on the 14 px glyph only. -->
+          <div class="cm__acts" data-sig>
+            <button class="sig sig--agree" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              Agree <b>8</b>
+            </button>
+            <button class="sig sig--against" type="button" aria-pressed="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Disagree <b>41</b>
+            </button>
+            <button class="sig" type="button" data-reply="transfer_brig">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 14.5 4.5 9.5l5-5"/><path d="M4.5 9.5H13a7 7 0 0 1 7 7v3"/></svg>
+              Reply
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+  </ol>
+
+  <!-- ============================================================
+       2 · COMPOSER
+       ============================================================ -->
+  <h2 class="label">Composer</h2>
+  <p class="explain">Six states of the same control. The live one is pinned to the bottom of
+     this screen — type in it to watch the field grow and the counter appear.</p>
+
+  <p class="state-tag">Rest · empty, send disabled</p>
+  <div class="composer composer--spec">
+    <div class="cmp__row">
+      <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+      <div class="cmp__field">
+        <textarea class="cmp__in" rows="1" placeholder="Add to the discussion" aria-label="Add a comment"></textarea>
+      </div>
+      <button class="send" type="button" aria-label="Post comment" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+          <path class="send__plane" d="M10.9 14 20.5 4"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <p class="state-tag">Focus · one line, send live</p>
+  <div class="composer composer--spec">
+    <div class="cmp__row">
+      <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+      <div class="cmp__field is-focus">
+        <span class="cmp__caret">Keep the keeper</span>
+      </div>
+      <button class="send" type="button" aria-label="Post comment">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+          <path d="M10.9 14 20.5 4"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <p class="state-tag">Grown · four lines, at the 112 px cap</p>
+  <div class="composer composer--spec">
+    <div class="cmp__row">
+      <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+      <div class="cmp__field is-focus">
+        <span class="cmp__caret">Rotate the outfield ten but keep the keeper. Set pieces have
+          cost us in three of the last four.</span>
+      </div>
+      <button class="send" type="button" aria-label="Post comment">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+          <path d="M10.9 14 20.5 4"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <p class="state-tag">Near the limit · scrolled to the caret, counter appears at 80 left</p>
+  <div class="composer composer--spec">
+    <div class="cmp__row">
+      <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+      <div class="cmp__field is-focus">
+        <span class="cmp__caret">and the reserve keeper has forty minutes of senior football all
+          season</span>
+        <span class="cmp__count">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+          62 left
+        </span>
+      </div>
+      <button class="send" type="button" aria-label="Post comment">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+          <path d="M10.9 14 20.5 4"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <p class="state-tag">Over the limit · minus sign, warning glyph, red border, send off</p>
+  <div class="composer composer--spec">
+    <div class="cmp__row">
+      <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+      <div class="cmp__field is-over">
+        <span class="cmp__caret">and goalkeeper is the one position where we have nothing at all
+          behind the first choice</span>
+        <span class="cmp__count is-over">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+          −24 over
+        </span>
+      </div>
+      <button class="send" type="button" aria-label="Post comment" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+          <path d="M10.9 14 20.5 4"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <p class="state-tag">Replying · context strip, dismissible</p>
+  <div class="composer composer--spec">
+    <p class="cmp__reply">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 14.5 4.5 9.5l5-5"/><path d="M4.5 9.5H13a7 7 0 0 1 7 7v3"/></svg>
+      Replying to <b>capitan_7</b>
+      <button class="cmp__x" type="button" aria-label="Stop replying to capitan_7">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </p>
+    <div class="cmp__row">
+      <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+      <div class="cmp__field is-focus">
+        <span class="cmp__caret">Nine of twelve is a pattern, not a proof</span>
+      </div>
+      <button class="send" type="button" aria-label="Post reply">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+          <path d="M10.9 14 20.5 4"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <p class="state-tag">Posting · send holds the spinner, field locked</p>
+  <div class="composer composer--spec">
+    <div class="cmp__row">
+      <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+      <div class="cmp__field">
+        <span class="cmp__caret" style="color:var(--muted)">Keep the keeper</span>
+      </div>
+      <button class="send is-busy" type="button" aria-label="Posting comment" aria-busy="true" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path class="send__spin" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5" opacity=".95"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       3 · EMPTY THREAD
+       ============================================================ -->
+  <h2 class="label">Empty thread</h2>
+
+  <div class="empty">
+    <svg class="empty__art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path stroke-width="1.5" d="M4 6.8A3.3 3.3 0 0 1 7.3 3.5h9.4A3.3 3.3 0 0 1 20 6.8v6.4a3.3 3.3 0 0 1-3.3 3.3H9.3L4 20.5V6.8Z"/>
+      <path stroke-width="2.6" d="M8.6 10h.01M12 10h.01M15.4 10h.01"/>
+    </svg>
+    <h3>No one has made the case yet</h3>
+    <p>Voting closes Sunday. Say why you would rest the XI — or why you wouldn't. The first
+       comment usually sets the terms of the whole thread.</p>
+    <button class="btn btn--secondary" type="button" data-open-composer>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 20h4L20.4 7.6a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="M15 6.1 18.5 9.6"/>
+      </svg>
+      Open the discussion
+    </button>
+  </div>
+  <p class="explain">The call to action is the <b>secondary</b> pill. A full-width accent pill
+     inside a thread is the ballot's <em>Vote</em> button, and nothing in the discussion is
+     allowed to look like it.</p>
+
+  <!-- ============================================================
+       4 · MODERATION
+       ============================================================ -->
+  <h2 class="label">Moderation</h2>
+  <p class="explain">None of these states exist in the current build. A debate feature in a
+     product with members under 18 needs all three, so they are <b>proposed</b> here. Each is
+     an icon, a plain sentence and a control — never a colour on its own.</p>
+
+  <p class="state-tag">Hidden by moderation · what everyone else sees</p>
+  <ol class="thread">
+    <li>
+      <article class="cm">
+        <div class="avatar cm__av" style="background-image:var(--av-14)" role="img" aria-label="dons_mode"></div>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">dons_mode</span>
+            <span class="badge">Moderated</span>
+            <span class="cm__when">2 h</span>
+            <button class="cm__of" type="button" aria-label="More options for this comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/>
+              </svg>
+            </button>
+          </div>
+          <div class="shroud">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 3l18 18"/>
+              <path d="M10.7 5.4A9.9 9.9 0 0 1 12 5.3c5 0 8.6 3.6 9.7 6.7-.4 1.2-1.2 2.6-2.4 3.8"/>
+              <path d="M6.3 7C4.4 8.3 3.1 10.1 2.3 12c1.1 3.1 4.7 6.7 9.7 6.7 1.8 0 3.4-.4 4.8-1.2"/>
+              <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+            </svg>
+            <div class="shroud__t">
+              <b>Hidden by a moderator</b>
+              Breaks rule 3 — no abuse aimed at named players or staff. The member has been told
+              and can appeal. Any replies underneath it stay exactly where they are.
+              <br><button class="linkbtn" type="button">Read the discussion rules</button>
+            </div>
+          </div>
+          <div class="cm__acts">
+            <button class="sig sig--agree" type="button" disabled aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              Agree
+            </button>
+            <button class="sig sig--against" type="button" disabled aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Disagree
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+  </ol>
+
+  <p class="state-tag">Hidden by moderation · what the author sees</p>
+  <ol class="thread">
+    <li>
+      <article class="cm">
+        <div class="avatar cm__av" style="background-image:var(--av-14)" role="img" aria-label="dons_mode"></div>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">You · dons_mode</span>
+            <span class="badge">Moderated</span>
+            <span class="cm__when">2 h</span>
+          </div>
+          <div class="shroud">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 3l18 18"/>
+              <path d="M10.7 5.4A9.9 9.9 0 0 1 12 5.3c5 0 8.6 3.6 9.7 6.7-.4 1.2-1.2 2.6-2.4 3.8"/>
+              <path d="M6.3 7C4.4 8.3 3.1 10.1 2.3 12c1.1 3.1 4.7 6.7 9.7 6.7 1.8 0 3.4-.4 4.8-1.2"/>
+              <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+            </svg>
+            <div class="shroud__t">
+              <b>Only you can see this</b>
+              A moderator hid it on 12 March for rule 3 — no abuse aimed at named players or staff.
+              <br><button class="linkbtn" type="button" data-reveal>Show my comment</button>
+              <button class="linkbtn" type="button">Appeal</button>
+            </div>
+          </div>
+          <p class="cm__text" data-veiled hidden>The travelling support paid £38 a ticket and the
+            manager wants to hand them a reserve XI. He should be nowhere near a touchline.</p>
+        </div>
+      </article>
+    </li>
+  </ol>
+
+  <p class="state-tag">Deleted by the author · tombstone keeps the thread</p>
+  <ol class="thread">
+    <li>
+      <article class="cm cm--gone">
+        <div class="ghost-av" aria-hidden="true"></div>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">Comment removed</span>
+            <span class="cm__when">1 h</span>
+          </div>
+          <div class="shroud">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>
+            </svg>
+            <div class="shroud__t">
+              <b>Deleted by the author</b>
+              The author's name and body are gone. The row stays so the reply underneath still
+              has something to hang off.
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <ol class="sub">
+        <li>
+          <article class="cm">
+            <div class="avatar cm__av" style="background-image:var(--av-05)" role="img" aria-label="scout_mode"></div>
+            <div class="cm__main">
+              <div class="cm__by">
+                <span class="cm__name">scout_mode</span>
+                <span class="cm__when">55 m</span>
+              </div>
+              <p class="cm__text">Deleted or not, I'd still like an answer on the away allocation
+                before Sunday.</p>
+              <div class="cm__acts" data-sig>
+                <button class="sig sig--agree" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+                  Agree <b>7</b>
+                </button>
+                <button class="sig sig--against" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  Disagree <b>0</b>
+                </button>
+              </div>
+            </div>
+          </article>
+        </li>
+      </ol>
+    </li>
+  </ol>
+
+  <p class="state-tag">Reported · pending review, counts frozen</p>
+  <ol class="thread">
+    <li>
+      <article class="cm cm--held">
+        <div class="avatar cm__av" style="background-image:var(--av-07)" role="img" aria-label="transfer_brig"></div>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">transfer_brig</span>
+            <span class="badge">Reported</span>
+            <span class="cm__when">12 m</span>
+            <button class="cm__of" type="button" aria-label="More options for this comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/>
+              </svg>
+            </button>
+          </div>
+          <p class="cm__text">Anyone voting to rest the XI has never paid for an away ticket in
+            their life and it shows every single week on here.</p>
+          <div class="shroud shroud--report">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 21V4"/><path d="M5 4.8h11.6l-1.8 4.3 1.8 4.3H5"/>
+            </svg>
+            <div class="shroud__t">
+              <b>Reported · a moderator is looking at it</b>
+              Two members reported this. It stays readable, but agreeing and disagreeing are
+              frozen until the review closes so a reported argument can't gather weight while
+              it is under question.
+            </div>
+          </div>
+          <div class="cm__acts">
+            <span class="tally">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              <b>3</b> agree
+            </span>
+            <span class="tally">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              <b>15</b> disagree
+            </span>
+            <button class="sig" type="button" data-reply="transfer_brig">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 14.5 4.5 9.5l5-5"/><path d="M4.5 9.5H13a7 7 0 0 1 7 7v3"/></svg>
+              Reply
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+  </ol>
+
+  <!-- ============================================================
+       5 · SORTING
+       ============================================================ -->
+  <h2 class="label">Sorting</h2>
+  <p class="explain">The segmented control the system already ships
+     (<b>.tax</b>, results&nbsp;&amp;&nbsp;actions), reused unchanged. It is chrome — it
+     filters, it does not express an opinion — so it keeps the accent fill on its selected item.
+     Nothing else on the screen does.</p>
+
+  <p class="state-tag">Newest · the default</p>
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Sort comments, newest selected" data-tax>
+      <button class="tax__btn" type="button" role="tab" aria-selected="true">Newest</button>
+      <button class="tax__btn" type="button" role="tab" aria-selected="false">Oldest</button>
+      <button class="tax__btn" type="button" role="tab" aria-selected="false">Most agreed</button>
+    </div>
+  </div>
+  <p class="explain">Most recent top-level comment first. Replies always stay oldest-first
+     inside their own thread, so an exchange still reads in the order it happened.</p>
+
+  <p class="state-tag">Oldest</p>
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Sort comments, oldest selected" data-tax>
+      <button class="tax__btn" type="button" role="tab" aria-selected="false">Newest</button>
+      <button class="tax__btn" type="button" role="tab" aria-selected="true">Oldest</button>
+      <button class="tax__btn" type="button" role="tab" aria-selected="false">Most agreed</button>
+    </div>
+  </div>
+  <p class="explain">The case as it was built. This is the order to read the day a vote closes,
+     because it shows which argument came first and what answered it.</p>
+
+  <p class="state-tag">Most agreed</p>
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Sort comments, most agreed selected" data-tax>
+      <button class="tax__btn" type="button" role="tab" aria-selected="false">Newest</button>
+      <button class="tax__btn" type="button" role="tab" aria-selected="false">Oldest</button>
+      <button class="tax__btn" type="button" role="tab" aria-selected="true">Most agreed</button>
+    </div>
+  </div>
+  <p class="explain">Ranked on <b>agrees minus disagrees</b>, not on agrees alone — otherwise a
+     comment on 40 agree / 60 disagree outranks one on 30 / 2. Ties fall back to newest.</p>
+
+  <div class="note">
+    <dl>
+      <dt>Pinned</dt>
+      <dd>A club comment marked pinned sits at the top in <b>all three</b> orders, and carries
+          the <b>Pinned by the club</b> label so it is obvious it is exempt.</dd>
+      <dt>Not a vote</dt>
+      <dd><b>Most agreed re-orders the thread. It does not touch the ballot.</b> The order of the
+          discussion and the result of the vote are computed from different things and never
+          appear in the same component.</dd>
+      <dt>Persistence</dt>
+      <dd>The choice is remembered per member, not per proposal — a member who reads
+          most-agreed reads it that way everywhere.</dd>
+    </dl>
+  </div>
+
+</main>
+
+<!-- ============================================================
+     PINNED COMPOSER  —  outside <main>, per the contract.
+     It also carries the library's `tabbar` class: that is the hook
+     the review builder uses to keep bottom-pinned chrome pinned when
+     the component is dropped into the device frame. Nothing in this
+     file styles `.tabbar` — there is no tab bar on a pushed proposal
+     detail, and the composer owns the bottom of the screen.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <p class="cmp__reply" data-reply-strip hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 14.5 4.5 9.5l5-5"/><path d="M4.5 9.5H13a7 7 0 0 1 7 7v3"/></svg>
+    Replying to <b data-reply-who>capitan_7</b>
+    <button class="cmp__x" type="button" aria-label="Stop replying" data-reply-cancel>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </p>
+
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-11)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="700"
+                placeholder="Add to the discussion" aria-label="Add a comment"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>600 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Post comment" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ---------- segmented sort control (results-actions .tax) ---------- */
+  document.querySelectorAll('[data-tax]').forEach(function(track){
+    track.addEventListener('click', function(e){
+      var b = e.target.closest('.tax__btn'); if(!b) return;
+      track.querySelectorAll('.tax__btn').forEach(function(x){
+        x.setAttribute('aria-selected', String(x === b));
+      });
+    });
+  });
+
+  /* ---------- agree / disagree -------------------------------------
+     Mutually exclusive per comment, toggles freely, no confirmation.
+     Counts move by one. Nothing here writes to a ballot.            */
+  function bump(btn, d){
+    var n = btn.querySelector('b'); if(!n) return;
+    var v = parseInt(n.textContent, 10);
+    if (isNaN(v)) return;
+    n.textContent = String(Math.max(0, v + d));
+  }
+  document.querySelectorAll('[data-sig]').forEach(function(group){
+    group.addEventListener('click', function(e){
+      var b = e.target.closest('.sig[aria-pressed]');
+      if(!b || b.disabled || !group.contains(b)) return;
+      var on = b.getAttribute('aria-pressed') === 'true';
+      if(!on){
+        group.querySelectorAll('.sig[aria-pressed="true"]').forEach(function(o){
+          if(o !== b){ o.setAttribute('aria-pressed','false'); bump(o,-1); }
+        });
+      }
+      b.setAttribute('aria-pressed', String(!on));
+      bump(b, on ? -1 : 1);
+    });
+  });
+
+  /* ---------- "3 more replies" expander ---------------------------- */
+  document.querySelectorAll('[data-more]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var list = b.closest('[data-subthread]'); if(!list) return;
+      list.querySelectorAll('[data-extra]').forEach(function(li){ li.hidden = false; });
+      var row = b.closest('[data-morerow]'); if(row) row.hidden = true;
+    });
+  });
+
+  /* ---------- author's own hidden comment: reveal / re-hide -------- */
+  document.querySelectorAll('[data-reveal]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var host = b.closest('.cm'); if(!host) return;
+      var body = host.querySelector('[data-veiled]'); if(!body) return;
+      body.hidden = !body.hidden;
+      b.textContent = body.hidden ? 'Show my comment' : 'Hide my comment';
+    });
+  });
+
+  /* ---------- composer -------------------------------------------- */
+  var box = document.querySelector('[data-cmp]');
+  if(box){
+    var MAX = 600, WARN = 80, GROW = 112;
+    var field  = box.querySelector('.cmp__field');
+    var ta     = box.querySelector('.cmp__in');
+    var send   = box.querySelector('.send');
+    var count  = box.querySelector('.cmp__count');
+    var ctext  = box.querySelector('[data-count-text]');
+    var strip  = box.querySelector('[data-reply-strip]');
+    var who    = box.querySelector('[data-reply-who]');
+    var cancel = box.querySelector('[data-reply-cancel]');
+
+    function sync(){
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, GROW) + 'px';
+      var left = MAX - ta.value.length;
+      var over = left < 0;
+      var show = left <= WARN;
+      count.hidden = !show;
+      if(show){
+        ctext.textContent = over
+          ? '−' + Math.abs(left) + ' over'
+          : left + ' left';
+      }
+      count.classList.toggle('is-over', over);
+      field.classList.toggle('is-over', over);
+      send.disabled = ta.value.trim() === '' || over;
+    }
+    ta.addEventListener('input', sync);
+    sync();
+
+    send.addEventListener('click', function(){
+      if(send.disabled) return;
+      send.classList.add('is-busy');
+      send.disabled = true;
+      send.setAttribute('aria-busy','true');
+      window.setTimeout(function(){
+        send.classList.remove('is-busy');
+        send.removeAttribute('aria-busy');
+        ta.value = '';
+        if(strip) strip.hidden = true;
+        sync();
+      }, 900);
+    });
+
+    document.querySelectorAll('[data-reply]').forEach(function(b){
+      b.addEventListener('click', function(){
+        if(!strip) return;
+        who.textContent = b.getAttribute('data-reply');
+        strip.hidden = false;
+        ta.focus();
+      });
+    });
+    if(cancel) cancel.addEventListener('click', function(){ strip.hidden = true; ta.focus(); });
+
+    var open = document.querySelector('[data-open-composer]');
+    if(open) open.addEventListener('click', function(){ ta.focus(); });
+  }
+})();
+</script>
+</body>
+</html>

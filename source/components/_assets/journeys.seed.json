@@ -1,0 +1,83 @@
+{
+  "_readme": "Named, ordered paths through the prototype. The client steps through one with the arrow keys instead of clicking around. Each step names a screen id (slug, or slug/frameIndex) and says what the member is doing there. Screen ids that do not exist are skipped at runtime and counted in the picker, so a typo is visible rather than silent.",
+  "groups": [
+    {
+      "name": "War Room — the core loop",
+      "journeys": [
+        {
+          "id": "wr-idea-to-proposal",
+          "name": "A member posts an idea and it reaches the threshold",
+          "who": "Member",
+          "why": "The product's central promise: an idea with enough support becomes a proposal the club must vote on.",
+          "steps": [
+            { "screen": "war-room/0", "note": "The member opens the War Room. Ideas, Voting, Results and Actions each have a rail." },
+            { "screen": "idea-gate", "note": "They tap the accent + to start an idea. The gate states what posting costs and what the rules are." },
+            { "screen": "create-idea/0", "note": "Compose. Title, body and category. The category decides which threshold the idea must clear." },
+            { "screen": "create-idea/1", "note": "Compliance and timing. The club's house rules are checked before the idea can post." },
+            { "screen": "create-idea/2", "note": "The deposit is locked. It returns in full unless the idea lapses." },
+            { "screen": "create-idea/3", "note": "Posted. This is the screen every member sees most often after acting." },
+            { "screen": "ideas-list/0", "note": "The idea now sits in the Ideas list alongside everything else open." },
+            { "screen": "idea-detail/0", "note": "The detail screen: who proposed it, the clock, and how close it is to the likes it needs." },
+            { "screen": "idea-detail/3", "note": "Support builds. The gauge is a percentage of the threshold, not of the membership." }
+          ]
+        },
+        {
+          "id": "wr-idea-lapses",
+          "name": "An idea runs out of time and lapses",
+          "who": "Member",
+          "why": "The only case where a deposit is forfeited. Worth showing because it is the one downside a member carries.",
+          "steps": [
+            { "screen": "idea-detail/0", "note": "An open idea with the clock running." },
+            { "screen": "idea-detail/6", "note": "Support has stalled well below the threshold." },
+            { "screen": "idea-detail/9", "note": "The clock reaches zero and the idea lapses. This is the one case where the deposit does not come back." }
+          ]
+        },
+        {
+          "id": "wr-vote-approve",
+          "name": "A member votes on a proposal and it is approved",
+          "who": "Member",
+          "why": "The decision moment. Everything before it is build-up.",
+          "steps": [
+            { "screen": "war-room/0", "note": "The Voting rail carries proposals that cleared the idea stage." },
+            { "screen": "voting-list/0", "note": "Everything currently open to a vote." },
+            { "screen": "proposal-detail/0", "note": "Before voting: the proposal, its options and the clock." },
+            { "screen": "proposal-detail/1", "note": "Casting the ballot." },
+            { "screen": "proposal-detail/2", "note": "Voted. The chart is locked so a member cannot be swayed by the running count." },
+            { "screen": "proposal-detail/5", "note": "Settled and approved. The club now owes an action." },
+            { "screen": "results-actions/2", "note": "The result, recorded." }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Membership",
+      "journeys": [
+        {
+          "id": "mem-join",
+          "name": "A new member signs up and picks a club",
+          "who": "Prospective member",
+          "why": "First run. Note the shipped app cannot complete this in-app — see the contrasting journey below.",
+          "steps": [
+            { "screen": "launch/0", "note": "Splash." },
+            { "screen": "auth/0", "note": "Get started." },
+            { "screen": "onboarding/0", "note": "Choose your pathway." },
+            { "screen": "onboarding/1", "note": "Your details. The date of birth field drives the age gate." },
+            { "screen": "onboarding/2", "note": "Your identity." },
+            { "screen": "club-selection/0", "note": "Choose the club you support." },
+            { "screen": "war-room/0", "note": "Landed. The member is in." }
+          ]
+        },
+        {
+          "id": "mem-shipped-deadend",
+          "name": "What sign-up actually does today",
+          "who": "Prospective member",
+          "why": "The contrast with the journey above. The shipped app hands the member to the desktop site and stops.",
+          "steps": [
+            { "screen": "auth/0", "note": "Get started, as shipped." },
+            { "screen": "launch/3", "note": "Tapping through to sign up opens a dialog telling the member to use the club's website. The journey ends in the app here." }
+          ]
+        }
+      ]
+    }
+  ]
+}

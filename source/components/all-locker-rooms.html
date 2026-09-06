@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html lang="en" data-component="all-locker-rooms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — All locker rooms</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — ALL LOCKER ROOMS
+   The destination of the `View all ↗` pill on the Backchat home.
+   Backchat's carousel shows four live rooms and four upcoming;
+   this screen is the whole set, sortable, filterable, searchable.
+
+   Sourced from:
+     lib/pages/all_locker_rooms/view/all_locker_rooms_content_view.dart
+     lib/pages/all_locker_rooms/view/all_locker_rooms_header_view.dart
+     lib/pages/all_locker_rooms/view/all_locker_rooms_list_view.dart
+     lib/pages/all_locker_rooms/enum/all_locker_rooms_button_type.dart
+     lib/pages/back_chat/enum/live_locker_rooms_sort.dart
+     lib/pages/back_chat/enum/upcoming_locker_rooms_sort.dart
+     lib/pages/back_chat/enum/locker_rooms_filter.dart
+     Screen-Specs/03-backchat/00-backchat-component-atlas.md  (BC-C27…BC-C35)
+
+   Nothing here is invented where the code had an answer:
+     · the room card is backchat.html's card, unchanged
+     · the sort and filter sheets are sheets.html's sheets, unchanged
+     · the skeleton bone is states.html's bone, unchanged
+     · the four scope chips are AllLockerRoomButtonType, in order,
+       with REMINDERS dropped in Live exactly as the code drops it
+       (`AllLockerRoomButtonType.values.length - 1`)
+     · the list is infinite-scroll on a cursor (`state.nextUrl`),
+       not numbered pages — so there is no pager, only a trailing
+       load-more and an end-of-list line
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;
+  --surface:       #1C2129;
+  --sunken:        #13171E;
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+  --acid-line:     rgba(155,226,34,.30);   /* derived, as sheets.html */
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* skeleton — states.html values, unchanged */
+  --bone:          rgba(255,255,255,.055);
+  --sheen:         rgba(255,255,255,.06);
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  /* the sheet shell — sheets.html values, unchanged */
+  --r-sheet:       18px;
+  --sheet-max:     560px;
+  --sheet-vh:      88vh;
+  --grab-w:        40px;
+  --grab-h:        4px;
+  --h-field:       52px;
+  --h-row:         48px;
+  --scrim:         rgba(3,4,1,.72);
+  --scrim-blur:    10px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* photography from _assets/avatars.css. av-17 / av-02 / av-12 are the
+     three faces backchat.html already gives taythaytu, capitan_7 and
+     scout_mode, so a room reads as the same room across both screens.
+     av-03 / av-05 carry mireia_88 and the signed-in member.
+
+     club_staff is av-08 here, NOT backchat.html's av-01: in avatars.css
+     --av-01 and --av-17 are byte-identical, so on the Backchat home
+     club_staff and taythaytu already render the same face. In a
+     thirteen-room list that is unreadable, so club_staff is moved off
+     the duplicate. backchat.html needs the same change. */
+  --av-02:url(data:image/jpeg;base64,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);
+  --av-03:url(data:image/jpeg;base64,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);
+  --av-05:url(data:image/jpeg;base64,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);
+  --av-08:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAGwAAAQUBAQAAAAAAAAAAAAAABAACAwUGAQf/xAA1EAACAQMDAgQEAwgDAQAAAAABAgMABBEFEiExURMiQWEGFHGBMkLBFSRDUmKRobEjgsLR/8QAGgEAAgMBAQAAAAAAAAAAAAAAAAQCAwUBBv/EACIRAAMAAgICAgMBAAAAAAAAAAABAgMRBCESMSJBEzJRQv/aAAwDAQACEQMRAD8AIxSxUmKWK2DII8UsU/bSxQAzFLFPxSxXQGYruKfiligBmKWKk20sUAMxXcU7FdxQA3FLFPxSxQAsUsVJtpbaidI9tLbUm2uEV0CJiFBLEADkk+lUN58SAyG30uE3Uv8ANglftjrVR8Ta5Nf3cmnWhIt4m2uw/iMOv2FXHwpAlrYtgf8AIz+YnqRWfyeU46gf43FVvdHba0+Jr51aSRbZWOdowCPtzVw1hrenbfnIVuYT/Ej4cf8AXHP25o+1mMbAkZq2k1kvAYnUYx0IpCOXk3ts0L4ePWkihABGRyDXdtTTAb923bupmK2sOVZY8kYubE8VuWM20ttSYpYq0qGYpYp+KWKAHba7tqTbSIA61DZ3RFtpkwYQuV/EFJH1xU/5gO9ck2ojM5wqjLHsKNho810Sy8Xa8hyWJPNa+1jW3VQox3qkt1MVyUhQhdxA3DHlzweavhkREgZIHFedy12ekwz12Eyawlky/u0zf1BeKLOtrcLvaLbt5zislrtte3NvCY7plnzlwrcY9ABjitF8Oo0McK3iKykYYnnd71B6SWi2dvbYJqHxijOIflHmA53JgBfvVrC6zwpKnKuoYfQ1jtU+HtT0jUrmCATvC0hNvPCNxCnkAj6cVp4rmHS7O3t7qXEgjC5IxkitHh5FDabMznY3SVJB22oXuIkVyXHk6jNDnWbZLVpi2VU4JFY29llkunnjuch2JwKazclQvj2IY8Lp9mzsdSgvUJVgG58vripobqC43eHIp2nB56VgbHUJUldEJWQgjmn6dJcKJ1ldkLnOQaVnm2l2i58ZN9HpO2hr1X2bkONvJo3bTJ490ZFP09oWnpldY3sVzKNkmRt6H0NFEb4ZN/QgjFAR6esHiC3XdIevNHFf3Dyk+Io5B61VNPWmXUlvaM5cuJwske3EbBMjrkcHNWVkyyDpz0+lQ6hp7LazXEMYPkLbvXHXFVWlaoEDMxwjNwe1Yt4qn6N6cs32mXmoRWunsR4CyT8bcnIyfalJfC1hElysYKKC0jPjPtxVFrerOdWiitxligIkP4VycE/b/FHS6LZTwINQ1a28352cuG/thaFH2zrv6QFN8VXM96JbSULFG4TxD7+n0P6VPql2uq7HdfPF+LHr71l9Xtora4e3sbhJYGGZHjQqFI6A/XNGW2qpBJLHIN4ESoG65bHJq6ISpP6F817hp+wu6u4zZRW8cOxJBhi35veora2mMZHheGAcAsODTnvra4sbOExgyx8ZNdOoTK6pKwMPQe1dvJKrvsSSf0VE5b5lVdGjOeCB+L6UTdmQybSrRKBgbhjNWSJDcTpMGQvCfKrdDROuINRs/GIVJUAGBUpUVPTOum67N1iorpFMDFyQqjJx60GNULdOaeLx5UKmM4xzxTrzS+tlH4LXejPD4phgnYeAyoON1G/tzS7pRuLK5HUHmgrvS2vSY4bQRgNnLetT2/wtBGEe4lKkdQvSs789J63sZnA6DgNQNmXthHJE68K/XFef3wfR71o3DeBLyv8ASfUfavRH1C2sLZ2EjGKJTuwM4AFYiXV7fXopDc24VZHLDH5O33qyr80ml0i3Hj8G032wK01iMarE8gBRMgH2NX1zq1jZwgW/zEMshyvhPhcH2rHXukXEBLRgyRDoy9qUWogDEzbiOACOBR4p9okslR0zQ3+u3Oo6dMrxqIFjAGAOOep7n3NC2NnD+zC7v5ixIJ61VxX811mCFSSxztHbua1MViLW0iKrvGNsh7HvUvClLcr0UZMvlS2yphiWNixnG4D8IFMjeK5WWCSTDA8Vy5EcNy8m7C58xFchvLNZVdo97E4BAxVDnfYMets8RTwJN+GyWziiwQgZJ3bdJzjPAqFWWTxYkiZSTlSalit2MLJMw68dxVe2gSPQRHFbpkKoNCtfqWZXIAzjniuRjLlGkLnvTNSNnZWzyzqG3cKmeWNcmXT0vY/TSW2FM4SHc8yqp9ScYqrvtS0u2XE9w0h6hFJYmspqWuTB9qklz+Y9EHYCqhpppZACxLMeT6mtKOFKXyfZn1zKb+K6LX4i+JprqzayggS3glbB5yxA5wTQOgj93z/Pu/3j9Kpr+UmZlH5eKvdBsWe1Rd2046kcA9jUM0zK8Z9EsdU35UXEFlO27Y4aNlyCRhSfX6VXXGji9Z5FCEpxxxz3z2q4SKR42Y8KmFIzjp6Y9ahuk8CB2yRnykZ559cUsk/Yw6nWipsLaK1upUTyll2Mccg55xWjjkZLWVh2yMfUfpVetnlVuJDsZwTjsPSirJgYJGfklO3p6VqcRfDf9MvlP5a/g+6022vYGjdcB+S0fBz3rOS/DV7aXPjWrLcxqcgfhYfY/pWhkfCZBOBTop8Kc9/U59c0xeCL9oXnLc+mUskvysWbuM+KO3pSMkceXBJyBwTVvP4Vym2ZQ4AyCwoa90qG4tle0wJ4zkKPzDGSD+hpDJwmk3LG45Kek0a3w1WVSAcDOeeKyOtawb1nkXhEysa//a0PxDqDWmiTGM4kciMEe9YBmZolXORmocLGv3GeZf8AgZKviJk9euaiDhI2eQkBOpAyfbFEL0wetQXUebWTjowb/Y/WtB+hJFfeGOaYyRqybhuKt1J9TW1s2SW2iMMDKHiXIBznPQj3rExr4spUnqMf3NbzT4jYWKRz2qCeGMMMA5OB1+lZ2ZfY7hb7RKPHjdXZ8xOdoLDI6dfrUNwSw+YY48MFfKOM9/c1ZkGW0WaLh2G9eyt7iq++s5LuBoE3lnQnrgfftnoKpWm1ste+9As0z3CRJzHGqAlT129f8/6qWLb8rJLnzMQo54xnP/mq6C01TT9qSFZhyWidiCD/AEtjAPt071NbXNpcWSm18TdvYvvXGBjgdcd61sa8Up0ZeT5N0FowwcmuNJgkZqMPgc9qa8m1cng4q/ZTo68rfhB5xzT47nwlC57/AHodTnLHPNDmbe5PoGwPeotkkj//2Q==);
+  --av-12:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAGwAAAQUBAQAAAAAAAAAAAAAABAECAwUGAAf/xAAvEAACAQMDAgYBBAEFAAAAAAABAgMABBEFEiExQQYTIlFhcTIHFIGRIxVCscHR/8QAGAEAAwEBAAAAAAAAAAAAAAAAAQIDAAT/xAAdEQADAQEBAQEBAQAAAAAAAAAAARECAyESMVEE/9oADAMBAAIRAxEAPwDD3QjdwVIIWhJXbGB5h+hirJLTy3LFi3xSyyqgwAMjrUaJCkZJnPELH7pUsLqXkRYHuaLlv3BIiRmI74oTzb66O1SQtMqaDTZsn5yIPjNKluC3JyPqk/btHJiV8Af2alMuBwAqD+SaaDJf0UxW+cGMn3wcV0lpalMqHHxu5oWS9A45X6HFDPcMTkMTRg3hPJYZjMkMm8DqD1FC7dtPS4ZG3IxVu/zS7XuZP8aeruBRFZGKVTg0pTaxB7UoXJ4oALPRoFmu8EA5HQ0VqUMUOdsYVvcUFaObWRGORxxSXMr3MzHJIpX+mvhYx3ks1q8jHA7YqOO/SG32pGGc9zUBk8u0WLHWuVo0TCJuY0DIljkM4Jf0g9TT3uUt4wsY57UKZGAwQAfaoPylyT0opBJJQCTJK3yfmhQk1/cLBbock8AV1xIZCfYdq13gDRmnZ7104J2oT8Udv5VKc8/WoAW/gDU5kDyFVz7miB+nl0BuMgwOvNeopBsjA3c1DPCCOduT/dc73o61xx/DxXV9BudLlww3KemKg0q6a0vdwXduUqQe/Fel65pRnVj+YA+8V5xd2xs73BGNpz9iqc9/XjIduXx6vwlj02a5sZb84CgmhY1wN1FG6m/ZNbq22NmyRQ6Rs52gU5zHFpJJBjmtDYaOHsGlkYBse9A2VmsC+bLUdzc3Fy+2FiiD2NYA+5hVyq5xgU1IVVSUb+aS8zHOwxUKSTAekenuay9HGkSIC0nQ9h/7UIPpJ7ntU0z7xkgsT0zQ7tgEZ4Ht3NOjET8HGa3WjWMz6XHH/rE1qqpkLHxj+qxen2jX1/FAB+bVt5P09aVUeO6lGTnlunxUujVhfllxuBOnTapaXixtqLXkJOMs2TRutX98GWG1JEhGATRej+G10/YskplbdlcnlfgfH3T9ehmN8VSPy5QnoLcgnHB4qD/TqS8hSQ6Dq/7Zrq61aXf1K54H8VjtdZpLsO2CuSA4GN/zVtqb+JIZJIDcmWIgEjaP+RVJqcly0MazqoKjOQKthe05+jXzICqdy/XNS28xRiRjFDxYbcvuKZM+30LVWvTkYXcX0kx2I3HxUkDvGuCetQWtsxG7BJNFG3lAyy8UrCTxsjykuMgmjXa1EW7YMAYJqpEcm7KY64ye1TNBJJgnLYPGemfqlhkwC4mZ33EbRgKo9hQ7njGePf3p1w4Mjc8A0MzljVQlv4bkC6uj9NvSvZNP1JRANx6CvEdGcpfqa9O0u7jjjR5iNo9+lcvWrVO3/O08RlhqniyDTLiPzAPNkfaqbc4HuaqZ/FMOpX7bJViMABKk5Bz8dqJ1PxB4cacGZo3mxtLKucfzWcub3wxLOGt1l8zIHCkLj/ulSpXTnpdXV+jQ+c1uHaQ7srycduvxWC1u+/dXJwhRemCeavdT1SJ42aJlVf8AaCx4rHyyGSQsSTVeWfazn77UiJLZgsqluhPNEvbo0wK9KEt2Cybm6Yq1SF7mHcowKszkCLW4ggAU4NdPqCT3KIo2oDyaCSzG/uae8AUZ20jQ1JJ32tgcYPSmvf8Ak2ztnLldq0xyWPJ5oG55crnpWSEQLhpDnrXFQvepSAo9TY+O9QtjPHSqBJ7GQR3SN81t7aUXFsI5MlcYx715+CQQR2q+0vXTbYWZcgd6j0y36i/HaXjLS58+yiMR0uKWAnIfyef7qmkRLi5BW3Fqq8nYSK0B8WQlMbaz17qYupXYjaD2HelwmX6bUlGX92jx+Up3YPLVW9TSyNubjpSCrpQ49OslhUs1a+ztduken8iKz2mRea8carlnbrXp1poEMVkhZjuxQf6KZ6HSljtQ7rziqi5TMjKBgZrb3Vq0dthTkAVlpYFaZskA5pNFcwplj6u64HvVSxG95G6Fjj5qznn/AMRUHrVVcZzjOFA4psE5CIsWJ4wKacHpXE8YpOv1TgOGM9aMihDqKCq609Elg4YEjtml04h8KsGkt2VM9BQTcGr+7hQWpORnFUcwCuQDnFLh0bahFSikrh1qhIvtGcRTxyEAbSK9Is9SMtuo9J44rzFXRLdGRhkjnFWdnqs8MYCysBSUZG2vrrdb7MAccmsvL6pWxzzQs2tMqYeZ2+KBfWzkeXGTSusNSKy73Rt6iRz0oN8liT1qy1GdbmGGTbg5OR71XE4J7k1TP4IMArj0rvYU4jiiYjpynFN704CsYcXdvyYn7NNzSkV2KxhOtdnmlGTwP7pygE4FYw+LOcjj7q8067tGVVuR5fbcBkVS4xip4W2qE9+tZqhRrDDp5wFCyk9AvJNDyWiA+izdPlkIq1/TW4z4ilVgCwtm2k9jlc16okjPw4Uj2IzUNajhfPL6Vp//2Q==);
+  --av-17:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAGwAAAgMBAQEAAAAAAAAAAAAABQYCAwQBBwD/xAAzEAACAQMDAgUDAwQBBQAAAAABAgMABBEFEiExQQYTIlFhFHGBkaGxFSMzQlIyU2PB8P/EABgBAAMBAQAAAAAAAAAAAAAAAAIDBAEA/8QAHxEAAgICAwEBAQAAAAAAAAAAAAECEQMhEiIxQWFx/9oADAMBAAIRAxEAPwDzKOeRnwq5J70b8PtHPq9vBqEjmB2wwAwT+laILK3iCllA9iavhFpFKk7pvSNwWVTyy55A/FC2ckEtR0200/VXjsoysLruVCTx7nnoM1y11WPR4JfSkjuAoQ8Y9vxWHxRr1jc6lC+lRSxIqYkZ12bz2GPj3+aEPcPcrknmgUbWxjnT6m6Ji9wXyEBJbge9Zpi8gZuuTjPvUVkIjw1SSV3UQpCzn4FFQF2aBvREGBtrSoYMo9+lVrFCCY7icggZwo3Y+5zxV0eoWUcip5Ej/wDk3jP6e1A7DS3s3RKoILdKNWbwqu1QDmgEWoWNzL5JLwlsBXfG3d9+1aHuDZyCN1KuvvSuLGtpBa99aCPPGeaG3Kk2ruI8lO/2olbqk6ec8g5FQvLciyZYzkN1xWJUjrsE213FMikgVZHcx/UhomCkd6qitGjDqqAA9Oazw6XcTSHD4x2FHoDYIuXke0WNgQVqiCVoouCc56Gi9zDI3oaI5z196HajbSQgIExkU9CSjU54pPLZSM96zQttPB4rPJBKoyRUopOMVpgXgih8rzbhm2c4C8fnNSm1QLamKzjESHG89Sw96Hzyf2URiWyoIUGq7eGWeRYgMF2AwegoQkduL1podiZBZvVniswnZXPOD2p0tfClqEHml5SBzk4rW/g7TZkHDRN2IbNBzQ1Y5MRYrtw2Gcbe+eabNGnjvovpJWTbtLRlusfHJB9vehus+DLmyUy2z+enU8YNCdPvJLTcvqV87euMfFY6ktBJOL7Ic5YvIQwMzbk6jJr4XcyQHLFQOgNfW9z9bpkN+xPnwkRS7iCHHOD96lczxXSB8hQB0obsxxpmQ3LyjAlIb4rlnLdpKWViffNDRKjTNtOFB4o/pxin2LGRk9aySaR0WmwZDeXMoztDECqk1F3nIuofV0HtWLT9TUYOcjpRqWKxu4vMZtrAZ44p4nYsalcKtwwAAB4wO1ZUjDruVhmrdSt2aQtENyjvWzw/pIu3aSWKSVFO0Ro+zcepJODgAVraStnRg5y4ossNJlvH8wqcHhOPanDT/DtvaxLcXQAI5APaiGixWpACJhEXAHt8ftWy9CS8MePalOVqyiMKdMXb3U7lX22clqmOkch9T1dpWum5m+nurR4Xx1yCpPwa+uNAtHkMyIm7OcFM81PTNK8uUEDCqe/NKbKFEKTJG8ZIbnHSvP8AXdOFvqoKBUW5O3kcA5otryX0WrAwedtXkNCeV/HeimnwxX1lFf3LJO0DnZIV27srxke4xWK1tGSpqmBZLddOsFtA7s0jb5CeAMDAGPyazvbTCJniJkU9cDOKu1yWZrlpXB9R4JqOl3j/AOKMAhuvHSnJasklK5A76OXZuBNarB7uLaI1O7NMVlYI5JkUFM9fejI0q0ljUxAKw6EULyfgUcV+M8ctGx16DpijcLSNGMk5NBPM8lw6jK55FF7e4NyNyYAAp9CLfhabeWI7B6t44FGfDVu8cd1aOWieVlKsPbvj9qAATvcK3mlcGmDRpDcaxa27EPvfn7YyaGStUHjlxkmhk0porK2NuCCQ555y3U5Oa5JI80hAOPih+qPBptwqJkbwWPOfirIb+IlSDkn2pDTorTTbYSVWK4A7UM/qeoWt2U+kjW3UcnOZGP29qovJ76WXfG4WFTgIXKhvk4rNJb7wzzWboxA/vQvnGDn/AOyKwak2HLWeDV4fq/JeMPxhxgjHerbizFppkKRgDezvj9B/6NYrS9FxAETDOpCekYB6EEffNW3d4v1flB90cY2D5I6n9c1sF2FZX1oXtRS4EgmlO5E/1xWOxlJvS8a4B7Gm6WKC5tWQoCSKCQ2yQXI2R8qe9NuiWthWG6PpBTZxyKJW7M/IbFD5L2N4AssLJ2zjiuR3UaAbCWPb3pVDk6PLZrOVJNmc5ojZpJbDDDC1x5BMpccY71nnundAuaqJDbPqKjhVBpg8DwtcawbonKwRMx+CeB/JpNjUO4GGOewGa9R8PaR/QfDrmRcXVzh5QeqjHpX8fyaGTpBwVsA+LmeQieMFihOcdhQ7TNXiUqkijBI785ovqXrUjrkc5pRvLGSImSEZX2HUUqLTVMomnF2h1vIxJbGS3mXDDqW6Vi09dUORNKJIewIyf1pQh1C4QbS7YBycmi2neIb477eEeZJMcLx0rHja8NjmGSG+FkJ5o1DMhO05/wBzwP0rlovnWqFXHmd6XdQvXQx2sBJEH+Rj/s/c/ua7Y38nnjD4NHCNITknchtNndSRHZceWwHaskr/AEUCiX1yZ5ap6fqfns0Mhwexqc1lKgLv/cjP7VzM/gR0q7tLmPExUDvk1bqOn24USWzhT2xQL6OMqWQsAewqm5stUlMf00uxE7e9BVB8rQmxmWRfJiiZ3bsozW2PS1Cb7uTbt/0Q5J+M9v3rZPqsESmGNREMcpEn8nvQqe6aZmZQUz7HrVAgb/B/9AimMkQk/qKk7BOwO0e6YwD/ADTBd3DyQMCclq8oV2VhIrFXU5DA8g+9O2g+IE1OMW9ywS7HvwJPkfPxSskX6h+KS8ZfdxFwcUMmg9JUrTFPFtANY7i3/wBgM1PZYti2ujQzzBmAyTyCOKhq5t7TUZbGyiSGOJVjY49TNjLc/nH4pls7XfdRLtwGcD96B+INEZdWvNsqieOVjIjcBsnIZT8jPB7g803G7eyfOqXUCysYlwh3Futct5AkoMnGK0xaVdTMCE2e2eh/NbbKC2mkEdwoVgdpz70+yOi6xukMwcZwOtNdpcfUxbA4AIpVurI2Vx5af9J5GO4ozBayw+TJAd0bDr7ULDVlry/SztEecd8UStF+oi4bBrHcF2tmZIg7dG+Ko028bDQN6XxlTQ/Avp56HyfkfuK+zzjvWcZA9PVeR9qs3hkDr+lOFFmea+BKkMMgjkEdRUc4Ofep4HWuOHHw94jW9CWGoMBMeIpv+58H5/mmU2uVCmvKCMfb+KcvD3i0C3Ntqrk+VjbOBk7emW+3HPzSJ4/qKseX4xhFqyyqV4280I8TaeXeO7R+QNkp6cE8HPw380xRvHNEssTrJGwyrKcgilPxnq6hV06FgWOGlI7Y5ApcE7GZGuOxdguJtOuGeLaQeHRhkN7Gtomt9RcNuEEzYBI4XPuR2/FDEcSxqGPqHGaqbMbVTRHY5XEU81mqzIVu7bG4f8h7j3B61r0S+wz20owGGUz2oL4b1dmf6Gf14UmFieVxyV+x6496sN9HZahJHI4/5xH3HtQfgX6MEno3NHn18OKWpzeWd5uKnKNuU9mFMlveQXcAkVhtkFQZreddk+D5RxmuNez/2Q==);
+}
+
+/* the one loop in the file — a shimmer cannot be a transition */
+@keyframes shim{to{transform:translateX(100%)}}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+/* every author display below would otherwise beat the UA rule for the
+   hidden attribute, and hidden is how rows, sheets and counts leave */
+[hidden]{display:none!important}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ============================================================
+   PAGE FURNITURE
+   ============================================================ */
+.bar{display:flex;align-items:center;gap:11px;margin:34px var(--gutter) 14px}
+.bar__eyebrow{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);
+}
+.bar .spacer{flex:1}
+.title{
+  margin:0 var(--gutter) 10px;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.lede{margin:0 var(--gutter) 16px;font-size:13px;line-height:1.5;color:var(--muted)}
+.lede b{color:var(--text);font-weight:600}
+
+.label{margin:34px var(--gutter) 12px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.note{margin:9px var(--gutter) 0;font-size:12px;line-height:1.45;color:var(--muted)}
+.note b{color:var(--text);font-weight:600}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+
+/* specimen wrapper — states.html / sheets.html construction */
+.spec{margin-top:20px}
+.spec__label{
+  display:flex;align-items:center;gap:9px;margin:0 var(--gutter) 10px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.spec__label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.spec__note{margin:10px var(--gutter) 0;font-size:11.5px;line-height:1.45;color:var(--dim)}
+.spec__note b{color:var(--muted);font-weight:600}
+
+/* ============================================================
+   CONTROLS
+   38 px discs keep the sampled size and take the create-idea.html
+   ::after expansion to a 44 px hit area. Everything that carries a
+   label is built at 44 px outright.
+   ============================================================ */
+.icon-btn{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.icon-btn--acid:hover{background:#A8EC33}
+
+.pill-btn{
+  display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 18px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.pill-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.pill-btn--acid:hover{background:#A8EC33}
+.pill-btn svg{width:15px;height:15px;flex:0 0 auto}
+
+.btn{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em;
+  cursor:pointer;white-space:nowrap;transition:background .18s var(--ease);
+}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--wide{width:100%}
+.btn__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
+  background:rgba(11,14,6,.16);font-size:12px;font-variant-numeric:tabular-nums;
+}
+.btn:focus-visible,.pill-btn:focus-visible,.icon-btn:focus-visible{
+  outline:2px solid var(--acid);outline-offset:2px;
+}
+
+/* ============================================================
+   MODE — Live / Upcoming
+   Two modes, not two tabs of one list: the code carries a separate
+   sort enum for each, and drops the REMINDERS chip in Live.
+   ============================================================ */
+.modes{
+  display:flex;gap:4px;margin:0 var(--gutter) 10px;padding:4px;
+  border-radius:var(--r-pill);background:var(--surface);
+}
+.mode{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  height:40px;border:0;border-radius:var(--r-pill);
+  background:transparent;color:var(--muted);
+  font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.mode:hover{color:var(--text)}
+.mode[aria-selected="true"]{background:var(--acid);color:var(--acid-ink)}
+.mode__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:19px;padding:0 6px;border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--dim);
+  font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.mode[aria-selected="true"] .mode__n{background:rgba(11,14,6,.16);color:var(--acid-ink)}
+.mode:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   TOOLBAR — search disc, sort trigger, filter trigger
+   The code's icon trio, given labels and a filter count.
+   ============================================================ */
+.tools{display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 10px}
+.tool{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 13px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--surface);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:border-color .16s var(--ease),background .18s var(--ease);
+}
+.tool:hover{border-color:rgba(255,255,255,.14)}
+.tool svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted)}
+.tool__t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.tool__t em{font-style:normal;color:var(--muted);font-weight:500}
+.tool__n{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
+  background:var(--acid-wash);color:var(--acid);
+  font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.tool.is-on{border-color:var(--acid-line)}
+.tool.is-on > svg{color:var(--acid)}
+.tool:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* the search trigger: the forms.html control shell, opening the real
+   field inside the search sheet */
+.seek{
+  display:flex;align-items:center;gap:10px;width:calc(100% - 2 * var(--gutter));
+  margin:0 var(--gutter) 8px;height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--dim);
+  font:inherit;font-size:14px;text-align:left;cursor:pointer;
+  transition:border-color .16s var(--ease);
+}
+.seek:hover{border-color:rgba(255,255,255,.14)}
+.seek svg{width:19px;height:19px;flex:0 0 auto;color:var(--muted)}
+.seek span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seek:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   SCOPE CHIPS — AllLockerRoomButtonType, in enum order
+   ============================================================ */
+.scope{
+  display:flex;gap:7px;margin:0 0 12px;padding:0 var(--gutter) 2px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.scope::-webkit-scrollbar{height:0}
+.scope__b{
+  flex:0 0 auto;height:36px;padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--muted);
+  font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  cursor:pointer;white-space:nowrap;
+  transition:background .16s var(--ease),color .16s var(--ease),border-color .16s var(--ease);
+}
+.scope__b:hover{color:var(--text);border-color:rgba(255,255,255,.14)}
+.scope__b[aria-pressed="true"]{
+  background:var(--acid-wash);border-color:var(--acid-line);color:var(--acid);
+}
+.scope__b:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   TALLY — what the list is currently showing
+   ============================================================ */
+.tally{
+  display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 10px;
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--dim);
+}
+.tally b{color:var(--text);font-variant-numeric:tabular-nums}
+.tally .spacer{flex:1}
+.tally__x{
+  border:0;background:transparent;padding:4px 2px;margin:0;
+  color:var(--acid);font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;cursor:pointer;
+}
+.tally__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   ROOM CARD — backchat.html's card, unchanged.
+   The full list is not a 244 px carousel cell, so the card runs the
+   full column width and carries the two things the peek card had no
+   room for: the reminder control and, on a room you host, EDIT.
+   ============================================================ */
+.list{display:flex;flex-direction:column;gap:10px;margin:0 var(--gutter)}
+.room{
+  padding:14px;border-radius:var(--r-panel);background:var(--surface);
+  text-align:left;
+}
+.room__top{display:flex;align-items:flex-start;gap:10px}
+.room__id{flex:1;min-width:0}
+.room__when{
+  margin:0 0 9px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--acid);font-variant-numeric:tabular-nums;
+}
+.room__when--live{display:inline-flex;align-items:center;gap:6px}
+.room__when--live::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.room__title{
+  margin:0;font-size:15px;font-weight:600;line-height:1.27;letter-spacing:-.01em;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.room__host{display:flex;align-items:center;gap:8px;margin-top:10px;min-width:0}
+.room__host .avatar{width:24px;height:24px}
+.avatar{
+  border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+.room__host span{
+  font-size:12px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.room__foot{
+  display:flex;align-items:center;gap:14px;
+  margin-top:12px;padding-top:11px;border-top:1px solid var(--line-soft);
+}
+.stat{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;
+}
+.stat svg{width:14px;height:14px;color:var(--muted);flex:0 0 auto}
+.access{
+  margin-left:auto;display:inline-flex;align-items:center;gap:5px;
+  font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);white-space:nowrap;
+}
+.access svg{width:12px;height:12px;flex:0 0 auto}
+
+/* reminder control — BC-C14 / BC-C15. The shipped chip is glyph-only
+   (a bell with either a + or a ✓) and this keeps that, because a worded
+   chip and a full date cannot share one 319 px line. State is carried by
+   the glyph as well as the fill, so it never rests on colour. 30 px disc
+   with the create-idea.html ::after expansion to 44. */
+.rem{
+  position:relative;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;
+  border:1px solid var(--acid-line);border-radius:50%;
+  background:var(--acid-wash);color:var(--acid);
+  cursor:pointer;
+  transition:background .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);
+}
+.rem::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.rem svg{width:17px;height:17px;flex:0 0 auto}
+.rem[aria-pressed="true"]{
+  background:var(--sunken);border-color:var(--line);color:var(--muted);
+}
+.rem:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.rem__on,.rem[aria-pressed="true"] .rem__off{display:none}
+.rem[aria-pressed="true"] .rem__on{display:block}
+
+.edit{
+  position:relative;margin-left:auto;
+  border:0;background:transparent;padding:4px 2px;
+  color:var(--acid);font:inherit;font-size:10.5px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;cursor:pointer;
+}
+.edit::after{content:"";position:absolute;inset:-9px -6px}
+.edit + .access{margin-left:14px}
+.edit:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   PAGINATION — there is none. The list is a cursor and a listener.
+   ============================================================ */
+.more{
+  display:flex;flex-direction:column;gap:10px;margin:10px var(--gutter) 0;
+}
+.more__line{
+  display:flex;align-items:center;justify-content:center;gap:9px;padding:6px 0 2px;
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--dim);
+}
+.ring{display:inline-flex;color:var(--acid);flex:0 0 auto}
+.ring svg{display:block}
+.end{
+  display:flex;align-items:center;gap:10px;margin:16px var(--gutter) 0;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.end::before,.end::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+
+/* ---------- skeleton — states.html bone, unchanged ---------- */
+.bone{position:relative;overflow:hidden;background:var(--bone);border-radius:5px;flex:0 0 auto}
+.bone--pill{border-radius:var(--r-pill)}
+.bone--circ{border-radius:50%}
+.bone::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 18%,var(--sheen) 50%,transparent 82%);
+  transform:translateX(-100%);animation:shim 1.5s linear infinite;
+}
+/* skeleton room card — geometry taken from .room: surface fill, R12,
+   14 px padding, 24 px portrait, 15 px title, hairline footer */
+.skel-room{padding:14px;border-radius:var(--r-panel);background:var(--surface)}
+.skel-room__host{display:flex;align-items:center;gap:8px;margin-top:12px}
+.skel-room__foot{
+  display:flex;align-items:center;gap:14px;
+  margin-top:12px;padding-top:11px;border-top:1px solid var(--line-soft);
+}
+
+/* ============================================================
+   EMPTY STATES — states.html panel and illustration rules
+   ============================================================ */
+.empty{
+  margin:0 var(--gutter);padding:24px 20px 22px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.empty h3{margin:14px 0 0;font-size:17px;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+.empty p{margin:7px auto 0;max-width:31ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.empty p b{color:var(--text);font-weight:600}
+.empty .pill-btn{margin-top:16px}
+.ill{display:block;width:132px;height:88px;margin:0 auto}
+.wait{
+  display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+  padding:8px 13px;border-radius:var(--r-pill);background:var(--sunken);
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+}
+.wait svg{width:13px;height:13px;flex:0 0 auto}
+/* the filtered-to-nothing panel: quieter than a true empty state,
+   because the fix is one tap away */
+.nohit{
+  margin:0 var(--gutter);padding:22px 18px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+  text-align:center;
+}
+.nohit h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.nohit p{margin:6px auto 0;max-width:30ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.nohit .pill-btn{margin-top:14px}
+
+/* ============================================================
+   SHEET SHELL — sheets.html, unchanged except that panes stack:
+   the search results header opens sort and filter over the search
+   sheet, so a pane may sit on top of another pane.
+   ============================================================ */
+.sheet{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;
+  width:100%;max-height:min(var(--sheet-vh),var(--sheet-max));
+  border:1px solid var(--line);border-bottom:0;
+  border-radius:var(--r-sheet) var(--r-sheet) 0 0;
+  background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%);
+  box-shadow:0 -20px 50px rgba(0,0,0,.6);
+  overflow:hidden;
+}
+.sheet:focus{outline:none}
+.sheet:focus-visible{outline:2px solid var(--acid);outline-offset:-3px}
+.sheet__grab{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  height:26px;width:100%;padding:0;margin:0;border:0;background:transparent;
+  cursor:grab;touch-action:none;
+}
+.sheet__grab::before{
+  content:"";width:var(--grab-w);height:var(--grab-h);border-radius:var(--r-pill);
+  background:rgba(255,255,255,.18);transition:background .16s var(--ease);
+}
+.sheet__grab:hover::before{background:rgba(255,255,255,.30)}
+.sheet__grab:focus-visible{outline:2px solid var(--acid);outline-offset:-4px}
+.sheet.is-dragging{transition:none}
+.sheet.is-dragging .sheet__grab{cursor:grabbing}
+
+.sheet__head{
+  flex:0 0 auto;display:flex;align-items:center;gap:9px;
+  padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);
+}
+.sheet__title{
+  margin:0;flex:1;min-width:0;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text);
+}
+.sheet__n{
+  flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px;
+  border-radius:var(--r-pill);background:var(--acid-wash);color:var(--acid);
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;
+}
+.sheet__clear{
+  flex:0 0 auto;border:0;background:transparent;padding:4px 2px;margin:0;
+  color:var(--muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:color .16s var(--ease);
+}
+.sheet__clear:hover{color:var(--text)}
+.sheet__clear[disabled]{color:var(--dim);cursor:default}
+.sheet__x{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-4px;position:relative;
+  border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.sheet__x::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.sheet__x:hover{background:rgba(255,255,255,.11);color:var(--text)}
+.sheet__x svg{width:16px;height:16px}
+.sheet__x:focus-visible,.sheet__clear:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.sheet__body::-webkit-scrollbar{width:0;height:0}
+.sheet__body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:12px var(--gutter);scrollbar-width:none;
+}
+.sheet__grp{
+  margin:16px 0 8px;font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.sheet__body > .sheet__grp:first-child{margin-top:0}
+.sheet__foot{
+  flex:0 0 auto;padding:12px var(--gutter);
+  padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);background:var(--sunken);
+}
+.sheet__body--last{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+
+/* ---------- option row — sheets.html, unchanged ---------- */
+.opt{
+  display:flex;align-items:center;gap:12px;width:100%;
+  min-height:var(--h-row);padding:11px 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background-color:var(--sunken);background-image:none;
+  color:var(--text);font:inherit;font-size:13.5px;font-weight:500;
+  text-align:left;cursor:pointer;
+  transition:background-color .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);
+}
+.opt + .opt{margin-top:8px}
+.opt:hover{border-color:rgba(255,255,255,.14)}
+.opt__text{flex:1;min-width:0}
+.opt__text small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.opt[aria-checked="true"]{
+  background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash));
+  border-color:var(--acid-line);color:var(--acid);font-weight:600;
+}
+.opt[aria-checked="true"] .opt__text small{color:rgba(155,226,34,.72)}
+.opt:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.check,.radio{
+  position:relative;flex:0 0 auto;width:20px;height:20px;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);
+  transition:background .16s var(--ease),box-shadow .16s var(--ease);
+}
+.check{border-radius:6px}
+.radio{border-radius:50%}
+.check svg,.radio svg{
+  position:absolute;inset:0;width:20px;height:20px;opacity:0;
+  transition:opacity .14s var(--ease);
+}
+.check svg{color:var(--acid-ink)}
+.radio svg{color:var(--acid)}
+.opt[aria-checked="true"] .check{background:var(--acid);box-shadow:none}
+.opt[aria-checked="true"] .radio{box-shadow:inset 0 0 0 1.7px var(--acid);background:transparent}
+.opt[aria-checked="true"] .check svg,.opt[aria-checked="true"] .radio svg{opacity:1}
+
+/* ---------- the real search field — forms.html control ---------- */
+.ctl{
+  display:flex;align-items:center;gap:10px;
+  height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.ctl__icon{flex:0 0 auto;width:19px;height:19px;color:var(--muted)}
+.ctl__in{
+  flex:1;min-width:0;height:100%;border:0;background:transparent;color:inherit;
+  font:inherit;font-size:16px;padding:0;margin:0;outline:none;
+}
+.ctl__in::placeholder{color:var(--dim);opacity:1}
+.ctl__in::-webkit-search-cancel-button{display:none}
+.ctl:focus-within{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.ctl:focus-within .ctl__icon{color:var(--text)}
+.ctl__btn{
+  position:relative;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-6px;
+  border:0;border-radius:50%;background:transparent;color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.ctl__btn::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.ctl__btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.ctl__btn:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.ctl__btn svg{width:18px;height:18px}
+.ctl--stick{
+  position:sticky;top:0;z-index:2;margin:-12px calc(-1 * var(--gutter)) 12px;
+  padding:12px var(--gutter);height:auto;
+  border:0;border-bottom:1px solid var(--line-soft);border-radius:0;
+  background:#181D25;box-shadow:none;
+}
+.ctl--stick:focus-within{box-shadow:none;border-color:transparent;border-bottom-color:var(--acid-line)}
+.ctl--stick .ctl__box{
+  display:flex;align-items:center;gap:10px;width:100%;height:44px;padding:0 12px;
+  border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.ctl--stick:focus-within .ctl__box{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+
+/* ---------- search sheet internals ---------- */
+.res{
+  display:flex;align-items:center;gap:8px;margin:0 0 12px;
+}
+.res h4{
+  margin:0;flex:1;min-width:0;
+  font-size:15px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;
+}
+.res .icon-btn{width:34px;height:34px;background:var(--sunken)}
+.res .icon-btn svg{width:16px;height:16px}
+.recent{display:flex;flex-wrap:wrap;gap:7px}
+.recent__b{
+  display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 13px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:border-color .16s var(--ease),background .16s var(--ease);
+}
+.recent__b:hover{border-color:rgba(255,255,255,.14);background:#181D25}
+.recent__b svg{width:13px;height:13px;color:var(--dim);flex:0 0 auto}
+.recent__b:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.searchlist{display:flex;flex-direction:column;gap:10px}
+
+/* ============================================================
+   LIVE LAYER
+   The class `tabbar` on the layer is the review shell's hook, so a
+   screen-pinned overlay stays inside the device frame. The layer
+   lives OUTSIDE <main class="screen"> so it cannot scroll away.
+   Panes are absolutely positioned, which is what lets sort open
+   over search instead of beside it.
+   ============================================================ */
+.layer{position:fixed;inset:0;z-index:60;display:none}
+.layer.is-open{display:block}
+.scrim{
+  position:absolute;inset:0;background:var(--scrim);
+  -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+          backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+  opacity:0;transition:opacity .22s var(--ease);
+}
+.layer.is-in .scrim{opacity:1}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .scrim{background:rgba(3,4,1,.86)}
+}
+.layer .sheet{
+  position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:420px;
+  max-height:min(var(--sheet-vh),var(--sheet-max),calc(100% - 24px - env(safe-area-inset-top,0px)));
+  transform:translateY(101%);transition:transform .32s var(--ease);will-change:transform;
+}
+.layer .sheet.is-up{transform:translateY(0)}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
+  .bone::after{display:none}
+  .bone{background:rgba(255,255,255,.08)}
+}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+  <!-- ================= HEADER ================= -->
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to Backchat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Backchat</span>
+    <span class="spacer"></span>
+    <button class="icon-btn icon-btn--acid" type="button" aria-label="Start a locker room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <h1 class="title">All locker rooms</h1>
+  <p class="lede">
+    Every room at Barcelona, live and scheduled. Pull down to refresh; the list keeps loading as you
+    reach the end.
+  </p>
+
+  <!-- ================= MODE ================= -->
+  <div class="modes" role="tablist" aria-label="Which rooms">
+    <button class="mode" type="button" role="tab" aria-selected="true"  data-mode="live">Live <span class="mode__n" data-n="live">6</span></button>
+    <button class="mode" type="button" role="tab" aria-selected="false" data-mode="soon">Upcoming <span class="mode__n" data-n="soon">7</span></button>
+  </div>
+
+  <!-- ================= SEARCH TRIGGER ================= -->
+  <button class="seek" type="button" data-open="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+    <span>Search rooms, hosts or attendees</span>
+  </button>
+
+  <!-- ================= SORT + FILTER ================= -->
+  <div class="tools">
+    <button class="tool" type="button" data-open="sort" aria-label="Change sort order">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+      <span class="tool__t"><em>Sort ·</em> <span data-sortlabel>Most recent</span></span>
+    </button>
+    <button class="tool" type="button" data-open="filter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16l-6.3 7.4V19l-3.4-2.2v-3.9L4 5.5Z"/></svg>
+      <span class="tool__t">Filter</span>
+      <span class="tool__n" data-fcount hidden>0</span>
+    </button>
+  </div>
+
+  <!-- ================= SCOPE ================= -->
+  <div class="scope" aria-label="Narrow the list">
+    <button class="scope__b" type="button" aria-pressed="true"  data-scope="all">All</button>
+    <button class="scope__b" type="button" aria-pressed="false" data-scope="mine">Hosted by me</button>
+    <button class="scope__b" type="button" aria-pressed="false" data-scope="invited">Invitations</button>
+    <button class="scope__b" type="button" aria-pressed="false" data-scope="reminded" data-soon-only>Reminders</button>
+  </div>
+
+  <p class="tally" aria-live="polite">
+    <b data-shown>6</b>&nbsp;rooms <span data-sorttally>· most recent</span>
+    <span class="spacer"></span>
+    <button class="tally__x" type="button" data-reset hidden>Clear</button>
+  </p>
+
+  <!-- ================= THE LIST · LIVE ================= -->
+  <div class="list" data-list="live" role="list" aria-label="Live locker rooms">
+
+    <article class="room" role="listitem"
+             data-title="change barca coach the shortlist" data-host="taythaytu"
+             data-att="mireia_88 pep_left_back nou_camp_ned"
+             data-access="open" data-r="6" data-p="41">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when room__when--live">Live</p>
+          <h3 class="room__title">Change Barca Coach : the shortlist</h3>
+        </div>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-17)" role="img" aria-label="taythaytu"></span>
+        <span>host : taythaytu</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="3 speakers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          3
+        </span>
+        <span class="stat" aria-label="41 in the room">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          41
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+          Open room
+        </span>
+      </div>
+    </article>
+
+    <article class="room" role="listitem"
+             data-title="are we actually title contenders" data-host="scout_mode"
+             data-att="capitan_7 blaugrana_al" data-access="open" data-r="5" data-p="63">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when room__when--live">Live</p>
+          <h3 class="room__title">Are we actually title contenders?</h3>
+        </div>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-12)" role="img" aria-label="scout_mode"></span>
+        <span>host : scout_mode</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="4 speakers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          4
+        </span>
+        <span class="stat" aria-label="63 in the room">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          63
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+          Open room
+        </span>
+      </div>
+    </article>
+
+    <article class="room" role="listitem"
+             data-title="squad for the arsenal leg" data-host="capitan_7"
+             data-att="taythaytu scout_mode" data-access="locked" data-invited="1"
+             data-r="4" data-p="18">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when room__when--live">Live</p>
+          <h3 class="room__title">Squad for the Arsenal leg</h3>
+        </div>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-02)" role="img" aria-label="capitan_7"></span>
+        <span>host : capitan_7</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="2 speakers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          2
+        </span>
+        <span class="stat" aria-label="18 in the room">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          18
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0V11"/></svg>
+          Locked room
+        </span>
+      </div>
+    </article>
+
+    <article class="room" role="listitem"
+             data-title="camp nou atmosphere bring back the drums" data-host="you"
+             data-att="mireia_88 sergi_gol" data-access="open" data-mine="1"
+             data-r="3" data-p="11">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when room__when--live">Live</p>
+          <h3 class="room__title">Camp Nou atmosphere : bring back the drums</h3>
+        </div>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-05)" role="img" aria-label="You"></span>
+        <span>host : you</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="2 speakers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          2
+        </span>
+        <span class="stat" aria-label="11 in the room">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          11
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+          Open room
+        </span>
+      </div>
+    </article>
+
+    <article class="room" role="listitem"
+             data-title="ticket ballot how it should work" data-host="mireia_88"
+             data-att="club_staff taythaytu" data-access="locked" data-invited="1"
+             data-r="2" data-p="9">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when room__when--live">Live</p>
+          <h3 class="room__title">Ticket ballot : how it should actually work</h3>
+        </div>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-03)" role="img" aria-label="mireia_88"></span>
+        <span>host : mireia_88</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="2 speakers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          2
+        </span>
+        <span class="stat" aria-label="9 in the room">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          9
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0V11"/></svg>
+          Locked room
+        </span>
+      </div>
+    </article>
+
+    <article class="room" role="listitem"
+             data-title="manager auto room" data-host="club_staff"
+             data-att="" data-access="open" data-r="1" data-p="2">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when room__when--live">Live</p>
+          <h3 class="room__title">Manager Auto Room</h3>
+        </div>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-08)" role="img" aria-label="club_staff"></span>
+        <span>host : club_staff</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="1 speaker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          1
+        </span>
+        <span class="stat" aria-label="2 in the room">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          2
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+          Open room
+        </span>
+      </div>
+    </article>
+  </div>
+
+  <!-- ================= THE LIST · UPCOMING ================= -->
+  <div class="list" data-list="soon" role="list" aria-label="Upcoming locker rooms" hidden>
+
+    <article class="room" role="listitem"
+             data-title="pre-match build-up barcelona v arsenal" data-host="club_staff"
+             data-att="capitan_7 taythaytu" data-access="open" data-r="7" data-p="74" data-i="26">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when">Sunday 19 April · 6:00 PM</p>
+          <h3 class="room__title">Pre-match build-up : Barcelona v Arsenal</h3>
+        </div>
+        <button class="rem" type="button" aria-pressed="false"
+                aria-label="Remind me when this room opens" title="Remind me when this room opens">
+          <svg class="rem__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.6 6.6h4.4M20.8 4.4v4.4"/></svg>
+          <svg class="rem__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.4 6.4l1.7 1.7 3.1-3.4"/></svg>
+        </button>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-08)" role="img" aria-label="club_staff"></span>
+        <span>host : club_staff</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="2 speakers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          2
+        </span>
+        <span class="stat" aria-label="74 booked in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          74
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+          Open room
+        </span>
+      </div>
+    </article>
+
+    <article class="room" role="listitem"
+             data-title="full-time verdict and player ratings" data-host="scout_mode"
+             data-att="mireia_88" data-access="locked" data-reminded="1"
+             data-r="6" data-p="12" data-i="236">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when">Sunday 19 April · 9:30 PM</p>
+          <h3 class="room__title">Full-time verdict and player ratings</h3>
+        </div>
+        <button class="rem" type="button" aria-pressed="true"
+                aria-label="Remind me when this room opens" title="Remind me when this room opens">
+          <svg class="rem__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.6 6.6h4.4M20.8 4.4v4.4"/></svg>
+          <svg class="rem__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.4 6.4l1.7 1.7 3.1-3.4"/></svg>
+        </button>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-12)" role="img" aria-label="scout_mode"></span>
+        <span>host : scout_mode</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="3 speakers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          3
+        </span>
+        <span class="stat" aria-label="12 booked in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          12
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0V11"/></svg>
+          Locked room
+        </span>
+      </div>
+    </article>
+
+    <article class="room" role="listitem"
+             data-title="youth academy who is ready for the first team" data-host="capitan_7"
+             data-att="scout_mode blaugrana_al" data-access="open" data-invited="1"
+             data-r="5" data-p="31" data-i="1466">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when">Monday 20 April · 7:00 PM</p>
+          <h3 class="room__title">Youth academy : who’s ready for the first team?</h3>
+        </div>
+        <button class="rem" type="button" aria-pressed="false"
+                aria-label="Remind me when this room opens" title="Remind me when this room opens">
+          <svg class="rem__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.6 6.6h4.4M20.8 4.4v4.4"/></svg>
+          <svg class="rem__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.4 6.4l1.7 1.7 3.1-3.4"/></svg>
+        </button>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-02)" role="img" aria-label="capitan_7"></span>
+        <span>host : capitan_7</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="2 speakers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          2
+        </span>
+        <span class="stat" aria-label="31 booked in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          31
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+          Open room
+        </span>
+      </div>
+    </article>
+
+    <article class="room" role="listitem"
+             data-title="season ticket renewal q and a with the club" data-host="club_staff"
+             data-att="mireia_88 sergi_gol nou_camp_ned" data-access="open" data-reminded="1"
+             data-r="4" data-p="208" data-i="4066">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when">Wednesday 22 April · 1:00 PM</p>
+          <h3 class="room__title">Season ticket renewal : Q&amp;A with the club</h3>
+        </div>
+        <button class="rem" type="button" aria-pressed="true"
+                aria-label="Remind me when this room opens" title="Remind me when this room opens">
+          <svg class="rem__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.6 6.6h4.4M20.8 4.4v4.4"/></svg>
+          <svg class="rem__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.4 6.4l1.7 1.7 3.1-3.4"/></svg>
+        </button>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-08)" role="img" aria-label="club_staff"></span>
+        <span>host : club_staff</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="5 speakers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          5
+        </span>
+        <span class="stat" aria-label="208 booked in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          208
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+          Open room
+        </span>
+      </div>
+    </article>
+
+    <article class="room" role="listitem"
+             data-title="transfer window the three names we need" data-host="taythaytu"
+             data-att="scout_mode capitan_7" data-access="open" data-reminded="1"
+             data-r="3" data-p="46" data-i="5506">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when">Thursday 23 April · 8:00 PM</p>
+          <h3 class="room__title">Transfer window : the three names we need</h3>
+        </div>
+        <button class="rem" type="button" aria-pressed="true"
+                aria-label="Remind me when this room opens" title="Remind me when this room opens">
+          <svg class="rem__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.6 6.6h4.4M20.8 4.4v4.4"/></svg>
+          <svg class="rem__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.4 6.4l1.7 1.7 3.1-3.4"/></svg>
+        </button>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-17)" role="img" aria-label="taythaytu"></span>
+        <span>host : taythaytu</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="3 speakers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          3
+        </span>
+        <span class="stat" aria-label="46 booked in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          46
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+          Open room
+        </span>
+      </div>
+    </article>
+
+    <article class="room" role="listitem"
+             data-title="drums at the camp nou planning the section" data-host="you"
+             data-att="mireia_88" data-access="open" data-mine="1"
+             data-r="2" data-p="4" data-i="6946">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when">Friday 24 April · 6:30 PM</p>
+          <h3 class="room__title">Drums at the Camp Nou : planning the section</h3>
+        </div>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-05)" role="img" aria-label="You"></span>
+        <span>host : you</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="1 speaker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          1
+        </span>
+        <span class="stat" aria-label="4 booked in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          4
+        </span>
+        <button class="edit" type="button">Edit</button>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+          Open room
+        </span>
+      </div>
+    </article>
+
+    <article class="room" role="listitem"
+             data-title="away day logistics sevilla" data-host="mireia_88"
+             data-att="sergi_gol" data-access="locked" data-invited="1"
+             data-r="1" data-p="7" data-i="8746">
+      <div class="room__top">
+        <div class="room__id">
+          <p class="room__when">Saturday 25 April · 11:00 AM</p>
+          <h3 class="room__title">Away day logistics : Sevilla</h3>
+        </div>
+        <button class="rem" type="button" aria-pressed="false"
+                aria-label="Remind me when this room opens" title="Remind me when this room opens">
+          <svg class="rem__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.6 6.6h4.4M20.8 4.4v4.4"/></svg>
+          <svg class="rem__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.4 6.4l1.7 1.7 3.1-3.4"/></svg>
+        </button>
+      </div>
+      <div class="room__host">
+        <span class="avatar" style="background-image:var(--av-03)" role="img" aria-label="mireia_88"></span>
+        <span>host : mireia_88</span>
+      </div>
+      <div class="room__foot">
+        <span class="stat" aria-label="1 speaker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          1
+        </span>
+        <span class="stat" aria-label="7 booked in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+          7
+        </span>
+        <span class="access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0V11"/></svg>
+          Locked room
+        </span>
+      </div>
+    </article>
+  </div>
+
+  <!-- filtered to nothing — not the same thing as an empty club -->
+  <div class="nohit" data-nohit hidden>
+    <h3>No room matches that combination</h3>
+    <p>There are rooms here — <b>none of them match</b> the chip and the filters you have on.</p>
+    <button class="pill-btn" type="button" data-reset>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      Clear filters
+    </button>
+  </div>
+
+  <!-- ================= LOADING MORE ================= -->
+  <div class="spec" style="margin-top:26px">
+    <p class="spec__label">Loading more · reaching the end of the list</p>
+    <div class="more" role="status" aria-label="Loading more rooms">
+      <div class="skel-room">
+        <div class="bone bone--pill" style="width:88px;height:9px"></div>
+        <div class="bone" style="width:84%;height:14px;margin-top:11px"></div>
+        <div class="bone" style="width:52%;height:14px;margin-top:7px"></div>
+        <div class="skel-room__host">
+          <div class="bone bone--circ" style="width:24px;height:24px"></div>
+          <div class="bone bone--pill" style="width:106px;height:11px"></div>
+        </div>
+        <div class="skel-room__foot">
+          <div class="bone bone--pill" style="width:40px;height:11px"></div>
+          <div class="bone bone--pill" style="width:46px;height:11px"></div>
+          <div class="bone bone--pill" style="width:84px;height:10px;margin-left:auto"></div>
+        </div>
+      </div>
+      <div class="more__line">
+        <span class="ring">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".18"/>
+            <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+            </path>
+          </svg>
+        </span>
+        Loading more rooms
+      </div>
+    </div>
+    <p class="spec__note">
+      The list is <b>infinite scroll on a cursor</b>, not numbered pages: the code watches the scroll
+      position and calls <code>loadMoreAllLockerRooms()</code> whenever <code>state.nextUrl</code> is
+      set. So there is no pager and no page count — one skeleton card holds the space the next card
+      will fill, with the ring underneath. The shipped build puts a bare unthemed
+      <code>CircularProgressIndicator</code> here, which renders in Material blue.
+    </p>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">End of list · nextUrl is null</p>
+    <p class="end">That’s all 13 rooms</p>
+    <p class="spec__note">
+      The shipped list renders a <code>SizedBox.shrink()</code> at the end, so a member who scrolls to
+      the bottom cannot tell whether the list finished or stalled. One line settles it.
+    </p>
+  </div>
+
+  <!-- ================= FIRST LOAD ================= -->
+  <h2 class="label">First load</h2>
+  <p class="note">
+    Four skeleton cards, matching <code>CDimensions.shimmerItems = 4</code>. The bone is states.html's
+    bone — a white alpha at 5.5% with one 1.5 s sheen — so it reads on the card fill rather than
+    fighting it. The shipped shimmer is a grey <code>#C8C6CE → #DFDFDF</code> sweep, a light-theme
+    skeleton on a dark screen, and it draws four portraits and four stats regardless of the card it
+    stands in for.
+  </p>
+  <div class="list" role="status" aria-label="Loading rooms">
+    <div class="skel-room">
+      <div class="bone bone--pill" style="width:64px;height:9px"></div>
+      <div class="bone" style="width:88%;height:14px;margin-top:11px"></div>
+      <div class="bone" style="width:46%;height:14px;margin-top:7px"></div>
+      <div class="skel-room__host">
+        <div class="bone bone--circ" style="width:24px;height:24px"></div>
+        <div class="bone bone--pill" style="width:98px;height:11px"></div>
+      </div>
+      <div class="skel-room__foot">
+        <div class="bone bone--pill" style="width:40px;height:11px"></div>
+        <div class="bone bone--pill" style="width:46px;height:11px"></div>
+        <div class="bone bone--pill" style="width:84px;height:10px;margin-left:auto"></div>
+      </div>
+    </div>
+    <div class="skel-room">
+      <div class="bone bone--pill" style="width:64px;height:9px"></div>
+      <div class="bone" style="width:72%;height:14px;margin-top:11px"></div>
+      <div class="skel-room__host">
+        <div class="bone bone--circ" style="width:24px;height:24px"></div>
+        <div class="bone bone--pill" style="width:112px;height:11px"></div>
+      </div>
+      <div class="skel-room__foot">
+        <div class="bone bone--pill" style="width:40px;height:11px"></div>
+        <div class="bone bone--pill" style="width:46px;height:11px"></div>
+        <div class="bone bone--pill" style="width:92px;height:10px;margin-left:auto"></div>
+      </div>
+    </div>
+    <div class="skel-room">
+      <div class="bone bone--pill" style="width:88px;height:9px"></div>
+      <div class="bone" style="width:92%;height:14px;margin-top:11px"></div>
+      <div class="bone" style="width:58%;height:14px;margin-top:7px"></div>
+      <div class="skel-room__host">
+        <div class="bone bone--circ" style="width:24px;height:24px"></div>
+        <div class="bone bone--pill" style="width:88px;height:11px"></div>
+      </div>
+      <div class="skel-room__foot">
+        <div class="bone bone--pill" style="width:40px;height:11px"></div>
+        <div class="bone bone--pill" style="width:46px;height:11px"></div>
+        <div class="bone bone--pill" style="width:84px;height:10px;margin-left:auto"></div>
+      </div>
+    </div>
+    <div class="skel-room">
+      <div class="bone bone--pill" style="width:64px;height:9px"></div>
+      <div class="bone" style="width:66%;height:14px;margin-top:11px"></div>
+      <div class="skel-room__host">
+        <div class="bone bone--circ" style="width:24px;height:24px"></div>
+        <div class="bone bone--pill" style="width:104px;height:11px"></div>
+      </div>
+      <div class="skel-room__foot">
+        <div class="bone bone--pill" style="width:40px;height:11px"></div>
+        <div class="bone bone--pill" style="width:46px;height:11px"></div>
+        <div class="bone bone--pill" style="width:92px;height:10px;margin-left:auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= EMPTY ================= -->
+  <h2 class="label">Empty</h2>
+  <p class="note">
+    Three of them, and they are not interchangeable. The shipped build uses one grey panel with one
+    line of text for all three, and no action.
+  </p>
+
+  <div class="spec">
+    <p class="spec__label">No live rooms</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M2 72 L28 40 L54 72 Z" fill="#1C2129"/>
+        <path d="M82 72 L108 36 L132 72 Z" fill="#1C2129" opacity=".7"/>
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M44 72 L66 36 L88 72 Z" fill="rgba(155,226,34,.18)"/>
+        <path d="M44 72 L66 36 L88 72" stroke="#9BE222" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="66" cy="44" r="3" fill="#9BE222"/>
+        <path d="M52 28 L44 20 M52 20 L46 14" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="4 4" stroke-linecap="round"/>
+        <path d="M80 28 L88 20 M80 20 L86 14" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="4 4" stroke-linecap="round"/>
+      </svg>
+      <h3>No rooms open right now</h3>
+      <p>
+        Nothing is in session at Barcelona. Rooms usually open within the hour after full time, and on
+        Thursday nights. <b>7 are scheduled</b> for this week.
+      </p>
+      <button class="pill-btn" type="button">See what’s upcoming</button>
+    </div>
+    <p class="spec__note">
+      The shipped copy is <code>No live locker rooms available</code>. It is accurate and useless: it
+      does not say when rooms usually run, and it does not point at the seven that are booked.
+    </p>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">No upcoming rooms</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M2 72 L24 44 L46 72 Z" fill="#1C2129" opacity=".6"/>
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M58 68v7M86 68v7M114 68v7" stroke="rgba(255,255,255,.12)" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M30 64v14" stroke="#9BE222" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M62 72 L86 38 L110 72 Z" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+      </svg>
+      <h3>Nothing scheduled yet</h3>
+      <p>
+        Rooms usually go up two days before a fixture. Barcelona play Sevilla on Sunday, so expect one
+        on Friday.
+      </p>
+      <span class="wait">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+        We’ll alert you when it’s up
+      </span>
+    </div>
+    <p class="spec__note">
+      Nothing the member can do moves this forward, so the action slot carries the promise instead of a
+      button — the treatment settled in <code>states.html</code>. Any member can start a room, so the
+      create control in the header stays available above.
+    </p>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">No search results</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M2 72 L24 42 L46 72 Z" fill="#1C2129"/>
+        <path d="M92 72 L114 40 L132 72 Z" fill="#1C2129" opacity=".7"/>
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="60" cy="38" r="25" fill="#080A0C"/>
+        <path d="M41 46H79" stroke="rgba(255,255,255,.14)" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="60" cy="38" r="25" stroke="#9BE222" stroke-width="1.8"/>
+        <path d="M78.5 57 L94 72.5" stroke="#9BE222" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+      <h3>Nothing matches “goalkeeper”</h3>
+      <p>
+        No live room at Barcelona uses that word. Search reads room names, hosts and attendees — it
+        does not read what is said inside a room.
+      </p>
+      <button class="pill-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        Clear search
+      </button>
+    </div>
+    <p class="spec__note">
+      This is the state the search sheet shows; open <b>Search</b> above and type something absent to
+      reach it live. The shipped sheet renders an empty white area instead — no message, no way back.
+    </p>
+  </div>
+
+</main>
+
+<!-- ============================================================
+     LIVE LAYER — outside <main class="screen">
+     ============================================================ -->
+<div class="layer tabbar" id="layer">
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ---------- search ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="s-t" data-pane="search" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="s-t" data-searchtitle>Find a live room</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <div class="ctl ctl--stick">
+        <span class="ctl__box">
+          <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.6"/><path d="M16 16l4.2 4.2"/></svg>
+          <input class="ctl__in" id="q" type="search" placeholder="Rooms, hosts or attendees"
+                 aria-label="Search rooms, hosts or attendees" autocomplete="off" spellcheck="false">
+          <button class="ctl__btn" type="button" id="qx" aria-label="Clear search" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+          </button>
+        </span>
+      </div>
+
+      <!-- recent searches: the state before a single character is typed -->
+      <div data-recent>
+        <p class="sheet__grp">Recent searches</p>
+        <div class="recent">
+          <button class="recent__b" type="button" data-term="coach">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            coach
+          </button>
+          <button class="recent__b" type="button" data-term="arsenal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            arsenal
+          </button>
+          <button class="recent__b" type="button" data-term="capitan_7">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            capitan_7
+          </button>
+          <button class="recent__b" type="button" data-term="ticket">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            ticket
+          </button>
+          <button class="recent__b" type="button" data-term="drums">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            drums
+          </button>
+        </div>
+        <p class="sheet__grp">Nothing yet</p>
+        <p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)">
+          Search covers room names, the host and anyone already in the room. It does not read what is
+          said inside a room.
+        </p>
+        <button class="sheet__clear" type="button" id="qclear" style="margin-top:14px;padding-left:0">
+          Clear recent searches
+        </button>
+      </div>
+
+      <!-- results -->
+      <div data-results hidden>
+        <div class="res">
+          <h4 data-rescount>0 results found</h4>
+          <button class="icon-btn" type="button" data-open="filter" aria-label="Filter these results">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16l-6.3 7.4V19l-3.4-2.2v-3.9L4 5.5Z"/></svg>
+          </button>
+          <button class="icon-btn" type="button" data-open="sort" aria-label="Sort these results">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+          </button>
+        </div>
+        <div class="searchlist" id="reslist" role="list"></div>
+      </div>
+
+      <!-- no match -->
+      <div class="empty" data-resnone hidden style="margin:8px 0 0">
+        <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+          <path d="M2 72 L24 42 L46 72 Z" fill="#1C2129"/>
+          <path d="M92 72 L114 40 L132 72 Z" fill="#1C2129" opacity=".7"/>
+          <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="60" cy="38" r="25" fill="#080A0C"/>
+          <path d="M41 46H79" stroke="rgba(255,255,255,.14)" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="60" cy="38" r="25" stroke="#9BE222" stroke-width="1.8"/>
+          <path d="M78.5 57 L94 72.5" stroke="#9BE222" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+        <h3 data-resterm>Nothing matches that</h3>
+        <p data-resscope>
+          No live room at Barcelona uses that word. Search reads room names, hosts and attendees — it
+          does not read what is said inside a room.
+        </p>
+        <button class="pill-btn" type="button" id="qwipe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+          Clear search
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- sort ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="o-t" data-pane="sort" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="o-t" data-sorttitle>Sort live rooms</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close sort">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last" role="radiogroup" aria-label="Sort order">
+      <button class="opt" type="button" role="radio" aria-checked="true" data-sort="recent">
+        <span class="opt__text">Most recent<small>Newest room first</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="radio" aria-checked="false" data-sort="immediate" data-soon-only>
+        <span class="opt__text">Most immediate<small>Starting soonest first</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="radio" aria-checked="false" data-sort="popular">
+        <span class="opt__text">Most popular<small data-poplabel>Most people in the room first</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ---------- filter ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="l-t" data-pane="filter" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="l-t" data-filtertitle>Filter · live</h3>
+      <span class="sheet__n" data-count hidden>0 on</span>
+      <button class="sheet__clear" type="button" data-clear disabled>Clear all</button>
+      <button class="sheet__x" type="button" data-close aria-label="Close filter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <p class="sheet__grp">Access</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="open">
+        <span class="opt__text">Open rooms only</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="locked">
+        <span class="opt__text">Locked rooms only</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <div data-soon-only>
+        <p class="sheet__grp">Me</p>
+        <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="invited">
+          <span class="opt__text">Rooms I’m invited to</span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="reminded">
+          <span class="opt__text">Rooms I’ve set a reminder for</span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+      </div>
+    </div>
+    <div class="sheet__foot">
+      <button class="btn btn--acid btn--wide" type="button" data-apply>
+        <span data-applylabel>Apply</span>
+      </button>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var reduce = window.matchMedia &&
+               window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ============================================================
+     STATE
+     mode  — 'live' | 'soon'. Two modes, because the code carries a
+             separate sort enum for each and drops one scope chip.
+     scope — AllLockerRoomButtonType
+     sort  — LiveLockerRoomsSort / UpcomingLockerRoomsSort
+     filt  — LockerRoomsFilter, multi-select
+     ============================================================ */
+  var SORTNAME = {recent:'Most recent', immediate:'Most immediate', popular:'Most popular'};
+  var st = {
+    mode:  'live',
+    scope: 'all',
+    sort:  {live:'recent', soon:'recent'},
+    filt:  {live:[], soon:[]}
+  };
+
+  var $  = function(s,r){ return (r||document).querySelector(s); };
+  var $$ = function(s,r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+
+  var lists   = {live:$('[data-list="live"]'), soon:$('[data-list="soon"]')};
+  var nohit   = $('[data-nohit]');
+  var shown   = $('[data-shown]');
+  var tallyS  = $('[data-sorttally]');
+  var resetB  = $$('[data-reset]');
+  var fcount  = $('[data-fcount]');
+  var ftool   = $('[data-open="filter"].tool');
+  var sortLbl = $('[data-sortlabel]');
+
+  function cards(mode){ return $$('.room', lists[mode]); }
+
+  function accessOf(c){ return c.getAttribute('data-access'); }
+  function flag(c,n){ return c.getAttribute('data-' + n) === '1'; }
+
+  function matches(c){
+    /* scope chip */
+    if (st.scope === 'mine'     && !flag(c,'mine'))     return false;
+    if (st.scope === 'invited'  && !flag(c,'invited'))  return false;
+    if (st.scope === 'reminded' && !isReminded(c))      return false;
+
+    var f = st.filt[st.mode];
+    if (!f.length) return true;
+
+    /* within a group the ticks are OR, across groups they are AND */
+    var acc = [];
+    if (f.indexOf('open')   > -1) acc.push('open');
+    if (f.indexOf('locked') > -1) acc.push('locked');
+    if (acc.length && acc.indexOf(accessOf(c)) < 0) return false;
+
+    var me = [];
+    if (f.indexOf('invited')  > -1) me.push(flag(c,'invited'));
+    if (f.indexOf('reminded') > -1) me.push(isReminded(c));
+    if (me.length && me.indexOf(true) < 0) return false;
+
+    return true;
+  }
+
+  /* a reminder set on the card is the same fact the filter reads */
+  function isReminded(c){
+    var b = $('.rem', c);
+    if (b) return b.getAttribute('aria-pressed') === 'true';
+    return flag(c,'reminded');
+  }
+
+  function sortKey(){
+    var s = st.sort[st.mode];
+    if (s === 'popular')   return {attr:'p', dir:-1};
+    if (s === 'immediate') return {attr:'i', dir: 1};
+    return {attr:'r', dir:-1};
+  }
+
+  function render(){
+    var mode = st.mode, list = lists[mode], k = sortKey(), n = 0;
+
+    lists.live.hidden = mode !== 'live';
+    lists.soon.hidden = mode !== 'soon';
+
+    /* order */
+    cards(mode)
+      .slice()
+      .sort(function(a,b){
+        var av = parseFloat(a.getAttribute('data-' + k.attr) || '0');
+        var bv = parseFloat(b.getAttribute('data-' + k.attr) || '0');
+        return (av - bv) * k.dir;
+      })
+      .forEach(function(c){ list.appendChild(c); });
+
+    /* visibility */
+    cards(mode).forEach(function(c){
+      var hit = matches(c);
+      c.hidden = !hit;
+      if (hit) n++;
+    });
+
+    /* chrome */
+    shown.textContent = String(n);
+    tallyS.textContent = '· ' + SORTNAME[st.sort[mode]].toLowerCase();
+    sortLbl.textContent = SORTNAME[st.sort[mode]];
+
+    var fn = st.filt[mode].length;
+    fcount.hidden = fn === 0;
+    fcount.textContent = String(fn);
+    ftool.classList.toggle('is-on', fn > 0);
+
+    var dirty = fn > 0 || st.scope !== 'all';
+    resetB.forEach(function(b){ if (b.classList.contains('tally__x')) b.hidden = !dirty; });
+
+    list.hidden = n === 0;
+    nohit.hidden = n > 0;
+
+    $$('[data-n]').forEach(function(el){
+      el.textContent = String(cards(el.getAttribute('data-n')).length);
+    });
+
+    /* the REMINDERS chip and the Me filter group exist only for upcoming,
+       exactly as the code drops them in the live section */
+    $$('.scope__b[data-soon-only]').forEach(function(b){ b.hidden = mode !== 'soon'; });
+    $$('[data-pane="filter"] [data-soon-only]').forEach(function(b){ b.hidden = mode !== 'soon'; });
+    $$('[data-pane="sort"] [data-soon-only]').forEach(function(b){ b.hidden = mode !== 'soon'; });
+
+    /* the filter head also carries a count pill, Clear all and a close, so
+       its title has ~160 px: any longer and it wraps to two lines */
+    $('[data-sorttitle]').textContent   = mode === 'live' ? 'Sort live rooms' : 'Sort upcoming rooms';
+    $('[data-filtertitle]').textContent = mode === 'live' ? 'Filter · live'   : 'Filter · upcoming';
+    $('[data-searchtitle]').textContent = mode === 'live' ? 'Find a live room'         : 'Find an upcoming room';
+    $('[data-poplabel]').textContent    = mode === 'live' ? 'Most people in the room first'
+                                                         : 'Most people booked in first';
+
+    /* keep the sheets showing what is actually applied */
+    $$('[data-pane="sort"] [data-sort]').forEach(function(o){
+      o.setAttribute('aria-checked', o.getAttribute('data-sort') === st.sort[mode] ? 'true' : 'false');
+    });
+    $$('[data-pane="filter"] [data-cb]').forEach(function(o){
+      o.setAttribute('aria-checked', st.filt[mode].indexOf(o.getAttribute('data-cb')) > -1 ? 'true' : 'false');
+    });
+    syncFilterHead();
+  }
+
+  /* ---------- mode ---------- */
+  $$('.mode').forEach(function(b){
+    b.addEventListener('click', function(){
+      st.mode = b.getAttribute('data-mode');
+      $$('.mode').forEach(function(x){ x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      /* REMINDERS does not exist in live, so a live switch cannot keep it */
+      if (st.mode === 'live' && st.scope === 'reminded') setScope('all');
+      render();
+    });
+  });
+
+  /* ---------- scope ---------- */
+  function setScope(v){
+    st.scope = v;
+    $$('.scope__b').forEach(function(x){
+      x.setAttribute('aria-pressed', x.getAttribute('data-scope') === v ? 'true' : 'false');
+    });
+  }
+  $$('.scope__b').forEach(function(b){
+    b.addEventListener('click', function(){ setScope(b.getAttribute('data-scope')); render(); });
+  });
+
+  /* ---------- reset ---------- */
+  resetB.forEach(function(b){
+    b.addEventListener('click', function(){
+      st.filt[st.mode] = [];
+      setScope('all');
+      render();
+    });
+  });
+
+  /* ---------- reminder toggles ---------- */
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+    var r = e.target.closest('.rem');
+    if (!r) return;
+    var on = r.getAttribute('aria-pressed') !== 'true';
+    r.setAttribute('aria-pressed', on ? 'true' : 'false');
+    /* a card cloned into the search results is the same room, so mirror it */
+    var card = r.closest('.room');
+    if (card){
+      cards(st.mode).forEach(function(c){
+        if (c !== card && c.getAttribute('data-title') === card.getAttribute('data-title')){
+          var b = $('.rem', c);
+          if (b) b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+      });
+    }
+    render();
+    if (searchOpen()) runSearch();
+  });
+
+  /* ---------- sort sheet: single-select, applies on tap ---------- */
+  $$('[data-pane="sort"] [data-sort]').forEach(function(o){
+    o.addEventListener('click', function(){
+      st.sort[st.mode] = o.getAttribute('data-sort');
+      render();
+      close();
+      if (searchOpen()) runSearch();
+    });
+  });
+
+  /* ---------- filter sheet: multi-select, Apply commits ---------- */
+  var draft = [];
+  var fpane = $('[data-pane="filter"]');
+
+  function syncFilterHead(){
+    var on  = draft.length;
+    var pill = $('[data-count]', fpane);
+    var cl   = $('[data-clear]', fpane);
+    var lb   = $('[data-applylabel]', fpane);
+    pill.hidden = on === 0;
+    pill.textContent = on + ' on';
+    cl.disabled = on === 0;
+    lb.innerHTML = on === 0 ? 'Apply' : 'Apply <span class="btn__n">' + on + '</span>';
+  }
+  $$('[data-cb]', fpane).forEach(function(o){
+    o.addEventListener('click', function(){
+      var k = o.getAttribute('data-cb'), i = draft.indexOf(k);
+      if (i > -1) draft.splice(i,1); else draft.push(k);
+      o.setAttribute('aria-checked', i > -1 ? 'false' : 'true');
+      syncFilterHead();
+    });
+  });
+  $('[data-clear]', fpane).addEventListener('click', function(){
+    draft = [];
+    $$('[data-cb]', fpane).forEach(function(o){ o.setAttribute('aria-checked','false'); });
+    syncFilterHead();
+  });
+  $('[data-apply]', fpane).addEventListener('click', function(){
+    st.filt[st.mode] = draft.slice();
+    render();
+    if (searchOpen()) runSearch();
+    close();
+  });
+
+  /* ============================================================
+     SEARCH
+     Scoped to the current mode, like the code's
+     getSearchAllLockerRooms. Results are the same room card, so a
+     room reads identically wherever it appears.
+     ============================================================ */
+  var q       = $('#q');
+  var qx      = $('#qx');
+  var reslist = $('#reslist');
+  var recent  = $('[data-recent]');
+  var results = $('[data-results]');
+  var resnone = $('[data-resnone]');
+
+  function searchOpen(){ return stack.indexOf($('[data-pane="search"]')) > -1; }
+
+  function hay(c){
+    return (c.getAttribute('data-title') + ' ' +
+            c.getAttribute('data-host')  + ' ' +
+            (c.getAttribute('data-att') || '')).toLowerCase();
+  }
+
+  function runSearch(){
+    var v = q.value.trim().toLowerCase();
+    qx.hidden = !v;
+
+    if (!v){
+      recent.hidden = false; results.hidden = true; resnone.hidden = true;
+      return;
+    }
+    recent.hidden = true;
+
+    var hits = cards(st.mode).filter(function(c){
+      return matches(c) && hay(c).indexOf(v) > -1;
+    });
+
+    reslist.innerHTML = '';
+    hits.forEach(function(c){
+      var copy = c.cloneNode(true);
+      copy.hidden = false;
+      copy.removeAttribute('role');
+      copy.setAttribute('role','listitem');
+      reslist.appendChild(copy);
+    });
+
+    var n = hits.length;
+    results.hidden = n === 0;
+    resnone.hidden = n > 0;
+    /* the shipped string is `N results found` for every N, so it reads
+       "1 results found" — pluralised here */
+    $('[data-rescount]').textContent = n + (n === 1 ? ' result found' : ' results found');
+    $('[data-resterm]').textContent  = 'Nothing matches “' + q.value.trim() + '”';
+    $('[data-resscope]').textContent =
+      'No ' + (st.mode === 'live' ? 'live' : 'upcoming') + ' room at Barcelona uses that word. ' +
+      'Search reads room names, hosts and attendees — it does not read what is said inside a room.';
+  }
+
+  q.addEventListener('input', runSearch);
+  qx.addEventListener('click', function(){ q.value=''; runSearch(); q.focus(); });
+  $('#qwipe').addEventListener('click', function(){ q.value=''; runSearch(); q.focus(); });
+  $('#qclear').addEventListener('click', function(){
+    $('.recent', recent).innerHTML = '';
+    $('#qclear').disabled = true;
+  });
+  $$('[data-term]').forEach(function(b){
+    b.addEventListener('click', function(){
+      q.value = b.getAttribute('data-term');
+      runSearch();
+      q.focus();
+    });
+  });
+
+  /* ============================================================
+     THE LAYER — panes stack, so sort can open over search
+     ============================================================ */
+  var layer = $('#layer');
+  var scrim = $('#scrim');
+  var main  = $('main.screen');
+  var stack = [];
+  var openers = [];
+
+  function focusables(root){
+    return $$('button, [href], input, select, textarea, [tabindex]', root).filter(function(el){
+      return !el.hasAttribute('disabled') &&
+             el.getAttribute('tabindex') !== '-1' &&
+             el.offsetParent !== null;
+    });
+  }
+
+  function open(name, trigger){
+    var p = layer.querySelector('[data-pane="' + name + '"]');
+    if (!p || stack.indexOf(p) > -1) return;
+
+    if (name === 'filter') draft = st.filt[st.mode].slice();
+
+    openers.push(trigger || null);
+    stack.push(p);
+    p.hidden = false;
+    p.style.zIndex = String(2 + stack.length);
+    p.style.transform = '';
+    layer.classList.add('is-open');
+    if (main) main.setAttribute('aria-hidden','true');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function(){
+      layer.classList.add('is-in');
+      p.classList.add('is-up');
+    });
+    p.setAttribute('tabindex','-1');
+    p.focus();
+    var sel = p.querySelector('[aria-checked="true"]');
+    if (sel && sel.scrollIntoView) sel.scrollIntoView({block:'nearest'});
+    if (name === 'search'){ runSearch(); setTimeout(function(){ q.focus(); }, reduce ? 0 : 340); }
+    document.addEventListener('keydown', onKey, true);
+  }
+
+  function close(){
+    var p = stack.pop();
+    if (!p) return;
+    var back = openers.pop();
+    p.classList.remove('is-up');
+    if (!stack.length){
+      layer.classList.remove('is-in');
+      document.removeEventListener('keydown', onKey, true);
+      if (main) main.removeAttribute('aria-hidden');
+      document.body.style.overflow = '';
+    }
+    setTimeout(function(){
+      p.hidden = true;
+      p.style.transform = '';
+      if (!stack.length) layer.classList.remove('is-open');
+    }, reduce ? 0 : 300);
+    if (back && back.offsetParent !== null) back.focus();
+    else if (stack.length) stack[stack.length - 1].focus();
+  }
+
+  function onKey(e){
+    var p = stack[stack.length - 1];
+    if (!p) return;
+    if (e.key === 'Escape'){ e.preventDefault(); close(); return; }
+    if (e.key !== 'Tab') return;
+    var f = focusables(p);
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    else if (!p.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+  }
+
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+    var o = e.target.closest('[data-open]');
+    if (o){ open(o.getAttribute('data-open'), o); return; }
+    if (e.target.closest('[data-close]')){ close(); return; }
+    if (e.target === scrim) close();
+  });
+
+  /* ---------- grabber drag ---------- */
+  var drag = null;
+  layer.addEventListener('pointerdown', function(e){
+    var g = e.target.closest ? e.target.closest('.sheet__grab') : null;
+    var p = stack[stack.length - 1];
+    if (!g || !p || !p.contains(g)) return;
+    drag = {y:e.clientY, t:Date.now(), dy:0, p:p};
+    p.classList.add('is-dragging');
+    if (g.setPointerCapture) g.setPointerCapture(e.pointerId);
+  });
+  layer.addEventListener('pointermove', function(e){
+    if (!drag) return;
+    drag.dy = Math.max(0, e.clientY - drag.y);
+    drag.p.style.transform = 'translateY(' + drag.dy + 'px)';
+    if (stack.length === 1) scrim.style.opacity = String(Math.max(0, 1 - drag.dy / 420));
+  });
+  function endDrag(){
+    if (!drag) return;
+    var d = drag.dy, ms = Math.max(1, Date.now() - drag.t), p = drag.p;
+    var fast = d / ms > 0.55;
+    drag = null;
+    p.classList.remove('is-dragging');
+    scrim.style.opacity = '';
+    if (d > 90 || (fast && d > 24)){ p.style.transform = 'translateY(101%)'; close(); }
+    else { p.style.transform = ''; }
+  }
+  layer.addEventListener('pointerup', endDrag);
+  layer.addEventListener('pointercancel', endDrag);
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en" data-component="hall-of-fame">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Hall of Fame &amp; Achievements</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — HALL OF FAME & ACHIEVEMENTS
+   The two recognition routes reached from Profile → Recognition:
+   Hall of Fame (HF-01…HF-04) and Achievements (AC-01, AC-02),
+   plus the populated Achievements states nothing in the capture
+   set records.
+
+   Nothing here is a new idiom. The token block is merits.html
+   verbatim. The season dropdown and the category sheet are the
+   corrected Hall of Fame pair already specified in sheets.html.
+   The dialog is dialogs.html's shell. The empty panel, the
+   "nothing to do" line and the skeleton bones are states.html's.
+   The podium is merits.html's plinth construction. The opponent
+   crest sits on club-selection.html's crest plate.
+
+   There is no gold on this page. The live screens use four
+   different golds — #D4AF37 and #B28401 (sampled, and NOT
+   present anywhere in lib/), #DFAA11 (= CColor.colorVeto, the
+   amber the app paints a blocked proposal with) and the declared
+   CColor.weaponBronzeColor #B08126. Rank is carried by ring
+   opacity, scale and a numeral instead.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls                 */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+  --acid-line:     rgba(155,226,34,.30);   /* derived: selected-row rim, sheets.html */
+
+  /* semantic red — the only other colour in the contract */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.12);
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  /* sheet shell — sheets.html, unchanged */
+  --r-sheet:       18px;
+  --sheet-max:     560px;
+  --sheet-vh:      88vh;
+  --grab-w:        40px;
+  --grab-h:        4px;
+  --h-field:       52px;                   /* control height, forms.html */
+  --h-row:         48px;
+
+  /* dialog shell — dialogs.html, unchanged */
+  --dlg-max:       344px;
+  --dlg-inset:     20px;
+  --dlg-pad:       20px;
+
+  /* skeleton — states.html, unchanged */
+  --bone:          rgba(255,255,255,.055);
+  --sheen:         rgba(255,255,255,.06);
+
+  /* club crest plate — club-selection.html, unchanged */
+  --plate:         rgba(255,255,255,.94);
+  --plate-edge:    rgba(0,0,0,.13);
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* photography — eight portraits from _assets/avatars.css.
+     The live default avatar is watermarked marketing key-art; see the notes. */
+  --av-01:url(data:image/jpeg;base64,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);
+  --av-02:url(data:image/jpeg;base64,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);
+  --av-03:url(data:image/jpeg;base64,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);
+  --av-04:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAGwAAAQUBAQAAAAAAAAAAAAAABgECAwQFBwD/xAA6EAACAQMCBAQEAwcCBwAAAAABAgMABBEFIQYSMUETIjJRM2FxoRRCUgcVI4GRwdFDsSVTcoKSouH/xAAZAQADAQEBAAAAAAAAAAAAAAACAwQBAAX/xAAiEQACAgICAgMBAQAAAAAAAAAAAQIRAxIhMTJBEyJCBGH/2gAMAwEAAhEDEQA/AOSptml5196aO9ejAJNcAPEqimuwJyBvSxgZO1OGPF6Vxx7x8oFKnNE2mcStpmlFHtOZW8oJbBP0FDRjKyAjpTHfmO5yfejUmgdUx1zILi4ebk5OY5xUfkGxB/rXmbNMoA0jpPCX7V20ixtdM1K157aACMSxDzKnuR3I+9a/7S+L47nQIrbS7yC4tdQU5kQZ5gpGV+R3HUVx8bmnGRsBeY8oOQPnW2Zr6FBJOTVm29WarE5x8jVq1GZAKFmmtEn8NanUZ8g6t9q8i4iB9qWwPiSPnqPtSwwY6E02M+ansPOaZH66aASJ6jSn4gpF9ZpW9YrjB7t5lX3BpYtPubmQLDEXJ6Bd6kht2uHUKCTnG1dP4Y0OHTLJcpmZhlmPv7UrJPV8D8GLdc9AOnAmrtCshRFJ/KWrN1Hh++0wjxo8g/mXcV2iYqEGO1YmoxJMp5lBx7il/JJFPwRa4OPlGT1Aj60mcfWjHV7SBRjw1z9KGLy3WPoMU2M9ibJicCug5juavWajxQc5xVBOtaFls1G+hXs2pDyWTuOwqHQGMksxPbFSXY5dKf6U3hdc+OfoKBeIX6QPP8Q1GvrqWT4lRDaSmADx8Sn8hklRF9TEAZNM/wBSrmnwG61S0gBxzzKMjtvvXPo5K2kFGhaBdadrSJeIpUqXjdTlX26j6ZrfuNb1O0l/h6Y0ka/lU+Zh/atSQc1+q+GoihAWPbcZG4+wqLVtHS+gmZXdJXjKrg7KffHTP1qO9pWz1NNI1Er2vFlnfuLeWCe1n/TLHjP0PSkvby2gjcySAAdMmsrRuG7i0uQ88khjRfNzNnnbPXHasbjCXx9XNvAAqIoyB0Jre5UZbjC2e1DULSRifxKH/uzWBeSJMrFGBFXru3W2REhs4Hj5ATKR5i2NxWbNHypkLyl+1NikiacnLsqL1q/YDmlHyqrLAIgCH5j3wNqt6f8AEpr5RNVM2b8f8Kak4XYLFMSCxLDCjqade+bSm7bdaXhRBiUgb+9AvEL9IGpfXUJ+JU83qFQN8SmCx/5xVi3uXsruG5jxzxOGAPfHaq59Qpz+muOTp2jq+l6/pWreF+FmYXRwzwybHYbn2OPcUSSFXiG2K5LwQ6jia3VjjnR1H1x/8rqpmijhLyuEUbEscCppRUZUj0ceR5I7Mp3VzChWIyLGWyRzHc49hXN7+RZ+IZGDq4Zuo6V0DUL6wjRz+Kt3lK8oyw2B670DyWmnx6nPNaMkikkoVOwNDHsbk5ikaEhh/AjnRSwHUihO+fxLgAYG9bGo3yNByxqVGNxQ+06o7Fk5m7fKjiuSfLJdHtRb+Oq7YA7VJp5/iiqLyNLJzN1NXrD4wp1UiSTuVm7djOlvTuE/VKKWYc2mP9KXhIeeX60K8Qn5IF5u1V39dWZugqvJ6hTBSHN1FOf00xugp5BIwBknoBWmGrwvG8vEmnKjFT4wOR2A3Nda5fEcq5wynJGKA+CdHa316NrlStxHCZPD/wCWDsOb5nJ27V0O7tPFKujFJBsCKlyu3wX/AM6cY8+zF1bTJZYgYRCF7qyZzQJqFmkF3zAxk5/IMfajDXbnVbVCAiMv6gSKArm5lklYtnmJoI/4Oyz4pjLq4zzO2PfArLc5yT1NWp0Zhgnc1WZSoIYYIqmC4IMjtkY61esc+MKojrV6x+MtE+hfsJeQtpzgFd17mm8JyIJZYzkODk9xU0Sg2Tg/pNR8Hgi4uCOlLj0xr8kC0o8lV5Oxots+C7qdQ19Mtsv6F8z/AOBRFY6FpOnhfBskkkG/iTDnb710ssUZHDJnP7LRtQ1LlFrau4/WRyr/AFNGOk8Mrw/H+8b9kluRtGF3WI+/zP8AtRNbjJB6knr7fSq3EbiPSpWJ8qLk5pUsrlwiiOGMeWVuCbOQvd6pcEtJdkFSf0gmi5jlaHtAm8Ph60vEHNDEvJPynPJncNt2Bzn61tmZWiDqwYHoQdjWzjq6Dxy2imD3FeorDb+CilpZPt86CILFpGaR1OB3o31SBryXkWPJ96pNpcjlbO3TmkPUCgTGuN9gfHYm7vii7KiM5PyFVXszc27lB50GR86PdS0e14f0iZx57iRMPJ7/ACHy/wB6HNOg8C0aeQevZR70eziTOKkB5BBwRgjtV2x+KtbE2mQNcQpLHkT5AI2IOff+dQjQbq1unUleVZOVOY4Zx74pqmmid45I14jiyf8A6TT+Dl8s7+7U1kMdhKr+V1GCDTuDpAYZF781ZHoJ+SCMyn8dGhOzZ2pVDC6dcbdKgvx4V/aOOhepbyea3uWMMKSMQMczYAqQuNOFBEMnt2oU421LxLJrSI4BPn/tSXcfFF4Gf94R20Y6LCMffrWLq9hcWmnRS3MollkkKvJ3fuM++KZBK1yKyN6vgMOAtVFnJNDOsj284GCsYdQ2MHLDrt7iixNB07drG7khjJ5vCBBVfoDuPpXM9HnSMpJIEywHmkjY/wDsp3/tReLgC35xJzEbeS5K/ZqvnFPshxzceghGmWtrmR5wxx1YgVmzX1lZylLSJpZJPU8a8yj2LN7Vh3LTzJkrO2dhzQrKv9RTY7BbeAQoEWe4PKXjQoVXHmOCemNvqaDWMVYzecnVjdXY6rawSysTGXLbAAOBsMY7HGf50P3MxkvFiwAqbBR0FFF28KW7RjAjiOAAfTtsKEEPNqRJOxOaivZtlTWqSL11EqvZSscKk45j8iP8irc0DXGr24PoZfEGO+O1VNVz+6pSPy8rj+RrR06QTQ2l23+nEwY1l8WFXNFPV7JrmV1gblPI3MBuHNZPC8VxaaqnPgxzAqcHoe1EWmnx7e2mbqzM5PyJNZDukFyJU9LXKcv/AJD/ABTITa+orJBP7H//2Q==);
+  --av-05:url(data:image/jpeg;base64,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);
+  --av-07:url(data:image/jpeg;base64,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);
+  --av-09:url(data:image/jpeg;base64,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);
+  --av-11:url(data:image/jpeg;base64,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);
+}
+
+/* The only keyframes in the file: a skeleton shimmer has to loop and a
+   transition cannot. states.html declares it the same way. */
+@keyframes shim{to{transform:translateX(100%)}}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+/* Bottom padding has to live INSIDE the frame: the builder emits each frame's
+   children and drops the <main class="screen"> wrapper, so padding on it is lost. */
+.frame__pad{height:72px}
+
+/* ============================================================
+   PAGE FURNITURE
+   34 px of top clearance: on a device the app bar sits under the
+   status bar, and in the review shell the phone's 26 px island is
+   inset 8 px from the top. ideas-list.html / voting-list.html are
+   the reference for this value.
+   ============================================================ */
+.bar{display:flex;align-items:center;gap:11px;margin:34px var(--gutter) 14px}
+.bar__eyebrow{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);
+}
+.bar .spacer{flex:1}
+.title{
+  margin:0 var(--gutter) 10px;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.lede{margin:0 var(--gutter) 16px;font-size:13px;line-height:1.5;color:var(--muted)}
+.lede b{color:var(--text);font-weight:600}
+.label{margin:22px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.head{display:flex;align-items:center;gap:8px;margin:22px var(--gutter) 10px}
+.head h2{flex:1;margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.cap{display:flex;gap:9px;margin:14px var(--gutter) 0;font-size:11.5px;line-height:1.45;color:var(--dim)}
+.cap svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:var(--dim)}
+.cap b{color:var(--text);font-weight:600}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted)}
+
+/* ============================================================
+   CONTROLS — 38 px discs keep the sampled size and take the
+   create-idea.html ::after expansion to a 44 px hit area.
+   ============================================================ */
+.icon-btn{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.pill-btn{
+  display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 18px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.pill-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.pill-btn--acid:hover{background:#A8EC33}
+.pill-btn--sm{height:34px;padding:0 13px;font-size:12.5px}
+.pill-btn svg{width:15px;height:15px;flex:0 0 auto}
+.pill-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.btn{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em;
+  cursor:pointer;white-space:nowrap;transition:background .18s var(--ease);
+}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.btn--ghost:hover{background:#181D25}
+.btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  height:32px;padding:0 14px;border-radius:var(--r-pill);
+  background:var(--acid-wash);
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;
+}
+.status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.tag{
+  display:inline-flex;align-items:center;height:26px;padding:0 10px;
+  border-radius:var(--r-pill);background:var(--sunken);
+  font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);white-space:nowrap;
+}
+.eyebrow{
+  margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.avatar{
+  border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+
+/* ============================================================
+   SECTION CONTAINER — merits.html
+   ============================================================ */
+.section{
+  margin:0 var(--gutter);padding:12px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);
+}
+.section + .section{margin-top:10px}
+.section__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.section__bar .spacer{flex:1}
+.section__body{margin:0;font-size:13px;color:var(--muted)}
+.section__body b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   CLUB CREST PLATE — club-selection.html, unchanged.
+   Third-party crests never composite straight onto our surfaces:
+   the plate is what gets measured against the surface, not the
+   crest, so optical weight is constant for every club.
+   ============================================================ */
+.plate{
+  --plate-size:40px;
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  width:var(--plate-size);height:var(--plate-size);
+  padding:calc(var(--plate-size) * .125);
+  border-radius:calc(var(--plate-size) * .28);
+  background:var(--plate);
+  box-shadow:inset 0 0 0 1px var(--plate-edge);
+  overflow:hidden;
+  font-size:calc(var(--plate-size) * .30);
+  font-weight:800;letter-spacing:-.03em;line-height:1;
+  color:var(--acid-ink);text-transform:uppercase;
+  -webkit-user-select:none;user-select:none;
+}
+.plate--sm{--plate-size:28px}
+
+/* ============================================================
+   FILTER PAIR — the corrected Hall of Fame pair, specified in
+   sheets.html. Season is three short single-line values that
+   change one field, so it is a dropdown anchored under its own
+   trigger. Category needs sub-copy and runs to "Member of the
+   Season", so it is a sheet. Both are the same control language,
+   and each field now carries its own label — the shipped screen
+   heads the pair with the single word CATEGORIES, above a Season
+   control, and opens a sheet titled CATEGORY.
+   ============================================================ */
+.hof{display:flex;flex-direction:column;gap:12px;margin:0 var(--gutter)}
+.hof__f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.hof__row{display:flex;gap:10px}
+.hof__f--half{flex:0 0 auto;width:calc(50% - 5px)}
+.hof__f--rest{flex:1;min-width:0;justify-content:flex-end}
+.hof__l{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);
+}
+.hof__hint{margin:0;font-size:11.5px;line-height:1.35;color:var(--dim);padding-bottom:16px}
+.anchored{position:relative}
+.sel{
+  display:flex;align-items:center;gap:10px;width:100%;height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer;
+  transition:border-color .16s var(--ease);
+}
+.sel:hover{border-color:rgba(255,255,255,.14)}
+.sel[aria-expanded="true"]{border-color:var(--acid)}
+.sel__v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted);transition:transform .18s var(--ease)}
+.sel[aria-expanded="true"] svg{transform:rotate(180deg);color:var(--acid)}
+.sel:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.menu{
+  position:absolute;left:0;top:calc(100% + 6px);z-index:6;
+  min-width:100%;max-height:200px;overflow-y:auto;padding:6px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.55);
+  scrollbar-width:none;
+}
+.menu::-webkit-scrollbar{width:0;height:0}
+.menu__i{
+  display:flex;align-items:center;gap:9px;width:100%;height:42px;padding:0 10px;
+  border:0;border-radius:9px;background:transparent;color:var(--text);
+  font:inherit;font-size:13.5px;font-weight:500;text-align:left;cursor:pointer;
+  font-variant-numeric:tabular-nums;transition:background .14s var(--ease);
+}
+.menu__i:hover{background:rgba(255,255,255,.06)}
+.menu__i[aria-selected="true"]{background:var(--acid-wash);color:var(--acid);font-weight:600}
+.menu__i svg{width:16px;height:16px;margin-left:auto;opacity:0;color:var(--acid)}
+.menu__i[aria-selected="true"] svg{opacity:1}
+.menu__i:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+/* while the menu is open the rest of the group goes inert rather than
+   sitting half-covered and still tappable, which is what HF-02 does */
+.hof.is-open .hof__inert{opacity:.35;pointer-events:none;transition:opacity .18s var(--ease)}
+
+/* ============================================================
+   PODIUM — merits.html's plinth construction. Rank is a numeral
+   plus ring opacity; there is no metal and no second hue. A slot
+   nobody holds yet is a dashed accent hairline, which is
+   states.html's rule for "something that should exist and does
+   not yet" — not an empty grey circle labelled 0 points.
+   ============================================================ */
+.podium{
+  display:grid;grid-template-columns:1fr 1.14fr 1fr;align-items:end;gap:8px;
+  padding:18px 10px 16px;overflow:hidden;
+  border-radius:var(--r-panel);background:var(--surface);
+}
+.plinth{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
+.plinth__badge{position:relative;margin-bottom:8px}
+.plinth__avatar{
+  width:52px;height:52px;
+  box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--ring,rgba(255,255,255,.20));
+}
+.plinth--first .plinth__avatar{width:64px;height:64px}
+.plinth__open{display:block;width:52px;height:52px}
+.plinth__rank{
+  position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);
+  min-width:21px;height:21px;padding:0 6px;border-radius:var(--r-pill);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;
+  background:var(--rchip,#2A303A);color:var(--rchip-ink,#FFF);
+  box-shadow:0 0 0 2px var(--surface);
+}
+.plinth__name{
+  margin:5px 0 2px;max-width:100%;font-size:12.5px;font-weight:600;line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.plinth__score{font-size:12.5px;font-weight:700;color:var(--acid);font-variant-numeric:tabular-nums}
+.plinth--open .plinth__name{color:var(--dim);font-weight:500}
+.plinth--open .plinth__score{color:var(--dim);font-weight:600}
+.pmeta{
+  display:flex;align-items:center;gap:11px;margin-top:10px;padding:11px 12px;
+  border-radius:var(--r-panel);background:var(--sunken);
+}
+.pmeta__id{flex:1;min-width:0}
+.pmeta__id b{display:block;font-size:12.5px;font-weight:600;letter-spacing:-.005em}
+.pmeta__id span{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+.pmeta__t{
+  flex:0 0 auto;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+
+/* ============================================================
+   ROLL OF HONOUR — the merits.html row, unchanged. The current
+   member is the accent-wash row with an accent left edge, not the
+   literal string "(ME)" appended to their own name.
+   ============================================================ */
+.board{list-style:none;margin:0;padding:0;border-radius:var(--r-panel);background:var(--surface);overflow:hidden}
+.row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.row:first-child{border-top:0}
+.row--you{background:var(--acid-wash);box-shadow:inset 3px 0 0 var(--acid)}
+.row__n{flex:0 0 20px;text-align:center;font-size:12px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums}
+.row--you .row__n{color:var(--acid)}
+.row__avatar{width:34px;height:34px}
+.row__id{flex:1;min-width:0}
+.row__name{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row__sub{display:block;margin-top:2px;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row__v{
+  flex:0 0 auto;text-align:right;font-size:13.5px;font-weight:700;color:var(--acid);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;
+}
+.row__v small{display:block;margin-top:1px;font-size:9.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim)}
+.row__ic{
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  width:34px;height:34px;border-radius:var(--r-panel);
+  background:var(--acid-wash);color:var(--acid);
+}
+.row__ic svg{width:17px;height:17px}
+.more{display:flex;justify-content:center;margin:12px 0 0}
+.note{
+  display:flex;align-items:flex-start;gap:11px;
+  margin:10px var(--gutter) 0;padding:13px 14px;
+  border-radius:var(--r-card);background:var(--surface);
+}
+.note svg{width:19px;height:19px;color:var(--acid);flex:0 0 auto;margin-top:1px}
+.note p{margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.note p b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   SEGMENTED CONTROL — filters-pickers.html's `.tax`, unchanged.
+   Two halves on a sunken track; the selected half is the accent
+   plate with --acid-ink on it. The shipped control paints a
+   #6B4EFF rectangle with two rounded and two square corners over
+   a #2F0C5A track, and #6B4EFF is not a token in lib/.
+   ============================================================ */
+.taxrow{display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 14px}
+.tax{
+  flex:1;display:flex;gap:4px;height:46px;padding:4px;
+  border-radius:var(--r-pill);background:var(--sunken);
+}
+.tax__half{
+  flex:1 1 0;min-width:0;
+  display:flex;align-items:center;justify-content:center;
+  height:38px;border-radius:var(--r-pill);background:transparent;
+  transition:background .18s var(--ease);
+}
+.tax__half[data-on="true"]{background:var(--acid)}
+.tax__btn{
+  flex:1 1 auto;min-width:0;height:38px;padding:0 6px;
+  border:0;border-radius:var(--r-pill);background:transparent;color:var(--muted);
+  font:inherit;font-size:13.5px;font-weight:600;letter-spacing:-.005em;
+  white-space:nowrap;cursor:pointer;transition:color .18s var(--ease);
+}
+.tax__btn:hover{color:var(--text)}
+.tax__half[data-on="true"] .tax__btn{color:var(--acid-ink);font-weight:700}
+.tax__btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   EMPTY PANEL — states.html, unchanged. It sits in the slot the
+   missing content would have filled, so it uses the section fill
+   and the section hairline. The shipped screen keeps a gold
+   plaque, two laurel sprigs and a watermarked roundel on screen
+   whether there is anything to show or not.
+   ============================================================ */
+.empty{
+  margin:0 var(--gutter);padding:24px 20px 22px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.empty h3{margin:14px 0 0;font-size:17px;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+.empty p{margin:7px auto 0;max-width:31ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.empty p b{color:var(--text);font-weight:600}
+.empty .pill-btn{margin-top:16px}
+/* the line that replaces an action where there genuinely is none */
+.wait{
+  display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+  padding:8px 13px;border-radius:var(--r-pill);background:var(--sunken);
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+}
+.wait svg{width:13px;height:13px;flex:0 0 auto}
+/* ILLUSTRATION — states.html's "range": surface fill = context,
+   accent wash + 1.8 stroke = something that exists, 1.8 accent
+   stroke on a 5-5 dash = something that should exist and does not
+   yet. One ground line at y72. No other marks. */
+.ill{display:block;width:132px;height:88px;margin:0 auto}
+
+/* ============================================================
+   TIER LADDER — Achievements · Leader status, populated.
+   The four tiers and their thresholds are read straight out of
+   getLeaderShipStatus() in lib/pages/profile/profile_body.dart.
+   ============================================================ */
+.standing{
+  display:flex;gap:12px;margin:0 var(--gutter);padding:16px;
+  border-radius:var(--r-card);background:var(--surface);
+}
+.standing__main{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.standing__t{margin:0;font-size:22px;font-weight:800;letter-spacing:-.025em;line-height:1.05;text-transform:uppercase}
+.standing__s{margin:7px 0 0;font-size:12px;color:var(--muted)}
+.standing__s b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.standing__score{
+  flex:0 0 92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  padding:12px 8px;border-radius:var(--r-panel);background:var(--sunken);
+}
+.standing__score b{font-size:22px;font-weight:700;letter-spacing:-.025em;color:var(--acid);font-variant-numeric:tabular-nums}
+.standing__score span{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);text-align:center}
+
+.prog{margin:0 0 12px;padding:13px;border-radius:var(--r-panel);background:var(--surface)}
+.prog__row{display:flex;align-items:baseline;gap:8px;margin:0 0 9px}
+.prog__row b{flex:1;font-size:13px;font-weight:600}
+.prog__row span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.prog__bar{display:block;height:8px;border-radius:var(--r-pill);background:var(--sunken);overflow:hidden}
+.prog__fill{display:block;height:100%;border-radius:var(--r-pill);background:var(--acid)}
+
+.tier{list-style:none;margin:0;padding:0;border-radius:var(--r-panel);background:var(--surface);overflow:hidden}
+.tier li{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.tier li:first-child{border-top:0}
+.tier li[aria-current="true"]{background:var(--acid-wash);box-shadow:inset 3px 0 0 var(--acid)}
+.tier__d{
+  flex:0 0 auto;width:9px;height:9px;border-radius:50%;
+  box-shadow:inset 0 0 0 1.6px var(--dim);
+}
+.tier li[aria-current="true"] .tier__d{background:var(--acid);box-shadow:none}
+.tier__id{flex:1;min-width:0}
+.tier__n{display:block;font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.tier li[aria-current="true"] .tier__n{color:var(--acid)}
+.tier__s{display:block;margin-top:2px;font-size:11.5px;color:var(--dim)}
+.tier__v{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums}
+.tier li[aria-current="true"] .tier__v{color:var(--acid)}
+
+/* ============================================================
+   SKELETON — states.html. Bones are white alphas so the same bone
+   reads on --section, --surface and --sunken. One 1.5 s sweep.
+   ============================================================ */
+.bone{position:relative;overflow:hidden;background:var(--bone);border-radius:5px;flex:0 0 auto}
+.bone--pill{border-radius:var(--r-pill)}
+.bone--circ{border-radius:50%}
+.bone::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 18%,var(--sheen) 50%,transparent 82%);
+  transform:translateX(-100%);
+  animation:shim 1.5s linear infinite;
+}
+.skel-fields{display:flex;flex-direction:column;gap:12px;margin:0 var(--gutter)}
+.skel-fields .bone{height:var(--h-field);border-radius:var(--r-panel)}
+.skel-pod{
+  display:grid;grid-template-columns:1fr 1.14fr 1fr;align-items:end;gap:8px;
+  padding:18px 10px 16px;border-radius:var(--r-panel);background:var(--surface);
+}
+.skel-pod > div{display:flex;flex-direction:column;align-items:center;gap:7px}
+.skel-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.skel-row:first-child{border-top:0}
+.skel-row__id{flex:1;min-width:0}
+
+/* ============================================================
+   SHEET SHELL — sheets.html, unchanged. Docked in the flow at
+   the foot of its own frame, so the review page can show it
+   without anyone having to tap for it. HF-03 ships with top
+   corner radius 0, no grabber and no safe-area inset.
+   ============================================================ */
+.dock{margin-top:20px}
+.dock .sheet{max-height:none}
+.dimmed{opacity:.34;filter:saturate(.55);pointer-events:none}
+.sheet{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;
+  width:100%;max-height:min(var(--sheet-vh),var(--sheet-max));
+  border:1px solid var(--line);border-bottom:0;
+  border-radius:var(--r-sheet) var(--r-sheet) 0 0;
+  background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%);
+  box-shadow:0 -20px 50px rgba(0,0,0,.6);
+  overflow:hidden;
+}
+.sheet__grab{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  height:26px;width:100%;
+}
+.sheet__grab::before{
+  content:"";width:var(--grab-w);height:var(--grab-h);border-radius:var(--r-pill);
+  background:rgba(255,255,255,.18);
+}
+.sheet__head{
+  flex:0 0 auto;display:flex;align-items:center;gap:9px;
+  padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);
+}
+.sheet__title{
+  margin:0;flex:1;min-width:0;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text);
+}
+.sheet__x{
+  flex:0 0 auto;position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-4px;
+  border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted);
+}
+.sheet__x::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.sheet__x svg{width:16px;height:16px}
+.sheet__body{flex:1 1 auto;min-height:0;padding:12px var(--gutter)}
+.sheet__lede{margin:0 0 12px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+/* a sheet with no foot still clears the home indicator */
+.sheet__body--last{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+
+/* OPTION ROW — sheets.html. Selected = accent wash over the
+   sunken fill, accent rim, accent label, filled radio. */
+.opt{
+  display:flex;align-items:center;gap:12px;width:100%;
+  min-height:var(--h-row);padding:11px 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background-color:var(--sunken);background-image:none;
+  color:var(--text);font:inherit;font-size:13.5px;font-weight:500;
+  text-align:left;
+}
+.opt + .opt{margin-top:8px}
+.opt__text{flex:1;min-width:0}
+.opt__text small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.opt[aria-checked="true"]{
+  background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash));
+  border-color:var(--acid-line);color:var(--acid);font-weight:600;
+}
+.opt[aria-checked="true"] .opt__text small{color:rgba(155,226,34,.72)}
+.radio{
+  position:relative;flex:0 0 auto;width:20px;height:20px;border-radius:50%;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);
+}
+.radio svg{position:absolute;inset:0;width:20px;height:20px;opacity:0;color:var(--acid)}
+.opt[aria-checked="true"] .radio{box-shadow:inset 0 0 0 1.7px var(--acid);background:transparent}
+.opt[aria-checked="true"] .radio svg{opacity:1}
+
+/* ============================================================
+   DIALOG SHELL — dialogs.html, unchanged. Shown in the flow at
+   the foot of its frame over a blurred, dimmed backdrop, which is
+   how the live modal presents (σ ≈ 12–15 pt plus a scrim) and the
+   one thing about it worth keeping.
+   ============================================================ */
+.stagedlg{
+  position:relative;overflow:hidden;isolation:isolate;
+  margin:34px var(--gutter) 0;padding:26px 0;min-height:544px;
+  border-radius:var(--r-card);
+  display:flex;align-items:center;justify-content:center;
+}
+.stagedlg__back{position:absolute;inset:0;padding:14px 0;filter:blur(9px);pointer-events:none}
+.stagedlg__scrim{position:absolute;inset:0;background:rgba(3,4,1,.72)}
+.dlg{
+  position:relative;z-index:2;
+  width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max);
+  margin:0 auto;padding:var(--dlg-pad);
+  border-radius:var(--r-card);background:var(--surface);
+  border:1px solid var(--line);
+  box-shadow:0 24px 60px rgba(0,0,0,.55);
+}
+.dlg__close{
+  position:absolute;top:12px;right:12px;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:50%;
+  background:var(--sunken);border:1px solid var(--line-soft);color:var(--muted);
+  cursor:pointer;transition:color .18s var(--ease),background .18s var(--ease);
+}
+.dlg__close svg{width:15px;height:15px}
+.dlg__close:hover{color:var(--text);background:#1A1F27}
+.dlg__close:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.dlg__title{
+  margin:14px 0 0;padding-right:26px;
+  font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.2;
+}
+.dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.dlg__body b{color:var(--text);font-weight:600}
+.dlg__facts{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+.act{display:flex;gap:10px;margin-top:18px}
+/* ICON TILE — dialogs.html's one state marker */
+.tile{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;border-radius:var(--r-panel);flex:0 0 auto;
+}
+.tile svg{width:22px;height:22px}
+.tile--acid{background:var(--acid-wash);color:var(--acid)}
+
+/* ---- share menu, and the sheet's own controls ---- */
+.pop{
+  position:absolute;top:calc(100% + 8px);right:0;z-index:80;min-width:206px;padding:7px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);
+  box-shadow:0 18px 44px rgba(0,0,0,.55)
+}
+.pop[hidden]{display:none}
+.pop__i{
+  display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border:0;border-radius:9px;
+  background:none;color:var(--text);font:inherit;font-size:13px;text-align:left;
+  white-space:nowrap;cursor:pointer
+}
+.pop__i:hover{background:var(--sunken)}
+.pop__i:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.pop__i svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted)}
+.pop__done{margin:4px 6px 2px;font-size:11.5px;color:var(--acid)}
+.pop__done[hidden]{display:none}
+
+.row[hidden]{display:none}
+.more .pill-btn[disabled]{color:var(--dim);cursor:default}
+.board__none{margin:12px 0 4px;font-size:13px;color:var(--muted);text-align:center}
+.board__none[hidden]{display:none}
+
+/* the award sheet's rows are real radios, and its ✕ is a real button */
+.opt{cursor:pointer}
+.opt:focus-visible{outline:2px solid var(--acid);outline-offset:2px;border-radius:var(--r-panel)}
+button.sheet__x{border:0;background:none;padding:0;cursor:pointer;color:var(--muted)}
+button.sheet__x:hover{color:var(--text)}
+button.sheet__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+  .bone::after{display:none}
+  .bone{background:rgba(255,255,255,.08)}
+}
+</style>
+</head>
+<body>
+<main class="screen">
+
+<!-- ============================================================
+     FRAME 1 — HALL OF FAME, the list
+     Covers HF-04 (resting) and the top of HF-02.
+     ============================================================ -->
+<section class="frame" data-title="Hall of Fame">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+
+  <h1 class="title">Hall of Fame</h1>
+  <p class="lede">Every <b>Member of the Match</b>, Week and Season awarded at Barcelona. The
+    podium is who leads the season you are looking at; the roll beneath it is every award, most
+    recent first.</p>
+
+  <div class="hof" id="hof1">
+    <div class="hof__row">
+      <div class="hof__f hof__f--half">
+        <span class="hof__l" id="sl1">Season</span>
+        <div class="anchored">
+          <button class="sel" type="button" id="seasonBtn1" aria-labelledby="sl1" aria-expanded="false" aria-haspopup="listbox">
+            <span class="sel__v" data-field="season">2025/26</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+          </button>
+          <div class="menu" id="seasonMenu1" role="listbox" aria-label="Season" hidden>
+            <button class="menu__i" type="button" role="option" aria-selected="true">2025/26
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+            <button class="menu__i" type="button" role="option" aria-selected="false">2024/25
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+            <button class="menu__i" type="button" role="option" aria-selected="false">2023/24
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="hof__f hof__f--rest hof__inert">
+        <p class="hof__hint">Awards are ranked inside one season.</p>
+      </div>
+    </div>
+
+    <div class="hof__f hof__inert">
+      <span class="hof__l" id="al1">Award</span>
+      <button class="sel" type="button" aria-labelledby="al1" aria-haspopup="dialog">
+        <span class="sel__v" data-field="award">Member of the Match</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <h2 class="label" id="hofScope">This season</h2>
+  <section class="section">
+    <div class="section__bar">
+      <span class="status-pill" id="hofCount">6 awarded · 2 holders</span>
+      <span class="spacer"></span>
+      <div class="anchored">
+        <button class="icon-btn" type="button" aria-label="Share the Hall of Fame" id="shareBtn" aria-expanded="false" aria-haspopup="menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></svg>
+        </button>
+        <div class="pop" id="sharePop" role="menu" aria-label="Share the Hall of Fame" hidden>
+          <p class="pop__done" id="shareDone" hidden>Link copied</p>
+          <button class="pop__i" type="button" role="menuitem" data-share="copy">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.4"/><path d="M15 6.5V6A2 2 0 0 0 13 4H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h.5"/></svg>
+            Copy the link
+          </button>
+          <button class="pop__i" type="button" role="menuitem" data-share="backchat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>
+            Post it to Backchat
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="podium" id="hofPodium">
+      <div class="plinth" style="--ring:rgba(255,255,255,.45);--rchip:#C9CFD8;--rchip-ink:#0B0E06">
+        <div class="plinth__badge">
+          <div class="avatar plinth__avatar" style="background-image:var(--av-02)" role="img" aria-label="capitan_7"></div>
+          <span class="plinth__rank">2</span>
+        </div>
+        <span class="plinth__name">capitan_7</span>
+        <span class="plinth__score">2 awards</span>
+      </div>
+
+      <div class="plinth plinth--first" style="--ring:#9BE222;--rchip:#9BE222;--rchip-ink:#0B0E06">
+        <div class="plinth__badge">
+          <div class="avatar plinth__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></div>
+          <span class="plinth__rank">1</span>
+        </div>
+        <span class="plinth__name">You</span>
+        <span class="plinth__score">4 awards</span>
+      </div>
+
+      <div class="plinth plinth--open">
+        <div class="plinth__badge">
+          <svg class="plinth__open" viewBox="0 0 56 56" fill="none" aria-hidden="true">
+            <circle cx="28" cy="28" r="26.1" stroke="#9BE222" stroke-opacity=".34" stroke-width="1.8" stroke-dasharray="5 5"/>
+          </svg>
+          <span class="plinth__rank">3</span>
+        </div>
+        <span class="plinth__name">Vacant</span>
+        <span class="plinth__score">&mdash;</span>
+      </div>
+    </div>
+
+    <div class="pmeta" id="hofMeta">
+      <span class="plate plate--sm" aria-hidden="true">INT</span>
+      <span class="pmeta__id">
+        <b>Barcelona v Inter Milan</b>
+        <span>Member of the Match &middot; Sun 28 Dec 2025</span>
+      </span>
+      <span class="pmeta__t">Latest</span>
+    </div>
+  </section>
+
+  <div class="head">
+    <h2>Roll of honour</h2>
+    <span class="tag">Newest first</span>
+  </div>
+  <section class="section">
+    <ol class="board" id="hofRoll">
+      <li class="row row--you">
+        <span class="avatar row__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></span>
+        <span class="row__id">
+          <span class="row__name">You &middot; dylan_n</span>
+          <span class="row__sub">v Inter Milan &middot; Sun 28 Dec</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+      <li class="row">
+        <span class="avatar row__avatar" style="background-image:var(--av-02)" role="img" aria-label="capitan_7"></span>
+        <span class="row__id">
+          <span class="row__name">capitan_7</span>
+          <span class="row__sub">v Sevilla &middot; Sat 20 Dec</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+      <li class="row row--you">
+        <span class="avatar row__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></span>
+        <span class="row__id">
+          <span class="row__name">You &middot; dylan_n</span>
+          <span class="row__sub">v Girona &middot; Sun 7 Dec</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+      <li class="row">
+        <span class="avatar row__avatar" style="background-image:var(--av-02)" role="img" aria-label="capitan_7"></span>
+        <span class="row__id">
+          <span class="row__name">capitan_7</span>
+          <span class="row__sub">v Real Betis &middot; Sat 29 Nov</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+      <li class="row row--you">
+        <span class="avatar row__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></span>
+        <span class="row__id">
+          <span class="row__name">You &middot; dylan_n</span>
+          <span class="row__sub">v Ajax &middot; Wed 26 Nov</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+      <li class="row row--you">
+        <span class="avatar row__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></span>
+        <span class="row__id">
+          <span class="row__name">You &middot; dylan_n</span>
+          <span class="row__sub">v Real Madrid &middot; Sun 9 Nov</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+    </ol>
+    <p class="board__none" id="hofNone" hidden>No award of this kind in that season.</p>
+    <div class="more"><button class="pill-btn" type="button" id="hofMore">Load earlier awards</button></div>
+  </section>
+
+  <div class="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+    <p>Member of the Match goes to the member whose War Room votes best matched the result. It is
+      worth <b>250 merits</b>, a prize, and a place here.</p>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>There is <b>no Hall of Fame in the code</b> — no page, no route, no widget, no model.
+    The Profile row draws a chevron and its tap handler is a bare <code>break</code>
+    (<code>profile_body.dart:375&ndash;376</code>), so today the row does nothing at all. This is the
+    first build of the screen.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+
+<!-- ============================================================
+     FRAME 2 — SEASON DROPDOWN OPEN  (HF-02)
+     ============================================================ -->
+<section class="frame" data-title="Season dropdown">
+
+  <div class="bar">
+    <span class="icon-btn" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </span>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+
+  <h1 class="title">Hall of Fame</h1>
+
+  <div class="hof is-open" id="hof2">
+    <div class="hof__row">
+      <div class="hof__f hof__f--half">
+        <span class="hof__l" id="sl2">Season</span>
+        <div class="anchored">
+          <button class="sel" type="button" id="seasonBtn2" aria-labelledby="sl2" aria-expanded="true" aria-haspopup="listbox">
+            <span class="sel__v" data-field="season">2025/26</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+          </button>
+          <div class="menu" id="seasonMenu2" role="listbox" aria-label="Season">
+            <button class="menu__i" type="button" role="option" aria-selected="true">2025/26
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+            <button class="menu__i" type="button" role="option" aria-selected="false">2024/25
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+            <button class="menu__i" type="button" role="option" aria-selected="false">2023/24
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="hof__f hof__f--rest hof__inert">
+        <p class="hof__hint">Awards are ranked inside one season.</p>
+      </div>
+    </div>
+
+    <div class="hof__f hof__inert">
+      <span class="hof__l" id="al2">Award</span>
+      <button class="sel" type="button" aria-labelledby="al2" aria-haspopup="dialog">
+        <span class="sel__v" data-field="award">Member of the Match</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <h2 class="label">This season</h2>
+  <section class="section">
+    <div class="podium" id="hofPodium2">
+      <div class="plinth" style="--ring:rgba(255,255,255,.45);--rchip:#C9CFD8;--rchip-ink:#0B0E06">
+        <div class="plinth__badge">
+          <div class="avatar plinth__avatar" style="background-image:var(--av-02)" role="img" aria-label="capitan_7"></div>
+          <span class="plinth__rank">2</span>
+        </div>
+        <span class="plinth__name">capitan_7</span>
+        <span class="plinth__score">2 awards</span>
+      </div>
+      <div class="plinth plinth--first" style="--ring:#9BE222;--rchip:#9BE222;--rchip-ink:#0B0E06">
+        <div class="plinth__badge">
+          <div class="avatar plinth__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></div>
+          <span class="plinth__rank">1</span>
+        </div>
+        <span class="plinth__name">You</span>
+        <span class="plinth__score">4 awards</span>
+      </div>
+      <div class="plinth plinth--open">
+        <div class="plinth__badge">
+          <svg class="plinth__open" viewBox="0 0 56 56" fill="none" aria-hidden="true">
+            <circle cx="28" cy="28" r="26.1" stroke="#9BE222" stroke-opacity=".34" stroke-width="1.8" stroke-dasharray="5 5"/>
+          </svg>
+          <span class="plinth__rank">3</span>
+        </div>
+        <span class="plinth__name">Vacant</span>
+        <span class="plinth__score">&mdash;</span>
+      </div>
+    </div>
+  </section>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>Live &mdash; tap <b>2025/26</b>. The menu's left edge is flush with its trigger and its top
+    edge sits <b>6 px below</b> the trigger's bottom edge, so the trigger stays readable and the menu
+    plainly belongs to it. The Award field underneath dims to <b>35% and goes inert</b>, so it reads
+    as unavailable rather than half-covered and still tappable. On <code>HF-02</code> the shipped
+    menu sits <b>6 pt above</b> its own trigger's top edge and <b>4 pt right</b> of its left edge, so
+    it covers the control that opened it, and the Category field it lands on stays live.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+
+<!-- ============================================================
+     FRAME 3 — CATEGORY SHEET  (HF-03)
+     The sheet already specified in sheets.html, docked in flow.
+     ============================================================ -->
+<section class="frame" data-title="Award category sheet">
+
+  <div class="dimmed" aria-hidden="true">
+    <div class="bar">
+      <span class="icon-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </span>
+      <span class="bar__eyebrow">Profile</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Hall of Fame</h1>
+    <div class="hof">
+      <div class="hof__row">
+        <div class="hof__f hof__f--half">
+          <span class="hof__l">Season</span>
+          <span class="sel"><span class="sel__v" data-field="season">2025/26</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+          </span>
+        </div>
+        <div class="hof__f hof__f--rest"><p class="hof__hint">Awards are ranked inside one season.</p></div>
+      </div>
+      <div class="hof__f">
+        <span class="hof__l">Award</span>
+        <span class="sel" style="border-color:var(--acid)"><span class="sel__v" data-field="award">Member of the Match</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg);color:var(--acid)"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </span>
+      </div>
+    </div>
+    <h2 class="label">This season</h2>
+    <div class="section">
+      <div class="podium" id="hofPodium3">
+        <div class="plinth" style="--ring:rgba(255,255,255,.45);--rchip:#C9CFD8;--rchip-ink:#0B0E06">
+          <div class="plinth__badge">
+            <div class="avatar plinth__avatar" style="background-image:var(--av-02)"></div>
+            <span class="plinth__rank">2</span>
+          </div>
+          <span class="plinth__name">capitan_7</span>
+          <span class="plinth__score">2 awards</span>
+        </div>
+        <div class="plinth plinth--first" style="--ring:#9BE222;--rchip:#9BE222;--rchip-ink:#0B0E06">
+          <div class="plinth__badge">
+            <div class="avatar plinth__avatar" style="background-image:var(--av-01)"></div>
+            <span class="plinth__rank">1</span>
+          </div>
+          <span class="plinth__name">You</span>
+          <span class="plinth__score">4 awards</span>
+        </div>
+        <div class="plinth plinth--open">
+          <div class="plinth__badge">
+            <svg class="plinth__open" viewBox="0 0 56 56" fill="none">
+              <circle cx="28" cy="28" r="26.1" stroke="#9BE222" stroke-opacity=".34" stroke-width="1.8" stroke-dasharray="5 5"/>
+            </svg>
+            <span class="plinth__rank">3</span>
+          </div>
+          <span class="plinth__name">Vacant</span>
+          <span class="plinth__score">&mdash;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dock">
+    <section class="sheet" aria-label="Award category">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Award</h3>
+        <span class="sheet__x" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </span>
+      </div>
+      <div class="sheet__body sheet__body--last" role="radiogroup" aria-label="Award category">
+        <p class="sheet__lede">Hall of Fame shows one award at a time. Pick which.</p>
+        <div class="opt" role="radio" aria-checked="true">
+          <span class="opt__text">Member of the Match<small>Awarded every fixture &middot; 250 merits</small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+        <div class="opt" role="radio" aria-checked="false">
+          <span class="opt__text">Member of the Week<small>Awarded every Monday &middot; 400 merits</small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+        <div class="opt" role="radio" aria-checked="false">
+          <span class="opt__text">Member of the Season<small>Awarded at the season close &middot; 1,000 merits</small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>The sheet shell from <code>sheets.html</code>, unchanged: <b>18 px top corners</b>, a
+    grabber, and a body that pads its own safe-area inset. <code>HF-03</code> has square top
+    corners, no grabber, and its last row finishes <b>28 pt from the screen edge inside the home
+    gesture zone</b>. The three award names, and the fact that they are the only three, come from
+    <code>enum.dart:191&ndash;192</code>.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+
+<!-- ============================================================
+     FRAME 4 — AWARD ANNOUNCED  (HF-01)
+     dialogs.html's shell over a blurred, dimmed Hall of Fame.
+     ============================================================ -->
+<section class="frame" data-title="Award announced">
+
+  <div class="stagedlg">
+    <div class="stagedlg__back" aria-hidden="true">
+      <div class="bar">
+        <span class="icon-btn"></span>
+        <span class="bar__eyebrow">Profile</span>
+        <span class="spacer"></span>
+      </div>
+      <h1 class="title">Hall of Fame</h1>
+      <div class="hof">
+        <div class="hof__row">
+          <div class="hof__f hof__f--half">
+            <span class="hof__l">Season</span>
+            <span class="sel"><span class="sel__v" data-field="season">2025/26</span></span>
+          </div>
+          <div class="hof__f hof__f--rest"><p class="hof__hint">Awards are ranked inside one season.</p></div>
+        </div>
+        <div class="hof__f">
+          <span class="hof__l">Award</span>
+          <span class="sel"><span class="sel__v" data-field="award">Member of the Match</span></span>
+        </div>
+      </div>
+      <h2 class="label">This season</h2>
+      <div class="section">
+        <div class="podium">
+          <div class="plinth" style="--ring:rgba(255,255,255,.45)">
+            <div class="plinth__badge"><div class="avatar plinth__avatar" style="background-image:var(--av-02)"></div></div>
+            <span class="plinth__name">capitan_7</span><span class="plinth__score">2 awards</span>
+          </div>
+          <div class="plinth plinth--first" style="--ring:#9BE222">
+            <div class="plinth__badge"><div class="avatar plinth__avatar" style="background-image:var(--av-01)"></div></div>
+            <span class="plinth__name">You</span><span class="plinth__score">4 awards</span>
+          </div>
+          <div class="plinth plinth--open">
+            <div class="plinth__badge">
+              <svg class="plinth__open" viewBox="0 0 56 56" fill="none">
+                <circle cx="28" cy="28" r="26.1" stroke="#9BE222" stroke-opacity=".34" stroke-width="1.8" stroke-dasharray="5 5"/>
+              </svg>
+            </div>
+            <span class="plinth__name">Vacant</span><span class="plinth__score">&mdash;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stagedlg__scrim" aria-hidden="true"></div>
+
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="hof-dlg-t">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+      <span class="tile tile--acid" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+      </span>
+      <h3 class="dlg__title" id="hof-dlg-t">You&rsquo;re Member of the Match</h3>
+      <p class="dlg__body">Barcelona v Inter Milan, Sun 28 Dec. You polled highest of
+        <b>1,284</b> Barcelona members in the War Room, so you keep the award until the next
+        fixture and you are on the Hall of Fame for good.</p>
+      <div class="dlg__facts">
+        <span class="status-pill">+250 merits</span>
+        <span class="tag">Prize to come</span>
+      </div>
+      <div class="act">
+        <button class="btn btn--acid" type="button">Hall of Fame</button>
+        <button class="btn btn--ghost" type="button">Not now</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>Three fixes to <code>HF-01</code>. It draws <b>no dismiss control of any kind</b> &mdash;
+    no ✕, no &ldquo;Later&rdquo;, no drag handle, no stated tap-out; the only way off the screen is
+    the CTA. Its <code>CONGRATULATIONS!</code> and <code>MEMBER OF THE MATCH</code> lines are the
+    <b>same size, weight and colour</b>, then the first 28 characters of body copy repeat them a
+    third time. And its crown ornament is flat <code>#DFAA11</code>, which is
+    <code>CColor.colorVeto</code> &mdash; the amber the app paints a <em>blocked</em> proposal
+    with.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+
+<!-- ============================================================
+     FRAME 5 — HALL OF FAME LOADING
+     states.html bones. Unrecorded in the capture set.
+     ============================================================ -->
+<section class="frame" data-title="Hall of Fame loading">
+
+  <div class="bar">
+    <span class="icon-btn" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </span>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Hall of Fame</h1>
+
+  <div class="skel-fields" aria-hidden="true">
+    <div class="hof__row" style="gap:10px">
+      <span class="bone" style="width:calc(50% - 5px)"></span>
+    </div>
+    <span class="bone"></span>
+  </div>
+
+  <h2 class="label" aria-hidden="true"><span class="bone" style="display:inline-block;width:104px;height:16px"></span></h2>
+  <section class="section" aria-busy="true" aria-label="Loading the Hall of Fame">
+    <div class="skel-pod">
+      <div>
+        <span class="bone bone--circ" style="width:52px;height:52px"></span>
+        <span class="bone" style="width:56px;height:10px"></span>
+        <span class="bone" style="width:40px;height:10px"></span>
+      </div>
+      <div>
+        <span class="bone bone--circ" style="width:64px;height:64px"></span>
+        <span class="bone" style="width:66px;height:10px"></span>
+        <span class="bone" style="width:44px;height:10px"></span>
+      </div>
+      <div>
+        <span class="bone bone--circ" style="width:52px;height:52px"></span>
+        <span class="bone" style="width:56px;height:10px"></span>
+        <span class="bone" style="width:40px;height:10px"></span>
+      </div>
+    </div>
+    <div class="board" style="margin-top:10px">
+      <div class="skel-row">
+        <span class="bone bone--circ" style="width:34px;height:34px"></span>
+        <span class="skel-row__id"><span class="bone" style="display:block;width:58%;height:11px"></span><span class="bone" style="display:block;width:42%;height:9px;margin-top:6px"></span></span>
+        <span class="bone" style="width:34px;height:13px"></span>
+      </div>
+      <div class="skel-row">
+        <span class="bone bone--circ" style="width:34px;height:34px"></span>
+        <span class="skel-row__id"><span class="bone" style="display:block;width:44%;height:11px"></span><span class="bone" style="display:block;width:52%;height:9px;margin-top:6px"></span></span>
+        <span class="bone" style="width:34px;height:13px"></span>
+      </div>
+      <div class="skel-row">
+        <span class="bone bone--circ" style="width:34px;height:34px"></span>
+        <span class="skel-row__id"><span class="bone" style="display:block;width:60%;height:11px"></span><span class="bone" style="display:block;width:38%;height:9px;margin-top:6px"></span></span>
+        <span class="bone" style="width:34px;height:13px"></span>
+      </div>
+      <div class="skel-row">
+        <span class="bone bone--circ" style="width:34px;height:34px"></span>
+        <span class="skel-row__id"><span class="bone" style="display:block;width:50%;height:11px"></span><span class="bone" style="display:block;width:46%;height:9px;margin-top:6px"></span></span>
+        <span class="bone" style="width:34px;height:13px"></span>
+      </div>
+    </div>
+  </section>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>Bones from <code>states.html</code> at the exact geometry of the loaded frame, so nothing
+    reflows when the data lands. No spinner: the app's default is a
+    <code>#2196F3</code> Material spinner, which is not a brand colour.
+    <code>achievement_screen.dart:110</code> already defines a grey-300/grey-100
+    <code>buildShimmerEffect()</code> &mdash; <b>and never calls it</b>.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+
+<!-- ============================================================
+     FRAME 6 — ACHIEVEMENTS · NO TITLES  (AC-01, the capture)
+     ============================================================ -->
+<section class="frame" data-title="Achievements · no titles">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Achievements</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Achievements">
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Playoff titles</button>
+      </span>
+      <span class="tax__half" data-on="false">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Leader status</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="empty">
+    <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+      <path d="M2 72 L28 36 L54 72 Z" fill="#1C2129"/>
+      <path d="M78 72 L106 30 L132 72 Z" fill="#1C2129" opacity=".7"/>
+      <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M40 72 L66 26 L92 72 Z" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+    </svg>
+    <h3>No playoff titles yet</h3>
+    <p>Barcelona have not won a competition since you joined in September. A title lands here for
+      every member who was voting when it was decided &mdash; you do not have to do anything to
+      claim it.</p>
+    <span class="wait">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+      Next final &middot; 24 May
+    </span>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>The captured screen keeps a gold-framed plaque, two laurel sprigs and a watermarked
+    roundel on screen whether there is anything to show or not &mdash; <b>382 pt of card carrying
+    two lines of text</b>, with 284 pt of bare canvas under it. Here the empty state <em>is</em> the
+    panel. The live copy reads <code>You haven't earned any playoff titles yet. Participate more to
+    earn achievements!</code> &mdash; which asks the member to do something that will not change the
+    outcome.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+
+<!-- ============================================================
+     FRAME 7 — ACHIEVEMENTS · TITLES WON   (NEW — unrecorded)
+     ============================================================ -->
+<section class="frame" data-title="Achievements · titles won">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Achievements</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Achievements">
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Playoff titles</button>
+      </span>
+      <span class="tax__half" data-on="false">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Leader status</button>
+      </span>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="section__bar">
+      <span class="status-pill">3 titles</span>
+      <span class="spacer"></span>
+      <span class="tag">Barcelona</span>
+    </div>
+    <ol class="board">
+      <li class="row">
+        <span class="row__ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">La Liga</span>
+          <span class="row__sub">Won 15 May 2025</span>
+        </span>
+        <span class="row__v">2024/25<small>season</small></span>
+      </li>
+      <li class="row">
+        <span class="row__ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Copa del Rey</span>
+          <span class="row__sub">Won 26 Apr 2025</span>
+        </span>
+        <span class="row__v">2024/25<small>season</small></span>
+      </li>
+      <li class="row">
+        <span class="row__ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">La Liga</span>
+          <span class="row__sub">Won 14 May 2023</span>
+        </span>
+        <span class="row__v">2022/23<small>season</small></span>
+      </li>
+    </ol>
+  </section>
+
+  <div class="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 19 8 9l4 6 3-4.5L22 19H2Z"/></svg>
+    <p>A title is <b>the club's, shared with you</b> because you were a voting member when it was
+      decided &mdash; you cast <b>46 votes</b> in 2024/25. It carries no merits and cannot be
+      lost.</p>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>Entirely new</b> &mdash; nothing in the capture set shows this tab with data, and
+    nothing in <code>lib/</code> defines a playoff title. The word <code>playoff</code> appears in
+    the codebase only as an email toggle (<code>enum.dart:193&ndash;194</code>,
+    <code>'Game/Playoff Emails'</code>); there is no playoff model, list or endpoint. The
+    competitions and dates are Barcelona's own results; <b>the idea that a member shares the
+    club's title, and the vote count beside it, are our proposal</b> &mdash; see the notes.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+
+<!-- ============================================================
+     FRAME 8 — ACHIEVEMENTS · NO SEASON  (AC-02, the capture)
+     ============================================================ -->
+<section class="frame" data-title="Achievements · no season">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Achievements</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Achievements">
+      <span class="tax__half" data-on="false">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Playoff titles</button>
+      </span>
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Leader status</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="empty">
+    <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+      <path d="M2 72 L28 40 L54 72 Z" fill="#1C2129"/>
+      <path d="M82 72 L108 36 L132 72 Z" fill="#1C2129" opacity=".7"/>
+      <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M44 72 L58 48 L74 48 L88 72 Z" fill="rgba(155,226,34,.18)"/>
+      <path d="M44 72 L58 48 M74 48 L88 72 M58 48H74" stroke="#9BE222" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M58 48 L66 30 L74 48" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+    </svg>
+    <h3>No season open at Barcelona</h3>
+    <p>Leader status is worked out inside one season. Barcelona's next season opens on
+      <b>8 August</b> &mdash; until then your <b>2025/26</b> standing is the one that counts, and it
+      stays on your Hall of Fame.</p>
+    <button class="pill-btn" type="button">See 2025/26 standing</button>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>Two fixes to <code>AC-02</code>. Its segmented control paints <b>Playoff titles</b> as the
+    active segment while the card below renders Leader Status content, so the control and the
+    content point at different tabs &mdash; here the highlight follows the content. And its message
+    is <code>No current season found for the default club.</code>, a lookup outcome shown as user
+    copy; the words &ldquo;found&rdquo; and &ldquo;the default club&rdquo; appear nowhere else in the
+    product, and that exact string is <b>not in the codebase at all</b>. There is also no action on
+    the live screen of any kind.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+
+<!-- ============================================================
+     FRAME 9 — ACHIEVEMENTS · LEADER STANDING  (NEW — unrecorded)
+     The four tiers and their thresholds are read out of
+     getLeaderShipStatus(), lib/pages/profile/profile_body.dart.
+     ============================================================ -->
+<section class="frame" data-title="Achievements · leader standing">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Achievements</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Achievements">
+      <span class="tax__half" data-on="false">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Playoff titles</button>
+      </span>
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Leader status</button>
+      </span>
+    </div>
+  </div>
+
+  <section class="standing" aria-label="Your leader status">
+    <div class="standing__main">
+      <p class="eyebrow">Barcelona &middot; 2025/26</p>
+      <h2 class="standing__t">Emerging<br>influencer</h2>
+      <p class="standing__s"><b>2,180</b> of your <b>2,480</b> merits were earned by reputation
+        rather than by turning up.</p>
+    </div>
+    <div class="standing__score">
+      <b>88%</b><span>Reputation share</span>
+    </div>
+  </section>
+
+  <div class="head"><h2>The ladder</h2></div>
+  <section class="section">
+    <div class="prog">
+      <p class="prog__row"><b>7 points to Leading influencer</b><span>88% &rarr; 95%</span></p>
+      <span class="prog__bar"><span class="prog__fill" style="width:88%"></span></span>
+    </div>
+    <ol class="tier">
+      <li>
+        <span class="tier__d" aria-hidden="true"></span>
+        <span class="tier__id">
+          <span class="tier__n">Member</span>
+          <span class="tier__s">Everyone starts here</span>
+        </span>
+        <span class="tier__v">under 75%</span>
+      </li>
+      <li>
+        <span class="tier__d" aria-hidden="true"></span>
+        <span class="tier__id">
+          <span class="tier__n">Early influencer</span>
+          <span class="tier__s">Passed 20 Oct 2025</span>
+        </span>
+        <span class="tier__v">75&ndash;85%</span>
+      </li>
+      <li aria-current="true">
+        <span class="tier__d" aria-hidden="true"></span>
+        <span class="tier__id">
+          <span class="tier__n">Emerging influencer</span>
+          <span class="tier__s">Where you are now</span>
+        </span>
+        <span class="tier__v">85&ndash;95%</span>
+      </li>
+      <li>
+        <span class="tier__d" aria-hidden="true"></span>
+        <span class="tier__id">
+          <span class="tier__n">Leading influencer</span>
+          <span class="tier__s">Top tier &middot; 31 members at Barcelona</span>
+        </span>
+        <span class="tier__v">over 95%</span>
+      </li>
+    </ol>
+  </section>
+
+  <div class="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 19 8 9l4 6 3-4.5L22 19H2Z"/></svg>
+    <p>Status is a <b>share</b>, not a total, so it can go down: earn merits by voting on everything
+      and your reputation share falls even though your merit count rises.</p>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>New screen, real content.</b> The four tier names and the three thresholds are read
+    straight out of <code>getLeaderShipStatus()</code>
+    (<code>profile_body.dart:402&ndash;420</code>) and <code>en.json:83&ndash;89</code>
+    &mdash; <code>MEMBER</code>, <code>EARLY INFLUENCER</code>, <code>EMERGING INFLUENCER</code>,
+    <code>LEADING INFLUENCER</code>, on <code>reputationPoint / totalPoint</code>. Nothing renders
+    them as a ladder today; they appear once, as a single word in the Profile header. Note the
+    function compares with <code>&lt;</code> on <em>both</em> sides of every band, so a member
+    sitting exactly on <code>0.95</code>, <code>0.85</code> or <code>0.75</code> falls all the way
+    through to <code>MEMBER</code>.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ============================================================
+     SEASON DROPDOWN — three short single-line values that change
+     one field in place. Anchored under its own trigger; while it
+     is open the rest of the filter group goes inert.
+     ============================================================ */
+  function wire(groupId, btnId, menuId){
+    var group = document.getElementById(groupId);
+    var btn   = document.getElementById(btnId);
+    var menu  = document.getElementById(menuId);
+    if (!group || !btn || !menu) return;
+
+    var items = Array.prototype.slice.call(menu.querySelectorAll('.menu__i'));
+
+    function open(){
+      menu.hidden = false;
+      group.classList.add('is-open');
+      btn.setAttribute('aria-expanded','true');
+    }
+    function close(focus){
+      menu.hidden = true;
+      group.classList.remove('is-open');
+      btn.setAttribute('aria-expanded','false');
+      if (focus) btn.focus();
+    }
+    function isOpen(){ return !menu.hidden; }
+
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (isOpen()) close(false); else { open(); (items[0] || btn).focus(); }
+    });
+
+    items.forEach(function(it, i){
+      it.addEventListener('click', function(){
+        items.forEach(function(x){ x.setAttribute('aria-selected', x === it ? 'true' : 'false'); });
+        btn.querySelector('.sel__v').textContent = it.textContent.trim();
+        close(true);
+      });
+      it.addEventListener('keydown', function(e){
+        if (e.key === 'ArrowDown'){ e.preventDefault(); (items[i+1] || items[0]).focus(); }
+        if (e.key === 'ArrowUp'){ e.preventDefault(); (items[i-1] || items[items.length-1]).focus(); }
+      });
+    });
+
+    menu.addEventListener('click', function(e){ e.stopPropagation(); });
+
+    document.addEventListener('click', function(){ if (isOpen()) close(false); });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && isOpen()) close(true);
+    });
+  }
+
+  wire('hof1','seasonBtn1','seasonMenu1');
+  wire('hof2','seasonBtn2','seasonMenu2');
+})();
+</script>
+</body>
+</html>

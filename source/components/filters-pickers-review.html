@@ -1,0 +1,2542 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Filters &amp; pickers · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; --surface: #1C2129; --sunken: #13171E; --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); --acid-line: rgba(155,226,34,.30); /* derived, as sheets.html */ /* semantic red — the only other hue */ --red: #E2564A; --red-wash: rgba(226,86,74,.14); /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; /* the sheet shell — sheets.html values, unchanged */ --r-sheet: 18px; --sheet-max: 560px; --sheet-vh: 88vh; --grab-w: 40px; --grab-h: 4px; --h-field: 52px; --h-row: 48px; --scrim: rgba(3,4,1,.72); --scrim-blur: 10px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* portraits — the same four faces the Ideas and Results lists give these authors, so an idea reads as the same idea everywhere */ --av-c7:url(data:image/jpeg;base64,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); --av-fp:url(data:image/jpeg;base64,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); --av-sm:url(data:image/jpeg;base64,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); --av-tt:url(data:image/jpeg;base64,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);}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk [hidden]{display:none!important}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+.mk .frame__pad{height:96px}
+.mk .bar{display:flex;align-items:center;gap:11px;margin:34px var(--gutter) 14px}
+.mk .bar__eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);}
+.mk .bar .spacer{flex:1}
+.mk .title{margin:0 var(--gutter) 12px; font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1; text-transform:uppercase;}
+.mk code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+.mk .cap{display:flex;gap:9px;margin:16px var(--gutter) 0; font-size:11.5px;line-height:1.5;color:var(--dim);}
+.mk .cap svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:var(--dim)}
+.mk .cap b{color:var(--text);font-weight:600}
+.mk .icon-btn{position:relative; display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease),box-shadow .18s var(--ease);}
+.mk .icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn svg{width:18px;height:18px}
+.mk .icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .pill-btn{display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 18px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:13px;font-weight:600;cursor:pointer; transition:background .18s var(--ease);}
+.mk .pill-btn:hover{background:#222833}
+.mk .pill-btn svg{width:15px;height:15px;flex:0 0 auto}
+.mk .pill-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .btn{flex:1 1 0;min-width:0; display:inline-flex;align-items:center;justify-content:center;gap:8px; height:46px;padding:0 14px;border:0;border-radius:var(--r-pill); font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em; cursor:pointer;white-space:nowrap;transition:background .18s var(--ease);}
+.mk .btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .btn--acid:hover{background:#A8EC33}
+.mk .btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .btn--ghost:hover{background:#181D25}
+.mk .btn--wide{width:100%}
+.mk .btn__n{display:inline-flex;align-items:center;justify-content:center; min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill); background:rgba(11,14,6,.16);font-size:12px;font-variant-numeric:tabular-nums;}
+.mk .btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .taxrow{display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 12px}
+.mk .tax{flex:1;display:flex;gap:4px;height:46px;padding:4px; border-radius:var(--r-pill);background:var(--sunken);}
+.mk .tax__half{flex:1 1 0;min-width:0; display:flex;align-items:center;justify-content:center;gap:6px; height:38px;border-radius:var(--r-pill);background:transparent; transition:background .18s var(--ease);}
+.mk .tax__half[data-on="true"]{background:var(--acid)}
+.mk .tax__btn{flex:0 1 auto;min-width:0;height:38px;padding:0 2px; border:0;border-radius:var(--r-pill);background:transparent;color:var(--muted); font:inherit;font-size:13.5px;font-weight:600;letter-spacing:-.005em; white-space:nowrap;cursor:pointer;transition:color .18s var(--ease);}
+.mk .tax__btn:hover{color:var(--text)}
+.mk .tax__half[data-on="true"] .tax__btn{color:var(--acid-ink);font-weight:700}
+.mk .tax__btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .tax__q{position:relative; display:inline-flex;align-items:center;justify-content:center; width:24px;height:24px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--muted); cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);}
+.mk .tax__q::after{content:"";position:absolute;inset:-10px;border-radius:inherit}
+.mk .tax__q svg{width:14px;height:14px}
+.mk .tax__q:hover{color:var(--text)}
+.mk .tax__half[data-on="true"] .tax__q{background:rgba(11,14,6,.14);color:var(--acid-ink)}
+.mk .tax__q[aria-expanded="true"]{background:var(--acid);color:var(--acid-ink)}
+.mk .tax__half[data-on="true"] .tax__q[aria-expanded="true"]{background:var(--acid-ink);color:var(--acid)}
+.mk .tax__q:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .fbar{display:flex;align-items:center;gap:8px; margin:0 0 12px;padding:0 var(--gutter) 2px; overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;}
+.mk .fbar::-webkit-scrollbar{height:0}
+.mk .fbar__t{position:relative;flex:0 0 auto}
+.mk .fbar__t.is-on{box-shadow:inset 0 0 0 1px var(--acid-line)}
+.mk .fbar__t.is-on svg{color:var(--acid)}
+.mk .fbar__n{position:absolute;top:-3px;right:-3px;z-index:1; display:inline-flex;align-items:center;justify-content:center; min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-pill); background:var(--acid);color:var(--acid-ink); font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums; box-shadow:0 0 0 2px var(--bg);}
+.mk .fchip{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;flex:0 0 auto; border:1px solid transparent;border-radius:var(--r-pill); background:var(--surface);color:var(--muted); font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; cursor:pointer;transition:background .18s var(--ease),color .18s var(--ease);}
+.mk .fchip:hover{color:var(--text)}
+.mk .fchip[aria-pressed="true"]{background:var(--acid-wash);border-color:var(--acid-line);color:var(--acid);}
+.mk .fchip[aria-pressed="true"] svg{width:12px;height:12px}
+.mk .fchip:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .tally{display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 4px; font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--dim);}
+.mk .tally b{color:var(--text);font-variant-numeric:tabular-nums}
+.mk .tally em{font-style:normal;color:var(--acid)}
+.mk .tally .spacer{flex:1}
+.mk .tally__x{display:inline-flex;align-items:center;gap:5px; border:0;background:transparent;padding:6px 2px;margin:0; color:var(--acid);font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em; text-transform:uppercase;cursor:pointer;}
+.mk .tally__x svg{width:12px;height:12px}
+.mk .tally__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .dock{margin-top:20px}
+.mk .dock .sheet{max-height:none}
+.mk .dock[hidden]{display:none}
+.mk .behind{transition:opacity .18s var(--ease),filter .18s var(--ease)}
+.mk .behind.is-dim{opacity:.34;filter:saturate(.55);cursor:default}
+.mk .behind.is-dim > *{pointer-events:none}
+.mk .sheet{position:relative;z-index:1; display:flex;flex-direction:column; width:100%;max-height:min(var(--sheet-vh),var(--sheet-max)); border:1px solid var(--line);border-bottom:0; border-radius:var(--r-sheet) var(--r-sheet) 0 0; background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%); box-shadow:0 -20px 50px rgba(0,0,0,.6); overflow:hidden;}
+.mk .sheet__grab{flex:0 0 auto;display:flex;align-items:center;justify-content:center; height:26px;width:100%;}
+.mk .sheet__grab::before{content:"";width:var(--grab-w);height:var(--grab-h);border-radius:var(--r-pill); background:rgba(255,255,255,.18);}
+.mk .sheet__head{flex:0 0 auto;display:flex;align-items:center;gap:9px; padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);}
+.mk .sheet__title{margin:0;flex:1;min-width:0; font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--text);}
+.mk .sheet__n{flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px; border-radius:var(--r-pill);background:var(--acid-wash);color:var(--acid); font-size:10.5px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;}
+.mk .sheet__clear{flex:0 0 auto;border:0;background:transparent;padding:6px 2px;margin:0; color:var(--muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer; transition:color .16s var(--ease);}
+.mk .sheet__clear:hover{color:var(--text)}
+.mk .sheet__clear[disabled]{color:var(--dim);cursor:default}
+.mk .sheet__x{position:relative;flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;margin-right:-4px; border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted); cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);}
+.mk .sheet__x::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.mk .sheet__x:hover{background:rgba(255,255,255,.11);color:var(--text)}
+.mk .sheet__x svg{width:16px;height:16px}
+.mk .sheet__x:focus-visible,.mk .sheet__clear:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .sheet__body::-webkit-scrollbar{width:0;height:0}
+.mk .sheet__body{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:none; -webkit-overflow-scrolling:touch;overscroll-behavior:contain; padding:12px var(--gutter);}
+.mk .sheet__lede{margin:0 0 12px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .sheet__grp{margin:16px 0 8px;font-size:10px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .sheet__body > .sheet__grp:first-child{margin-top:0}
+.mk .sheet__foot{flex:0 0 auto;padding:12px var(--gutter); padding-bottom:calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line);background:var(--sunken);}
+.mk .sheet__foot--pair{display:flex;gap:10px}
+.mk .sheet__body--last{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+.mk .opt{display:flex;align-items:center;gap:12px;width:100%; min-height:var(--h-row);padding:11px 14px; border:1px solid var(--line);border-radius:var(--r-panel); background-color:var(--sunken);background-image:none; color:var(--text);font:inherit;font-size:13.5px;font-weight:500; text-align:left;cursor:pointer; transition:background-color .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);}
+.mk .opt + .opt{margin-top:8px}
+.mk .opt:hover{border-color:rgba(255,255,255,.14)}
+.mk .opt__text{flex:1;min-width:0}
+.mk .opt__text small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.mk .opt[aria-checked="true"]{background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash)); border-color:var(--acid-line);color:var(--acid);font-weight:600;}
+.mk .opt[aria-checked="true"] .opt__text small{color:rgba(155,226,34,.72)}
+.mk .opt:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .check,.mk .radio{position:relative;flex:0 0 auto;width:20px;height:20px; background:var(--surface);box-shadow:inset 0 0 0 1px var(--line); transition:background .16s var(--ease),box-shadow .16s var(--ease);}
+.mk .check{border-radius:6px}
+.mk .radio{border-radius:50%}
+.mk .check svg,.mk .radio svg{position:absolute;inset:0;width:20px;height:20px;opacity:0; transition:opacity .14s var(--ease);}
+.mk .check svg{color:var(--acid-ink)}
+.mk .radio svg{color:var(--acid)}
+.mk .opt[aria-checked="true"] .check{background:var(--acid);box-shadow:none}
+.mk .opt[aria-checked="true"] .radio{box-shadow:inset 0 0 0 1.7px var(--acid);background:transparent}
+.mk .opt[aria-checked="true"] .check svg,.mk .opt[aria-checked="true"] .radio svg{opacity:1}
+.mk .cal__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.mk .cal__mon{flex:1;min-width:0;text-align:center; font-size:14.5px;font-weight:700;letter-spacing:-.01em;}
+.mk .cal__nav{position:relative; display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--sunken);color:var(--text); cursor:pointer;transition:background .16s var(--ease);}
+.mk .cal__nav::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .cal__nav:hover{background:#181D25}
+.mk .cal__nav[disabled]{color:var(--dim);cursor:default}
+.mk .cal__nav:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .cal__nav svg{width:16px;height:16px}
+.mk .cal__dow,.mk .cal__grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.mk .cal__dow{margin-bottom:4px}
+.mk .cal__dow span{text-align:center;font-size:9.5px;font-weight:700;letter-spacing:.12em; text-transform:uppercase;color:var(--dim);}
+.mk .cal__grid{row-gap:2px}
+.mk .cal__d{position:relative;display:flex;align-items:center;justify-content:center; height:44px;border:0;background:transparent;color:var(--text); font:inherit;font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums; cursor:pointer;}
+.mk .cal__d span{position:relative;z-index:1;display:flex;align-items:center;justify-content:center; width:34px;height:34px;border-radius:50%;}
+.mk .cal__d--out{color:var(--dim);cursor:default}
+.mk .cal__d--off{color:var(--dim);cursor:not-allowed;text-decoration:line-through;text-decoration-color:rgba(91,96,107,.6)}
+.mk .cal__d--today span{box-shadow:inset 0 0 0 1px var(--acid-line);color:var(--acid)}
+.mk .cal__d[aria-selected="true"] span,.mk .cal__d--sel span{background:var(--acid);color:var(--acid-ink);font-weight:700;box-shadow:none;}
+.mk .cal__d:focus-visible span{outline:2px solid var(--acid);outline-offset:2px}
+.mk .cal__d--in::before,.mk .cal__d--edge::before{content:"";position:absolute;top:5px;bottom:5px;left:0;right:0; background:var(--acid-wash);}
+.mk .cal__d--from::before{left:50%;border-radius:var(--r-pill) 0 0 var(--r-pill)}
+.mk .cal__d--to::before{right:50%;border-radius:0 var(--r-pill) var(--r-pill) 0}
+.mk .cal__d--in{color:var(--acid)}
+.mk .cal__sum{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:11px 14px; border-radius:var(--r-panel);background:var(--sunken); font-size:12.5px;color:var(--muted);}
+.mk .cal__sum b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.mk .cal__sum em{margin-left:auto;font-style:normal;color:var(--acid);font-weight:600}
+.mk .pair{display:flex;gap:10px;margin:0 0 14px}
+.mk .dfield{flex:1 1 0;min-width:0}
+.mk .dfield__l{display:block;margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .dfield__b{display:flex;align-items:center;gap:9px;width:100%;height:var(--h-field);padding:0 13px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--surface);color:var(--text); font:inherit;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums; text-align:left;cursor:pointer;transition:border-color .16s var(--ease);}
+.mk .dfield__b span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk .dfield__b svg{width:17px;height:17px;flex:0 0 auto;color:var(--muted)}
+.mk .dfield__b:hover{border-color:rgba(255,255,255,.14)}
+.mk .dfield__b.is-active{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.mk .dfield__b.is-active svg{color:var(--acid)}
+.mk .dfield__b.is-empty{color:var(--dim);font-weight:500}
+.mk .dfield__b:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .tipwrap{position:relative;margin:0 var(--gutter) 12px}
+.mk .tip{position:relative; padding:14px 15px 15px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--surface); box-shadow:0 16px 38px rgba(0,0,0,.55);}
+.mk .tip::before{content:"";position:absolute;top:-6px;left:24%; width:12px;height:12px;transform:rotate(45deg); background:var(--surface); border-left:1px solid var(--line);border-top:1px solid var(--line);}
+.mk .tip__head{display:flex;align-items:flex-start;gap:10px;margin:0 0 8px}
+.mk .tip__t{flex:1;min-width:0;margin:0; font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--acid);}
+.mk .tip__x{position:relative;flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; width:26px;height:26px;margin:-5px -4px 0 0; border:0;border-radius:50%;background:transparent;color:var(--muted); cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);}
+.mk .tip__x::after{content:"";position:absolute;inset:-9px;border-radius:inherit}
+.mk .tip__x:hover{background:rgba(255,255,255,.07);color:var(--text)}
+.mk .tip__x svg{width:15px;height:15px}
+.mk .tip__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .tip p{margin:0;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .tip p + p{margin-top:9px}
+.mk .tip p b{color:var(--text);font-weight:600}
+.mk .tip__more{display:inline-flex;align-items:center;gap:6px;height:38px;margin-top:12px; padding:0 14px;border:1px solid var(--line);border-radius:var(--r-pill); background:var(--sunken);color:var(--text); font:inherit;font-size:12px;font-weight:600;cursor:pointer;}
+.mk .tip__more svg{width:13px;height:13px}
+.mk .tip__more:hover{border-color:rgba(255,255,255,.14)}
+.mk .tip__more:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .rcard{margin:12px var(--gutter) 0;padding:16px; border-radius:var(--r-card);background:var(--surface); box-shadow:inset 0 1px 0 rgba(255,255,255,.06);}
+.mk .rcard__author{display:flex;align-items:center;gap:9px;margin-bottom:13px}
+.mk .avatars{display:flex;flex:0 0 auto}
+.mk .avatar{border-radius:50%;flex:0 0 auto; background-color:#20262F;background-size:cover;background-position:center 22%;}
+.mk .avatars > .avatar + .avatar{margin-left:-9px}
+.mk .avatars .avatar{width:22px;height:22px;border:1.5px solid var(--surface)}
+.mk .byline{min-width:0;font-size:12.5px;color:var(--muted); white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .rcard__title{margin:0 0 7px;font-size:17px;font-weight:600;line-height:1.2;letter-spacing:-.015em}
+.mk .rcard__body{margin:0;font-size:13px;line-height:1.35;color:var(--muted)}
+.mk .cardmeta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:13px 0 10px}
+.mk .when{display:inline-flex;align-items:center;gap:6px;min-width:0; font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums;}
+.mk .when svg{width:13px;height:13px;flex:0 0 auto}
+.mk .typechip{flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px; border-radius:var(--r-pill);background:var(--sunken);color:var(--muted); font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase; white-space:nowrap;}
+.mk .verdict{display:flex;align-items:center;gap:11px;min-height:56px;padding:11px 13px;border-radius:var(--r-panel)}
+.mk .verdict__badge{width:28px;height:28px;flex:0 0 auto;border-radius:50%; display:inline-flex;align-items:center;justify-content:center;}
+.mk .verdict__badge svg{width:16px;height:16px;display:block}
+.mk .verdict__body{min-width:0}
+.mk .verdict__word{display:block;font-size:13.5px;font-weight:700;letter-spacing:.07em; line-height:1.1;text-transform:uppercase;}
+.mk .verdict__sub{display:block;margin-top:3px;font-size:11.5px;line-height:1.25; color:var(--muted);font-variant-numeric:tabular-nums;}
+.mk .verdict--pos{background:var(--acid-wash);box-shadow:inset 0 0 0 1px rgba(155,226,34,.22)}
+.mk .verdict--pos .verdict__badge{background:var(--acid);color:var(--acid-ink)}
+.mk .verdict--pos .verdict__word{color:var(--acid)}
+.mk .verdict--neg{background:var(--red-wash);box-shadow:inset 0 0 0 1px rgba(226,86,74,.24)}
+.mk .verdict--neg .verdict__badge{background:var(--red);color:var(--acid-ink)}
+.mk .verdict--neg .verdict__word{color:var(--red)}
+.mk .viewbtn{display:flex;align-items:center;justify-content:center;gap:7px; width:100%;height:44px;margin-top:10px; border:0;border-radius:var(--r-pill); background:var(--sunken);color:var(--text); font:inherit;font-size:13.5px;font-weight:600; cursor:pointer;transition:background .18s var(--ease);}
+.mk .viewbtn svg{width:13px;height:13px;flex:0 0 auto}
+.mk .viewbtn:hover{background:#1A1F27}
+.mk .viewbtn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .nohit{margin:12px var(--gutter) 0;padding:30px 20px;text-align:center; border:1px dashed var(--line);border-radius:var(--r-card);background:var(--section);}
+.mk .nohit svg.nohit__art{width:44px;height:44px;color:var(--acid);opacity:.85;margin-bottom:12px}
+.mk .nohit h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.mk .nohit p{margin:7px auto 0;max-width:32ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .nohit p b{color:var(--text);font-weight:600}
+.mk .nohit .pill-btn{margin-top:16px}
+.mk .nohit__alt{display:flex;align-items:center;justify-content:center;gap:7px; margin:12px auto 0;padding:8px 10px;border:0;background:none; font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em; text-transform:uppercase;color:var(--muted);cursor:pointer; border-radius:var(--r-pill);transition:color .16s var(--ease),background .16s var(--ease);}
+.mk .nohit__alt b{color:var(--text);font-weight:800}
+.mk .nohit__alt:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.mk .nohit__alt:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .nohit--inline{padding:18px 20px;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .nohit--inline b{color:var(--text);font-weight:600}
+.mk .end{display:flex;align-items:center;gap:10px;margin:20px var(--gutter) 0; font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);}
+.mk .end::before,.mk .end::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Filters &amp; pickers</h1>
+    <p class="dek">
+  The narrowing controls: the sheet that sorts a Results or Actions list, the state a member sees
+  when a filter is on, what happens when a filter matches nothing, the two date pickers, the date
+  range, and the small <code>?</code> explainer popover on the Decisions / Positions switch. These
+  are the last imperative surfaces in the app that no other component in this library covers.
+</p>
+    <div class="meta">
+      <span><b>Component</b> filters-pickers</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 8</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">Sort results<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Sort actions<span class="side__tag">02</span></a></li>
+      <li><a class="side__item" href="#scr-3">Filter results<span class="side__tag">03</span></a></li>
+      <li><a class="side__item" href="#scr-4">Filters on<span class="side__tag">04</span></a></li>
+      <li><a class="side__item" href="#scr-5">Nothing matches<span class="side__tag">05</span></a></li>
+      <li><a class="side__item" href="#scr-6">The explainer<span class="side__tag">06</span></a></li>
+      <li><a class="side__item" href="#scr-7">Date picker<span class="side__tag">07</span></a></li>
+      <li><a class="side__item" href="#scr-8">Date range<span class="side__tag">08</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><span class="side__item" aria-current="page">Filters &amp; pickers<span class="side__tag side__tag--new">This page</span></span></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">Eight surfaces that narrow a list</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">8 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>Sort results</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="behind is-dim" data-behind>
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Back to the War Room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <span class="bar__eyebrow">War Room</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Results</h1>
+    <div class="taxrow">
+      <div class="tax" role="tablist" aria-label="Proposal taxonomy">
+        <span class="tax__half" data-on="true"><button class="tax__btn" type="button" role="tab" aria-selected="true">Decisions</button></span>
+        <span class="tax__half"><button class="tax__btn" type="button" role="tab" aria-selected="false">Positions</button></span>
+      </div>
+    </div>
+    <div class="fbar" role="group" aria-label="Filter results" data-chipbar data-chips-only>
+      <button class="icon-btn fbar__t" type="button" data-open aria-haspopup="dialog" aria-expanded="true" aria-label="Sort results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+      </button>
+      <button class="fchip" type="button" aria-pressed="true" data-chip="all">All</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="on-field">On-field</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="management">Management</button>
+    </div>
+    <p class="tally" data-sortline hidden>
+      <span>Sorted by <b data-sortname>Most recent</b></span>
+    </p>
+  </div>
+
+  <div class="dock" data-dock>
+    <section class="sheet" aria-label="Sort results" data-sheet data-applies-on-tap>
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Sort results</h3>
+        <button class="sheet__x" type="button" aria-label="Close sort">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body sheet__body--last" role="radiogroup" aria-label="Sort order">
+        <button class="opt" type="button" role="radio" aria-checked="true">
+          <span class="opt__text">Most recent<small>Latest verdict first · <code>ordering=recent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="opt__text">Most urgent<small>Nearest to its action deadline · <code>ordering=urgent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="opt__text">Most popular<small>Most votes cast first · <code>ordering=popular</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>In the build this sheet does nothing.</b> Every row is a
+    <code>BodyProfileItem</code> with <code>onPress: () {}</code> —
+    <code>result/widget/show_filter.dart:53</code> — so the tick can be looked at but the sort
+    never changes and the sheet never closes. The three orders are
+    <code>CLString.listSortProposal</code> → <code>["recent","urgent","popular"]</code>. Radio,
+    not checkbox: one order at a time. Applies on tap, so no Apply button.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Sort actions</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="behind is-dim" data-behind>
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Back to the War Room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <span class="bar__eyebrow">War Room</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Actions</h1>
+    <div class="taxrow">
+      <div class="tax" role="tablist" aria-label="Proposal taxonomy">
+        <span class="tax__half" data-on="true"><button class="tax__btn" type="button" role="tab" aria-selected="true">Decisions</button></span>
+        <span class="tax__half"><button class="tax__btn" type="button" role="tab" aria-selected="false">Positions</button></span>
+      </div>
+    </div>
+    <div class="fbar" role="group" aria-label="Filter actions" data-chipbar data-chips-only>
+      <button class="icon-btn fbar__t" type="button" data-open aria-haspopup="dialog" aria-expanded="true" aria-label="Sort actions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+      </button>
+      <button class="fchip" type="button" aria-pressed="true" data-chip="all">All</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="on-field">On-field</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="management">Management</button>
+    </div>
+    <p class="tally" data-sortline hidden>
+      <span>Sorted by <b data-sortname>Most urgent</b></span>
+    </p>
+  </div>
+
+  <div class="dock" data-dock>
+    <section class="sheet" aria-label="Sort actions" data-sheet data-applies-on-tap>
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Sort actions</h3>
+        <button class="sheet__x" type="button" aria-label="Close sort">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body sheet__body--last" role="radiogroup" aria-label="Sort order">
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="opt__text">Most recent<small>Newest instruction first · <code>ordering=recent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="true">
+          <span class="opt__text">Most urgent<small>Closest to kick-off first · <code>ordering=urgent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="opt__text">Most popular<small>Most votes cast first · <code>ordering=popular</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The two sheets are the same sheet, built twice, at two different row heights.</b>
+    Actions sets <code>height: CSpace.height * 0.08</code> on each row —
+    <code>action/widget/show_filter.dart:49</code> — which is <code>65 pt</code> on a 812 pt
+    screen, while Results leaves the height unset and lands near <code>48</code>. Same three
+    labels, same dead <code>onPress</code>, two geometries. One row: <code>48</code> minimum.
+    The only honest difference is the title, which is
+    <code>'SORT {}'.tr(args: ['ACTIONS'])</code>.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-3">
+        <figcaption class="scr__cap"><span class="scr__n">03</span>Filter results</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="behind is-dim" data-behind>
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Back to the War Room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <span class="bar__eyebrow">War Room</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Results</h1>
+    <div class="fbar" role="group" aria-label="Filter results" data-chipbar data-chips-only>
+      <button class="icon-btn fbar__t is-on" type="button" data-open aria-haspopup="dialog" aria-expanded="true" aria-label="Filter results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+        <span class="fbar__n" data-trigger-n aria-hidden="true">2</span>
+      </button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="all">All</button>
+      <button class="fchip" type="button" aria-pressed="true" data-chip="on-field">On-field</button>
+      <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+    </div>
+    <p class="tally" data-applied hidden>
+      <span><b data-applied-n>2</b> filters applied from the sheet</span>
+    </p>
+  </div>
+
+  <div class="dock" data-dock>
+    <section class="sheet" aria-label="Filter results" data-count data-sheet>
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Filter results</h3>
+        <span class="sheet__n" data-n>2 on</span>
+        <button class="sheet__clear" type="button" data-clear>Clear all</button>
+        <button class="sheet__x" type="button" aria-label="Close filter">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body">
+        <p class="sheet__grp">Kind</p>
+        <button class="opt" type="button" role="checkbox" aria-checked="true">
+          <span class="opt__text">On-field decisions<small><code>category=on_field_decisions</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Off-field decisions<small><code>category=off_field_decisions</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Management decisions<small><code>category=management_decisions</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Positions<small>Opinion proposals · <code>type=position</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+
+        <p class="sheet__grp">Verdict</p>
+        <button class="opt" type="button" role="checkbox" aria-checked="true">
+          <span class="opt__text">Approved<small><code>MProposal.status = approved</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Rejected<small><code>MProposal.status = rejected</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Vetoed<small><code>MProposal.status = vetoed</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Cancelled by management<small><code>MProposal.status = cancelled</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+
+        <p class="sheet__grp">Mine</p>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Ideas I proposed<small><code>category=my_idea</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Ideas I voted on<small><code>MProposal.isVote</code> · in memory</small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+      </div>
+      <div class="sheet__foot">
+        <button class="btn btn--acid btn--wide" type="button" data-apply>Apply <span class="btn__n" data-btn-n>2</span></button>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>This sheet is new — the shipped app has no filter sheet.</b> The trigger draws a
+    filter glyph and opens a sort list. Worse, the two axes it replaces cannot be combined today:
+    in <code>ResultC.getFilterListIdea</code> (<code>cubit/proposal/result.dart:52–61</code>) a
+    category is sent <em>as</em> <code>type</code> with <code>category: null</code>, so picking
+    <b>On-field</b> silently discards the Decisions / Positions choice. Multi-select, so checkbox
+    and Apply are honest, and nothing behind the sheet moves until Apply is pressed.
+    <b>Lapsed</b> is deliberately absent: <code>getListResult</code> strips lapsed proposals
+    client-side (<code>result.dart:186</code>), so a Lapsed filter could never return a row.
+    <b>Kind</b> is server-side — <code>getListIdea</code> carries <code>type</code> and
+    <code>category</code>. <b>Verdict</b> and <b>Mine</b> are not: the endpoint sends five
+    parameters and none of them is a status (<code>service/src/proposal.dart:52–59</code>), so
+    those two groups filter the single capped page of 50 already in memory.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-4">
+        <figcaption class="scr__cap"><span class="scr__n">04</span>Filters on</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Results</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Proposal taxonomy">
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Decisions</button>
+      </span>
+      <span class="tax__half">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Positions</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="fbar" role="group" aria-label="Filter results" data-chipbar>
+    <button class="icon-btn fbar__t is-on" type="button" aria-label="Filter results, 2 filters on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+      <span class="fbar__n" data-trigger-n aria-hidden="true">2</span>
+    </button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="all">All</button>
+    <button class="fchip" type="button" aria-pressed="true" data-chip="on-field">
+      On-field
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg>
+    </button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="management">Management</button>
+    <button class="fchip" type="button" aria-pressed="true" data-chip="mine">
+      My ideas
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg>
+    </button>
+  </div>
+
+  <p class="tally" data-tally>
+    <span><b data-tally-n>2</b> filters on · <b data-tally-hit>2</b> of <b>14</b></span>
+    <span class="spacer"></span>
+    <button class="tally__x" type="button" data-clear-chips>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      Clear all
+    </button>
+  </p>
+
+  <article class="rcard" data-row data-cat="on-field" data-mine="true">
+    <div class="rcard__author">
+      <span class="avatars">
+        <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+        <span class="avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+      </span>
+      <span class="byline">by capitan_7 &amp; scout_mode</span>
+    </div>
+    <h2 class="rcard__title">Start Lamine Yamal against Girona</h2>
+    <p class="rcard__body">Name him in the starting eleven rather than holding him on the bench.</p>
+    <div class="cardmeta">
+      <span class="when">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        Settled 12 Jul, 20:45
+      </span>
+      <span class="typechip">On-field</span>
+    </div>
+    <div class="verdict verdict--pos">
+      <span class="verdict__badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4.5 4.5L19 7"/></svg>
+      </span>
+      <span class="verdict__body">
+        <span class="verdict__word">Approved</span>
+        <span class="verdict__sub">84% support · 70% needed · 1,079 votes</span>
+      </span>
+    </div>
+    <button class="viewbtn" type="button">
+      View details
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </button>
+  </article>
+
+  <article class="rcard" data-row data-cat="on-field" data-mine="true">
+    <div class="rcard__author">
+      <span class="avatars">
+        <span class="avatar" style="background-image:var(--av-tt)" role="img" aria-label="taythaytu"></span>
+      </span>
+      <span class="byline">by taythaytu</span>
+    </div>
+    <h2 class="rcard__title">Rest Pedri against Getafe</h2>
+    <p class="rcard__body">Hold him out of the squad entirely with the Champions League tie four days later.</p>
+    <div class="cardmeta">
+      <span class="when">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        Settled 10 Jul, 19:15
+      </span>
+      <span class="typechip">On-field</span>
+    </div>
+    <div class="verdict verdict--neg">
+      <span class="verdict__badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </span>
+      <span class="verdict__body">
+        <span class="verdict__word">Rejected</span>
+        <span class="verdict__sub">41% support · 70% needed · 1,204 votes</span>
+      </span>
+    </div>
+    <button class="viewbtn" type="button">
+      View details
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </button>
+  </article>
+
+  <p class="end" data-endline>End of 2 matching results</p>
+  <p class="nohit nohit--inline" data-none hidden>
+    <b>Nothing on this page matches.</b> Drop a filter and the results come back.
+  </p>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The summary line and the trigger count are new.</b> Today the only sign a filter is
+    on is that one chip turns green — <code>result_screen.dart:166–171</code> — with no count, no
+    "2 of 14" and no way to clear anything except tapping the chip you happen to remember
+    pressing. Three signals here, and none of them is colour on its own: a tick inside the chip,
+    a numeral on the trigger, and the sentence with <b>Clear all</b> beside it.
+    <b>The filter also does not survive leaving the screen:</b> <code>initState</code> calls
+    <code>getListResult</code>, which re-requests the unfiltered default list
+    (<code>result.dart:172–178</code>) without resetting <code>currentFilterPri</code>,
+    <code>currentFilterSup</code> or <code>currentSortResult</code> — so you come back to green
+    chips over unfiltered results.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-5">
+        <figcaption class="scr__cap"><span class="scr__n">05</span>Nothing matches</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Results</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Proposal taxonomy">
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Decisions</button>
+      </span>
+      <span class="tax__half">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Positions</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="fbar" role="group" aria-label="Filter results" data-chipbar>
+    <button class="icon-btn fbar__t is-on" type="button" aria-label="Filter results, 2 filters on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+      <span class="fbar__n" data-trigger-n aria-hidden="true">2</span>
+    </button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="all">All</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="on-field">On-field</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+    <button class="fchip" type="button" aria-pressed="true" data-chip="management">
+      Management
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg>
+    </button>
+    <button class="fchip" type="button" aria-pressed="true" data-chip="mine">
+      My ideas
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg>
+    </button>
+  </div>
+
+  <p class="tally" data-tally>
+    <span><b data-tally-n>2</b> filters on · <b data-tally-hit>0</b> of <b>14</b></span>
+    <span class="spacer"></span>
+    <button class="tally__x" type="button" data-clear-chips>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      Clear all
+    </button>
+  </p>
+
+  <div class="nohit" data-nohit>
+    <svg class="nohit__art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M3.5 5.5h17l-6.6 7.6v5.6l-3.8 1.8v-7.4z"/>
+      <path d="M16.5 16.5l5 5M21.5 16.5l-5 5"/>
+    </svg>
+    <h3 data-nohit-h>No management idea of yours has settled yet</h3>
+    <p data-nohit-p><b>There are 14 results here</b> — none of them match <b>Management</b> and
+    <b>My ideas</b> together. Drop one filter and the rest come back.</p>
+    <button class="pill-btn" type="button" data-clear-chips>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      Clear filters
+    </button>
+    <!-- the alternative was a sentence; it names an action, so it is a
+         button — dropping the second filter is one tap from here -->
+    <button class="nohit__alt" type="button" data-drop-chip="mine">or keep <b>Management</b> only · <b data-alt-n>4</b> results</button>
+  </div>
+
+  <p class="end" data-hits hidden><b data-hits-n>14</b> results match</p>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The build shows nothing at all here.</b> <code>buildResult</code> is a
+    <code>ListView.builder</code> over <code>state.listResultData?.length</code>
+    (<code>result_screen.dart:372–376</code>) with no zero branch, so a filter that matches
+    nothing leaves an empty scroll area under the chips — and the same is true of
+    <code>buildAction</code> (<code>action_screen.dart:379–383</code>). The app already owns an
+    empty panel, <code>EmptyContainer</code> in <code>lib/widgets/empty_data.dart</code>, and uses
+    it on the War Room rails and in Credit history, but never on these two screens.
+    <b>This panel is deliberately not that one:</b> <code>No results yet</code> is a stage that
+    has not happened, this is a filter the member can undo, and only one of those has a button.
+    The dashed edge is the states.html filtered-out treatment, not the solid section edge used for
+    a genuinely empty stage.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-6">
+        <figcaption class="scr__cap"><span class="scr__n">06</span>The explainer</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Results</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Proposal taxonomy">
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Decisions</button>
+        <button class="tax__q" type="button" aria-expanded="true" aria-label="What Decisions means" data-tip="tip-dec">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.4 9.2a2.7 2.7 0 1 1 3.7 2.5c-.8.3-1.1 1-1.1 1.8v.4"/><path d="M12 17.4h.01"/></svg>
+        </button>
+      </span>
+      <!-- Positions has NO explainer copy anywhere in the codebase —
+           CLString.listExplainTitleIDea[1] is lorem ipsum — so it
+           carries no `?` disc. A disc that opens nothing is the exact
+           fault this pass exists to remove. -->
+      <span class="tax__half">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Positions</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="tipwrap">
+    <div class="tip" id="tip-dec" role="dialog" aria-label="What Decisions means">
+      <div class="tip__head">
+        <h3 class="tip__t">Decisions</h3>
+        <button class="tip__x" type="button" aria-label="Close explainer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <p>On-field Decisions are instructions executable by the manager or coach during a match.
+      These may be <b>Vetoed</b> or <b>Ruled Out</b>, and the deposit forfeited, when the
+      instruction is not executable.</p>
+      <button class="tip__more" type="button">
+        How a verdict is reached
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="fbar" role="group" aria-label="Filter results" data-chipbar>
+    <button class="icon-btn fbar__t" type="button" aria-label="Filter results">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+      <span class="fbar__n" data-trigger-n aria-hidden="true" hidden>0</span>
+    </button>
+    <button class="fchip" type="button" aria-pressed="true" data-chip="all">All</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="on-field">On-field</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="off-field">Off-field</button>
+    <button class="fchip" type="button" aria-pressed="false" data-chip="management">Management</button>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The explainer is reachable — but only just, and it has no copy.</b> The trigger is a
+    <code>16 × 16</code> circle inside the segment label
+    (<code>result_screen.dart:255–277</code>, and the same block in <code>action_screen.dart</code>,
+    <code>voting_screen.dart</code> and <code>ideas_screen.dart</code>), against the
+    <code>44</code> platform minimum; it is enlarged to <code>24</code> here with the
+    <code>::after</code> expansion to <code>44</code>. All four call sites pass the same
+    <b>lorem ipsum</b> as <code>detail:</code> — <code>result_screen.dart:222</code> and
+    <code>:289</code>. The real sentence used above is the app's own
+    <code>CLString.listExplainTitleIDea[0]</code>, which is only ever read by
+    <code>ideas/drop_down/title.dart:58</code>. Its sibling, <code>[1]</code>, for Positions, is
+    lorem ipsum too — so <b>Positions has no explainer copy anywhere in the codebase</b> and its
+    popover is left unbuilt rather than filled with filler.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-7">
+        <figcaption class="scr__cap"><span class="scr__n">07</span>Date picker</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="behind is-dim" data-behind>
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Back to the War Room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <span class="bar__eyebrow">Results</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Filter by date</h1>
+    <div class="pair" style="margin:0 var(--gutter) 14px">
+      <span class="dfield">
+        <span class="dfield__l" id="dp1-from-l">From</span>
+        <button class="dfield__b is-active" type="button" data-open data-end="from"
+                aria-haspopup="dialog" aria-expanded="true" aria-labelledby="dp1-from-l dp1-from-v">
+          <span id="dp1-from-v" data-field="from">12 Jul 2026</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3"/><path d="M8 3.4v3.2M16 3.4v3.2M3.6 10h16.8"/></svg>
+        </button>
+      </span>
+      <span class="dfield">
+        <span class="dfield__l" id="dp1-to-l">To</span>
+        <button class="dfield__b is-empty" type="button" data-open data-end="to"
+                aria-haspopup="dialog" aria-expanded="false" aria-labelledby="dp1-to-l dp1-to-v">
+          <span id="dp1-to-v" data-field="to">Choose a date</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3"/><path d="M8 3.4v3.2M16 3.4v3.2M3.6 10h16.8"/></svg>
+        </button>
+      </span>
+    </div>
+  </div>
+
+  <div class="dock" data-dock>
+    <section class="sheet" aria-label="Choose the from date" data-sheet
+             data-cal data-mode="single"
+             data-min="2022-01-01" data-max="2026-07-30"
+             data-from="2026-07-12" data-end="from">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title" data-cal-title>From date</h3>
+        <button class="sheet__x" type="button" data-close aria-label="Close date picker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body">
+        <p class="cal__sum" data-cal-sum><b></b><em></em></p>
+        <div class="cal__bar">
+          <button class="cal__nav" type="button" data-go="-1" aria-label="Previous month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+          </button>
+          <p class="cal__mon" aria-live="polite" data-cal-mon>July 2026</p>
+          <button class="cal__nav" type="button" data-go="1" aria-label="Next month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </button>
+        </div>
+        <div class="cal__dow" aria-hidden="true">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        </div>
+        <div class="cal__grid" role="grid" data-cal-grid aria-label="July 2026"></div>
+      </div>
+      <div class="sheet__foot sheet__foot--pair">
+        <button class="btn btn--ghost" type="button" data-cancel>Cancel</button>
+        <button class="btn btn--acid" type="button" data-commit>Set <span data-commit-end>from</span> date</button>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>The build calls <code>showDatePicker</code> raw — the stock light Material calendar over
+    the app, twice, at <code>select_date/index.dart:98</code> and <code>:130</code>. Both pass
+    <code>locale: const Locale('vi')</code>, and <code>main.dart:53–58</code> declares
+    <code>supportedLocales: [Locale("en")]</code> with an English fallback, so
+    <b>the picker is explicitly asked to render in a language the app does not support</b>.
+    The window is faithful: <code>firstDate: DateTime(2022)</code>,
+    <code>lastDate: DateTime.now()</code> — a settled result cannot be in the future, so future
+    days are struck through and inert and <b>Next month</b> is disabled at the far edge rather
+    than hidden. Today, 30 July, keeps the 1 px accent ring. Weeks start on <b>Monday</b>, the
+    library-wide answer settled in <code>_assets/date-picker.md</code>.
+    <b>The reference date is fixed at 30 July 2026, never <code>new Date()</code></b> — a frame
+    that renders "today" drifts between the screenshot and the review, and the review pages are
+    the record.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-8">
+        <figcaption class="scr__cap"><span class="scr__n">08</span>Date range</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="behind is-dim" data-behind>
+    <div class="bar">
+      <button class="icon-btn" type="button" aria-label="Back to the War Room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <span class="bar__eyebrow">Results</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Filter by date</h1>
+    <div class="pair" style="margin:0 var(--gutter) 14px">
+      <span class="dfield">
+        <span class="dfield__l" id="dp2-l">Settled between</span>
+        <button class="dfield__b is-active" type="button" data-open
+                aria-haspopup="dialog" aria-expanded="true" aria-labelledby="dp2-l dp2-v">
+          <span id="dp2-v" data-field="range">12 Jul → 30 Jul 2026</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3"/><path d="M8 3.4v3.2M16 3.4v3.2M3.6 10h16.8"/></svg>
+        </button>
+      </span>
+    </div>
+  </div>
+
+  <div class="dock" data-dock>
+    <section class="sheet" aria-label="Choose a date range" data-sheet
+             data-cal data-mode="range"
+             data-min="2022-01-01" data-max="2026-07-30"
+             data-from="2026-07-12" data-to="2026-07-30" data-end="from">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Settled between</h3>
+        <span class="sheet__n" data-cal-n>19 days</span>
+        <button class="sheet__clear" type="button" data-cal-reset>Reset</button>
+        <button class="sheet__x" type="button" data-close aria-label="Close range picker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body">
+        <div class="pair">
+          <span class="dfield">
+            <span class="dfield__l" id="dp2-from-l">From</span>
+            <button class="dfield__b is-active" type="button" data-end="from"
+                    aria-pressed="true" aria-labelledby="dp2-from-l dp2-from-v">
+              <span id="dp2-from-v" data-field="from">12 Jul 2026</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3"/><path d="M8 3.4v3.2M16 3.4v3.2M3.6 10h16.8"/></svg>
+            </button>
+          </span>
+          <span class="dfield">
+            <span class="dfield__l" id="dp2-to-l">To</span>
+            <button class="dfield__b" type="button" data-end="to"
+                    aria-pressed="false" aria-labelledby="dp2-to-l dp2-to-v">
+              <span id="dp2-to-v" data-field="to">30 Jul 2026</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3"/><path d="M8 3.4v3.2M16 3.4v3.2M3.6 10h16.8"/></svg>
+            </button>
+          </span>
+        </div>
+        <p class="cal__sum" data-cal-sum><b></b><em></em></p>
+        <div class="cal__bar">
+          <button class="cal__nav" type="button" data-go="-1" aria-label="Previous month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+          </button>
+          <p class="cal__mon" aria-live="polite" data-cal-mon>July 2026</p>
+          <button class="cal__nav" type="button" data-go="1" aria-label="Next month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </button>
+        </div>
+        <div class="cal__dow" aria-hidden="true">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        </div>
+        <div class="cal__grid" role="grid" data-cal-grid aria-label="July 2026"></div>
+      </div>
+      <div class="sheet__foot sheet__foot--pair">
+        <button class="btn btn--ghost" type="button" data-cal-clear>Reset filter</button>
+        <button class="btn btn--acid" type="button" data-commit>Apply range</button>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>Both ends on one surface. The build stacks a dialog inside a dialog: two read-only
+    fields, each opening a second <code>AlertDialog</code> holding a
+    <code>SfDateRangePicker</code> in a <code>250 px</code> box
+    (<code>on_tap.dart:340–366</code>), and dismissing it fires <b>three</b> stacked
+    <code>context.pop()</code> calls (<code>:287–289</code> and <code>:303–305</code>) — one for
+    each dialog it believes is open. <b>The whole dialog is in Vietnamese:</b>
+    <code>'Xác nhận'</code> as the confirm label (<code>:163</code>),
+    <code>'Đặt lại bộ lọc'</code> as reset (<code>:149</code> and <code>:293</code>),
+    <code>'Ngày bắt đầu'</code> / <code>'Ngày kết thúc'</code> as the two field labels
+    (<code>:233</code>, <code>:252</code>), and both fields format with
+    <code>DateFormat('dd MMMM, yyyy', 'vi')</code> (<code>:392</code>, <code>:405</code>).
+    Both ends are accent discs, the days between carry the 12% wash edge to edge, and the range
+    cannot cross today. <b>From</b> and <b>To</b> select which end the next tap sets, and setting
+    <b>From</b> hands the next tap to <b>To</b> on its own — one grid, no second dialog, and no
+    stack of pops to unwind.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Eight surfaces that narrow a list</h2>
+  <p>
+    Every list in the War Room is filtered before it is read. Two of those filters — the ones on
+    <strong>Results</strong> and <strong>Actions</strong> — have never been designed, captured or
+    specified. They are opened by a small circular button at the head of the category strip, and
+    what opens is a sheet whose three rows do nothing at all: each row's tap handler in the
+    shipped code is an empty function. The sheet can be scrolled and admired; it cannot sort.
+  </p>
+  <p>
+    So this file does two jobs. It rebuilds the surfaces that exist — the sort sheet, the date
+    picker, the date range, the explainer popover — on the dark kit, and it fills the three holes
+    that make those surfaces unusable: there is no way to tell how many filters are on, no way to
+    clear them, and nothing on screen when a filter matches nothing. Filtering a list to zero
+    results in today's build produces a blank area under the chips.
+  </p>
+  <p>
+    Nothing here is in the Figma file. Every construction is borrowed from a component that is:
+    the sheet shell, option rows, indicators and calendar grid are <code>sheets.html</code>
+    unchanged; the screen title, taxonomy switch, category chips, result cards and verdict plates
+    are <code>results-actions.html</code> unchanged; the nothing-matched panel is
+    <code>ideas-list.html</code>'s. What is genuinely new is the count on the filter trigger, the
+    summary line that says <em>2 filters on · 3 of 14</em> with <strong>Clear all</strong>
+    beside it, the filter sheet itself, and the nothing-matched copy.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Screen</td><td>Taxonomy switch</td>
+          <td class="t-note">A <code>46px</code> <code>#13171E</code> track holding two
+            <code>38px</code> halves; the selected half is a full <code>#9BE222</code> plate with
+            <code>#0B0E06</code> ink. <code>CLString.listFilterPri</code> —
+            <strong>Decisions</strong> / <strong>Positions</strong> — sent as
+            <code>type=decisions|position</code>.</td>
+        </tr>
+        <tr>
+          <td>Screen</td><td><code>?</code> explainer trigger</td>
+          <td class="t-note">A <code>24px</code> disc sitting on the half beside the label, with an
+            invisible <code>::after</code> expansion to a <code>44px</code> hit area. The build
+            draws it at <code>16 × 16</code> and nests it <em>inside</em> the tab button; here the
+            label and the disc are two separate controls on one plate, so a screen reader is not
+            offered a button inside a button.</td>
+        </tr>
+        <tr>
+          <td>Screen</td><td>Filter trigger</td>
+          <td class="t-note">The kit's <code>38px</code> disc on <code>#1C2129</code> with a
+            1.9-stroke bar glyph. When a filter is on it takes a
+            <code>rgba(155,226,34,.30)</code> inner ring, the glyph turns accent, and an
+            <code>18px</code> accent count rides the top-right corner with a <code>2px</code>
+            <code>#030401</code> halo so it reads on any row beneath.</td>
+        </tr>
+        <tr>
+          <td>Screen</td><td>Category chips</td>
+          <td class="t-note"><code>CLString.listFilterSup</code> with index 0 dropped, because
+            index 0 <em>is</em> the trigger in the shipped list: <strong>All · On-field ·
+            Off-field · Management · My ideas</strong>. <code>34px</code>, radius pill, uppercase
+            <code>11 / 700 / .11em</code>. Active is the <code>12%</code> accent wash with the
+            <code>30%</code> rim <em>and a tick glyph</em>, so the state is never colour alone.</td>
+        </tr>
+        <tr>
+          <td>Screen</td><td>Filter summary</td>
+          <td class="t-note">New. <code>11 / 700 / .11em</code> uppercase <code>#5B606B</code>
+            with the figures in white tabular numerals: <em>2 filters on · 3 of 14</em>, and
+            <strong>Clear all</strong> in accent at the right end with an <code>✕</code>. Kept to
+            one line at <code>375px</code> — the sort order stays on the sheet that sets it.</td>
+        </tr>
+        <tr>
+          <td>Sheet</td><td>Shell</td>
+          <td class="t-note"><code>sheets.html</code> unchanged: top corners <code>18px</code>,
+            <code>#1C2129</code> → <code>#13171E</code> at 180°, 1&nbsp;px white&nbsp;7.5% on top
+            and sides, <code>0 −20 50 rgba(0,0,0,.6)</code>, a <code>40 × 4</code> grabber in a
+            <code>26px</code> strip, and <code>min(88vh, 560)</code> height.</td>
+        </tr>
+        <tr>
+          <td>Sheet</td><td>Title bar</td>
+          <td class="t-note"><code>11 / 700 / .14em</code> uppercase on a hairline. The shipped
+            title is <code>'SORT {}'.tr()</code> filled with <code>RESULTS</code> or
+            <code>ACTIONS</code>; on the filter sheet the bar also carries the count pill,
+            <strong>Clear all</strong> and a <code>30px</code> ✕.</td>
+        </tr>
+        <tr>
+          <td>Sheet</td><td>Sort row</td>
+          <td class="t-note"><code>48px</code> minimum, radius <code>12px</code>, on
+            <code>#13171E</code>. <strong>Round radio</strong>, because only one order can be
+            active — <code>ordering=recent|urgent|popular</code>. Selected is the accent wash, the
+            accent rim and an accent label. Applies on tap, so the sort sheet has no foot.</td>
+        </tr>
+        <tr>
+          <td>Sheet</td><td>Filter row</td>
+          <td class="t-note">Same row, <strong>square checkbox</strong>, because more than one can
+            be on. Grouped <code>Kind</code> / <code>Verdict</code> / <code>Mine</code> under
+            <code>10 / 700 / .14em</code> labels, and the foot carries a full-width accent
+            <strong>Apply</strong> with the count — nothing behind the sheet moves until it is
+            pressed.</td>
+        </tr>
+        <tr>
+          <td>Picker</td><td>Month grid</td>
+          <td class="t-note"><code>sheets.html</code>'s calendar: seven columns, Monday first,
+            <code>44px</code> rows, a <code>34px</code> accent disc for the selection,
+            <code>#5B606B</code> for adjacent months, and today as a 1&nbsp;px
+            <code>rgba(155,226,34,.30)</code> ring. Unselectable days are struck through, not
+            hidden.</td>
+        </tr>
+        <tr>
+          <td>Picker</td><td>Summary line</td>
+          <td class="t-note">Above the grid, on <code>#13171E</code>: the answer restated in words
+            — <em>Sunday 12 July 2026</em> — with the distance from today in accent at the right.
+            <code>12</code> on its own is not a date.</td>
+        </tr>
+        <tr>
+          <td>Picker</td><td>Range fill</td>
+          <td class="t-note">Both ends are accent discs; the days between carry the <code>12%</code>
+            wash edge to edge behind the disc so the run reads as one object rather than
+            twenty-one separate cells.</td>
+        </tr>
+        <tr>
+          <td>Picker</td><td>From / To fields</td>
+          <td class="t-note">Two <code>52px</code> read-only controls at the head of the range
+            sheet, tabular numerals, calendar glyph at the right, the one being edited ringed in
+            accent with a <code>3px</code> wash halo. Both live on the <em>same</em> surface as the
+            grid — the build opens a second dialog for each.</td>
+        </tr>
+        <tr>
+          <td>Popover</td><td>Explainer</td>
+          <td class="t-note">A <code>#1C2129</code> plate at radius <code>12px</code> with a
+            rotated-square tail pointing at the disc that opened it, an accent
+            <code>11 / 700 / .14em</code> title, <code>13px</code> <code>#99A0AE</code> body at
+            1.5 line height, a close control, and one optional onward link. The build's version is
+            radius <code>3px</code>, has no dismiss control and no title styling of its own.</td>
+        </tr>
+        <tr>
+          <td>Empty</td><td>Nothing matched</td>
+          <td class="t-note">A <strong>dashed</strong> <code>rgba(255,255,255,.075)</code> edge on
+            <code>#080A0C</code> holding a 1.5-stroke crossed-filter glyph, a sentence naming the
+            two filters that collide, a <code>44px</code> <strong>Clear filters</strong> button and
+            one cheaper alternative underneath. Dashed, not solid, because this is a filtered-out
+            state and not an empty stage.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>No filter</td>
+          <td class="t-note"><code>All</code> chip pressed, trigger plain with no ring and no
+            count, no summary line at all. Absence of the line is the signal.</td></tr>
+        <tr><td>Filter on</td>
+          <td class="t-note">Three signals at once: a tick inside the accent chip, an accent ring
+            plus a numeral on the trigger, and the summary line in words with
+            <strong>Clear all</strong>. Any one of the three could be missed; all three cannot.</td></tr>
+        <tr><td>Filter matches nothing</td>
+          <td class="t-note">The dashed panel, the two colliding filters named in the sentence, and
+            a button that clears them. The summary line still reads <em>2 filters on · 0 of 14</em>
+            so the member knows the list is not empty, the filter is.</td></tr>
+        <tr><td>Stage genuinely empty</td>
+          <td class="t-note">Not this panel. <code>No results yet</code> on the solid section edge,
+            with no button — there is nothing to undo. The build uses one string,
+            <code>'No {} yet'</code>, for both cases and shows it only on the War Room rails.</td></tr>
+        <tr><td>Sort row selected</td>
+          <td class="t-note">Round indicator filled with an accent dot, row washed at
+            <code>12%</code>, rim at <code>30%</code>, label accent and <code>600</code>. Exactly
+            one row in the group.</td></tr>
+        <tr><td>Filter row checked</td>
+          <td class="t-note">Square indicator filled <code>#9BE222</code> with an
+            <code>#0B0E06</code> tick. Any number of rows. Head count and Apply count both track
+            it live, and <strong>Clear all</strong> disables at zero.</td></tr>
+        <tr><td>Day unselectable</td>
+          <td class="t-note"><code>#5B606B</code> and struck through, cursor
+            <code>not-allowed</code>. Future days on both pickers, because
+            <code>lastDate: DateTime.now()</code>. <strong>Next month</strong> is disabled rather
+            than removed, so the edge of the window is visible instead of mysterious.</td></tr>
+        <tr><td>Today</td>
+          <td class="t-note">A 1&nbsp;px accent ring that survives under a selected disc, since
+            both ends of a range usually sit near today.</td></tr>
+        <tr><td>Range incomplete</td>
+          <td class="t-note">The unset field reads <code>Choose a date</code> in
+            <code>#5B606B</code> at <code>500</code>; <strong>Apply</strong> stays available only
+            once both ends exist. Setting <em>From</em> after <em>To</em> is prevented by the grid,
+            not by an error message.</td></tr>
+        <tr><td>Explainer open</td>
+          <td class="t-note">Trigger disc inverts — accent fill on a plain half, <code>#0B0E06</code>
+            fill on the selected half — and the popover appears with its tail under the disc.
+            Escape, the ✕ or a second tap closes it.</td></tr>
+        <tr><td>Explainer with no copy</td>
+          <td class="t-note">Unbuilt on purpose. <strong>Positions</strong> has no explainer text
+            anywhere in the codebase, and a popover containing filler is worse than a disc that is
+            not there.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Nothing.</b> None of these eight surfaces appears in the dark-mode export, in
+          Screen-Specs, or in any capture. The coverage audit lists all of them as
+          <b>uncovered</b> under "Other imperative surfaces".</li>
+      </ul>
+      <h3>Reused from this library</h3>
+      <ul>
+        <li><b>Sheet shell, option row, radio and checkbox, calendar grid, range fill</b> —
+          <code>sheets.html</code>, values unchanged</li>
+        <li><b>Screen title, taxonomy switch, category chips, result card, verdict plate</b> —
+          <code>results-actions.html</code>, unchanged</li>
+        <li><b>Nothing-matched panel and its <code>Clear filters</code> pill</b> —
+          <code>ideas-list.html</code></li>
+        <li><b>The <code>52px</code> control shell</b> for the two date fields —
+          <code>forms.html</code></li>
+        <li><b>The <code>::after</code> hit-area expansion</b> on every <code>38px</code> disc and
+          on the <code>24px</code> explainer trigger — <code>create-idea.html</code></li>
+      </ul>
+      <h3>Reused from the shipped code</h3>
+      <ul>
+        <li><b>Three sort orders</b> — <code>CLString.listSortProposal</code> →
+          <code>["recent","urgent","popular"]</code></li>
+        <li><b>Five category chips</b> — <code>CLString.listFilterSup</code>, index 0 dropped
+          exactly as the code drops it</li>
+        <li><b>Verdict values</b> — <code>StatusIdeaEnum</code>: <code>approved</code>,
+          <code>rejected</code>, <code>vetoed</code>, <code>cancelled</code></li>
+        <li><b>The date window</b> — <code>firstDate: DateTime(2022)</code>,
+          <code>lastDate: DateTime.now()</code></li>
+        <li><b>The explainer copy</b> — <code>CLString.listExplainTitleIDea[0]</code>, the only
+          real explainer sentence that exists in the codebase</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>A sort sheet that sorts</b> — every row in both shipped sheets carries
+          <code>onPress: () {}</code></li>
+        <li><b>A filter sheet</b> — the app has none; its filter-glyph trigger opens a sort
+          list</li>
+        <li><b>Verdict as a filter</b> — you cannot currently narrow Results to
+          <code>Approved</code> at all</li>
+        <li><b>The count on the filter trigger</b> and the accent ring around it</li>
+        <li><b>The filter summary line</b> — <em>2 filters on · 3 of 14 results</em> — and
+          <b>Clear all</b>, which does not exist in any form today</li>
+        <li><b>A tick inside the active chip</b>, so the state is not carried by hue alone</li>
+        <li><b>The nothing-matched panel</b> — the build renders a blank area</li>
+        <li><b>One range surface</b> instead of a dialog opening a dialog</li>
+        <li><b>Struck-through unselectable days</b> and a disabled <b>Next month</b>, so the window
+          is legible</li>
+        <li><b>A dismissible explainer</b> with a title, a tail and a <code>44px</code>
+          trigger</li>
+        <li><b>English throughout.</b> Every string on the range surface is Vietnamese in the
+          build</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:14px">
+    Five faults are corrected here rather than reproduced, and each is worth reading as a bug
+    report. <b>One</b> — both sort sheets are inert: <code>result/widget/show_filter.dart:53</code>
+    and <code>action/widget/show_filter.dart:53</code> pass an empty function as the row handler,
+    while the identical sheets on Ideas and Voting pass a real one. <b>Two</b> — the same sheet is
+    built at two row heights: Actions sets <code>height: CSpace.height * 0.08</code>
+    (<code>action/widget/show_filter.dart:49</code>), Results leaves it unset. <b>Three</b> —
+    neither list has a zero branch, so a filter that matches nothing shows nothing
+    (<code>result_screen.dart:372</code>, <code>action_screen.dart:379</code>), even though the
+    app already owns <code>EmptyContainer</code>. <b>Four</b> — the filter survives a screen change
+    visually but not actually: <code>initState</code> re-requests the default unfiltered list
+    (<code>result.dart:172</code>) without clearing the selection state, so you return to green
+    chips over unfiltered results. <b>Five</b> — the date layer is pinned to Vietnamese in an
+    English-only app: <code>Locale('vi')</code> at <code>select_date/index.dart:102</code> and
+    <code>:130</code>, <code>DateFormat(… , 'vi')</code> at <code>on_tap.dart:392</code> and
+    <code>:405</code>, and hardcoded Vietnamese labels at <code>on_tap.dart:149</code>,
+    <code>:163</code>, <code>:233</code>, <code>:252</code> and <code>:293</code>.
+  </p>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Should the taxonomy and the categories be independent?</h3>
+      <p>They are not today. <code>getFilterListIdea</code> sends a category <em>as</em> the
+      <code>type</code> parameter with <code>category: null</code>
+      (<code>cubit/proposal/result.dart:52–61</code>), so choosing <b>On-field</b> silently
+      discards your <b>Decisions / Positions</b> choice — and switching to <b>Positions</b> shrinks
+      the chip list from six entries to three while keeping the numeric index, which turns
+      <b>My ideas</b> into <b>On-field</b> without telling you. We built them as
+      <span class="flag">two independent axes</span>, which is what the sheet implies and what a
+      member will expect. If the API cannot carry both at once, the chips have to become part of
+      the taxonomy rather than sit beside it, and the sheet shrinks.</p>
+    </li>
+    <li>
+      <h3>What can actually be filtered on the server?</h3>
+      <p><code>getListIdea</code> sends exactly five query parameters —
+      <code>club_uuid</code>, <code>stage</code>, <code>category</code>, <code>type</code>,
+      <code>ordering</code> — plus <code>limit: '50'</code>
+      (<code>service/src/proposal.dart:52–59</code>). There is <b>no status parameter and no
+      is_vote parameter</b>, so the <b>Verdict</b> and <b>Mine</b> groups cannot be server-side
+      today. We built them <span class="flag">filtering the page already in memory</span>, which is
+      defensible only because the list is a single request capped at 50 and therefore complete for
+      most clubs. If a club can hold more than 50 settled Results, those two groups need real query
+      parameters or they will lie.</p>
+    </li>
+    <li>
+      <h3>Is one filter enough per category, or many?</h3>
+      <p>The chips are single-select today: tapping one replaces the last. We built the sheet as
+      <span class="flag">multi-select with Apply</span> and kept the chips as single-select
+      shortcuts to the same state, so the chip strip stays a one-tap path and the sheet is where
+      combinations are made. The alternative — chips that also multi-select — makes the strip
+      state harder to read at <code>375</code> px and needs a horizontal scroll indicator.</p>
+    </li>
+    <li>
+      <h3>Should a filter survive leaving the screen?</h3>
+      <p>Today it half-survives, which is the worst of both: the chips remember, the list forgets.
+      We assumed <span class="flag">the filter is per-visit and resets on entry</span> — so the
+      chips must reset too. The other defensible answer is that a filter is a member preference
+      and persists until cleared, which needs it written to the cubit's initial state and
+      re-applied on <code>initState</code>. Either is fine; the current mixture is not.</p>
+    </li>
+    <li>
+      <h3>What does the Positions explainer say?</h3>
+      <p>There is one real explainer sentence in the whole codebase —
+      <code>listExplainTitleIDea[0]</code>, about On-field Decisions — and it is used on one screen
+      that is not this one. Its sibling for Positions is lorem ipsum, and all four War Room list
+      screens pass lorem ipsum directly at the call site. We shipped
+      <span class="flag">the Decisions popover only</span> and left the Positions disc without one.
+      Two or three sentences on what a Position is and we will build it.</p>
+    </li>
+    <li>
+      <h3>Which date does the range filter, and does it exist?</h3>
+      <p>The range dialog in <code>on_tap.dart</code> and the <code>SelectDate</code> widget are
+      both <b>dead code</b> — nothing in <code>lib/</code> constructs either, and the only live
+      date-range field sits in an admin user-list drawer with no route into it. We built the range
+      as <span class="flag">Settled between</span>, filtering on the date a verdict was reached,
+      because that is the only date a Result carries that a member would search by. If the range
+      is meant to filter Actions by kick-off, or if it is not wanted at all, say so — it is the one
+      surface here with no live caller.</p>
+    </li>
+    <li>
+      <h3>Monday-first weeks?</h3>
+      <p>The grid starts on <span class="flag">Monday</span>, which suits AU and EU and is wrong
+      for a US audience. The build never decided, because it never drew a calendar — it asked the
+      platform, in Vietnamese. If the app ships to both, the grid must follow the device locale.</p>
+    </li>
+    <li>
+      <h3>Can we delete the Vietnamese?</h3>
+      <p><code>assets/translations/vi.json</code> still ships, <code>main.dart</code> declares
+      <code>supportedLocales: [Locale("en")]</code>, and seven date helpers in
+      <code>utils/src/convert_data.dart</code> plus both date pickers hardcode
+      <code>'vi'</code>. We built <span class="flag">English only</span>. Confirm the app is
+      English-only and we will treat every Vietnamese string and every hardcoded
+      <code>'vi'</code> locale as a defect to be removed, not a feature to be preserved.</p>
+    </li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+
+  /* ------------------------------------------------------------
+     FRAME SCOPING
+     Eight frames, and every one of them holds a sheet, a chip
+     strip and a calendar with the same class names. document.
+     querySelector wires the first frame and leaves seven dead, so
+     nothing below reaches past its own frame. The wrapper differs
+     by build target: <section class="frame"> survives in the raw
+     component and in the prototype iframe, while build-reviews.py
+     drops it and emits each frame into its own .mk__scroll.
+     ------------------------------------------------------------ */
+  function frameOf(el){
+    return el.closest('section.frame') || el.closest('.mk__scroll') ||
+           el.closest('.mk') || document;
+  }
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+
+  /* The reference date is FIXED. Never new Date(): a frame that
+     renders "today" drifts between the screenshot and the review,
+     and the review pages are the record. 30 July 2026 is the date
+     every other frame in this component is written against. */
+  var TODAY = new Date(2026, 6, 30);
+  var MON  = ['January','February','March','April','May','June','July',
+              'August','September','October','November','December'];
+  var MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var DOW  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  function iso(s){
+    if(!s) return null;
+    var p = s.split('-');
+    return new Date(+p[0], +p[1]-1, +p[2]);
+  }
+  function same(a,b){
+    return !!a && !!b && a.getFullYear()===b.getFullYear() &&
+           a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  }
+  function dayNo(d){ return Math.round(d.getTime()/86400000); }
+  function shortF(d){ return d.getDate() + ' ' + MON3[d.getMonth()] + ' ' + d.getFullYear(); }
+  function longF(d){ return DOW[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()] + ' ' + d.getFullYear(); }
+  /* one range label, so the sheet summary and the field behind it
+     cannot disagree — the shared year is written once, at the end */
+  function rangeText(a,b){
+    if(!a) return 'Choose a range';
+    if(!b) return shortF(a) + ' → …';
+    var left = a.getFullYear() === b.getFullYear()
+      ? a.getDate() + ' ' + MON3[a.getMonth()]
+      : shortF(a);
+    return left + ' → ' + shortF(b);
+  }
+  function ago(d){
+    var n = dayNo(TODAY) - dayNo(d);
+    if(n === 0) return 'Today';
+    if(n === 1) return 'Yesterday';
+    if(n < 0)   return 'In ' + (-n) + ' days';
+    return n + ' days ago';
+  }
+
+  /* ============================================================
+     THE CALENDAR — one implementation, single and range
+     ------------------------------------------------------------
+     The month grid follows _assets/date-picker.md exactly: seeded
+     from the field rather than from the clock, Monday-first via
+     (first.getDay()+6)%7, days from new Date(y,m+1,0).getDate().
+     The only extension is the range: a second end, the wash
+     between the two, and an active end that the next tap sets.
+     Do not write a second calendar.
+     ============================================================ */
+  each(document.querySelectorAll('[data-cal]'), function(sheet){
+    if(sheet.__cal) return;
+    sheet.__cal = true;
+
+    var grid   = sheet.querySelector('[data-cal-grid]');
+    var monEl  = sheet.querySelector('[data-cal-mon]');
+    var sumEl  = sheet.querySelector('[data-cal-sum]');
+    var nEl    = sheet.querySelector('[data-cal-n]');
+    var titleEl= sheet.querySelector('[data-cal-title]');
+    var endEl  = sheet.querySelector('[data-commit-end]');
+    var resetB = sheet.querySelector('[data-cal-reset]');
+    var frame  = frameOf(sheet);
+    if(!grid) return;
+
+    var range = sheet.getAttribute('data-mode') === 'range';
+    var MIN = iso(sheet.getAttribute('data-min'));
+    var MAX = iso(sheet.getAttribute('data-max')) || TODAY;
+
+    /* the committed value the screen behind is showing, and the
+       working copy the sheet is editing — Cancel is the difference */
+    var saved = { from: iso(sheet.getAttribute('data-from')),
+                  to:   iso(sheet.getAttribute('data-to')) };
+    var work  = { from: saved.from, to: saved.to };
+    var end   = sheet.getAttribute('data-end') || 'from';
+    var view  = new Date((work.from || work.to || MAX).getTime());
+    view.setDate(1);
+
+    function setEnd(which){
+      end = which;
+      each(sheet.querySelectorAll('.dfield__b[data-end]'), function(b){
+        var on = b.getAttribute('data-end') === which;
+        b.classList.toggle('is-active', on);
+        if(b.hasAttribute('aria-pressed')) b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      if(titleEl) titleEl.textContent = which === 'to' ? 'To date' : 'From date';
+      if(endEl)   endEl.textContent   = which;
+      sheet.setAttribute('aria-label',
+        range ? 'Choose a date range' : 'Choose the ' + which + ' date');
+    }
+
+    function writeFields(){
+      each(sheet.querySelectorAll('[data-field]'), function(el){
+        var k = el.getAttribute('data-field');
+        var btn = el.closest('.dfield__b');
+        if(k === 'range'){
+          el.textContent = rangeText(work.from, work.to);
+        } else {
+          el.textContent = work[k] ? shortF(work[k]) : 'Choose a date';
+        }
+        if(btn) btn.classList.toggle('is-empty',
+          k === 'range' ? !work.from : !work[k]);
+      });
+    }
+
+    function summary(){
+      if(!sumEl) return;
+      var b = sumEl.querySelector('b'), e = sumEl.querySelector('em');
+      if(!range){
+        var d = work[end];
+        b.textContent = d ? longF(d) : 'No date chosen';
+        e.textContent = d ? ago(d) : 'Pick a day';
+        return;
+      }
+      if(work.from && work.to){
+        b.textContent = rangeText(work.from, work.to);
+        var days = dayNo(work.to) - dayNo(work.from) + 1;
+        e.textContent = same(work.to, TODAY) ? 'Ends today' : days + ' days';
+        if(nEl){ nEl.textContent = days + (days === 1 ? ' day' : ' days'); nEl.hidden = false; }
+      } else if(work.from){
+        b.textContent = rangeText(work.from, null);
+        e.textContent = 'Pick the end';
+        if(nEl){ nEl.hidden = true; }
+      } else {
+        b.textContent = 'No range set';
+        e.textContent = 'Pick a start';
+        if(nEl){ nEl.hidden = true; }
+      }
+      if(resetB) resetB.disabled = !work.from && !work.to;
+    }
+
+    function cell(tag, cls, n){
+      var el = document.createElement(tag);
+      el.className = cls;
+      if(tag === 'button') el.type = 'button';
+      var s = document.createElement('span');
+      s.textContent = n;
+      el.appendChild(s);
+      return el;
+    }
+
+    function draw(){
+      var y = view.getFullYear(), m = view.getMonth();
+      var label = MON[m] + ' ' + y;
+      if(monEl) monEl.textContent = label;
+      grid.setAttribute('aria-label', label);
+      grid.innerHTML = '';
+
+      var first = new Date(y, m, 1);
+      var lead  = (first.getDay() + 6) % 7;            /* Monday-first */
+      var days  = new Date(y, m + 1, 0).getDate();
+      var prev  = new Date(y, m, 0).getDate();
+
+      for(var i = lead; i > 0; i--){
+        grid.appendChild(cell('span', 'cal__d cal__d--out', prev - i + 1));
+      }
+
+      for(var n = 1; n <= days; n++){
+        var d = new Date(y, m, n);
+        var out = (MIN && d < MIN) || (MAX && d > MAX);
+        var cls = 'cal__d';
+        if(same(d, TODAY)) cls += ' cal__d--today';
+        if(range && work.from && work.to){
+          if(same(d, work.from) && same(d, work.to)) { /* one-day range: a disc, no bar */ }
+          else if(same(d, work.from)) cls += ' cal__d--edge cal__d--from';
+          else if(same(d, work.to))   cls += ' cal__d--edge cal__d--to';
+          else if(d > work.from && d < work.to) cls += ' cal__d--in';
+        }
+        var isFrom = range ? same(d, work.from) : same(d, work[end]);
+        var isTo   = range && same(d, work.to);
+        if(isTo && !isFrom) cls += ' cal__d--sel';
+
+        var el;
+        if(out){
+          el = cell('span', cls + ' cal__d--off', n);
+          el.setAttribute('aria-disabled', 'true');
+        } else {
+          el = cell('button', cls, n);
+          if(isFrom) el.setAttribute('aria-selected', 'true');
+          el.setAttribute('data-day', n);
+        }
+        grid.appendChild(el);
+      }
+
+      var trail = (7 - ((lead + days) % 7)) % 7;
+      for(var t = 1; t <= trail; t++){
+        grid.appendChild(cell('span', 'cal__d cal__d--out cal__d--off', t));
+      }
+
+      each(sheet.querySelectorAll('.cal__nav[data-go]'), function(b){
+        var go = +b.getAttribute('data-go');
+        var probe = new Date(y, m + go, 1);
+        b.disabled = go < 0
+          ? (!!MIN && probe < new Date(MIN.getFullYear(), MIN.getMonth(), 1))
+          : (!!MAX && probe > new Date(MAX.getFullYear(), MAX.getMonth(), 1));
+      });
+
+      summary();
+      writeFields();
+    }
+
+    function pick(n){
+      var d = new Date(view.getFullYear(), view.getMonth(), n);
+      if(!range){
+        work[end] = d;
+      } else if(end === 'from'){
+        work.from = d;
+        if(work.to && work.to < d) work.to = null;
+        setEnd('to');                     /* hand the next tap to the other end */
+      } else {
+        if(work.from && d < work.from){ work.to = work.from; work.from = d; }
+        else work.to = d;
+      }
+      draw();
+    }
+
+    grid.addEventListener('click', function(ev){
+      var b = ev.target.closest('button[data-day]');
+      if(b && grid.contains(b)) pick(+b.getAttribute('data-day'));
+    });
+
+    each(sheet.querySelectorAll('.cal__nav[data-go]'), function(b){
+      b.addEventListener('click', function(){
+        view = new Date(view.getFullYear(), view.getMonth() + (+b.getAttribute('data-go')), 1);
+        draw();
+      });
+    });
+
+    each(sheet.querySelectorAll('.dfield__b[data-end]'), function(b){
+      b.addEventListener('click', function(){
+        setEnd(b.getAttribute('data-end'));
+        var d = work[b.getAttribute('data-end')];
+        if(d){ view = new Date(d.getFullYear(), d.getMonth(), 1); }
+        draw();
+      });
+    });
+
+    if(resetB) resetB.addEventListener('click', function(){
+      work.from = null; work.to = null; setEnd('from'); draw();
+    });
+    var clearB = sheet.querySelector('[data-cal-clear]');
+    if(clearB) clearB.addEventListener('click', function(){
+      work.from = null; work.to = null; setEnd('from'); draw(); commit(); sheet.__close();
+    });
+
+    function commit(){
+      saved.from = work.from; saved.to = work.to;
+      each(frame.querySelectorAll('[data-behind] [data-field]'), function(el){
+        var k = el.getAttribute('data-field');
+        var btn = el.closest('.dfield__b');
+        if(k === 'range'){
+          el.textContent = rangeText(saved.from, saved.to);
+        } else {
+          el.textContent = saved[k] ? shortF(saved[k]) : 'Choose a date';
+        }
+        if(btn) btn.classList.toggle('is-empty',
+          k === 'range' ? !saved.from : !saved[k]);
+      });
+    }
+
+    /* re-seed the working copy from the committed value; used by
+       Cancel and by every reopen, so an abandoned edit never sticks */
+    sheet.__reseed = function(which){
+      work.from = saved.from; work.to = saved.to;
+      setEnd(which || (range ? 'from' : (sheet.getAttribute('data-end') || 'from')));
+      var d = work[end] || work.from || MAX;
+      view = new Date(d.getFullYear(), d.getMonth(), 1);
+      draw();
+    };
+    sheet.__commit = commit;
+
+    var commitB = sheet.querySelector('[data-commit]');
+    if(commitB) commitB.addEventListener('click', function(){ commit(); sheet.__close(); });
+    var cancelB = sheet.querySelector('[data-cancel]');
+    if(cancelB) cancelB.addEventListener('click', function(){ sheet.__reseed(); sheet.__close(); });
+
+    setEnd(end);
+    draw();
+  });
+
+  /* ============================================================
+     THE SHEET — open, close, focus return
+     Nothing here auto-dismisses. Escape and the screen behind both
+     close it, and focus goes back to whatever opened it.
+     ============================================================ */
+  each(document.querySelectorAll('[data-dock]'), function(dock){
+    var frame  = frameOf(dock);
+    var behind = frame.querySelector('[data-behind]');
+    var sheet  = dock.querySelector('[data-sheet]');
+    if(!sheet) return;
+    var opener = null;
+
+    function open(trigger){
+      opener = trigger || opener;
+      dock.hidden = false;
+      if(behind){ behind.classList.add('is-dim'); behind.setAttribute('aria-hidden','true'); }
+      each(frame.querySelectorAll('[data-open]'), function(b){
+        b.setAttribute('aria-expanded', b === opener ? 'true' : 'false');
+        /* the field that opened the sheet is the one being edited */
+        if(b.classList.contains('dfield__b')) b.classList.toggle('is-active', b === opener);
+      });
+      if(sheet.__reseed && trigger && trigger.getAttribute('data-end')){
+        sheet.__reseed(trigger.getAttribute('data-end'));
+      }
+      var first = sheet.querySelector('.sheet__x');
+      if(first) first.focus();
+    }
+    function close(){
+      dock.hidden = true;
+      if(behind){ behind.classList.remove('is-dim'); behind.removeAttribute('aria-hidden'); }
+      each(frame.querySelectorAll('[data-open]'), function(b){
+        b.setAttribute('aria-expanded','false');
+      });
+      if(opener) opener.focus();
+    }
+    sheet.__close = close;
+    sheet.__open  = open;
+
+    each(frame.querySelectorAll('[data-open]'), function(b){
+      b.addEventListener('click', function(){ open(b); });
+    });
+    each(sheet.querySelectorAll('[data-close], .sheet__x'), function(b){
+      b.addEventListener('click', function(){
+        if(sheet.__reseed) sheet.__reseed();
+        close();
+      });
+    });
+    /* The screen behind is the scrim. Only a click that lands on the
+       screen ITSELF closes — while it is dimmed its children are
+       pointer-events:none, so the target is the screen; once it is
+       live, a click on a control inside it is that control's, and
+       must not be swallowed by the scrim it has stopped being. */
+    if(behind) behind.addEventListener('click', function(ev){
+      if(ev.target !== behind) return;
+      if(behind.classList.contains('is-dim') && !dock.hidden){
+        ev.preventDefault();
+        if(sheet.__reseed) sheet.__reseed();
+        close();
+      }
+    });
+    frame.addEventListener('keydown', function(ev){
+      if(ev.key === 'Escape' && !dock.hidden){
+        ev.stopPropagation();
+        if(sheet.__reseed) sheet.__reseed();
+        close();
+      }
+    });
+
+    /* the sheet is up when the frame loads — that is the specimen */
+    var firstOpen = frame.querySelector('[data-open][aria-expanded="true"]') ||
+                    frame.querySelector('[data-open]');
+    opener = firstOpen;
+  });
+
+  /* ============================================================
+     OPTION ROWS
+     Radio applies on tap and closes the sheet — the sort sheets
+     have no Apply button, so the tap has to be the apply.
+     Checkbox is multi-select and waits for Apply.
+     ============================================================ */
+  function recount(sheet){
+    if(!sheet) return;
+    var on = sheet.querySelectorAll('.opt[role="checkbox"][aria-checked="true"]').length;
+    var n = sheet.querySelector('[data-n]');
+    var b = sheet.querySelector('[data-btn-n]');
+    var clear = sheet.querySelector('[data-clear]');
+    if(n){ n.textContent = on + ' on'; n.hidden = on === 0; }
+    if(b){ b.textContent = on; b.hidden = on === 0; }
+    if(clear){ clear.disabled = on === 0; }
+  }
+
+  each(document.querySelectorAll('.opt'), function(opt){
+    opt.addEventListener('click', function(){
+      var sheet = opt.closest('.sheet');
+      if(opt.getAttribute('role') === 'radio'){
+        var g = opt.closest('[role="radiogroup"]');
+        if(g) each(g.querySelectorAll('.opt[role="radio"]'), function(o){
+          o.setAttribute('aria-checked', o === opt ? 'true' : 'false');
+        });
+        if(sheet && sheet.hasAttribute('data-applies-on-tap')){
+          var frame = frameOf(sheet);
+          var line  = frame.querySelector('[data-sortline]');
+          var name  = frame.querySelector('[data-sortname]');
+          var label = opt.querySelector('.opt__text').firstChild.textContent.trim();
+          if(name){ name.textContent = label; }
+          if(line){ line.hidden = false; }
+          if(sheet.__close) sheet.__close();
+        }
+      } else if(opt.getAttribute('role') === 'checkbox'){
+        opt.setAttribute('aria-checked', opt.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+        recount(sheet);
+      }
+    });
+  });
+
+  each(document.querySelectorAll('[data-clear]'), function(btn){
+    btn.addEventListener('click', function(){
+      var sheet = btn.closest('.sheet');
+      each(sheet.querySelectorAll('.opt[role="checkbox"]'), function(o){
+        o.setAttribute('aria-checked','false');
+      });
+      recount(sheet);
+    });
+  });
+
+  each(document.querySelectorAll('[data-apply]'), function(btn){
+    btn.addEventListener('click', function(){
+      var sheet = btn.closest('.sheet');
+      var frame = frameOf(sheet);
+      var on = sheet.querySelectorAll('.opt[role="checkbox"][aria-checked="true"]').length;
+      var line = frame.querySelector('[data-applied]');
+      var n    = frame.querySelector('[data-applied-n]');
+      var trig = frame.querySelector('[data-trigger-n]');
+      var tbtn = frame.querySelector('.fbar__t');
+      if(n) n.textContent = on;
+      if(line) line.hidden = on === 0;
+      if(trig){ trig.textContent = on; trig.hidden = on === 0; }
+      if(tbtn) tbtn.classList.toggle('is-on', on > 0);
+      if(sheet.__close) sheet.__close();
+    });
+  });
+
+  /* ============================================================
+     THE CHIP STRIP
+     ------------------------------------------------------------
+     14 settled results, so "x of 14" is counted rather than
+     asserted. All is exclusive; the three categories are an OR;
+     My ideas is a second axis ANDed on top. Management + My ideas
+     really is 0 — which is what the nothing-matched frame is for.
+     ============================================================ */
+  var ROWS = [
+    /* the two on-field rows this screen actually renders are the two
+       marked mine, so the card list and the count cannot disagree */
+    {c:'on-field',  mine:true }, {c:'on-field',  mine:true },
+    {c:'on-field',  mine:false}, {c:'on-field',  mine:false},
+    {c:'on-field',  mine:false}, {c:'on-field',  mine:false},
+    {c:'off-field', mine:true }, {c:'off-field', mine:false},
+    {c:'off-field', mine:false}, {c:'off-field', mine:false},
+    {c:'management',mine:false}, {c:'management',mine:false},
+    {c:'management',mine:false}, {c:'management',mine:false}
+  ];
+  var CATS = ['on-field','off-field','management'];
+
+  function countFor(cats, mine){
+    return ROWS.filter(function(r){
+      if(cats.length && cats.indexOf(r.c) === -1) return false;
+      if(mine && !r.mine) return false;
+      return true;
+    }).length;
+  }
+  function nameOf(k){
+    return k === 'on-field' ? 'On-field' : k === 'off-field' ? 'Off-field' :
+           k === 'management' ? 'Management' : 'My ideas';
+  }
+
+  each(document.querySelectorAll('[data-chipbar]'), function(bar){
+    var frame = frameOf(bar);
+    /* on the sheet frames the trigger belongs to the sheet, not to the
+       chips — the chips there only carry their own pressed state */
+    var chipsOnly = bar.hasAttribute('data-chips-only');
+    var chips = bar.querySelectorAll('.fchip[data-chip]');
+    var TICK  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" ' +
+                'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                '<path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg>';
+
+    function state(){
+      var cats = [], mine = false;
+      each(chips, function(c){
+        if(c.getAttribute('aria-pressed') !== 'true') return;
+        var k = c.getAttribute('data-chip');
+        if(k === 'mine') mine = true;
+        else if(k !== 'all') cats.push(k);
+      });
+      return { cats: cats, mine: mine };
+    }
+
+    function render(){
+      var s = state();
+      var n = s.cats.length + (s.mine ? 1 : 0);
+      var hit = countFor(s.cats, s.mine);
+
+      /* All is on only when nothing else is */
+      each(chips, function(c){
+        var k = c.getAttribute('data-chip');
+        var on = k === 'all' ? n === 0 : c.getAttribute('aria-pressed') === 'true';
+        c.setAttribute('aria-pressed', on ? 'true' : 'false');
+        /* the tick is the non-colour half of the pressed signal */
+        var svg = c.querySelector('svg');
+        if(on && k !== 'all' && !svg) c.insertAdjacentHTML('beforeend', TICK);
+        if((!on || k === 'all') && svg) svg.remove();
+      });
+
+      if(chipsOnly) return;
+
+      var trig = frame.querySelector('[data-trigger-n]');
+      var tbtn = bar.querySelector('.fbar__t');
+      if(trig){ trig.textContent = n; trig.hidden = n === 0; }
+      if(tbtn){
+        tbtn.classList.toggle('is-on', n > 0);
+        tbtn.setAttribute('aria-label', n === 0 ? 'Filter results'
+          : 'Filter results, ' + n + (n === 1 ? ' filter on' : ' filters on'));
+      }
+
+      var tn = frame.querySelector('[data-tally-n]');
+      var th = frame.querySelector('[data-tally-hit]');
+      if(tn) tn.textContent = n;
+      if(th) th.textContent = hit;
+      var tx = frame.querySelector('[data-clear-chips]');
+      if(tx && tx.classList.contains('tally__x')) tx.disabled = n === 0;
+
+      /* frame 4 — the result cards on the page */
+      var rows = frame.querySelectorAll('[data-row]');
+      if(rows.length){
+        var shown = 0;
+        each(rows, function(r){
+          var okC = !s.cats.length || s.cats.indexOf(r.getAttribute('data-cat')) > -1;
+          var okM = !s.mine || r.getAttribute('data-mine') === 'true';
+          r.hidden = !(okC && okM);
+          if(!r.hidden) shown++;
+        });
+        var end = frame.querySelector('[data-endline]');
+        var none = frame.querySelector('[data-none]');
+        if(end){ end.hidden = shown === 0; end.textContent = 'End of ' + shown + ' matching result' + (shown === 1 ? '' : 's'); }
+        if(none) none.hidden = shown > 0;
+      }
+
+      /* frame 5 — the nothing-matched panel */
+      var nohit = frame.querySelector('[data-nohit]');
+      if(nohit){
+        var hits = frame.querySelector('[data-hits]');
+        nohit.hidden = hit > 0;
+        if(hits){
+          hits.hidden = hit === 0;
+          var hn = frame.querySelector('[data-hits-n]');
+          if(hn) hn.textContent = hit;
+        }
+        if(hit === 0 && n > 0){
+          var names = s.cats.map(nameOf); if(s.mine) names.push('My ideas');
+          var h = frame.querySelector('[data-nohit-h]');
+          var p = frame.querySelector('[data-nohit-p]');
+          if(h) h.textContent = names.length > 1
+            ? 'Nothing matches ' + names.join(' and ')
+            : 'Nothing matches ' + names[0];
+          if(p) p.innerHTML = '<b>There are 14 results here</b> — none of them match <b>' +
+            names.join('</b> and <b>') + '</b> together. Drop one filter and the rest come back.';
+        }
+        /* the "or keep X only" shortcut, recounted */
+        var alt = frame.querySelector('[data-drop-chip]');
+        if(alt){
+          var drop = alt.getAttribute('data-drop-chip');
+          var kept = s.cats.slice(), keptMine = s.mine;
+          if(drop === 'mine') keptMine = false; else kept = kept.filter(function(k){ return k !== drop; });
+          var altN = countFor(kept, keptMine);
+          var altName = kept.length ? kept.map(nameOf).join(' + ') : (keptMine ? 'My ideas' : 'everything');
+          alt.hidden = (hit > 0) || altN === 0 || altN === hit;
+          alt.innerHTML = 'or keep <b>' + altName + '</b> only · <b>' + altN + '</b> results';
+        }
+      }
+    }
+
+    each(chips, function(c){
+      c.addEventListener('click', function(){
+        var k = c.getAttribute('data-chip');
+        if(k === 'all'){
+          each(chips, function(x){ x.setAttribute('aria-pressed', x === c ? 'true' : 'false'); });
+        } else {
+          c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+        }
+        render();
+      });
+    });
+
+    each(frame.querySelectorAll('[data-clear-chips]'), function(b){
+      b.addEventListener('click', function(){
+        each(chips, function(x){
+          x.setAttribute('aria-pressed', x.getAttribute('data-chip') === 'all' ? 'true' : 'false');
+        });
+        render();
+      });
+    });
+
+    each(frame.querySelectorAll('[data-drop-chip]'), function(b){
+      b.addEventListener('click', function(){
+        var k = b.getAttribute('data-drop-chip');
+        each(chips, function(x){
+          if(x.getAttribute('data-chip') === k) x.setAttribute('aria-pressed','false');
+        });
+        render();
+      });
+    });
+
+    render();
+  });
+
+  /* ============================================================
+     THE TAXONOMY SEGMENT AND THE EXPLAINER
+     ============================================================ */
+  each(document.querySelectorAll('.tax'), function(tax){
+    each(tax.querySelectorAll('.tax__btn'), function(btn){
+      btn.addEventListener('click', function(){
+        each(tax.querySelectorAll('.tax__half'), function(half){
+          var on = half.contains(btn);
+          if(on) half.setAttribute('data-on','true'); else half.removeAttribute('data-on');
+          var b = half.querySelector('.tax__btn');
+          if(b) b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      });
+    });
+  });
+
+  each(document.querySelectorAll('.tax__q[data-tip]'), function(q){
+    var tip = document.getElementById(q.getAttribute('data-tip'));
+    if(!tip) return;
+    q.addEventListener('click', function(){
+      var open = q.getAttribute('aria-expanded') === 'true';
+      q.setAttribute('aria-expanded', open ? 'false' : 'true');
+      tip.hidden = open;
+      if(!open){ var x = tip.querySelector('.tip__x'); if(x) x.focus(); }
+    });
+    var x = tip.querySelector('.tip__x');
+    if(x) x.addEventListener('click', function(){
+      tip.hidden = true;
+      q.setAttribute('aria-expanded','false');
+      q.focus();
+    });
+    frameOf(q).addEventListener('keydown', function(ev){
+      if(ev.key === 'Escape' && !tip.hidden){
+        tip.hidden = true; q.setAttribute('aria-expanded','false'); q.focus();
+      }
+    });
+    tip.hidden = q.getAttribute('aria-expanded') !== 'true';
+  });
+})();
+</script>

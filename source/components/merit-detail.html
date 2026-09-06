@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en" data-component="merit-detail">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Merit detail &amp; badges</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — MERIT DETAIL & BADGES
+   The gamification surface behind the Merits tab: four pushed
+   routes / overlays reached from merits.html.
+
+   Tokens, type scale, hero construction, section container,
+   status pill, icon button, row and avatar patterns are copied
+   verbatim from merits.html. Nothing here introduces a colour.
+
+   Badge artwork is drawn from the brand's own geometry — the
+   angular peak motif, the accent, the surface ladder and facet
+   count. There is no gold, no metal and no medal on this page.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls, tab bar        */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* hero */
+  --hero-a:        #0D3617;
+  --hero-b:        #17481C;
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* photography — six portraits from _assets/avatars.css */
+  --av-01:url(data:image/jpeg;base64,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);
+  --av-02:url(data:image/jpeg;base64,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);
+  --av-03:url(data:image/jpeg;base64,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);
+  --av-04:url(data:image/jpeg;base64,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);
+  --av-05:url(data:image/jpeg;base64,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);
+  --av-06:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAHAAAAgMBAQEBAAAAAAAAAAAAAwYEBQcCAQAI/8QANhAAAgEDAgQDBgYCAQUAAAAAAQIDAAQRBSEGEjFBE1FhBxQicYGRIzJCUrHBodFiJUNTcuH/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AvlFGQUJaMlAVBVTxVxHFw3pJn2a5lylvGe7eZ9B/qrdax3jrVn1XiW4UMTDaEwRDtt+Y/U5+woF6WSa7neaV3lkdizMdySakw2E82CoUY3+I4ocHwjpVhamQNsDigLFw9duCylDjoA+Klrw7qawc6ws+f07HGPlVnp0oQqHBpptQHVSgIx5Ggz6TRryGAv7vMqrguGjIAz5V7pt5c6LqcF7ay8ssLcyEdPUEfcGtSQLHCEBIUDvVBq2jWd6TJ4YSQj86jGfmO9BqGh6nDrOkW2ow7LOgbl/aehH0Oase1Z37LrmW1k1DRJixEWJ4vIA7N/RrRO1B4aG1ENDagR1oyUJaMgoOy3hxs/7VJ+wrCltbq/mkeGCSZiS7cik4ye9atrnGGnaFfJYXkUzGWLmLooIUHIGRnJ+lZzb8S6jbTCOCRFgVwfCWJQuM9OlBWSwXFpIVlt3V1OGQruKlWF/D4wMimJu4qRqepTNqkjHBlc80hRcFiRnHyA2qfpd1YS8styjugI5lP5SP6+dBcW4t7mBJIMEH82OtXukPGWKFsdhmqu60zSYLQ6not4phOBJDkeJCTtkqOoz3GPrQ7I3IhMvLzANsQcEnywaBtngYxZHUdqpbqVlfBqAvEuohikOnzyb45jjFCfXZbidYr2xe3Dn88iFR9+lBd8MTPBxtYyJnE6PBJ6ggkf5ArUx0rM+FLbxeJrQgZMJZyfQKf91pnag8NDaiGhtQJC0Vc0JKMtBn/tUtFB06/A+LDwsfPoR/dI8BHig4zTz7VrgCHTrbO5Z5Mf4pCjcgg0DFe6NLLdi6t3HxhZBn1HapFtE1lp00bxhVnbDhcEsPL0oek6tItsIJI/FjH5Qeq/I9qlXt/BbQIotpOeRwAHYb/Wgj6HYfjNfT/DBCBGm+7v1A9cCmpdOPgJHIzNF7o7nl6kgjOfoc1VH3i51C0FyYkgWP8GKNcKvn8ye5pwvLOaG2t2jVXdBkKpyGUjBH2NBnf/Vbe9WSP4ZI5RyIBkAdQcitM03jSxkjg0/iPT0F1ImWkhQMp/8AYDcGq1tKiKBiu69CDuPl6VDm0x7OQTKGYN0598/Kgb9LGmQ6tJeaaviKYyiAgq2dsjHcdO2d6bFJKKSMEjJHlSJwYDFrHu4lA8OFmkUfqZiNvpinyg5NDaimhNQI60ZKClGWgRPanGhtLNuUFwThjnIHpWeRHIFbFxxZrd8MXH4TSPH8S8gyRWMq2D6UDHpVykHKXwACOteapcC/uUm95jjEO6qRkfaqZndgiK2Aak2AUXQQIGbmxzPgAUE6xub+41RJTdM3JkjnB5APIeVNOl8Q6s+opLB4d1bS4Ro0QqUH7hmudP0/VFZG9zE8Z6hSHBHqKmXaJbMsl1ZtYOoAWVE5cf1j0NBdRvqtrM+HimiclhHIuQpPYHqKPeavdXFisDxRRCPdeUZwfSqLTNcmklms5zzyRk8rr0cdjXeq6msFo8x6hdh5mgYvZ8xm1PUpvhKgrGDnfIGT/NP1I3su097fQnvXYH3tub1GCaeaDw0JqKaG1AioaMpoKURpEijaSR1REGWZjgAeZNB9e3VvaafPcXbYt44y0h/496wGVk8eQKCE5jy564ztTfxvxoNXhOm2AxZhwWkPWbHTbsufvSfJ8ZzQdCQhhjtUqDmkk/DbDVAGx3OKKsmMcu3nQPGj3/ElrGgt445U26sQcVa6pq+pSIzavBEqEbgkuPLcGka21a5g5VSVwE7A9akXes3F7CIp5Wkz0JPSgt9O1CzhmmmRRHyjZR0+lF0u3uuKtaitEVliJ5pMfpTPWlq0naFHwnMW23rZvZhHYxaM8IUDUObnmDAc2D0wfL+6B1sbSGws4rS3QJFEoVQKk1wtdHONqD40Nq7NcMaDFtQ9omn24ZdOt5Lxx+s/Ag/s/alDWuLNV1pPAuZVjgzkwwjlU+We5+tUcas8oLHPc0d4jzEkHzFAGZSx5R2FcqcirHT7F7u4YIMsqh8edealpklhMHCnwJN0by/4/Oggldq9EeB6+VFjQk1Pt7dZMKcfI0FYgbJ2oyBmG3+KuF0iBjjA38qt9P023tsFVUnv3NBDsNPjsdNe/uVywGUVh9v5q7s7ya1it7u2d45VXlLqxB6+nzqo4nu+W3gtF/NLIuR6A1PtAyaZgAbk7H6UDRpvtKv7DkOpRC/t35ssgCyx8pwcjoRuN/Wn7RuI9L16HmsLpXfHxRN8Lr9P9Vhow0/gvlWYc0bocEON9vmM/YV6hvbNka3mUso/DkHwMu+eo6/Wg/QZobVmWie0ye1cW+rF5FGxMqhZB0xhhs3/AM61oGn6xYasjNZ3CyMn50z8S/MUH5iiTlxjqSMnyqwuLRooOYdSOpr64sjaHxEBKR4MmdsVPaSFbK2WS4TmmbLE7hB6+VB1wshTXISw/CZvDJ88inWfQYZGltJ4RJC/VD/IpUsfCttSjhjYZReflz3Ug5+ozWt3dkssNvcr3Ubigyy/9nGpW7mbSj75Af8AtkhZF++zfzVadJ1CzfluLK4gI/8AJERW4wQtGqlk5l/cNjVtbhOTGTjyIoMEtrWRiO5pk0zh3UbwD3ezlkJ7lcL9ztWura2obnFvDzefhjP8USWVYoi3YCg/P/GXDUmkX9q13P41w7ZaOEZEa/2aJbuiWaKRkjPfqakcY6qLriWeZ2U4YRxhjso6sfnUDx3mDYXEfKOVk+P67f3QRr1iAjwNySqQVI3wevSplnKL+AXMShMNh1P6X64+R7VBZglysNx4kkJJHMikdP5FWOmeKl87yQIkboUEe427benX50HkkaXRMR3ddwD3HlQbN7vTGWewuHgaNs8oJ5c/T08qNNG0F4rjJBODg713MoeMtEMEnPWg/9k=);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ---------- shared bits (merits.html) ---------- */
+.label{margin:22px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.head{display:flex;align-items:center;gap:8px;margin:22px var(--gutter) 10px}
+.head h2{flex:1;margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+
+.pill-btn{
+  display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:17px;height:17px}
+
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  height:32px;padding:0 14px;border-radius:var(--r-pill);
+  background:var(--acid-wash);
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;
+}
+.status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+
+.avatar{
+  border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+.eyebrow{
+  margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.tag{
+  display:inline-flex;align-items:center;height:26px;padding:0 10px;
+  border-radius:var(--r-pill);background:var(--sunken);
+  font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);white-space:nowrap;
+}
+
+/* ============================================================
+   FRAME LABELS  (review scaffolding, not part of a screen)
+   ============================================================ */
+.fr{border-top:1px solid var(--line);margin-top:34px;padding-top:18px}
+.fr:first-of-type{border-top:0;margin-top:0;padding-top:0}
+
+/* ============================================================
+   HERO  (merits.html construction, prop omitted on pushed routes)
+   ============================================================ */
+.hero{
+  position:relative;overflow:hidden;
+  margin:0 var(--gutter);
+  border-radius:var(--r-card);
+  background:linear-gradient(112deg,var(--hero-a) 0%,var(--hero-b) 58%,#0C3416 100%);
+  height:138px;
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;
+  padding:14px 18px 16px;
+}
+.hero__field{position:absolute;inset:0;pointer-events:none}
+.hero__range{position:absolute;right:0;bottom:0;width:54%;height:38%;pointer-events:none;z-index:1}
+.hero__back{
+  position:relative;z-index:3;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;border:0;border-radius:50%;
+  background:rgba(255,255,255,.12);color:#fff;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.hero__back:hover{background:rgba(255,255,255,.2)}
+.hero__back svg{width:18px;height:18px}
+.hero__id{position:relative;z-index:3;max-width:56%}
+.hero__id .eyebrow{margin:0 0 6px;color:rgba(255,255,255,.6)}
+.hero__title{
+  position:relative;z-index:3;margin:0;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.hero--badge{align-items:flex-start;justify-content:flex-start}
+.hero__bdg.bdg{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-48%);
+  width:104px;z-index:3;
+}
+
+/* ============================================================
+   SUMMARY CARD  (merits.html .standing)
+   ============================================================ */
+.standing{
+  display:flex;gap:12px;
+  margin:10px var(--gutter) 0;padding:16px;
+  border-radius:var(--r-card);background:var(--surface);
+}
+.standing__main{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.standing__rank{display:flex;align-items:baseline;gap:7px;margin:0}
+.standing__rank b{font-size:32px;font-weight:800;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+.standing__rank span{font-size:12.5px;color:var(--muted)}
+.delta{display:inline-flex;align-items:center;gap:4px;margin-top:9px;font-size:12px;font-weight:600;color:var(--acid)}
+.delta svg{width:12px;height:12px}
+.standing__score{
+  flex:0 0 96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  padding:12px 8px;border-radius:var(--r-panel);background:var(--sunken);
+}
+.standing__score b{font-size:22px;font-weight:700;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.standing__score span{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);text-align:center}
+
+/* ============================================================
+   SECTION CONTAINER
+   ============================================================ */
+.section{
+  margin:0 var(--gutter);padding:12px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);
+}
+.section + .section{margin-top:10px}
+.section__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.section__bar .spacer{flex:1}
+.section__body{margin:0;font-size:13px;color:var(--muted)}
+.section__body b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   LEDGER  (frame 1)
+   ============================================================ */
+.grp{
+  display:flex;align-items:baseline;gap:8px;
+  padding:2px 2px 8px;
+}
+.grp + .board{margin-top:0}
+.grp__t{flex:1;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.grp__v{font-size:12px;font-weight:700;color:var(--acid);font-variant-numeric:tabular-nums}
+.board{list-style:none;margin:0;padding:0;border-radius:var(--r-panel);background:var(--surface);overflow:hidden}
+.board + .grp{margin-top:16px}
+
+.led{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.led:first-child{border-top:0}
+.led__ic{
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  width:34px;height:34px;border-radius:var(--r-panel);
+  background:var(--sunken);color:var(--muted);
+}
+.led__ic svg{width:17px;height:17px}
+.led__ic--award{background:var(--acid-wash);color:var(--acid)}
+.led__id{flex:1;min-width:0}
+.led__t{display:block;font-size:13.5px;font-weight:600;line-height:1.25}
+.led__s{display:block;margin-top:2px;font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.led__v{
+  flex:0 0 auto;font-size:14px;font-weight:700;color:var(--acid);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;
+}
+.led__v--down{color:#E2564A}
+.more{display:flex;justify-content:center;margin:12px 0 0}
+
+/* ============================================================
+   BADGE  — the artwork system
+   Cell facets carry rarity, the glyph carries the deed,
+   the perimeter arc carries progress.
+   ============================================================ */
+.bdg{display:block;width:100%;height:auto;overflow:visible}
+.bdg__pan{fill:var(--sunken);stroke:none}
+.bdg__ring{fill:none;stroke:var(--line);stroke-width:1.6;stroke-linejoin:round}
+.bdg__ring2{fill:none;stroke:rgba(255,255,255,.055);stroke-width:1.3;stroke-linejoin:round}
+.bdg__prog{
+  fill:none;stroke:var(--acid);stroke-width:2.8;
+  stroke-linejoin:round;stroke-linecap:butt;
+}
+.bdg__gly{color:rgba(255,255,255,.28)}
+
+/* earned — ring strength rises with rarity, hue never changes */
+.bdg.is-earned .bdg__pan{fill:var(--acid-wash)}
+.bdg.is-earned .bdg__gly{color:var(--acid)}
+.bdg.is-earned .bdg__ring{stroke:rgba(155,226,34,.45)}
+.bdg--uncommon.is-earned .bdg__ring{stroke:rgba(155,226,34,.55)}
+.bdg--rare.is-earned .bdg__ring{stroke:rgba(155,226,34,.70)}
+.bdg--rare.is-earned .bdg__ring2{stroke:rgba(155,226,34,.30)}
+.bdg--elite.is-earned .bdg__pan{fill:rgba(155,226,34,.17)}
+.bdg--elite.is-earned .bdg__ring{stroke:rgba(155,226,34,.85)}
+.bdg--elite.is-earned .bdg__ring2{stroke:rgba(155,226,34,.50)}
+
+/* in progress — dark cell, faint glyph, accent arc on the facets */
+.bdg.is-prog .bdg__gly{color:rgba(255,255,255,.30)}
+
+/* locked — dashed hairline, glyph reduced to a silhouette */
+.bdg.is-locked .bdg__pan{fill:#0E1116}
+.bdg.is-locked .bdg__ring{stroke:var(--line-soft);stroke-dasharray:2.2 2.6}
+.bdg.is-locked .bdg__ring2{stroke:rgba(255,255,255,.035)}
+.bdg.is-locked .bdg__gly{color:rgba(255,255,255,.13)}
+
+/* ---------- collection grid (frame 2) ---------- */
+.filt{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none}
+.filt::-webkit-scrollbar{height:0}
+.filt__b{
+  height:32px;padding:0 13px;flex:0 0 auto;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--muted);
+  font:inherit;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.filt__b[aria-pressed="true"]{background:var(--acid-wash);color:var(--acid)}
+
+.grid{
+  display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:8px;
+  margin:0;padding:0;list-style:none;
+}
+.grid > li{display:flex}
+.bcell{flex:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  text-align:center;gap:2px;height:100%;min-height:126px;
+  padding:12px 6px 11px;border:0;border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);font:inherit;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.bcell:hover{background:#222833}
+.bcell .bdg{width:58px;margin-bottom:7px}
+.bcell__n{font-size:12px;font-weight:600;line-height:1.2}
+.bcell__s{font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.bcell--prog .bcell__s{color:var(--acid);font-weight:600}
+.bcell--locked .bcell__n{color:var(--muted)}
+
+/* ---------- rarity legend ---------- */
+.legend{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0;padding:0;list-style:none}
+.legend li{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+.legend .bdg{width:44px}
+.legend b{font-size:11px;font-weight:600}
+.legend em{font-style:normal;font-size:10px;color:var(--dim);line-height:1.25}
+
+/* ============================================================
+   BADGE DETAIL  (frame 3)
+   ============================================================ */
+.title{margin:16px var(--gutter) 0;font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;text-transform:uppercase}
+.sub{display:flex;align-items:center;gap:8px;margin:10px var(--gutter) 0}
+.sub span{font-size:12.5px;color:var(--muted)}
+
+.prog{margin-top:12px;padding:13px;border-radius:var(--r-panel);background:var(--surface)}
+.prog__bar{height:8px;border-radius:var(--r-pill);background:var(--sunken);overflow:hidden}
+.prog__fill{display:block;height:100%;border-radius:var(--r-pill);background:var(--acid)}
+.prog__row{display:flex;align-items:baseline;gap:8px;margin:0 0 9px}
+.prog__row b{flex:1;font-size:13.5px;font-weight:600}
+.prog__row span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.row:first-child{border-top:0}
+.row__avatar{width:34px;height:34px}
+.row__id{flex:1;min-width:0}
+.row__name{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row__sub{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+.row__end{flex:0 0 auto;font-size:12px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.row__end--acid{color:var(--acid)}
+
+.holders{display:flex;align-items:center;gap:12px;padding:2px 2px 12px}
+.stack{display:flex;flex:0 0 auto}
+.stack .avatar{width:30px;height:30px;box-shadow:0 0 0 2px var(--section)}
+.stack .avatar + .avatar{margin-left:-9px}
+.holders p{margin:0;font-size:12.5px;color:var(--muted)}
+.holders p b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+
+.note{
+  display:flex;align-items:center;gap:11px;
+  margin:10px var(--gutter) 0;padding:13px 14px;
+  border-radius:var(--r-card);background:var(--surface);
+}
+.note svg{width:19px;height:19px;color:var(--acid);flex:0 0 auto}
+.note p{margin:0;font-size:12.5px;color:var(--muted)}
+.note p b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   AWARD MOMENT  (frame 4)
+   ============================================================ */
+.moment{
+  position:relative;overflow:hidden;
+  margin:0 var(--gutter);border-radius:var(--r-card);
+  min-height:540px;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:var(--bg);
+}
+.moment__back{position:absolute;inset:0;padding:14px;filter:blur(10px);opacity:1;pointer-events:none}
+.moment__back .grid{gap:8px}
+.moment__scrim{position:absolute;inset:0;background:rgba(3,4,1,.55)}
+.moment__replay{position:relative;z-index:4;display:none}
+.moment.is-off .award{display:none}
+.moment.is-off .moment__replay{display:inline-flex}
+
+.award{
+  position:relative;z-index:3;width:100%;
+  padding:18px 18px 18px;border-radius:var(--r-card);
+  background:var(--surface);border:1px solid var(--line);
+  text-align:center;
+}
+.award__x{
+  position:absolute;top:10px;right:10px;z-index:5;
+  width:32px;height:32px;background:rgba(255,255,255,.06);
+}
+.award__x svg{width:15px;height:15px}
+.award__art{
+  position:relative;height:158px;margin:2px 0 16px;
+  display:flex;align-items:flex-end;justify-content:center;overflow:hidden;
+}
+.award__rays{position:absolute;left:50%;top:42%;width:300px;height:300px;transform:translate(-50%,-50%)}
+.award__peaks{position:absolute;left:50%;bottom:0;width:196px;height:52px;transform:translateX(-50%)}
+.award__bdg{position:relative;z-index:2;width:96px;margin-bottom:26px}
+.award__title{margin:0;font-size:26px;font-weight:800;letter-spacing:-.025em;line-height:1.02;text-transform:uppercase}
+.award__body{margin:9px 4px 0;font-size:13px;color:var(--muted)}
+.award__tags{display:flex;justify-content:center;flex-wrap:wrap;gap:7px;margin-top:14px}
+.award__acts{display:flex;gap:8px;margin-top:16px}
+.btn-acid,.btn-ghost{
+  flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  height:46px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14px;font-weight:700;cursor:pointer;
+  transition:background .18s var(--ease),filter .18s var(--ease);
+}
+.btn-acid{background:var(--acid);color:var(--acid-ink)}
+.btn-acid:hover{filter:brightness(1.08)}
+.btn-ghost{background:var(--sunken);color:var(--text);font-weight:600}
+.btn-ghost:hover{background:#1A1F27}
+.btn-acid svg,.btn-ghost svg{width:17px;height:17px}
+.award__done{
+  display:none;margin:12px 0 0;font-size:12px;font-weight:600;color:var(--acid);
+}
+.award.is-shared .award__done{display:block}
+
+/* motion — the moment is the only animated thing on the page */
+@keyframes mk-card{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes mk-rise{from{opacity:0;transform:translateX(-50%) translateY(26px)}to{opacity:1;transform:translateX(-50%)}}
+@keyframes mk-pop{0%{opacity:0;transform:scale(.72)}60%{transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
+@keyframes mk-spin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes mk-up{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.award--anim{animation:mk-card .5s var(--ease) both}
+.award--anim .award__peaks{animation:mk-rise .8s .05s var(--ease) both}
+.award--anim .award__bdg{animation:mk-pop .66s .2s var(--ease) both}
+.award--anim .award__rays{animation:mk-spin 34s linear infinite}
+.award--anim .eyebrow{animation:mk-up .5s .38s var(--ease) both}
+.award--anim .award__title{animation:mk-up .5s .44s var(--ease) both}
+.award--anim .award__body{animation:mk-up .5s .5s var(--ease) both}
+.award--anim .award__tags{animation:mk-up .5s .56s var(--ease) both}
+.award--anim .award__acts{animation:mk-up .5s .62s var(--ease) both}
+
+/* ---- anchored menu, inline search and the badge readout ---- */
+.anch{position:relative}
+.pop{
+  position:absolute;top:calc(100% + 8px);right:0;z-index:80;min-width:196px;padding:7px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);
+  box-shadow:0 18px 44px rgba(0,0,0,.55)
+}
+.pop[hidden]{display:none}
+.pop__i{
+  display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:0;border-radius:9px;
+  background:none;color:var(--text);font:inherit;font-size:13px;text-align:left;
+  white-space:nowrap;cursor:pointer
+}
+.pop__i:hover{background:var(--sunken)}
+.pop__i:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.pop__i svg{width:15px;height:15px;margin-left:auto;flex:0 0 auto;color:var(--acid);opacity:0}
+.pop__i[aria-checked="true"]{color:var(--acid)}
+.pop__i[aria-checked="true"] svg{opacity:1}
+
+.srch{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:0 11px;height:40px;
+  background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-panel)}
+.srch[hidden]{display:none}
+.srch svg{width:16px;height:16px;flex:0 0 auto;color:var(--dim)}
+.srch input{flex:1;min-width:0;height:100%;border:0;background:none;color:var(--text);
+  font:inherit;font-size:13.5px;outline:none}
+.srch input::placeholder{color:var(--dim)}
+.srch button{width:24px;height:24px;flex:0 0 auto;display:grid;place-items:center;padding:0;border:0;
+  border-radius:var(--r-pill);background:var(--surface);color:var(--muted);cursor:pointer}
+.srch button:hover{color:var(--text)}
+.srch input:focus-visible,.srch button:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.led[hidden],.grp[hidden],.board[hidden],.grid li[hidden],.board .row[hidden]{display:none}
+.nohits{margin:14px 0 2px;font-size:13px;color:var(--muted);text-align:center}
+.nohits[hidden]{display:none}
+.more .pill-btn[disabled]{color:var(--dim);cursor:default}
+
+.bcell[aria-pressed="true"]{box-shadow:inset 0 0 0 1.5px var(--acid)}
+.bsel{
+  display:flex;align-items:center;gap:11px;margin-top:11px;padding:11px 12px;
+  background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-panel)
+}
+.bsel[hidden]{display:none}
+.bsel__id{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.bsel__n{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.bsel__s{font-size:12px;color:var(--muted)}
+.bsel__x{
+  width:28px;height:28px;flex:0 0 auto;display:grid;place-items:center;padding:0;border:0;
+  border-radius:var(--r-pill);background:var(--surface);color:var(--muted);cursor:pointer
+}
+.bsel__x svg{width:15px;height:15px}
+.bsel__x:hover{color:var(--text)}
+.bsel__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SHARED BADGE GEOMETRY
+     Cells: circle → octagon → hexagon → triangle.
+     Facets reduce and sharpen as rarity rises, so the rarest
+     badge is the closest thing to the brand's bare peak.
+     pathLength="100" lets the progress arc be set in percent.
+     ============================================================ -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false"><defs>
+  <!-- cells -->
+  <g id="c-cir"><path pathLength="100" d="M36 9A27 27 0 1 1 36 63A27 27 0 1 1 36 9Z"/></g>
+  <g id="c-oct"><path pathLength="100" d="M36 9 55.09 16.91 63 36 55.09 55.09 36 63 16.91 55.09 9 36 16.91 16.91Z"/></g>
+  <g id="c-hex"><path pathLength="100" d="M36 9 59.38 22.5 59.38 49.5 36 63 12.62 49.5 12.62 22.5Z"/></g>
+  <g id="c-hex-o"><path d="M36 3 64.58 19.5 64.58 52.5 36 69 7.42 52.5 7.42 19.5Z"/></g>
+  <g id="c-tri"><path pathLength="100" d="M36 9 59.38 49.5H12.62Z"/></g>
+  <g id="c-tri-o"><path d="M36 2 65.44 53H6.56Z"/></g>
+
+  <!-- glyphs: peaks, chevrons and one diamond. Peak count = magnitude,
+       height = rank, inversion = opposition, nesting = depth,
+       apex diamond = origin. -->
+  <g id="g-one"><path fill="currentColor" d="M36 26 50 46H22Z"/></g>
+  <g id="g-pair"><path fill="currentColor" d="M20 46 28.5 30 37 46Z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" d="M35 46 43.5 30 52 46Z"/></g>
+  <g id="g-asc"><path fill="currentColor" d="M20 46 25.5 38 31 46Z"/><path fill="currentColor" d="M30 46 36 33 42 46Z"/><path fill="currentColor" d="M41 46 47 27 53 46Z"/></g>
+  <g id="g-three"><path fill="currentColor" d="M20 46 28 34 36 46Z"/><path fill="currentColor" d="M28 46 36 24 44 46Z"/><path fill="currentColor" d="M36 46 44 34 52 46Z"/></g>
+  <g id="g-lift"><path fill="currentColor" d="M19 46 27 36 35 46Z"/><path fill="currentColor" d="M30 46 41 25 52 46Z"/></g>
+  <g id="g-flank"><path fill="currentColor" d="M36 25 45.5 46H26.5Z"/><path fill="currentColor" d="M14 46 20 35 26 46Z"/><path fill="currentColor" d="M46 46 52 35 58 46Z"/></g>
+  <g id="g-chev3"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M22 33 36 24 50 33M22 41 36 32 50 41M22 49 36 40 50 49"/></g>
+  <g id="g-bar"><path fill="currentColor" d="M36 26 50 46H22Z"/><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M23 37H49"/></g>
+  <g id="g-mirror"><path fill="currentColor" d="M36 23 47 34H25Z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" d="M36 49 25 38H47Z"/></g>
+  <g id="g-saw"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M14 46 21 34 28 46 35 34 42 46 49 34 56 46"/></g>
+  <g id="g-range"><path fill="currentColor" d="M16 46 23 34 29 40 36 25 43 40 49 34 56 46Z"/></g>
+  <g id="g-found"><path fill="currentColor" d="M36 30 48 46H24Z"/><path fill="currentColor" d="M36 18.5 40.5 23 36 27.5 31.5 23Z"/></g>
+
+  <!-- the award moment's rays fade out from the badge so the clipped
+       outer ends never read as solid bars -->
+  <radialGradient id="rayfade" gradientUnits="userSpaceOnUse" cx="100" cy="100" r="94">
+    <stop offset="0" stop-color="#9BE222" stop-opacity=".60"/>
+    <stop offset=".5" stop-color="#9BE222" stop-opacity=".20"/>
+    <stop offset="1" stop-color="#9BE222" stop-opacity="0"/>
+  </radialGradient>
+</defs></svg>
+
+<main class="screen">
+
+
+
+<!-- ============================================================
+     FRAME 1 — MERIT HISTORY
+     ============================================================ -->
+<div class="fr frame" data-title="Merit history">
+
+  <header class="hero">
+    <svg class="hero__field" viewBox="0 0 343 132" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 132 L52 46 L104 132 Z"    fill="#fff" opacity=".030"/>
+      <path d="M92 132 L146 30 L200 132 Z"  fill="#fff" opacity=".024"/>
+      <path d="M196 0 L252 0 L196 84 Z"     fill="#fff" opacity=".026"/>
+    </svg>
+    <svg class="hero__range" viewBox="0 0 226 69" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 69 L40 28 L80 69 Z"     fill="#9BE222"/>
+      <path d="M88 69 L140 6 L192 69 Z"   fill="#9BE222"/>
+      <path d="M184 69 L226 32 L226 69 Z" fill="#9BE222"/>
+    </svg>
+    <button class="hero__back" type="button" aria-label="Back to Merits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="hero__id">
+      <p class="eyebrow">Merits</p>
+      <h1 class="hero__title">History</h1>
+    </div>
+  </header>
+
+  <section class="standing" aria-label="Season summary">
+    <div class="standing__main">
+      <p class="eyebrow">Season 25/26 · Barcelona</p>
+      <p class="standing__rank"><b>2,480</b><span>merits earned</span></p>
+      <span class="delta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        646 this month
+      </span>
+    </div>
+    <div class="standing__score">
+      <b>48</b><span>Entries</span>
+    </div>
+  </section>
+
+  <div class="head">
+    <h2>Ledger</h2>
+    <span class="anch">
+      <button class="pill-btn" type="button" id="led-season-btn" aria-expanded="false" aria-haspopup="menu">
+        <span id="led-season-val">All seasons</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="pop" id="led-season-pop" role="menu" aria-label="Season" hidden>
+        <button class="pop__i" type="button" role="menuitemradio" aria-checked="true" data-season="all">All seasons
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+        <button class="pop__i" type="button" role="menuitemradio" aria-checked="false" data-season="25/26">Season 25/26
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+        <button class="pop__i" type="button" role="menuitemradio" aria-checked="false" data-season="24/25">Season 24/25
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+      </div>
+    </span>
+  </div>
+
+  <section class="section" id="led-section">
+    <div class="section__bar">
+      <span class="status-pill" id="led-pill">Season 25/26</span>
+      <span class="spacer"></span>
+      <button class="icon-btn" type="button" aria-label="Search entries" id="led-search-btn" aria-expanded="false" aria-controls="led-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+      </button>
+      <span class="anch">
+        <button class="icon-btn" type="button" aria-label="Filter entries" id="led-filter-btn" aria-expanded="false" aria-haspopup="menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+        </button>
+        <div class="pop" id="led-filter-pop" role="menu" aria-label="Filter entries" hidden>
+          <button class="pop__i" type="button" role="menuitemradio" aria-checked="true" data-dir="all">All entries
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+          <button class="pop__i" type="button" role="menuitemradio" aria-checked="false" data-dir="up">Merits earned
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+          <button class="pop__i" type="button" role="menuitemradio" aria-checked="false" data-dir="down">Merits taken back
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+        </div>
+      </span>
+    </div>
+
+    <div class="srch" id="led-search" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+      <input type="search" id="led-q" autocomplete="off" placeholder="Search the ledger" aria-label="Search the ledger">
+      <button type="button" id="led-qclear" aria-label="Clear the search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+
+    <div class="grp" data-season="25/26"><span class="grp__t">This week</span><span class="grp__v">+346</span></div>
+    <ol class="board" data-season="25/26">
+      <li class="led">
+        <span class="led__ic led__ic--award">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Member of the Match</span>
+          <span class="led__s">Barcelona v Inter Milan · 28 Dec</span>
+        </span>
+        <span class="led__v">+250</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Motion carried</span>
+          <span class="led__s">Squad rotation · 26 Dec</span>
+        </span>
+        <span class="led__v">+60</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Votes cast</span>
+          <span class="led__s">4 War Room motions · 25 Dec</span>
+        </span>
+        <span class="led__v">+40</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Replies upvoted</span>
+          <span class="led__s">18 upvotes in Backchat · 24 Dec</span>
+        </span>
+        <span class="led__v">+36</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Vote withdrawn</span>
+          <span class="led__s">Ticket ballot · 23 Dec</span>
+        </span>
+        <span class="led__v led__v--down">−40</span>
+      </li>
+    </ol>
+
+    <div class="grp" data-season="25/26"><span class="grp__t">Earlier in December</span><span class="grp__v">+300</span></div>
+    <ol class="board" data-season="25/26">
+      <li class="led">
+        <span class="led__ic led__ic--award">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.6 20 7v10l-8 4.4L4 17V7l8-4.4Z"/><path d="M8.5 15 12 9l3.5 6H8.5Z" fill="currentColor" stroke="none"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Badge earned</span>
+          <span class="led__s">Backchat Regular · 21 Dec</span>
+        </span>
+        <span class="led__v">+100</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 19 8 9l4 6 3-4.5L22 19H2Z"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Seven-day streak</span>
+          <span class="led__s">Voted every day, 14–20 Dec</span>
+        </span>
+        <span class="led__v">+70</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="3.4"/><path d="M4 20a6 6 0 0 1 12 0M18.5 8v6M15.5 11h6"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Member invited</span>
+          <span class="led__s">scout_mode joined · 11 Dec</span>
+        </span>
+        <span class="led__v">+50</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 19 6v5c0 4.3-2.9 8-7 9-4.1-1-7-4.7-7-9V6l7-3Z"/><path d="M9 11.5h6"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Veto held</span>
+          <span class="led__s">Kit redesign · 8 Dec</span>
+        </span>
+        <span class="led__v">+80</span>
+      </li>
+    </ol>
+
+    <!-- page 2 of season 25/26 — revealed by the footer button, not fetched -->
+    <div class="grp" data-season="25/26" data-page="2" hidden><span class="grp__t">Earlier in November</span><span class="grp__v">+180</span></div>
+    <ol class="board" data-season="25/26" data-page="2" hidden>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Motion carried</span>
+          <span class="led__s">Away ticket ballot · 14 Nov</span>
+        </span>
+        <span class="led__v">+60</span>
+      </li>
+      <li class="led">
+        <span class="led__ic led__ic--award">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.6 20 7v10l-8 4.4L4 17V7l8-4.4Z"/><path d="M8.5 15 12 9l3.5 6H8.5Z" fill="currentColor" stroke="none"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Badge earned</span>
+          <span class="led__s">Streak Keeper · 20 Nov</span>
+        </span>
+        <span class="led__v">+100</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Reply removed</span>
+          <span class="led__s">Backchat house rules · 6 Nov</span>
+        </span>
+        <span class="led__v led__v--down">−20</span>
+      </li>
+    </ol>
+
+    <!-- season 24/25 — shown only when that season is chosen -->
+    <div class="grp" data-season="24/25" hidden><span class="grp__t">May 2025</span><span class="grp__v">+410</span></div>
+    <ol class="board" data-season="24/25" hidden>
+      <li class="led">
+        <span class="led__ic led__ic--award">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Member of the Week</span>
+          <span class="led__s">Week 34 · 19 May 2025</span>
+        </span>
+        <span class="led__v">+400</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Votes cast</span>
+          <span class="led__s">1 War Room motion · 11 May 2025</span>
+        </span>
+        <span class="led__v">+10</span>
+      </li>
+    </ol>
+
+    <p class="nohits" id="led-nohits" hidden>No entry matches that.</p>
+
+    <div class="more"><button class="pill-btn" type="button" id="led-more">Load earlier entries</button></div>
+  </section>
+  <div style="height:32px" aria-hidden="true"></div>
+</div>
+
+
+<!-- ============================================================
+     FRAME 2 — BADGE COLLECTION
+     ============================================================ -->
+<div class="fr frame" data-title="Badge collection">
+
+  <header class="hero">
+    <svg class="hero__field" viewBox="0 0 343 132" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 132 L52 46 L104 132 Z"    fill="#fff" opacity=".030"/>
+      <path d="M92 132 L146 30 L200 132 Z"  fill="#fff" opacity=".024"/>
+      <path d="M196 0 L252 0 L196 84 Z"     fill="#fff" opacity=".026"/>
+    </svg>
+    <svg class="hero__range" viewBox="0 0 226 69" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 69 L40 28 L80 69 Z"     fill="#9BE222"/>
+      <path d="M88 69 L140 6 L192 69 Z"   fill="#9BE222"/>
+      <path d="M184 69 L226 32 L226 69 Z" fill="#9BE222"/>
+    </svg>
+    <button class="hero__back" type="button" aria-label="Back to Merits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="hero__id">
+      <p class="eyebrow">Merits</p>
+      <h1 class="hero__title">Badges</h1>
+    </div>
+  </header>
+
+  <div class="head">
+    <h2>Collection</h2>
+    <span class="anch">
+      <button class="pill-btn" type="button" id="bdg-season-btn" aria-expanded="false" aria-haspopup="menu">
+        <span id="bdg-season-val">Season 25/26</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="pop" id="bdg-season-pop" role="menu" aria-label="Season" hidden>
+        <button class="pop__i" type="button" role="menuitemradio" aria-checked="true" data-season="25/26">Season 25/26
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+        <button class="pop__i" type="button" role="menuitemradio" aria-checked="false" data-season="all">All time
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+      </div>
+    </span>
+  </div>
+
+  <section class="section" id="bdg-section">
+    <div class="section__bar">
+      <span class="status-pill" id="bdg-pill">6 of 12 earned</span>
+      <span class="spacer"></span>
+      <span class="anch">
+        <button class="icon-btn" type="button" aria-label="Sort badges" id="bdg-sort-btn" aria-expanded="false" aria-haspopup="menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+        </button>
+        <div class="pop" id="bdg-sort-pop" role="menu" aria-label="Sort badges" hidden>
+          <button class="pop__i" type="button" role="menuitemradio" aria-checked="true" data-sort="rarity">By rarity
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+          <button class="pop__i" type="button" role="menuitemradio" aria-checked="false" data-sort="status">Earned first
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+          <button class="pop__i" type="button" role="menuitemradio" aria-checked="false" data-sort="name">A to Z
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+        </div>
+      </span>
+    </div>
+
+    <div class="filt" role="group" aria-label="Filter badges">
+      <button class="filt__b" type="button" aria-pressed="true"  data-state="all">All</button>
+      <button class="filt__b" type="button" aria-pressed="false" data-state="earned">Earned</button>
+      <button class="filt__b" type="button" aria-pressed="false" data-state="prog">In progress</button>
+      <button class="filt__b" type="button" aria-pressed="false" data-state="locked">Locked</button>
+    </div>
+
+    <ul class="grid" id="bdg-grid">
+      <li data-season="24/25"><button class="bcell" type="button">
+        <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-one"/>
+        </svg>
+        <span class="bcell__n">First Vote</span><span class="bcell__s">Earned 2 Sep 2024</span>
+      </button></li>
+
+      <li data-season="25/26"><button class="bcell" type="button">
+        <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-chev3"/>
+        </svg>
+        <span class="bcell__n">Backchat Regular</span><span class="bcell__s">Earned 21 Dec</span>
+      </button></li>
+
+      <li data-season="25/26"><button class="bcell" type="button">
+        <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-pair"/>
+        </svg>
+        <span class="bcell__n">Derby Day</span><span class="bcell__s">Earned 14 Oct</span>
+      </button></li>
+
+      <li data-season="25/26"><button class="bcell bcell--prog" type="button">
+        <svg class="bdg bdg--common is-prog" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/>
+          <use class="bdg__prog" href="#c-cir" style="stroke-dasharray:60 100"/>
+          <use class="bdg__gly" href="#g-flank"/>
+        </svg>
+        <span class="bcell__n">Recruiter</span><span class="bcell__s">3 of 5</span>
+      </button></li>
+
+      <li data-season="25/26"><button class="bcell" type="button">
+        <svg class="bdg bdg--uncommon is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/><use class="bdg__gly" href="#g-asc"/>
+        </svg>
+        <span class="bcell__n">Streak Keeper</span><span class="bcell__s">Earned 20 Dec</span>
+      </button></li>
+
+      <li data-season="25/26"><button class="bcell bcell--prog" type="button">
+        <svg class="bdg bdg--uncommon is-prog" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/>
+          <use class="bdg__prog" href="#c-oct" style="stroke-dasharray:20 100"/>
+          <use class="bdg__gly" href="#g-bar"/>
+        </svg>
+        <span class="bcell__n">Top Ten</span><span class="bcell__s">2 to go</span>
+      </button></li>
+
+      <li data-season="25/26"><button class="bcell bcell--locked" type="button">
+        <svg class="bdg bdg--uncommon is-locked" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/><use class="bdg__gly" href="#g-mirror"/>
+        </svg>
+        <span class="bcell__n">Veto Held</span><span class="bcell__s">Locked</span>
+      </button></li>
+
+      <li data-season="25/26"><button class="bcell bcell--prog" type="button">
+        <svg class="bdg bdg--rare is-prog" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__ring2" href="#c-hex-o"/>
+          <use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/>
+          <use class="bdg__prog" href="#c-hex" style="stroke-dasharray:70 100"/>
+          <use class="bdg__gly" href="#g-lift"/>
+        </svg>
+        <span class="bcell__n">Kingmaker</span><span class="bcell__s">7 of 10</span>
+      </button></li>
+
+      <li data-season="25/26"><button class="bcell" type="button">
+        <svg class="bdg bdg--rare is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__ring2" href="#c-hex-o"/>
+          <use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/><use class="bdg__gly" href="#g-three"/>
+        </svg>
+        <span class="bcell__n">Member of the Match</span><span class="bcell__s">Earned 28 Dec</span>
+      </button></li>
+
+      <li data-season="25/26"><button class="bcell bcell--locked" type="button">
+        <svg class="bdg bdg--rare is-locked" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__ring2" href="#c-hex-o"/>
+          <use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/><use class="bdg__gly" href="#g-saw"/>
+        </svg>
+        <span class="bcell__n">Full Season</span><span class="bcell__s">Locked</span>
+      </button></li>
+
+      <li data-season="24/25"><button class="bcell" type="button">
+        <svg class="bdg bdg--elite is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__ring2" href="#c-tri-o"/>
+          <use class="bdg__pan" href="#c-tri"/><use class="bdg__ring" href="#c-tri"/><use class="bdg__gly" href="#g-found"/>
+        </svg>
+        <span class="bcell__n">Founding Member</span><span class="bcell__s">Earned 2 Sep 2024</span>
+      </button></li>
+
+      <li data-season="25/26"><button class="bcell bcell--locked" type="button">
+        <svg class="bdg bdg--elite is-locked" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__ring2" href="#c-tri-o"/>
+          <use class="bdg__pan" href="#c-tri"/><use class="bdg__ring" href="#c-tri"/><use class="bdg__gly" href="#g-range"/>
+        </svg>
+        <span class="bcell__n">Hall of Fame</span><span class="bcell__s">Locked</span>
+      </button></li>
+    </ul>
+
+    <p class="nohits" id="bdg-nohits" hidden>No badge in that state.</p>
+
+    <div class="bsel" id="bdg-sel" hidden aria-live="polite">
+      <span class="bsel__id">
+        <span class="bsel__n" id="bdg-sel-n"></span>
+        <span class="bsel__s" id="bdg-sel-s"></span>
+      </span>
+      <button class="bsel__x" type="button" id="bdg-sel-x" aria-label="Close the badge summary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <section class="section">
+    <p class="eyebrow">How rarity reads</p>
+    <ul class="legend">
+      <li>
+        <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72" aria-hidden="true"><use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/></svg>
+        <b>Common</b><em>Most members</em>
+      </li>
+      <li>
+        <svg class="bdg bdg--uncommon is-earned" viewBox="0 0 72 72" aria-hidden="true"><use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/></svg>
+        <b>Uncommon</b><em>10–40%</em>
+      </li>
+      <li>
+        <svg class="bdg bdg--rare is-earned" viewBox="0 0 72 72" aria-hidden="true"><use class="bdg__ring2" href="#c-hex-o"/><use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/></svg>
+        <b>Rare</b><em>1–10%</em>
+      </li>
+      <li>
+        <svg class="bdg bdg--elite is-earned" viewBox="0 0 72 72" aria-hidden="true"><use class="bdg__ring2" href="#c-tri-o"/><use class="bdg__pan" href="#c-tri"/><use class="bdg__ring" href="#c-tri"/></svg>
+        <b>Elite</b><em>Under 1%</em>
+      </li>
+    </ul>
+    <p class="section__body" style="margin-top:11px">The cell loses facets and sharpens as a badge gets
+      rarer, so the rarest badge is the closest thing to the bare peak in the SportsHeist mark. Rarity is
+      how few members hold a badge — <b>not</b> a ladder you climb.</p>
+  </section>
+  <div style="height:32px" aria-hidden="true"></div>
+</div>
+
+
+<!-- ============================================================
+     FRAME 3 — BADGE DETAIL
+     ============================================================ -->
+<div class="fr frame" data-title="Badge detail">
+
+  <header class="hero hero--badge">
+    <svg class="hero__field" viewBox="0 0 343 132" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 132 L52 46 L104 132 Z"    fill="#fff" opacity=".030"/>
+      <path d="M92 132 L146 30 L200 132 Z"  fill="#fff" opacity=".024"/>
+      <path d="M196 0 L252 0 L196 84 Z"     fill="#fff" opacity=".026"/>
+    </svg>
+    <svg class="hero__range" viewBox="0 0 226 69" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 69 L40 28 L80 69 Z"     fill="#9BE222"/>
+      <path d="M88 69 L140 6 L192 69 Z"   fill="#9BE222"/>
+      <path d="M184 69 L226 32 L226 69 Z" fill="#9BE222"/>
+    </svg>
+    <button class="hero__back" type="button" aria-label="Back to badges">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <svg class="bdg bdg--rare is-prog hero__bdg" viewBox="0 0 72 72" role="img" aria-label="Kingmaker, rare, 7 of 10">
+      <use class="bdg__ring2" href="#c-hex-o"/>
+      <use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/>
+      <use class="bdg__prog" href="#c-hex" style="stroke-dasharray:70 100"/>
+      <use class="bdg__gly" href="#g-lift"/>
+    </svg>
+  </header>
+
+  <h1 class="title">Kingmaker</h1>
+  <p class="sub"><span class="tag">Rare</span><span>212 of 6,840 members · 3.1%</span></p>
+
+  <div class="head"><h2>How it&rsquo;s earned</h2></div>
+  <section class="section">
+    <p class="section__body">Back <b>ten War Room motions</b> that go on to carry. Only votes cast before
+      a motion closes count, and a withdrawn vote is removed from the tally.</p>
+    <div class="prog">
+      <p class="prog__row"><b>7 of 10 motions</b><span>3 to go</span></p>
+      <span class="prog__bar"><span class="prog__fill" style="width:70%"></span></span>
+    </div>
+  </section>
+
+  <div class="head">
+    <h2>Motions that carried</h2>
+    <button class="pill-btn" type="button" id="mot-all" aria-expanded="false" aria-controls="mot-board">View all
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </button>
+  </div>
+  <section class="section">
+    <ol class="board" id="mot-board">
+      <li class="row">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Squad rotation</span>
+          <span class="row__sub">Carried 26 Dec · you voted with 61%</span>
+        </span>
+        <span class="row__end row__end--acid">7</span>
+      </li>
+      <li class="row">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Kit redesign</span>
+          <span class="row__sub">Carried 8 Dec · you voted with 58%</span>
+        </span>
+        <span class="row__end row__end--acid">6</span>
+      </li>
+      <li class="row">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Away ticket ballot</span>
+          <span class="row__sub">Carried 14 Nov · you voted with 72%</span>
+        </span>
+        <span class="row__end row__end--acid">5</span>
+      </li>
+      <li class="row" data-rest hidden>
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Press the goal kick</span>
+          <span class="row__sub">Carried 2 Nov · you voted with 66%</span>
+        </span>
+        <span class="row__end row__end--acid">4</span>
+      </li>
+      <li class="row" data-rest hidden>
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Sign a left-back in January</span>
+          <span class="row__sub">Carried 18 Oct · you voted with 81%</span>
+        </span>
+        <span class="row__end row__end--acid">3</span>
+      </li>
+      <li class="row" data-rest hidden>
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Youth minutes in the cup</span>
+          <span class="row__sub">Carried 30 Sep · you voted with 74%</span>
+        </span>
+        <span class="row__end row__end--acid">2</span>
+      </li>
+      <li class="row" data-rest hidden>
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Keep the away kit another season</span>
+          <span class="row__sub">Carried 14 Sep · you voted with 69%</span>
+        </span>
+        <span class="row__end row__end--acid">1</span>
+      </li>
+    </ol>
+  </section>
+
+  <div class="head"><h2>Who holds it</h2></div>
+  <section class="section">
+    <div class="holders">
+      <span class="stack" aria-hidden="true">
+        <span class="avatar" style="background-image:var(--av-01)"></span>
+        <span class="avatar" style="background-image:var(--av-02)"></span>
+        <span class="avatar" style="background-image:var(--av-03)"></span>
+        <span class="avatar" style="background-image:var(--av-04)"></span>
+        <span class="avatar" style="background-image:var(--av-05)"></span>
+        <span class="avatar" style="background-image:var(--av-06)"></span>
+      </span>
+      <p><b>212</b> members hold Kingmaker, including <b>4</b> you follow.</p>
+    </div>
+    <ol class="board">
+      <li class="row">
+        <span class="avatar row__avatar" style="background-image:var(--av-01)" role="img" aria-label="capitan_7"></span>
+        <span class="row__id">
+          <span class="row__name">capitan_7</span>
+          <span class="row__sub">Barcelona · first to earn it</span>
+        </span>
+        <span class="row__end">14 Oct</span>
+      </li>
+      <li class="row">
+        <span class="avatar row__avatar" style="background-image:var(--av-02)" role="img" aria-label="scout_mode"></span>
+        <span class="row__id">
+          <span class="row__name">scout_mode</span>
+          <span class="row__sub">Barcelona</span>
+        </span>
+        <span class="row__end">2 Nov</span>
+      </li>
+      <li class="row">
+        <span class="avatar row__avatar" style="background-image:var(--av-03)" role="img" aria-label="taythaytu"></span>
+        <span class="row__id">
+          <span class="row__name">taythaytu</span>
+          <span class="row__sub">Barcelona</span>
+        </span>
+        <span class="row__end">21 Nov</span>
+      </li>
+    </ol>
+  </section>
+
+  <div class="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+    <p><b>+150 merits</b> land in your ledger the moment this unlocks.</p>
+  </div>
+  <div style="height:32px" aria-hidden="true"></div>
+</div>
+
+
+<!-- ============================================================
+     FRAME 4 — AWARD MOMENT
+     ============================================================ -->
+<div class="fr frame" data-title="Award moment">
+
+  <div class="moment" id="moment">
+    <div class="moment__back" aria-hidden="true">
+      <ul class="grid">
+        <li><span class="bcell">
+          <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-one"/></svg>
+          <span class="bcell__n">First Vote</span><span class="bcell__s">Earned 2 Sep</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-chev3"/></svg>
+          <span class="bcell__n">Backchat Regular</span><span class="bcell__s">Earned 21 Dec</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-pair"/></svg>
+          <span class="bcell__n">Derby Day</span><span class="bcell__s">Earned 14 Oct</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--uncommon is-earned" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/><use class="bdg__gly" href="#g-asc"/></svg>
+          <span class="bcell__n">Streak Keeper</span><span class="bcell__s">Earned 20 Dec</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--uncommon is-locked" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/><use class="bdg__gly" href="#g-mirror"/></svg>
+          <span class="bcell__n">Veto Held</span><span class="bcell__s">Locked</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--elite is-earned" viewBox="0 0 72 72"><use class="bdg__ring2" href="#c-tri-o"/><use class="bdg__pan" href="#c-tri"/><use class="bdg__ring" href="#c-tri"/><use class="bdg__gly" href="#g-found"/></svg>
+          <span class="bcell__n">Founding Member</span><span class="bcell__s">Earned 2 Sep</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--rare is-locked" viewBox="0 0 72 72"><use class="bdg__ring2" href="#c-hex-o"/><use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/><use class="bdg__gly" href="#g-saw"/></svg>
+          <span class="bcell__n">Full Season</span><span class="bcell__s">Locked</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--common is-prog" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__prog" href="#c-cir" style="stroke-dasharray:60 100"/><use class="bdg__gly" href="#g-flank"/></svg>
+          <span class="bcell__n">Recruiter</span><span class="bcell__s">3 of 5</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--elite is-locked" viewBox="0 0 72 72"><use class="bdg__ring2" href="#c-tri-o"/><use class="bdg__pan" href="#c-tri"/><use class="bdg__ring" href="#c-tri"/><use class="bdg__gly" href="#g-range"/></svg>
+          <span class="bcell__n">Hall of Fame</span><span class="bcell__s">Locked</span>
+        </span></li>
+      </ul>
+    </div>
+    <div class="moment__scrim" aria-hidden="true"></div>
+
+    <button class="pill-btn moment__replay" type="button" id="replay">Replay the moment</button>
+
+    <div class="award award--anim" id="award" role="dialog" aria-modal="true" aria-labelledby="award-t">
+      <button class="icon-btn award__x" type="button" id="dismiss" aria-label="Dismiss">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+
+      <div class="award__art" aria-hidden="true">
+        <svg class="award__rays" viewBox="0 0 200 200">
+          <g fill="url(#rayfade)">
+            <path d="M100 100 97 4h6Z" opacity=".95"/>
+            <path d="M100 100 97 4h6Z" opacity=".45" transform="rotate(30 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".80" transform="rotate(60 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".35" transform="rotate(90 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".90" transform="rotate(120 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".40" transform="rotate(150 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".70" transform="rotate(180 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".30" transform="rotate(210 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".85" transform="rotate(240 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".38" transform="rotate(270 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".62" transform="rotate(300 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".44" transform="rotate(330 100 100)"/>
+          </g>
+        </svg>
+        <svg class="award__peaks" viewBox="0 0 226 69" preserveAspectRatio="none">
+          <path d="M0 69 L40 28 L80 69 Z"     fill="#9BE222"/>
+          <path d="M88 69 L140 6 L192 69 Z"   fill="#9BE222"/>
+          <path d="M184 69 L226 32 L226 69 Z" fill="#9BE222"/>
+        </svg>
+        <svg class="bdg bdg--rare is-earned award__bdg" viewBox="0 0 72 72">
+          <use class="bdg__ring2" href="#c-hex-o"/>
+          <use href="#c-hex" fill="#1C2129"/>
+          <use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/><use class="bdg__gly" href="#g-three"/>
+        </svg>
+      </div>
+
+      <p class="eyebrow">Badge earned</p>
+      <h3 class="award__title" id="award-t">Member of the Match</h3>
+      <p class="award__body">Barcelona v Inter Milan. You polled highest of 1,284 members in the War Room.</p>
+
+      <div class="award__tags">
+        <span class="status-pill">+250 merits</span>
+        <span class="tag">Rare · 3.1%</span>
+      </div>
+
+      <div class="award__acts">
+        <button class="btn-acid" type="button" id="share">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></svg>
+          Share
+        </button>
+        <button class="btn-ghost" type="button">View badge</button>
+      </div>
+
+      <p class="award__done">Shared to Backchat</p>
+    </div>
+  </div>
+  <div style="height:32px" aria-hidden="true"></div>
+</div>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ---------- one popover primitive: outside click, Escape, focus return ---------- */
+  function popover(btn, pop, onPick){
+    if (!btn || !pop) return null;
+    function away(e){ if (!btn.parentNode.contains(e.target)) close(false); }
+    function esc(e){ if (e.key === 'Escape'){ e.stopPropagation(); close(true); } }
+    function open(){
+      pop.hidden = false;
+      btn.setAttribute('aria-expanded','true');
+      document.addEventListener('mousedown', away, true);
+      document.addEventListener('keydown', esc, true);
+      var sel = pop.querySelector('[aria-checked="true"]') || pop.querySelector('.pop__i');
+      if (sel) sel.focus();
+    }
+    function close(focus){
+      pop.hidden = true;
+      btn.setAttribute('aria-expanded','false');
+      document.removeEventListener('mousedown', away, true);
+      document.removeEventListener('keydown', esc, true);
+      if (focus) btn.focus();
+    }
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      pop.hidden ? open() : close(true);
+    });
+    pop.addEventListener('click', function(e){
+      var i = e.target.closest('.pop__i'); if(!i) return;
+      [].slice.call(pop.querySelectorAll('.pop__i')).forEach(function(x){
+        x.setAttribute('aria-checked', x === i ? 'true' : 'false');
+      });
+      if (onPick) onPick(i);
+      close(true);
+    });
+    pop.addEventListener('keydown', function(e){
+      var items = [].slice.call(pop.querySelectorAll('.pop__i'));
+      var i = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown'){ e.preventDefault(); (items[i+1] || items[0]).focus(); }
+      if (e.key === 'ArrowUp'){ e.preventDefault(); (items[i-1] || items[items.length-1]).focus(); }
+    });
+    return {open:open, close:close};
+  }
+
+  /* ============================================================
+     FRAME 1 — the ledger. Season, search and direction all act on
+     the same set of entries, so every control moves the list.
+     ============================================================ */
+  var ledSec = document.getElementById('led-section');
+  if (ledSec){
+    var ledPill  = document.getElementById('led-pill');
+    var ledQ     = document.getElementById('led-q');
+    var ledNo    = document.getElementById('led-nohits');
+    var ledMore  = document.getElementById('led-more');
+    var ledVal   = document.getElementById('led-season-val');
+    var season   = 'all', dir = 'all', ledPage = 1;
+
+    function ledPaint(){
+      var q = (ledQ.value || '').trim().toLowerCase();
+      var hits = 0;
+
+      [].slice.call(ledSec.querySelectorAll('.board')).forEach(function(ol){
+        var s = ol.getAttribute('data-season');
+        var page2 = ol.getAttribute('data-page') === '2';
+        var seasonOk = season === 'all' || season === s;
+        var pageOk = !page2 || ledPage > 1;
+
+        var shown = 0;
+        [].slice.call(ol.querySelectorAll('.led')).forEach(function(li){
+          var down = !!li.querySelector('.led__v--down');
+          var dirOk = dir === 'all' || (dir === 'down' ? down : !down);
+          var textOk = !q || li.textContent.toLowerCase().indexOf(q) > -1;
+          var show = seasonOk && pageOk && dirOk && textOk;
+          li.hidden = !show;
+          if (show) shown++;
+        });
+
+        ol.hidden = shown === 0;
+        var head = ol.previousElementSibling;
+        while (head && !head.classList.contains('grp')) head = head.previousElementSibling;
+        if (head) head.hidden = shown === 0;
+        hits += shown;
+      });
+
+      ledNo.hidden = hits > 0;
+      ledPill.textContent = season === 'all' ? 'All seasons' : 'Season ' + season;
+      if (dir !== 'all') ledPill.textContent += dir === 'up' ? ' · earned' : ' · taken back';
+
+      /* the second page only exists in 25/26, so hide the button when it can't apply */
+      var canPage = (season === 'all' || season === '25/26') && !q && dir === 'all';
+      ledMore.hidden = ledPage === 1 ? !canPage : false;
+    }
+
+    popover(document.getElementById('led-season-btn'),
+            document.getElementById('led-season-pop'), function(i){
+      season = i.getAttribute('data-season');
+      ledVal.textContent = i.textContent.trim();
+      ledPaint();
+    });
+    popover(document.getElementById('led-filter-btn'),
+            document.getElementById('led-filter-pop'), function(i){
+      dir = i.getAttribute('data-dir');
+      ledPaint();
+    });
+
+    var ledSBtn = document.getElementById('led-search-btn');
+    var ledSBox = document.getElementById('led-search');
+    ledSBtn.addEventListener('click', function(){
+      var open = ledSBox.hidden;
+      ledSBox.hidden = !open;
+      ledSBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) ledQ.focus(); else { ledQ.value = ''; ledPaint(); }
+    });
+    ledQ.addEventListener('input', ledPaint);
+    document.getElementById('led-qclear').addEventListener('click', function(){
+      ledQ.value = ''; ledPaint(); ledQ.focus();
+    });
+
+    ledMore.addEventListener('click', function(){
+      ledPage = 2;
+      ledPaint();
+      ledMore.disabled = true;
+      ledMore.textContent = 'That’s the whole ledger';
+    });
+
+    ledPaint();
+  }
+
+  /* ============================================================
+     FRAME 2 — the badge collection. The state pills, the season
+     and the sort all reorder or reduce the same grid.
+     ============================================================ */
+  var bdgSec = document.getElementById('bdg-section');
+  if (bdgSec){
+    var grid    = document.getElementById('bdg-grid');
+    var cells   = [].slice.call(grid.children);
+    var order   = cells.slice();                 /* the authored rarity order */
+    var bdgPill = document.getElementById('bdg-pill');
+    var bdgNo   = document.getElementById('bdg-nohits');
+    var bdgVal  = document.getElementById('bdg-season-val');
+    var state   = 'all', bdgSeason = '25/26', sort = 'rarity';
+
+    function stateOf(li){
+      var b = li.querySelector('.bcell');
+      if (b.classList.contains('bcell--locked')) return 'locked';
+      if (b.classList.contains('bcell--prog'))   return 'prog';
+      return 'earned';
+    }
+    function nameOf(li){ return li.querySelector('.bcell__n').textContent.trim(); }
+
+    function bdgPaint(){
+      var pool = order.filter(function(li){
+        return bdgSeason === 'all' || li.getAttribute('data-season') === bdgSeason;
+      });
+
+      var rank = {earned:0, prog:1, locked:2};
+      var sorted = pool.slice();
+      if (sort === 'status') sorted.sort(function(a,b){ return rank[stateOf(a)] - rank[stateOf(b)]; });
+      if (sort === 'name')   sorted.sort(function(a,b){ return nameOf(a).localeCompare(nameOf(b)); });
+      sorted.forEach(function(li){ grid.appendChild(li); });
+
+      var shown = 0, earned = 0;
+      order.forEach(function(li){
+        var inPool = pool.indexOf(li) > -1;
+        var st = stateOf(li);
+        var show = inPool && (state === 'all' || state === st);
+        li.hidden = !show;
+        if (show) shown++;
+        if (inPool && st === 'earned') earned++;
+      });
+
+      bdgNo.hidden = shown > 0;
+      bdgPill.textContent = earned + ' of ' + pool.length + ' earned';
+    }
+
+    document.querySelectorAll('.filt').forEach(function(g){
+      g.addEventListener('click', function(e){
+        var b = e.target.closest('.filt__b'); if(!b) return;
+        g.querySelectorAll('.filt__b').forEach(function(x){
+          x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+        });
+        state = b.getAttribute('data-state') || 'all';
+        bdgPaint();
+      });
+    });
+
+    popover(document.getElementById('bdg-season-btn'),
+            document.getElementById('bdg-season-pop'), function(i){
+      bdgSeason = i.getAttribute('data-season');
+      bdgVal.textContent = i.textContent.trim();
+      bdgPaint();
+    });
+    popover(document.getElementById('bdg-sort-btn'),
+            document.getElementById('bdg-sort-pop'), function(i){
+      sort = i.getAttribute('data-sort');
+      bdgPaint();
+    });
+
+    /* a badge cell answers: which badge, how rare, where you are with it */
+    var TIER = {'bdg--common':'Common','bdg--uncommon':'Uncommon','bdg--rare':'Rare','bdg--elite':'Elite'};
+    var selBox = document.getElementById('bdg-sel');
+    grid.addEventListener('click', function(e){
+      var b = e.target.closest('.bcell'); if(!b) return;
+      var li = b.parentNode;
+      var on = b.getAttribute('aria-pressed') === 'true';
+      cells.forEach(function(x){ x.querySelector('.bcell').setAttribute('aria-pressed','false'); });
+      if (on){ selBox.hidden = true; return; }
+      b.setAttribute('aria-pressed','true');
+
+      var svg = b.querySelector('.bdg');
+      var tier = 'Common';
+      Object.keys(TIER).forEach(function(k){ if (svg.classList.contains(k)) tier = TIER[k]; });
+
+      document.getElementById('bdg-sel-n').textContent = nameOf(li);
+      document.getElementById('bdg-sel-s').textContent =
+        tier + ' · ' + b.querySelector('.bcell__s').textContent.trim()
+        + ' · season ' + li.getAttribute('data-season');
+      selBox.hidden = false;
+    });
+    document.getElementById('bdg-sel-x').addEventListener('click', function(){
+      selBox.hidden = true;
+      cells.forEach(function(x){ x.querySelector('.bcell').setAttribute('aria-pressed','false'); });
+    });
+
+    bdgPaint();
+  }
+
+  /* ---------- FRAME 3 — View all opens the rest of the motions ---------- */
+  var motAll = document.getElementById('mot-all');
+  if (motAll){
+    motAll.addEventListener('click', function(){
+      var rest = [].slice.call(document.querySelectorAll('#mot-board [data-rest]'));
+      var open = rest[0].hidden;
+      rest.forEach(function(r){ r.hidden = !open; });
+      motAll.setAttribute('aria-expanded', open ? 'true' : 'false');
+      motAll.firstChild.nodeValue = open ? 'Show fewer' : 'View all';
+    });
+  }
+
+  /* award moment — dismiss, replay, share */
+  var moment  = document.getElementById('moment');
+  var award   = document.getElementById('award');
+  var dismiss = document.getElementById('dismiss');
+  var replay  = document.getElementById('replay');
+  var share   = document.getElementById('share');
+
+  if (dismiss) dismiss.addEventListener('click', function(){
+    moment.classList.add('is-off');
+    award.classList.remove('award--anim');
+    award.classList.remove('is-shared');
+  });
+
+  if (replay) replay.addEventListener('click', function(){
+    moment.classList.remove('is-off');
+    void award.offsetWidth;              /* restart the keyframes */
+    award.classList.add('award--anim');
+  });
+
+  if (share) share.addEventListener('click', function(){
+    award.classList.add('is-shared');
+  });
+})();
+</script>
+</body>
+</html>

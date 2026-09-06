@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en" data-component="veto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Veto</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — VETO
+   Four frames: hold notice, veto detail, club-side confirm,
+   and the resolved card family.
+
+   Token block copied verbatim from merits.html. Content and
+   behaviour taken from the live build (lib/pages/veto/veto_hold.dart,
+   confirm_page.dart, assets/translations/en.json → vetoPage.*) and
+   from Screen-Specs/02-war-room (WR-01, WR-20, WR-C36).
+
+   THE HOLD TREATMENT — the one new idea in this file.
+   The palette has an accent (#9BE222 = decided, go) and one
+   semantic red (#E2564A = destructive, down). A veto is neither:
+   it is a *hold*. So the hold is drawn as THE ACCENT, INTERRUPTED —
+   a 45° bar pattern struck through the accent, dark bars over the
+   acid plate and acid bars over the dark plane, with a dashed arc
+   as the stroke equivalent. No new hue, and it is a different
+   *category* of mark rather than a third colour:
+       filled plate  = decided   (acid = approved, red = rejected)
+       hatched plane = held      (veto)
+       dashed stroke = a figure that has stopped moving
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls, tab bar        */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* hero */
+  --hero-a:        #0D3617;
+  --hero-b:        #17481C;
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* ---- derived, not invented: the hold treatment -------------
+     every value below is either the accent #9BE222 or the canvas
+     #13171E at an alpha. No new hue enters the palette.          */
+  --hold-ring:  rgba(155,226,34,.30);            /* ring on a held object      */
+  --hold-under: rgba(155,226,34,.05);            /* wash beneath the bars      */
+  --hold-bars:  repeating-linear-gradient(135deg,
+                  rgba(155,226,34,.11) 0 5px,
+                  rgba(155,226,34,0)  5px 11px); /* acid bars on a dark plane  */
+  --struck:     repeating-linear-gradient(135deg,
+                  rgba(3,4,1,.62) 0 4px,
+                  rgba(3,4,1,0)   4px 9px);      /* dark bars on an acid plate */
+
+  /* red, used only for the destructiveness of an *action* */
+  --red:       #E2564A;
+  --red-wash:  rgba(226,86,74,.11);
+  --red-ring:  rgba(226,86,74,.30);
+
+  /* photography extracted from the Figma exports */
+  --av-you:url(data:image/jpeg;base64,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);
+  --av-c7:url(data:image/jpeg;base64,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);
+  --av-sm:url(data:image/jpeg;base64,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);
+  --av-fp:url(data:image/jpeg;base64,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);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ============================================================
+   FRAME WRAPPER — documentation chrome, not part of the product
+   ============================================================ */
+.caption{
+  margin:26px var(--gutter) 9px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);
+}
+.caption:first-child{margin-top:4px}
+.caption b{color:var(--muted);font-weight:700}
+.frame{
+  width:375px;max-width:100%;margin:0 auto;
+  border:1px solid var(--line);border-radius:22px;
+  background:var(--bg);overflow:hidden;
+}
+
+/* ============================================================
+   SHARED — bars, buttons, labels
+   ============================================================ */
+.topbar{
+  display:flex;align-items:center;gap:10px;
+  height:52px;padding:0 12px;
+}
+.topbar h2{
+  flex:1;margin:0;text-align:center;
+  font-size:15px;font-weight:600;letter-spacing:-.01em;
+}
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:17px;height:17px}
+
+.label{
+  margin:22px var(--gutter) 10px;
+  font-size:18px;font-weight:600;letter-spacing:-.015em;
+}
+.eyebrow{
+  margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.card{
+  margin:0 var(--gutter);padding:16px;
+  border-radius:var(--r-card);background:var(--surface);
+}
+.card p{margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--muted)}
+.card p:last-child{margin-bottom:0}
+.card p strong{color:var(--text);font-weight:600}
+.avatar{
+  border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+.tabular{font-variant-numeric:tabular-nums}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:52px;padding:0 18px;
+  border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14.5px;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;transition:background .18s var(--ease),transform .12s var(--ease);
+}
+.btn svg{width:17px;height:17px;flex:0 0 auto}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--flat{background:var(--surface);color:var(--text)}
+.btn--flat:hover{background:#222833}
+.btn--danger{background:var(--red);color:var(--acid-ink)}
+.btn--danger:hover{background:#E86A5F}
+.btn--danger:focus-visible{outline-color:var(--red)}
+.actions{display:flex;gap:10px;margin:22px var(--gutter) 20px}
+.actions .btn--flat{flex:0 0 41%}
+.actions .btn--acid,.actions .btn--danger{flex:1}
+
+/* ============================================================
+   THE HOLD TREATMENT
+   ============================================================ */
+.held{
+  background-color:var(--sunken);
+  background-image:var(--hold-bars);
+  border:1px solid var(--hold-ring);
+}
+.held-flat{                       /* same bars, no ring, for inner strips */
+  background-color:var(--hold-under);
+  background-image:var(--hold-bars);
+}
+
+/* ---- the hold banner ---- */
+.holdbar{
+  display:flex;align-items:center;gap:12px;
+  margin:4px var(--gutter) 0;padding:13px 14px;
+  border-radius:var(--r-panel);
+}
+.holdbar__disc{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;border-radius:50%;
+  background:var(--sunken);box-shadow:inset 0 0 0 1px var(--hold-ring);
+  color:var(--acid);
+}
+.holdbar__disc svg{width:21px;height:21px}
+.holdbar__id{flex:1;min-width:0}
+.holdbar__id b{
+  display:block;font-size:11px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--acid);
+}
+.holdbar__id span{display:block;margin-top:3px;font-size:11.5px;color:var(--muted)}
+.holdbar__side{
+  flex:0 0 auto;text-align:right;font-size:11.5px;color:var(--muted);
+}
+.holdbar__side b{
+  display:block;font-size:14px;font-weight:700;color:var(--text);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;
+}
+
+/* ---- clocks: one held, one running ---- */
+.clocks{display:flex;gap:10px;margin:12px var(--gutter) 0}
+.clock{
+  flex:1;min-width:0;padding:12px 13px 11px;border-radius:var(--r-panel);
+  background:var(--sunken);border:1px solid transparent;
+}
+.clock--held{
+  background-color:var(--sunken);background-image:var(--hold-bars);
+  border-color:var(--hold-ring);
+}
+.clock__top{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.clock__top svg{width:13px;height:13px;flex:0 0 auto;color:var(--dim)}
+.clock--held .clock__top svg{color:var(--acid)}
+.clock__top span{
+  font-size:9.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.clock--held .clock__top span{color:var(--acid)}
+.clock time{
+  display:block;font-size:24px;font-weight:700;letter-spacing:-.03em;
+  line-height:1;color:var(--text);font-variant-numeric:tabular-nums;
+}
+.clock small{display:block;margin-top:5px;font-size:11px;color:var(--muted)}
+
+/* ============================================================
+   VOTE READOUT — the count that was interrupted
+   ============================================================ */
+.count{display:flex;align-items:flex-end;gap:12px;margin-bottom:14px}
+.count__fig{display:flex;align-items:baseline;gap:6px;flex:1}
+.count__fig b{
+  font-size:38px;font-weight:800;letter-spacing:-.04em;line-height:.9;
+  font-variant-numeric:tabular-nums;
+}
+.count__fig span{font-size:12.5px;font-weight:600;color:var(--muted)}
+.count__need{
+  flex:0 0 auto;padding:5px 10px;border-radius:var(--r-pill);
+  background:var(--sunken);
+  font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);font-variant-numeric:tabular-nums;
+}
+
+.bar{position:relative;height:12px;border-radius:var(--r-pill);
+  background:rgba(255,255,255,.08);overflow:hidden}
+.bar__fill{position:absolute;inset:0 auto 0 0;border-radius:var(--r-pill);background:var(--acid)}
+/* held: the acid fill is struck through with dark 45° bars */
+.bar--held .bar__fill::after{content:"";position:absolute;inset:0;background-image:var(--struck)}
+.bar__mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text);border-radius:1px}
+.bar-legend{display:flex;justify-content:space-between;margin-top:7px;font-size:10.5px;
+  font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+.split{list-style:none;margin:16px 0 0;padding:0;border-top:1px solid var(--line-soft)}
+.split li{display:flex;align-items:center;gap:10px;padding:11px 0;
+  border-bottom:1px solid var(--line-soft)}
+.split li:last-child{border-bottom:0}
+.split__key{flex:1;min-width:0;font-size:13.5px;font-weight:600}
+.split__pct{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.split li:first-child .split__pct{color:var(--acid)}
+.split__n{flex:0 0 66px;text-align:right;font-size:11.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums}
+
+.voters{display:flex;align-items:center;gap:9px;margin-top:14px}
+.stackav{display:flex;flex:0 0 auto}
+.stackav > .avatar + .avatar{margin-left:-8px}
+.stackav .avatar{width:24px;height:24px;box-shadow:0 0 0 1.5px var(--surface)}
+.voters span{font-size:12px;color:var(--muted)}
+
+.frozen{
+  display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 12px;
+  border-radius:10px;
+}
+.frozen svg{width:15px;height:15px;flex:0 0 auto;color:var(--acid)}
+.frozen p{margin:0;font-size:11.5px;line-height:1.45;color:var(--muted)}
+
+/* ============================================================
+   ATTRIBUTION — who holds it
+   ============================================================ */
+.who{display:flex;align-items:center;gap:11px;margin-top:14px;
+  padding-top:14px;border-top:1px solid var(--line-soft)}
+/* canonical club crest plate, fallback form — no Barcelona artwork in _assets,
+   so the plate carries the 3-character club code. 40px size: radius 40*.28,
+   code at 40*.30. Plate tone is fixed and never varies per club. */
+.plate{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:40px;height:40px;flex:0 0 auto;
+  border-radius:11.2px;padding:5px;
+  background:rgba(255,255,255,.94);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.13);
+  color:var(--acid-ink);
+  font-size:12px;font-weight:800;letter-spacing:-.03em;
+}
+.who__id{flex:1;min-width:0}
+.who__id b{display:block;font-size:13px;font-weight:600}
+.who__id span{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+
+/* ============================================================
+   NUMBERED STEPS — what you can do
+   ============================================================ */
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps li{display:flex;gap:12px;padding:13px 0;border-top:1px solid var(--line-soft)}
+.steps li:first-child{border-top:0;padding-top:0}
+.steps li:last-child{padding-bottom:0}
+.steps li::before{
+  counter-increment:s;content:counter(s);
+  display:flex;align-items:center;justify-content:center;
+  width:23px;height:23px;flex:0 0 auto;border-radius:50%;
+  background:var(--acid-wash);color:var(--acid);
+  font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.steps b{display:block;margin-bottom:4px;font-size:13.5px;font-weight:600}
+.steps p{margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+
+/* ============================================================
+   FRAME 3 — DIALOG
+   ============================================================ */
+.frame--dlg{position:relative;min-height:812px;overflow:hidden}
+.behind{position:absolute;inset:0;padding:0 0 4px;filter:blur(3px);opacity:.5;
+  pointer-events:none;user-select:none}
+.scrim{
+  position:absolute;inset:0;z-index:2;
+  display:flex;align-items:center;justify-content:center;
+  padding:14px;overflow-y:auto;overscroll-behavior:contain;
+  background:rgba(3,4,1,.72);
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+}
+.scrim::-webkit-scrollbar{width:0}
+.dlg{
+  width:100%;margin:auto;padding:18px 18px 16px;
+  border-radius:var(--r-card);background:var(--surface);
+  border:1px solid var(--line);
+  box-shadow:0 18px 50px rgba(0,0,0,.7);
+}
+.dlg__disc{
+  display:flex;align-items:center;justify-content:center;
+  width:52px;height:52px;margin:0 auto 12px;border-radius:50%;
+  background-color:var(--sunken);background-image:var(--hold-bars);
+  box-shadow:inset 0 0 0 1px var(--hold-ring);color:var(--acid);
+}
+.dlg__disc svg{width:26px;height:26px}
+.dlg h3{
+  margin:0 0 7px;text-align:center;
+  font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.2;
+}
+.dlg__dek{margin:0 0 14px;text-align:center;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.dlg__dek b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+
+.readback{margin:12px 0 0;border-radius:var(--r-panel);background:var(--sunken);padding:2px 13px}
+.readback div{display:flex;gap:10px;align-items:baseline;padding:9px 0;
+  border-top:1px solid var(--line-soft)}
+.readback div:first-child{border-top:0}
+.readback dt{flex:0 0 40%;margin:0;font-size:11px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--dim)}
+.readback dd{flex:1;margin:0;font-size:12.5px;font-weight:600;text-align:right;
+  font-variant-numeric:tabular-nums}
+
+.reasonbox{margin-top:12px;padding:13px;border-radius:var(--r-panel)}
+.reasonbox p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.reasonbox__top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.reasonbox__top span{
+  flex:1;font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--acid);
+}
+.txtbtn{
+  display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:11px;font-weight:600;cursor:pointer;
+}
+.txtbtn svg{width:12px;height:12px}
+.txtbtn:hover{background:#222833}
+.reasonbox p{margin:0;font-size:12.5px;line-height:1.5;color:var(--text)}
+
+.bullets{list-style:none;margin:12px 0 0;padding:0}
+.bullets li{position:relative;padding:0 0 8px 15px;font-size:12px;line-height:1.4;
+  color:var(--muted)}
+.bullets li:last-child{padding-bottom:0}
+.bullets li::before{content:"";position:absolute;left:2px;top:7px;width:4px;height:4px;
+  border-radius:50%;background:var(--dim)}
+.bullets b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+
+.warn{
+  display:flex;gap:10px;margin-top:12px;padding:12px 13px;border-radius:var(--r-panel);
+  background:var(--red-wash);box-shadow:inset 0 0 0 1px var(--red-ring);
+}
+.warn svg{width:17px;height:17px;flex:0 0 auto;color:var(--red)}
+.warn p{margin:0;font-size:12.5px;line-height:1.45;color:var(--text)}
+
+.consent{display:flex;gap:11px;align-items:flex-start;margin:12px 0 2px;cursor:pointer}
+.consent input{position:absolute;opacity:0;width:0;height:0}
+.consent__box{
+  display:flex;align-items:center;justify-content:center;
+  width:22px;height:22px;flex:0 0 auto;margin-top:1px;border-radius:7px;
+  background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line);color:transparent;
+  transition:background .16s var(--ease),color .16s var(--ease);
+}
+.consent__box svg{width:14px;height:14px}
+.consent input:checked + .consent__box{background:var(--acid);color:var(--acid-ink);
+  box-shadow:inset 0 0 0 1px var(--acid)}
+.consent input:focus-visible + .consent__box{outline:2px solid var(--acid);outline-offset:2px}
+.consent span{font-size:12.5px;line-height:1.45;color:var(--muted)}
+.dlg .actions{margin:14px 0 0}
+/* --surface on --surface is invisible: the dialog secondary drops to --sunken */
+.dlg .btn--flat{background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line)}
+.dlg .btn--flat:hover{background:#1A1F27}
+
+/* the faint screen behind the dialog */
+.behind .card{background:var(--surface)}
+
+/* ============================================================
+   FRAME 4 — RESULT CARD FAMILY
+   ============================================================ */
+.rail{
+  /* flex-start, not stretch: a vetoed card carries a reason and is legitimately
+     taller than an approved one. Stretching leaves a dead void in the short cards. */
+  display:flex;gap:12px;align-items:flex-start;padding:0 var(--gutter) 6px;overflow-x:auto;
+  scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;
+  -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
+}
+.rail::-webkit-scrollbar{display:none}
+.rescard{
+  flex:0 0 auto;scroll-snap-align:start;
+  width:268px;padding:16px;border-radius:var(--r-card);background:var(--surface);
+  display:flex;flex-direction:column;
+  box-shadow:inset 0 1px 0 var(--line);
+}
+.rescard__by{display:flex;align-items:center;gap:9px;margin-bottom:13px}
+.rescard__by .avatar{width:22px;height:22px}
+.rescard__by span{font-size:12.5px;color:var(--muted);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.rescard h3{margin:0 0 8px;font-size:17px;font-weight:600;line-height:1.2;
+  letter-spacing:-.015em}
+.rescard__body{margin:0;font-size:13px;line-height:1.35;color:var(--muted)}
+.cardmeta{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin:14px 0 10px}
+.cardclock{display:inline-flex;align-items:center;gap:6px}
+.cardclock svg{width:14px;height:14px;flex:0 0 auto;color:var(--text)}
+.cardclock time{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.cardclock--held svg{color:var(--acid)}
+.cardclock--over svg,.cardclock--over time{color:var(--muted)}
+.tagpill{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  white-space:nowrap;color:var(--muted);
+}
+.tagpill::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.tagpill--held{color:var(--acid)}
+
+/* -- gauge panel: the held card. Dashed arc = a figure that stopped -- */
+.gauge{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;border-radius:var(--r-panel);
+}
+.gauge__label{font-size:13.5px;font-weight:600;line-height:1.25}
+.gauge__label small{display:block;margin-top:3px;font-size:11px;font-weight:500;color:var(--muted)}
+.gauge__ring{position:relative;width:64px;height:64px;flex:0 0 auto}
+.gauge__ring svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+.gauge__track{fill:none;stroke:rgba(255,255,255,.10);stroke-width:7}
+.gauge__dash{fill:none;stroke:var(--acid);stroke-width:7;stroke-linecap:butt}
+.gauge__value{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:14.5px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+
+/* -- verdict bar: filled = decided, hatched = held -- */
+.verdict{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 13px;border-radius:var(--r-panel);
+}
+.verdict__badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;flex:0 0 auto;border-radius:50%;
+}
+.verdict__badge svg{width:15px;height:15px}
+.verdict b{
+  flex:1;font-size:15px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;
+}
+.verdict span{flex:0 0 auto;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;
+  opacity:.72}
+
+.verdict--yes{background:var(--acid);color:var(--acid-ink)}
+.verdict--yes .verdict__badge{background:rgba(11,14,6,.16);color:var(--acid-ink)}
+.verdict--no{background:var(--red);color:var(--acid-ink)}
+.verdict--no .verdict__badge{background:rgba(11,14,6,.16);color:var(--acid-ink)}
+.verdict--held{
+  background-color:var(--sunken);background-image:var(--hold-bars);
+  box-shadow:inset 0 0 0 1px var(--hold-ring);color:var(--acid);
+}
+.verdict--held .verdict__badge{background:rgba(155,226,34,.13);color:var(--acid)}
+.verdict--held span{color:var(--muted);opacity:1}
+
+.because{
+  display:flex;gap:8px;margin-top:10px;padding:10px 11px;border-radius:10px;
+  background:var(--sunken);
+}
+.because svg{width:14px;height:14px;flex:0 0 auto;color:var(--acid);margin-top:1px}
+.because p{margin:0;font-size:11.5px;line-height:1.45;color:var(--muted)}
+.because p b{color:var(--text);font-weight:600}
+
+.cardcta{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  /* margin-top:auto pins the CTA to the card floor so a stretched rail stays level */
+  width:100%;height:46px;margin-top:auto;
+  border:0;border-radius:var(--r-pill);background:var(--sunken);color:var(--text);
+  font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.cardcta svg{width:14px;height:14px}
+.cardcta:hover{background:#1A1F27}
+.cardcta--acid{background:var(--acid);color:var(--acid-ink)}
+.cardcta--acid:hover{background:#A8EC33}
+
+/* released state — the bars resolve back to a solid plate */
+.released{
+  display:flex;align-items:center;gap:12px;
+  margin:0 var(--gutter);padding:13px 14px;border-radius:var(--r-panel);
+  background:var(--acid);color:var(--acid-ink);
+}
+.released__badge{display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:rgba(11,14,6,.16)}
+.released__badge svg{width:17px;height:17px}
+.released div{flex:1;min-width:0}
+.released b{display:block;font-size:12.5px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase}
+.released span{display:block;margin-top:3px;font-size:11.5px;font-weight:500;opacity:.78;
+  font-variant-numeric:tabular-nums}
+
+.note{margin:14px var(--gutter) 0;font-size:11.5px;line-height:1.5;color:var(--muted)}
+.note b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   PANELS — behind the app-bar actions. Inline rather than floating:
+   these frames scroll and a `position:fixed` overlay inside <main>
+   escapes the review device. Escape closes, an outside click closes,
+   focus returns to the trigger.
+   ============================================================ */
+[hidden]{display:none!important}
+.panel{
+  margin:10px var(--gutter) 0;padding:12px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--surface);box-shadow:0 18px 44px rgba(0,0,0,.45);
+}
+.panel__head{display:flex;align-items:center;gap:8px;margin:0 2px 8px}
+.panel__head h3{
+  flex:1;margin:0;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.panel__x{
+  width:26px;height:26px;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:0;border-radius:50%;background:var(--sunken);color:var(--muted);cursor:pointer;
+}
+.panel__x svg{width:13px;height:13px}
+.panel__x:hover{background:#1A1F27;color:var(--text)}
+.panel__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.panel__o{
+  display:flex;align-items:center;gap:9px;width:100%;min-height:44px;padding:0 9px;
+  border:0;border-radius:9px;background:transparent;color:var(--text);
+  font:inherit;font-size:14px;text-align:left;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.panel__o:hover{background:var(--sunken)}
+.panel__o:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.panel__o[aria-checked="true"]{color:var(--acid);font-weight:600}
+.panel__tick{width:15px;height:15px;flex:0 0 auto;opacity:0;color:var(--acid)}
+.panel__o[aria-checked="true"] .panel__tick{opacity:1}
+.panel__body{margin:0 2px;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.panel__body b{color:var(--text);font-weight:600}
+.panel__body p{margin:0 0 9px}
+.panel__body p:last-child{margin-bottom:0}
+.panel__ok{margin:8px 2px 0;font-size:12px;font-weight:600;color:var(--acid)}
+.icon-btn[aria-expanded="true"]{background:var(--acid);color:var(--acid-ink)}
+.icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* the reason box, while it is being edited */
+.reasonbox p[contenteditable="true"]{
+  -webkit-line-clamp:unset;display:block;overflow:visible;
+  outline:2px solid var(--acid);outline-offset:6px;border-radius:4px;
+}
+.txtbtn[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink)}
+
+/* a settled action row: the buttons are gone, replaced by a reading */
+.settled{
+  display:flex;align-items:center;gap:11px;
+  margin:22px var(--gutter) 20px;padding:14px 15px;
+  border-radius:var(--r-card);background:var(--red);color:var(--acid-ink);
+}
+.settled svg{width:20px;height:20px;flex:0 0 auto}
+.settled b{display:block;font-size:12.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.settled span{display:block;margin-top:3px;font-size:11.5px;font-weight:500;opacity:.82;line-height:1.35}
+
+/* nothing left in the rail once the filter is applied */
+.railnote{
+  flex:0 0 auto;width:270px;
+  display:flex;align-items:center;justify-content:center;
+  min-height:120px;padding:16px;border-radius:var(--r-card);
+  background:var(--surface);color:var(--muted);font-size:13px;text-align:center;
+}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+<!-- ============================================================
+     FRAME 1 — VETO HOLD NOTICE
+     ============================================================ -->
+<p class="caption">Frame 1 · <b>Veto hold notice</b> — member view, proposal frozen</p>
+<div class="frame">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Voting</h2>
+    <button class="icon-btn" type="button" aria-label="How the veto works">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.6M12 7.6h.01"/></svg>
+    </button>
+  </div>
+
+  <!-- the hold banner -->
+  <div class="holdbar held">
+    <span class="holdbar__disc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>
+    </span>
+    <span class="holdbar__id">
+      <b>Veto hold</b>
+      <span>Club Management · today, 14:02</span>
+    </span>
+    <span class="holdbar__side">
+      <b class="tabular">41:12</b>
+      held
+    </span>
+  </div>
+
+  <!-- the proposal -->
+  <div style="margin:20px var(--gutter) 0">
+    <p class="eyebrow">Your proposal · Voting stage</p>
+    <h1 style="margin:0;font-size:24px;font-weight:700;letter-spacing:-.025em;line-height:1.15">Cancel the Japan pre-season tour</h1>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p>Club Management has placed a veto on this proposal. Voting is paused with
+      <strong class="tabular">41:12</strong> still to run.</p>
+    <p><strong>Nothing has been decided.</strong> Every ballot already cast stays on the record
+      and the count is held exactly where it stood.</p>
+  </div>
+
+  <!-- two clocks: one stopped, one running -->
+  <div class="clocks">
+    <div class="clock clock--held">
+      <span class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10 9v6M14 9v6"/></svg>
+        <span>Voting · paused</span>
+      </span>
+      <time datetime="PT41M12S">41:12</time>
+      <small>Resumes here if lifted</small>
+    </div>
+    <div class="clock">
+      <span class="clock__top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+        <span>Appeal window</span>
+      </span>
+      <time datetime="PT29M41S" data-countdown="1781">29:41</time>
+      <small>Counting down now</small>
+    </div>
+  </div>
+
+  <!-- reason -->
+  <h2 class="label">Reason for the veto</h2>
+  <div class="card">
+    <p>The tour is contracted with the tournament organiser until July 2027. Withdrawing this
+      summer triggers a <strong>&euro;4.2m penalty</strong> and puts the club in breach of the
+      broadcast agreement covering both Japan fixtures.</p>
+    <p>We cannot carry out this decision as voted. We will bring a shortened three-day tour to
+      the club as a new Idea within 48 hours.</p>
+    <div class="who">
+      <span class="plate" role="img" aria-label="Barcelona">BAR</span>
+      <span class="who__id">
+        <b>Club Management · Barcelona</b>
+        <span>Published to all 1,284 members at 14:02</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- what you can do -->
+  <h2 class="label">What you can do</h2>
+  <div class="card">
+    <ol class="steps">
+      <li><div>
+        <b>Accept the veto</b>
+        <p>The hold becomes final and the proposal is recorded as Vetoed. Your deposit is not charged.</p>
+      </div></li>
+      <li><div>
+        <b>Or appeal it</b>
+        <p>Post an <em>Idea to Reject the Veto</em> before the appeal window closes. It needs a
+          deposit of 25.0 Credits, refunded as soon as the Idea becomes
+          a Proposal.</p>
+      </div></li>
+      <li><div>
+        <b>Win the appeal, and the hold lifts</b>
+        <p>If that Proposal reaches 80% Support at the end of its Voting stage, the veto is
+          removed and this proposal continues with 41:12 remaining — as though it had never been
+          held.</p>
+      </div></li>
+    </ol>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn--flat" type="button">Accept veto</button>
+    <button class="btn btn--acid" type="button">Appeal the veto</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     FRAME 2 — VETO DETAIL
+     ============================================================ -->
+<p class="caption">Frame 2 · <b>Veto detail</b> — full rationale and the vote that was overridden</p>
+<div class="frame" id="veto-detail">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Veto detail</h2>
+    <button class="icon-btn" type="button" aria-label="Share">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M8 7.5 12 3.5l4 4M5 14v5.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V14"/></svg>
+    </button>
+  </div>
+
+  <div class="holdbar held">
+    <span class="holdbar__disc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>
+    </span>
+    <span class="holdbar__id">
+      <b>Veto hold · on appeal</b>
+      <span>Voting paused · 29:41 left to appeal</span>
+    </span>
+  </div>
+
+  <div style="margin:20px var(--gutter) 0">
+    <p class="eyebrow">Proposal · posted by you</p>
+    <h1 style="margin:0;font-size:24px;font-weight:700;letter-spacing:-.025em;line-height:1.15">Cancel the Japan pre-season tour</h1>
+  </div>
+
+  <!-- the vote that was overridden -->
+  <h2 class="label">Where the vote stood</h2>
+  <div class="card">
+    <div class="count">
+      <span class="count__fig"><b>75%</b><span>Support</span></span>
+      <span class="count__need">70% needed</span>
+    </div>
+
+    <div class="bar bar--held" role="img" aria-label="75 per cent support, held; 70 per cent needed to approve">
+      <span class="bar__fill" style="width:75%"></span>
+      <span class="bar__mark" style="left:70%"></span>
+    </div>
+    <div class="bar-legend"><span>Held at 14:02</span><span>Threshold 70%</span></div>
+
+    <ul class="split">
+      <li>
+        <span class="split__key">Cancel the tour</span>
+        <span class="split__pct">75%</span>
+        <span class="split__n">309 votes</span>
+      </li>
+      <li>
+        <span class="split__key">Keep the tour</span>
+        <span class="split__pct">25%</span>
+        <span class="split__n">103 votes</span>
+      </li>
+    </ul>
+
+    <div class="voters">
+      <span class="stackav">
+        <span class="avatar" style="background-image:var(--av-you)" role="img" aria-label="You"></span>
+        <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+        <span class="avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+        <span class="avatar" style="background-image:var(--av-fp)" role="img" aria-label="fan_pulse"></span>
+      </span>
+      <span>You and 411 other members voted</span>
+    </div>
+
+    <div class="frozen held-flat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10 9v6M14 9v6"/></svg>
+      <p>Counting stopped at 14:02. These figures are final as at that moment — no further votes
+        are being taken while the hold stands.</p>
+    </div>
+  </div>
+
+  <!-- full rationale -->
+  <h2 class="label">Club Management's rationale</h2>
+  <div class="card">
+    <p><strong>The commitment.</strong> The two Japan fixtures are contracted with the tournament
+      organiser until July 2027. The agreement was signed before this club joined SportsHeist and
+      is not a decision the club can reopen this season.</p>
+    <p><strong>The cost of withdrawing.</strong> Cancelling now triggers a &euro;4.2m penalty and
+      leaves the club in breach of the broadcast agreement that covers both matches. The penalty
+      would come out of the same budget as the January transfer allowance.</p>
+    <p><strong>What we are doing instead.</strong> We accept the club wants a shorter summer. We
+      will bring a three-day version of the tour, with one fixture instead of two, to the club as
+      a new Idea within 48 hours. If members prefer it, it can be in place for this summer.</p>
+    <div class="who">
+      <span class="plate" role="img" aria-label="Barcelona">BAR</span>
+      <span class="who__id">
+        <b>Club Management · Barcelona</b>
+        <span>Signed and published 30 Jul, 14:02</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- the trust copy -->
+  <h2 class="label">What this means for you</h2>
+  <div class="card">
+    <p><strong>Your vote still stands.</strong> The count is held, not cancelled. All 412 ballots
+      stay on the record. If the hold is lifted, voting restarts from exactly these figures with
+      41:12 on the clock.</p>
+    <p><strong>A veto is not a rejection.</strong> Club Management can hold a decision only where
+      carrying it out would break a contract, a competition rule or the law. It cannot hold one
+      because it disagrees with the outcome, and it has to publish its reason, signed, to every
+      member.</p>
+    <p><strong>You can put it back to the club.</strong> An Idea to Reject the Veto runs through
+      the normal Ideas and Voting stages. Reach 80% Support and the veto is removed — the club
+      overrules its own management, and this proposal carries on where it left off.</p>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn--flat" type="button">Accept veto</button>
+    <button class="btn btn--acid" type="button">Appeal the veto</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     FRAME 3 — VETO CONFIRM (club side, destructive)
+     ============================================================ -->
+<p class="caption">Frame 3 · <b>Veto confirm</b> — club side, destructive confirmation</p>
+<div class="frame frame--dlg">
+
+  <!-- the screen underneath, blurred and scrimmed -->
+  <div class="behind" aria-hidden="true">
+    <div class="topbar">
+      <span class="icon-btn"></span>
+      <h2>Review proposal</h2>
+      <span class="icon-btn"></span>
+    </div>
+    <div style="margin:8px var(--gutter) 0">
+      <p class="eyebrow">Proposal · dylan_n</p>
+      <h1 style="margin:0;font-size:24px;font-weight:700;letter-spacing:-.025em;line-height:1.15">Cancel the Japan pre-season tour</h1>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="count">
+        <span class="count__fig"><b>75%</b><span>Support</span></span>
+        <span class="count__need">70% needed</span>
+      </div>
+      <div class="bar"><span class="bar__fill" style="width:75%"></span><span class="bar__mark" style="left:70%"></span></div>
+      <div class="bar-legend"><span>41:12 left</span><span>Threshold 70%</span></div>
+    </div>
+    <div class="actions">
+      <span class="btn btn--flat">Place veto</span>
+      <span class="btn btn--acid">Let it run</span>
+    </div>
+  </div>
+
+  <div class="scrim">
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="veto-dlg-t">
+      <span class="dlg__disc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>
+      </span>
+      <h3 id="veto-dlg-t">Veto this proposal?</h3>
+      <p class="dlg__dek">Confirming stops a live count and puts
+        <b>Cancel the Japan pre-season tour</b> on hold.</p>
+
+      <dl class="readback">
+        <div><dt>Stage</dt><dd>Voting · 41:12 unspent</dd></div>
+        <div><dt>Support</dt><dd>75% of 412 votes</dd></div>
+        <div><dt>Appeal</dt><dd>30:00</dd></div>
+      </dl>
+
+      <div class="reasonbox held">
+        <div class="reasonbox__top">
+          <span>Reason members will see</span>
+          <button class="txtbtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="M14.5 5.5l4 4"/></svg>
+            Edit
+          </button>
+        </div>
+        <p>The tour is contracted with the tournament organiser until July 2027. Withdrawing this
+          summer triggers a &euro;4.2m penalty and puts the club in breach of the broadcast
+          agreement covering both Japan fixtures.</p>
+      </div>
+
+      <ul class="bullets">
+        <li>All <b>412</b> members who voted are told their decision is on hold, not lost.</li>
+        <li><b>dylan_n</b> can appeal for <b>30:00</b>; <b>80% Support</b> removes your veto.</li>
+        <li>Your reason is published to all <b>1,284</b> members, signed.</li>
+      </ul>
+
+      <div class="warn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10v4M12 17h.01"/></svg>
+        <p>This overturns a live member decision. Only an appeal can lift it.</p>
+      </div>
+
+      <label class="consent">
+        <input type="checkbox" checked>
+        <span class="consent__box" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4.5 4.5L19 7"/></svg>
+        </span>
+        <span>I confirm this cannot be carried out as voted, and that the reason is accurate.</span>
+      </label>
+
+      <div class="actions">
+        <button class="btn btn--flat" type="button">Cancel</button>
+        <button class="btn btn--danger" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>
+          Place veto
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     FRAME 4 — RESULT CARD FAMILY
+     ============================================================ -->
+<p class="caption">Frame 4 · <b>Card family</b> — held, vetoed, approved, rejected</p>
+<div class="frame" style="padding-bottom:18px">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Results</h2>
+    <button class="icon-btn" type="button" aria-label="Filter results">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+    </button>
+  </div>
+
+  <h2 class="label" style="margin-top:6px">Decided &amp; held</h2>
+
+  <div class="rail">
+
+    <!-- 1 · in flight, held -->
+    <article class="rescard" data-state="held">
+      <div class="rescard__by">
+        <span class="avatar" style="background-image:var(--av-you)" role="img" aria-label="You"></span>
+        <span>by you · dylan_n</span>
+      </div>
+      <h3>Cancel the Japan pre-season tour</h3>
+      <p class="rescard__body">Withdraw from both Japan fixtures and play the pre-season at home.</p>
+
+      <div class="cardmeta">
+        <span class="cardclock cardclock--held">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10 9v6M14 9v6"/></svg>
+          <time datetime="PT41M12S">41:12</time>
+        </span>
+        <span class="tagpill tagpill--held">Veto hold</span>
+      </div>
+
+      <div class="gauge held">
+        <span class="gauge__label">75% Support<small>held, 70% needed</small></span>
+        <span class="gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="gauge__dash" cx="32" cy="32" r="27" pathLength="100"
+              stroke-dasharray="3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 3 2 0 25"/>
+          </svg>
+          <span class="gauge__value">75%</span>
+        </span>
+      </div>
+
+      <button class="cardcta cardcta--acid" type="button">
+        Read the veto
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </button>
+    </article>
+
+    <!-- 2 · resolved: vetoed -->
+    <article class="rescard" data-state="vetoed">
+      <div class="rescard__by">
+        <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+        <span>by capitan_7</span>
+      </div>
+      <h3>Move the academy to Sant Joan</h3>
+      <p class="rescard__body">Relocate the youth setup to a new site for the 2028 season.</p>
+
+      <div class="cardmeta">
+        <span class="cardclock cardclock--over">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+          <time datetime="PT0S">00:00</time>
+        </span>
+        <span class="tagpill">Position</span>
+      </div>
+
+      <div class="verdict verdict--no">
+        <span class="verdict__badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/></svg>
+        </span>
+        <b>Vetoed</b>
+        <span>81% Support</span>
+      </div>
+
+      <div class="because">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 2.5v6c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9v-6L12 3Z"/></svg>
+        <p><b>Club Management:</b> planning consent for the Sant Joan site was refused in June.
+          Not appealed.</p>
+      </div>
+
+      <button class="cardcta" type="button">
+        View details
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </button>
+    </article>
+
+    <!-- 3 · resolved: approved -->
+    <article class="rescard" data-state="approved">
+      <div class="rescard__by">
+        <span class="avatar" style="background-image:var(--av-fp)" role="img" aria-label="fan_pulse"></span>
+        <span>by fan_pulse</span>
+      </div>
+      <h3>Safe standing pilot</h3>
+      <p class="rescard__body">Trial licensed safe-standing rails in one north-stand block.</p>
+
+      <div class="cardmeta">
+        <span class="cardclock cardclock--over">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+          <time datetime="PT0S">00:00</time>
+        </span>
+        <span class="tagpill">Position</span>
+      </div>
+
+      <div class="verdict verdict--yes">
+        <span class="verdict__badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4.5 4.5L19 7"/></svg>
+        </span>
+        <b>Approved</b>
+        <span>82% Support</span>
+      </div>
+
+      <button class="cardcta" type="button">
+        View details
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </button>
+    </article>
+
+    <!-- 4 · resolved: rejected -->
+    <article class="rescard" data-state="rejected">
+      <div class="rescard__by">
+        <span class="avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+        <span>by scout_mode</span>
+      </div>
+      <h3>Rename the North Stand</h3>
+      <p class="rescard__body">Sell the naming rights to the north stand for three seasons.</p>
+
+      <div class="cardmeta">
+        <span class="cardclock cardclock--over">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg>
+          <time datetime="PT0S">00:00</time>
+        </span>
+        <span class="tagpill">Decision</span>
+      </div>
+
+      <div class="verdict verdict--no">
+        <span class="verdict__badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </span>
+        <b>Rejected</b>
+        <span>41% Support</span>
+      </div>
+
+      <button class="cardcta" type="button">
+        View details
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </button>
+    </article>
+
+    <p class="railnote" role="status" hidden>No proposals in that state.</p>
+  </div>
+
+  <!-- the fifth state: the hold is lifted -->
+  <h2 class="label">Hold released</h2>
+  <div class="released">
+    <span class="released__badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4.5 4.5L19 7"/></svg>
+    </span>
+    <div>
+      <b>Veto overruled</b>
+      <span>84% Support on the appeal · voting resumed 15:11 with 41:12 remaining</span>
+    </div>
+  </div>
+  <p class="note"><b>The rule the five states share.</b> A <b>filled</b> state plate means the club
+    has decided — acid for approved, red for rejected. <b>Bars struck through the accent</b> mean
+    the decision is held: nothing has been settled. A <b>dashed</b> stroke is a figure that has
+    stopped moving. Buttons are not states, so a call to action stays solid acid throughout.</p>
+
+</div>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* the appeal window is the one clock that is still running */
+  function pad(n){return String(n).padStart(2,'0');}
+  var clocks = Array.prototype.slice.call(document.querySelectorAll('[data-countdown]'))
+    .map(function(el){return {el:el,left:parseInt(el.dataset.countdown,10)||0};});
+
+  if (clocks.some(function(c){return c.left>0;})){
+    setInterval(function(){
+      clocks.forEach(function(c){
+        if (c.left<=0) return;
+        c.left -= 1;
+        var m = Math.floor(c.left/60), s = c.left%60;
+        c.el.textContent = pad(m)+':'+pad(s);
+        c.el.setAttribute('datetime','PT'+m+'M'+s+'S');
+      });
+    },1000);
+  }
+
+  /* the club-side confirm is gated on the consent box */
+  var box = document.querySelector('.consent input');
+  var go  = document.querySelector('.btn--danger');
+  if (box && go){
+    var sync = function(){
+      go.disabled = !box.checked;
+      go.style.opacity = box.checked ? '' : '.45';
+      go.style.cursor  = box.checked ? '' : 'not-allowed';
+    };
+    box.addEventListener('change', sync);
+    sync();
+  }
+})();
+</script>
+</body>
+</html>

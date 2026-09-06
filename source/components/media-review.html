@@ -1,0 +1,2093 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Image viewer · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; --surface: #1C2129; --sunken: #13171E; --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); --acid-line: rgba(155,226,34,.30); /* semantic red — destructive / failure only */ --red: #E2564A; --red-wash: rgba(226,86,74,.12); --red-line: rgba(226,86,74,.28); /* neutral wash — where a state must NOT read as red or acid */ --neutral-wash: rgba(255,255,255,.06); /* skeleton — states.html */ --bone: rgba(255,255,255,.055); --sheen: rgba(255,255,255,.06); /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; /* sheet shell — sheets.html, unchanged */ --r-sheet: 18px; --sheet-max: 560px; --sheet-vh: 88vh; --grab-w: 40px; --grab-h: 4px; --h-row: 48px; --h-field: 52px; /* dialog shell — dialogs.html, unchanged */ --dlg-inset: 20px; --dlg-max: 340px; --dlg-pad: 20px; /* scrim — dialogs.html / sheets.html */ --scrim: rgba(3,4,1,.72); --scrim-blur: 10px; /* ---- viewer only ---- */ --photo: #000000; /* the viewer ground */ --photo-veil: rgba(0,0,0,.72); /* chrome scrim on photo */ --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* portraits from _assets/avatars.css — the mapping is the one the rest of the library uses: taythaytu 01, capitan_7 02, fan_pulse 03, club_staff 04, transfer_brig 07, dylan_n ("You") 08, scout_mode 12, dons_mode 14 */ --av-01:url(data:image/jpeg;base64,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); /* taythaytu */ --av-02:url(data:image/jpeg;base64,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); /* capitan_7 */ --av-03:url(data:image/jpeg;base64,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); /* fan_pulse */ --av-04:url(data:image/jpeg;base64,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); /* club_staff */ --av-07:url(data:image/jpeg;base64,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); /* transfer_brig */ --av-08:url(data:image/jpeg;base64,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); /* dylan_n · You */ --av-12:url(data:image/jpeg;base64,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); /* scout_mode */ --av-14:url(data:image/jpeg;base64,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); /* dons_mode */}
+@keyframes shim{to{transform:translateX(100%)}}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk [hidden]{display:none!important}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:0 0 12px}
+.mk .frame + .frame{margin-top:16px}
+.mk code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.94em;color:inherit}
+.mk .vw{position:relative;overflow:hidden;isolation:isolate; width:100%;height:684px;min-height:100%; background:var(--photo);}
+.mk .vw__plate{position:absolute;left:0;right:0;top:50%; transform:translateY(-50%); background-repeat:no-repeat;background-size:cover; background-position:center 26%; transition:transform .3s var(--ease);}
+.mk .vw__plate--45{aspect-ratio:4 / 5}
+.mk .vw__plate--32{aspect-ratio:3 / 2}
+.mk .vw__plate.is-zoom{transform:translateY(-50%) scale(2.4)}
+.mk .vw__zoomcue{position:absolute;inset:0;z-index:2;pointer-events:none; box-shadow:inset 0 0 0 1px rgba(255,255,255,.10);}
+.mk .vw__top{position:absolute;left:0;right:0;top:0;z-index:4; padding:34px 8px 0; /* 34 clears the status bar / island */ background:linear-gradient(180deg, rgba(0,0,0,.80) 0%, rgba(0,0,0,.46) 56%, rgba(0,0,0,0) 100%);}
+.mk .vw__bar{display:flex;align-items:center;gap:8px;height:48px}
+.mk .vw__spacer{flex:1;min-width:0}
+.mk .disc{position:relative;flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;border:0;border-radius:50%; background:rgba(0,0,0,.46);color:var(--text);cursor:pointer; /* the rim is what makes a floating control findable on a BLACK letterbox as well as on a bright photograph. Without it a .46 black disc on #000 is invisible. */ box-shadow:inset 0 0 0 1px rgba(255,255,255,.15); -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px); transition:background .16s var(--ease);}
+.mk .disc::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .disc:hover{background:rgba(0,0,0,.66)}
+.mk .disc svg{width:20px;height:20px}
+.mk .disc:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .count{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center; height:28px;padding:0 12px;border-radius:var(--r-pill); background:rgba(0,0,0,.52);color:var(--text); box-shadow:inset 0 0 0 1px rgba(255,255,255,.15); -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px); font-size:12.5px;font-weight:700;letter-spacing:.04em; font-variant-numeric:tabular-nums;white-space:nowrap;}
+.mk .count b{font-weight:700}
+.mk .count span{color:rgba(255,255,255,.58);font-weight:600}
+.mk .who{display:flex;align-items:center;gap:8px;min-width:0;flex:1;}
+.mk .avatar{border-radius:50%;background-size:cover;background-position:center 22%; background-repeat:no-repeat;flex:0 0 auto;}
+.mk .who__av{width:28px;height:28px;box-shadow:0 0 0 1px rgba(255,255,255,.16)}
+.mk .who__txt{min-width:0}
+.mk .who__n{display:block;font-size:13px;font-weight:600;letter-spacing:-.01em; overflow:hidden;text-overflow:ellipsis;white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,.7);}
+.mk .who__m{display:block;margin-top:1px;font-size:11px;color:rgba(255,255,255,.66); font-variant-numeric:tabular-nums;text-shadow:0 1px 3px rgba(0,0,0,.7);}
+.mk .vw__bot{position:absolute;left:0;right:0;bottom:0;z-index:4; padding:22px 0 calc(14px + env(safe-area-inset-bottom,0px)); background:linear-gradient(0deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.48) 54%, rgba(0,0,0,0) 100%);}
+.mk .dots{display:flex;align-items:center;justify-content:center;gap:6px; margin:0 0 12px;padding:0;list-style:none;}
+.mk .dot{width:6px;height:6px;padding:0;border:0;border-radius:50%; background:rgba(255,255,255,.34);cursor:pointer; transition:background .16s var(--ease),width .2s var(--ease);}
+.mk .dot[aria-current="true"]{width:18px;border-radius:var(--r-pill);background:var(--acid)}
+.mk .dot:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .cap{margin:0 var(--gutter)}
+.mk .cap__t{margin:0;font-size:13px;line-height:1.5;color:rgba(255,255,255,.92); text-shadow:0 1px 3px rgba(0,0,0,.8);}
+.mk .cap__t b{font-weight:600}
+.mk .cap__row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.mk .cap__btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px; border:1px solid rgba(255,255,255,.16);border-radius:var(--r-pill); background:rgba(0,0,0,.46);color:var(--text); -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px); font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap; transition:background .16s var(--ease);}
+.mk .cap__btn:hover{background:rgba(0,0,0,.68)}
+.mk .cap__btn svg{width:15px;height:15px}
+.mk .cap__btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .hint{display:inline-flex;align-items:center;gap:7px; margin:0 auto;padding:0 12px;height:30px; border-radius:var(--r-pill);background:rgba(0,0,0,.46); box-shadow:inset 0 0 0 1px rgba(255,255,255,.15); -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px); font-size:11.5px;font-weight:600;color:rgba(255,255,255,.86);}
+.mk .hint svg{width:15px;height:15px;color:var(--acid)}
+.mk .hintwrap{display:flex;justify-content:center;margin:0 var(--gutter) 12px}
+.mk .zoom{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;height:28px; padding:0 4px 0 12px;border-radius:var(--r-pill); background:rgba(0,0,0,.52);box-shadow:inset 0 0 0 1px rgba(255,255,255,.15); -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px); font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;}
+.mk .zoom__x{color:var(--acid)}
+.mk .zoom__r{height:22px;padding:0 10px;border:0;border-radius:var(--r-pill); background:rgba(255,255,255,.14);color:var(--text); font:inherit;font-size:11px;font-weight:700;letter-spacing:.06em; text-transform:uppercase;cursor:pointer;}
+.mk .zoom__r:hover{background:rgba(255,255,255,.24)}
+.mk .zoom__r:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .bone{position:relative;overflow:hidden;background:var(--bone);border-radius:var(--r-panel)}
+.mk .bone::after{content:"";position:absolute;inset:0;transform:translateX(-100%); background:linear-gradient(90deg,transparent,var(--sheen),transparent); animation:shim 1.35s var(--ease) infinite;}
+.mk .vw__load{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%); aspect-ratio:4 / 5;border-radius:0;background:var(--sunken);}
+.mk .vw__loadtxt{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%); z-index:4;display:flex;flex-direction:column;align-items:center;gap:11px;}
+.mk .ring{display:inline-flex;color:var(--acid)}
+.mk .ring svg{display:block}
+.mk .loadcap{margin:0;font-size:11px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:rgba(255,255,255,.52);}
+.mk .fail{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%); padding:0 30px;text-align:center;}
+.mk .tile{display:inline-flex;align-items:center;justify-content:center; width:52px;height:52px;border-radius:14px;flex:0 0 auto;}
+.mk .tile svg{width:25px;height:25px}
+.mk .tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.mk .tile--acid{background:var(--acid-wash);color:var(--acid)}
+.mk .fail h2{margin:16px 0 0;font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+.mk .fail p{margin:8px auto 0;max-width:28ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .fail__ref{display:inline-block;margin-top:12px;padding:5px 10px;border-radius:8px; background:rgba(255,255,255,.05); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px; color:var(--dim);word-break:break-all;}
+.mk .fail__acts{display:flex;gap:10px;margin:20px auto 0;max-width:280px}
+.mk .btn{position:relative;flex:1 1 0;min-width:0; display:inline-flex;align-items:center;justify-content:center;gap:8px; height:46px;padding:0 14px;border:0;border-radius:var(--r-pill); font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em; cursor:pointer;white-space:nowrap; transition:background .18s var(--ease),opacity .18s var(--ease);}
+.mk .btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .btn--acid:hover{background:#A8EC33}
+.mk .btn--danger{background:var(--red);color:var(--acid-ink)}
+.mk .btn--danger:hover{background:#E9675C}
+.mk .btn--ghost{background:rgba(255,255,255,.09);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .btn--ghost:hover{background:rgba(255,255,255,.15)}
+.mk .btn--wide{width:100%;flex:0 0 auto}
+.mk .btn svg{width:18px;height:18px}
+.mk .btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .sheet{position:relative;z-index:1; display:flex;flex-direction:column; width:100%;max-height:min(var(--sheet-vh),var(--sheet-max)); border:1px solid var(--line);border-bottom:0; border-radius:var(--r-sheet) var(--r-sheet) 0 0; background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%); box-shadow:0 -20px 50px rgba(0,0,0,.6); overflow:hidden;}
+.mk .sheet:focus{outline:none}
+.mk .sheet:focus-visible{outline:2px solid var(--acid);outline-offset:-3px}
+.mk .sheet__grab{flex:0 0 auto;display:flex;align-items:center;justify-content:center; height:26px;width:100%;padding:0;margin:0;border:0;background:transparent; cursor:grab;touch-action:none;}
+.mk .sheet__grab::before{content:"";width:var(--grab-w);height:var(--grab-h);border-radius:var(--r-pill); background:rgba(255,255,255,.18);transition:background .16s var(--ease);}
+.mk .sheet__grab:hover::before{background:rgba(255,255,255,.30)}
+.mk .sheet__grab:focus-visible{outline:2px solid var(--acid);outline-offset:-4px;border-radius:var(--r-sheet) var(--r-sheet) 0 0}
+.mk .sheet.is-dragging{transition:none}
+.mk .sheet.is-dragging .sheet__grab{cursor:grabbing}
+.mk .sheet__head{flex:0 0 auto;display:flex;align-items:center;gap:9px; padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);}
+.mk .sheet__title{margin:0;flex:1;min-width:0; font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--text);}
+.mk .sheet__x{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;margin-right:-4px;position:relative; border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted); cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);}
+.mk .sheet__x::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.mk .sheet__x:hover{background:rgba(255,255,255,.11);color:var(--text)}
+.mk .sheet__x svg{width:16px;height:16px}
+.mk .sheet__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .sheet__body::-webkit-scrollbar{width:0;height:0}
+.mk .sheet__body{scrollbar-width:none}
+.mk .sheet__body{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch; overscroll-behavior:contain;padding:12px var(--gutter);}
+.mk .sheet__body--last{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+.mk .sheet__foot{flex:0 0 auto;padding:12px var(--gutter); padding-bottom:calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line);background:var(--sunken);}
+.mk .sheet__foot--pair{display:flex;gap:10px}
+.mk .acts{margin:0;padding:0;list-style:none;overflow:hidden; border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);}
+.mk .acts li + li{border-top:1px solid var(--line-soft)}
+.mk .act{display:flex;align-items:center;gap:13px;width:100%;min-height:54px;padding:0 14px; border:0;background:transparent;color:var(--text); font:inherit;font-size:14.5px;font-weight:500;text-align:left;cursor:pointer; transition:background .16s var(--ease);}
+.mk .act:hover{background:rgba(255,255,255,.045)}
+.mk .act > svg{width:20px;height:20px;flex:0 0 auto;color:var(--muted)}
+.mk .act small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--dim)}
+.mk .act__t{flex:1;min-width:0}
+.mk .act--danger{color:var(--red)}
+.mk .act--danger > svg{color:var(--red)}
+.mk .act--danger:hover{background:var(--red-wash)}
+.mk .act:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.mk .acts__ctx{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.mk .acts__ctx .avatar{width:34px;height:34px}
+.mk .acts__ctx b{display:block;font-size:14px;font-weight:600;letter-spacing:-.01em}
+.mk .acts__ctx span{display:block;margin-top:2px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk .acts__thumb{width:34px;height:34px;border-radius:9px;flex:0 0 auto; background-size:cover;background-position:center 26%; box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);}
+.mk .dlg{position:relative; width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max); margin:0 auto;padding:var(--dlg-pad); border-radius:var(--r-card);background:var(--surface); border:1px solid var(--line); box-shadow:0 24px 60px rgba(0,0,0,.55);}
+.mk .dlg__close{position:absolute;top:12px;right:12px; display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;border-radius:50%; background:var(--sunken);border:1px solid var(--line-soft);color:var(--muted); cursor:pointer;transition:color .18s var(--ease),background .18s var(--ease);}
+.mk .dlg__close::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.mk .dlg__close svg{width:15px;height:15px}
+.mk .dlg__close:hover{color:var(--text);background:#1A1F27}
+.mk .dlg__close:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .dlg__title{margin:14px 0 0;padding-right:26px;font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.2}
+.mk .dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .dlg__body b{color:var(--text);font-weight:600}
+.mk .dlg__act{display:flex;gap:10px;margin-top:18px}
+.mk .field{margin-top:14px}
+.mk .field__label{display:block;margin-bottom:7px; font-size:12.5px;font-weight:600;letter-spacing:-.005em;color:var(--text);}
+.mk .field__box{display:flex;border:1px solid var(--line);border-radius:var(--r-panel); background:var(--sunken); transition:border-color .16s var(--ease),box-shadow .16s var(--ease);}
+.mk .field__box:focus-within{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.mk .field__in{flex:1;min-width:0;min-height:88px;padding:12px 13px;resize:none; border:0;background:transparent;color:var(--text); font:inherit;font-size:16px;line-height:1.45;outline:none;}
+.mk .field__in::placeholder{color:var(--dim);opacity:1}
+.mk .field__foot{display:flex;align-items:center;gap:8px;margin-top:7px}
+.mk .field__help{flex:1;min-width:0;font-size:11.5px;line-height:1.4;color:var(--muted)}
+.mk .field__n{flex:0 0 auto;font-size:11.5px;font-weight:600;color:var(--dim); font-variant-numeric:tabular-nums;}
+.mk .toast{display:flex;align-items:center;gap:11px; padding:9px 10px 9px 12px;min-height:52px; border-radius:var(--r-card);background:var(--surface); border:1px solid var(--line);box-shadow:0 14px 34px rgba(0,0,0,.5);}
+.mk .toast::before{content:"";flex:0 0 auto;width:3px;height:22px;border-radius:2px;background:var(--mark-color,var(--acid))}
+.mk .toast__icon{display:inline-flex;flex:0 0 auto;color:var(--mark-color,var(--acid))}
+.mk .toast__icon svg{width:19px;height:19px}
+.mk .toast__msg{flex:1;min-width:0;font-size:13px;font-weight:500;line-height:1.35}
+.mk .toast__msg small{display:block;margin-top:3px;font-size:11.5px;font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk .toast__act{flex:0 0 auto;height:32px;padding:0 12px;border:0;border-radius:var(--r-pill); background:var(--acid-wash);color:var(--acid); font:inherit;font-size:12.5px;font-weight:700;cursor:pointer; transition:background .18s var(--ease);}
+.mk .toast__act:hover{background:rgba(155,226,34,.2)}
+.mk .toast__act:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .toast--error{--mark-color:var(--red)}
+.mk .toast--error .toast__act{background:var(--red-wash);color:var(--red)}
+.mk .toaster{position:absolute;left:0;right:0;bottom:0;z-index:6; display:flex;flex-direction:column;gap:8px; padding:0 var(--gutter) calc(16px + env(safe-area-inset-bottom,0px));}
+.mk .track{display:block;margin-top:7px;height:3px;border-radius:2px;overflow:hidden; background:rgba(255,255,255,.10);}
+.mk .track__fill{display:block;height:100%;border-radius:2px;background:var(--acid)}
+.mk .gnd{position:relative;height:33.3333%;overflow:hidden; display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;}
+.mk .gnd + .gnd{box-shadow:inset 0 1px 0 rgba(255,255,255,.09)}
+.mk .gnd--black{background:#000000}
+.mk .gnd--canvas{background:#030401}
+.mk .gnd--built{background:#2C2C2C}
+.mk .gnd__plate{width:34%;flex:0 0 auto;aspect-ratio:4 / 5; background-size:cover;background-position:center 26%;}
+.mk .gnd__tag{flex:0 0 auto; display:inline-flex;align-items:center;gap:8px;height:26px;padding:0 11px; border-radius:var(--r-pill);background:rgba(0,0,0,.52); box-shadow:inset 0 0 0 1px rgba(255,255,255,.15); -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px; color:rgba(255,255,255,.80);white-space:nowrap;}
+.mk .gnd__tag b{font-family:var(--font);font-weight:700;letter-spacing:.10em; text-transform:uppercase;font-size:9px;color:var(--acid);}
+.mk .gnd__tag.is-off b{color:var(--muted)}
+.mk .gnd__tag.is-bad b{color:var(--red)}
+.mk .layer{position:fixed;inset:0;z-index:60;display:none;align-items:flex-end;justify-content:center}
+.mk .layer.is-open{display:flex}
+.mk .scrim{position:absolute;inset:0; background:var(--photo-veil); -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9); backdrop-filter:blur(var(--scrim-blur)) saturate(.9); opacity:0;transition:opacity .22s var(--ease);}
+.mk .layer.is-in .scrim{opacity:1}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .mk .scrim{background:rgba(0,0,0,.88)}
+}
+.mk .layer .sheet{max-width:420px;transform:translateY(101%); transition:transform .32s var(--ease);will-change:transform; max-height:min(var(--sheet-vh),var(--sheet-max),calc(100% - 24px - env(safe-area-inset-top,0px)));}
+.mk .layer.is-in .sheet{transform:translateY(0)}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+  .mk .bone::after{animation:none!important;opacity:0}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Image viewer</h1>
+    <p class="dek">The full-screen photo viewer and the swipeable gallery — the surface members land on when they
+tap any photo in a locker room, a chat, an idea or a profile. Both surfaces exist in the shipped app
+and neither has ever been designed, specified or screenshotted.</p>
+    <div class="meta">
+      <span><b>Component</b> media</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 9</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">Viewer<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Pinch and zoom<span class="side__tag">02</span></a></li>
+      <li><a class="side__item" href="#scr-3">Loading<span class="side__tag">03</span></a></li>
+      <li><a class="side__item" href="#scr-4">Won’t load<span class="side__tag">04</span></a></li>
+      <li><a class="side__item" href="#scr-5">Gallery<span class="side__tag">05</span></a></li>
+      <li><a class="side__item" href="#scr-6">Save and share<span class="side__tag">06</span></a></li>
+      <li><a class="side__item" href="#scr-7">Saving<span class="side__tag">07</span></a></li>
+      <li><a class="side__item" href="#scr-8">Caption form<span class="side__tag">08</span></a></li>
+      <li><a class="side__item" href="#scr-9">Ground comparison<span class="side__tag">09</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><span class="side__item" aria-current="page">Image viewer<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">Two screens nobody has seen yet</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">9 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>Viewer</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="vw">
+    <div class="vw__plate vw__plate--45" style="background-image:var(--av-01)" role="img"
+         aria-label="Photo posted by taythaytu in Post-Match Breakdown"></div>
+
+    <header class="vw__top">
+      <div class="vw__bar">
+        <button class="disc" type="button" aria-label="Close photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <div class="who">
+          <span class="avatar who__av" style="background-image:var(--av-01)" role="img" aria-label="taythaytu"></span>
+          <span class="who__txt">
+            <b class="who__n">taythaytu</b>
+            <span class="who__m">12 Aug 2026, 8:31 PM</span>
+          </span>
+        </div>
+        <button class="disc" type="button" data-open="share" aria-haspopup="dialog" aria-label="Save or share this photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <footer class="vw__bot">
+      <div class="hintwrap">
+        <span class="hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.6" cy="10.6" r="6.1"/><path d="M15.2 15.2 20 20M10.6 8.1v5M8.1 10.6h5"/></svg>
+          Pinch to zoom · drag down to close
+        </span>
+      </div>
+    </footer>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the share disc in frames 01, 02 and 05, or from
+     "Edit caption" in frame 05.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <!-- live: save and share -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Save or share this photo" data-pane="share" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li>
+          <div class="acts__ctx">
+            <span class="acts__thumb" style="background-image:var(--av-01)" aria-hidden="true"></span>
+            <span class="act__t">
+              <b>taythaytu’s photo</b>
+              <span>Post-Match Breakdown · 12 Aug</span>
+            </span>
+          </div>
+        </li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5V15.5M8.4 11.9 12 15.5l3.6-3.6"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+          <span class="act__t">Save to Photos<small>Full resolution, to your camera roll</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+          <span class="act__t">Share…</span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1"/><path d="M13.8 10.2a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1"/></svg>
+          <span class="act__t">Copy link to photo</span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+          <span class="act__t">Report this photo</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- live: caption form, as a sheet because it follows a sheet-height
+       surface and the keyboard has to fit under it -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a caption" data-pane="caption" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Caption · photo 4 of 7</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close caption form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <div class="field" style="margin-top:0">
+        <div class="field__box">
+          <textarea class="field__in" rows="4" maxlength="200" data-capin
+            aria-label="Caption" placeholder="What is happening in this photo?"></textarea>
+        </div>
+        <div class="field__foot">
+          <span class="field__help">Four lines maximum. Leave it empty to remove the caption.</span>
+          <span class="field__n" data-capn>0 / 200</span>
+        </div>
+      </div>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button" data-close>Cancel</button>
+      <button class="btn btn--acid" type="button" data-close>Add caption</button>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Pinch and zoom</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="vw">
+    <div class="vw__plate vw__plate--45 is-zoom" data-plate style="background-image:var(--av-01)" role="img"
+         aria-label="Photo posted by taythaytu, zoomed to 2.4 times"></div>
+    <span class="vw__zoomcue" aria-hidden="true"></span>
+
+    <header class="vw__top">
+      <div class="vw__bar">
+        <button class="disc" type="button" aria-label="Close photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="vw__spacer"></span>
+        <span class="zoom" role="status">
+          <span><b class="zoom__x" data-zoomval>2.4×</b></span>
+          <button class="zoom__r" type="button" data-zoomreset>Fit</button>
+        </span>
+        <span class="vw__spacer"></span>
+        <button class="disc" type="button" data-open="share" aria-haspopup="dialog" aria-label="Save or share this photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <footer class="vw__bot">
+      <div class="hintwrap">
+        <span class="hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12h6M4.5 12l2.6-2.6M4.5 12l2.6 2.6"/><path d="M19.5 12h-6M19.5 12l-2.6-2.6M19.5 12l-2.6 2.6"/></svg>
+          Drag to pan · double-tap to fit
+        </span>
+      </div>
+    </footer>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the share disc in frames 01, 02 and 05, or from
+     "Edit caption" in frame 05.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <!-- live: save and share -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Save or share this photo" data-pane="share" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li>
+          <div class="acts__ctx">
+            <span class="acts__thumb" style="background-image:var(--av-01)" aria-hidden="true"></span>
+            <span class="act__t">
+              <b>taythaytu’s photo</b>
+              <span>Post-Match Breakdown · 12 Aug</span>
+            </span>
+          </div>
+        </li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5V15.5M8.4 11.9 12 15.5l3.6-3.6"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+          <span class="act__t">Save to Photos<small>Full resolution, to your camera roll</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+          <span class="act__t">Share…</span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1"/><path d="M13.8 10.2a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1"/></svg>
+          <span class="act__t">Copy link to photo</span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+          <span class="act__t">Report this photo</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- live: caption form, as a sheet because it follows a sheet-height
+       surface and the keyboard has to fit under it -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a caption" data-pane="caption" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Caption · photo 4 of 7</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close caption form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <div class="field" style="margin-top:0">
+        <div class="field__box">
+          <textarea class="field__in" rows="4" maxlength="200" data-capin
+            aria-label="Caption" placeholder="What is happening in this photo?"></textarea>
+        </div>
+        <div class="field__foot">
+          <span class="field__help">Four lines maximum. Leave it empty to remove the caption.</span>
+          <span class="field__n" data-capn>0 / 200</span>
+        </div>
+      </div>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button" data-close>Cancel</button>
+      <button class="btn btn--acid" type="button" data-close>Add caption</button>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-3">
+        <figcaption class="scr__cap"><span class="scr__n">03</span>Loading</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="vw">
+    <div class="vw__load bone" aria-hidden="true"></div>
+
+    <header class="vw__top">
+      <div class="vw__bar">
+        <button class="disc" type="button" aria-label="Close photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="vw__spacer"></span>
+      </div>
+    </header>
+
+    <div class="vw__loadtxt" role="status" aria-live="polite">
+      <span class="ring">
+        <svg class="anim" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4" opacity=".18"/>
+          <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+      </span>
+      <p class="loadcap">Loading photo</p>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the share disc in frames 01, 02 and 05, or from
+     "Edit caption" in frame 05.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <!-- live: save and share -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Save or share this photo" data-pane="share" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li>
+          <div class="acts__ctx">
+            <span class="acts__thumb" style="background-image:var(--av-01)" aria-hidden="true"></span>
+            <span class="act__t">
+              <b>taythaytu’s photo</b>
+              <span>Post-Match Breakdown · 12 Aug</span>
+            </span>
+          </div>
+        </li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5V15.5M8.4 11.9 12 15.5l3.6-3.6"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+          <span class="act__t">Save to Photos<small>Full resolution, to your camera roll</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+          <span class="act__t">Share…</span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1"/><path d="M13.8 10.2a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1"/></svg>
+          <span class="act__t">Copy link to photo</span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+          <span class="act__t">Report this photo</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- live: caption form, as a sheet because it follows a sheet-height
+       surface and the keyboard has to fit under it -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a caption" data-pane="caption" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Caption · photo 4 of 7</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close caption form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <div class="field" style="margin-top:0">
+        <div class="field__box">
+          <textarea class="field__in" rows="4" maxlength="200" data-capin
+            aria-label="Caption" placeholder="What is happening in this photo?"></textarea>
+        </div>
+        <div class="field__foot">
+          <span class="field__help">Four lines maximum. Leave it empty to remove the caption.</span>
+          <span class="field__n" data-capn>0 / 200</span>
+        </div>
+      </div>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button" data-close>Cancel</button>
+      <button class="btn btn--acid" type="button" data-close>Add caption</button>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-4">
+        <figcaption class="scr__cap"><span class="scr__n">04</span>Won’t load</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="vw">
+    <div class="fail" role="alert">
+      <span class="tile tile--red" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 14.5V6.2A1.7 1.7 0 0 0 18.3 4.5H5.7A1.7 1.7 0 0 0 4 6.2v11.6a1.7 1.7 0 0 0 1.7 1.7h8.6"/>
+          <path d="M4 15.4l3.6-3.2 3 2.6"/><circle cx="14.6" cy="9" r="1.3"/>
+          <path d="M17.6 16.4 21 19.8M21 16.4l-3.4 3.4"/>
+        </svg>
+      </span>
+      <h2>This photo won’t load</h2>
+      <p>The file is on the server but the request timed out. Nothing has been saved to your
+        phone.</p>
+      <span class="fail__ref">post/2026-08/9f14c2…jpg · 408</span>
+      <div class="fail__acts">
+        <button class="btn btn--ghost" type="button">Close</button>
+        <button class="btn btn--acid" type="button">Try again</button>
+      </div>
+    </div>
+
+    <header class="vw__top">
+      <div class="vw__bar">
+        <button class="disc" type="button" aria-label="Close photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="vw__spacer"></span>
+      </div>
+    </header>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the share disc in frames 01, 02 and 05, or from
+     "Edit caption" in frame 05.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <!-- live: save and share -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Save or share this photo" data-pane="share" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li>
+          <div class="acts__ctx">
+            <span class="acts__thumb" style="background-image:var(--av-01)" aria-hidden="true"></span>
+            <span class="act__t">
+              <b>taythaytu’s photo</b>
+              <span>Post-Match Breakdown · 12 Aug</span>
+            </span>
+          </div>
+        </li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5V15.5M8.4 11.9 12 15.5l3.6-3.6"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+          <span class="act__t">Save to Photos<small>Full resolution, to your camera roll</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+          <span class="act__t">Share…</span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1"/><path d="M13.8 10.2a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1"/></svg>
+          <span class="act__t">Copy link to photo</span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+          <span class="act__t">Report this photo</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- live: caption form, as a sheet because it follows a sheet-height
+       surface and the keyboard has to fit under it -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a caption" data-pane="caption" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Caption · photo 4 of 7</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close caption form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <div class="field" style="margin-top:0">
+        <div class="field__box">
+          <textarea class="field__in" rows="4" maxlength="200" data-capin
+            aria-label="Caption" placeholder="What is happening in this photo?"></textarea>
+        </div>
+        <div class="field__foot">
+          <span class="field__help">Four lines maximum. Leave it empty to remove the caption.</span>
+          <span class="field__n" data-capn>0 / 200</span>
+        </div>
+      </div>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button" data-close>Cancel</button>
+      <button class="btn btn--acid" type="button" data-close>Add caption</button>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-5">
+        <figcaption class="scr__cap"><span class="scr__n">05</span>Gallery</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="vw" data-gallery>
+    <div class="vw__plate vw__plate--32" data-gplate style="background-image:var(--av-03)" role="img"
+         aria-label="Photo 4 of 7, posted by fan_pulse"></div>
+
+    <header class="vw__top">
+      <div class="vw__bar">
+        <button class="disc" type="button" aria-label="Close gallery">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="vw__spacer"></span>
+        <span class="count" role="status" aria-live="polite" aria-label="Photo 4 of 7">
+          <b data-gnow>4</b><span> / 7</span>
+        </span>
+        <span class="vw__spacer"></span>
+        <button class="disc" type="button" data-open="share" aria-haspopup="dialog" aria-label="Save or share this photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <footer class="vw__bot">
+      <ul class="dots" aria-label="Jump to a photo">
+        <li><button class="dot" type="button" aria-current="false" aria-label="Photo 1 of 7" data-go="1"></button></li>
+        <li><button class="dot" type="button" aria-current="false" aria-label="Photo 2 of 7" data-go="2"></button></li>
+        <li><button class="dot" type="button" aria-current="false" aria-label="Photo 3 of 7" data-go="3"></button></li>
+        <li><button class="dot" type="button" aria-current="true"  aria-label="Photo 4 of 7" data-go="4"></button></li>
+        <li><button class="dot" type="button" aria-current="false" aria-label="Photo 5 of 7" data-go="5"></button></li>
+        <li><button class="dot" type="button" aria-current="false" aria-label="Photo 6 of 7" data-go="6"></button></li>
+        <li><button class="dot" type="button" aria-current="false" aria-label="Photo 7 of 7" data-go="7"></button></li>
+      </ul>
+      <div class="cap">
+        <p class="cap__t" data-gcap><b>fan_pulse</b> Second half, minute 71 — the away end still
+          full after the equaliser.</p>
+        <div class="cap__row">
+          <button class="cap__btn" type="button" data-open="caption" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13.4 6.6 17.4 10.6"/></svg>
+            Edit caption
+          </button>
+        </div>
+      </div>
+    </footer>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the share disc in frames 01, 02 and 05, or from
+     "Edit caption" in frame 05.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <!-- live: save and share -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Save or share this photo" data-pane="share" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li>
+          <div class="acts__ctx">
+            <span class="acts__thumb" style="background-image:var(--av-01)" aria-hidden="true"></span>
+            <span class="act__t">
+              <b>taythaytu’s photo</b>
+              <span>Post-Match Breakdown · 12 Aug</span>
+            </span>
+          </div>
+        </li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5V15.5M8.4 11.9 12 15.5l3.6-3.6"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+          <span class="act__t">Save to Photos<small>Full resolution, to your camera roll</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+          <span class="act__t">Share…</span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1"/><path d="M13.8 10.2a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1"/></svg>
+          <span class="act__t">Copy link to photo</span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+          <span class="act__t">Report this photo</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- live: caption form, as a sheet because it follows a sheet-height
+       surface and the keyboard has to fit under it -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a caption" data-pane="caption" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Caption · photo 4 of 7</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close caption form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <div class="field" style="margin-top:0">
+        <div class="field__box">
+          <textarea class="field__in" rows="4" maxlength="200" data-capin
+            aria-label="Caption" placeholder="What is happening in this photo?"></textarea>
+        </div>
+        <div class="field__foot">
+          <span class="field__help">Four lines maximum. Leave it empty to remove the caption.</span>
+          <span class="field__n" data-capn>0 / 200</span>
+        </div>
+      </div>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button" data-close>Cancel</button>
+      <button class="btn btn--acid" type="button" data-close>Add caption</button>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-6">
+        <figcaption class="scr__cap"><span class="scr__n">06</span>Save and share</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="vw">
+    <div class="vw__plate vw__plate--45" style="background-image:var(--av-01)" aria-hidden="true"></div>
+    <span class="scrim" style="opacity:1" aria-hidden="true"></span>
+
+    <div style="position:absolute;left:0;right:0;bottom:0;z-index:5;max-width:420px;margin:0 auto">
+      <section class="sheet" role="group" aria-label="Save or share this photo, specimen">
+        <div class="sheet__grab" aria-hidden="true"></div>
+        <div class="sheet__body sheet__body--last">
+          <ul class="acts">
+            <li>
+              <div class="acts__ctx">
+                <span class="acts__thumb" style="background-image:var(--av-01)" aria-hidden="true"></span>
+                <span class="act__t">
+                  <b>taythaytu’s photo</b>
+                  <span>Post-Match Breakdown · 4 of 7</span>
+                </span>
+              </div>
+            </li>
+            <li><button class="act" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5V15.5M8.4 11.9 12 15.5l3.6-3.6"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+              <span class="act__t">Save to Photos<small>Full resolution, to your camera roll</small></span></button></li>
+            <li><button class="act" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+              <span class="act__t">Share…</span></button></li>
+            <li><button class="act" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1"/><path d="M13.8 10.2a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1"/></svg>
+              <span class="act__t">Copy link to photo</span></button></li>
+            <li><button class="act" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 4.5h9L18.5 8.5v11a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1z"/><path d="M14 4.5v4.5h4.5M8 13h8M8 16.5h5"/></svg>
+              <span class="act__t">Edit caption<small>Only on photos you posted</small></span></button></li>
+            <li><button class="act act--danger" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+              <span class="act__t">Report this photo</span></button></li>
+          </ul>
+          <div style="margin-top:10px">
+            <button class="btn btn--ghost btn--wide" type="button">Cancel</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the share disc in frames 01, 02 and 05, or from
+     "Edit caption" in frame 05.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <!-- live: save and share -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Save or share this photo" data-pane="share" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li>
+          <div class="acts__ctx">
+            <span class="acts__thumb" style="background-image:var(--av-01)" aria-hidden="true"></span>
+            <span class="act__t">
+              <b>taythaytu’s photo</b>
+              <span>Post-Match Breakdown · 12 Aug</span>
+            </span>
+          </div>
+        </li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5V15.5M8.4 11.9 12 15.5l3.6-3.6"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+          <span class="act__t">Save to Photos<small>Full resolution, to your camera roll</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+          <span class="act__t">Share…</span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1"/><path d="M13.8 10.2a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1"/></svg>
+          <span class="act__t">Copy link to photo</span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+          <span class="act__t">Report this photo</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- live: caption form, as a sheet because it follows a sheet-height
+       surface and the keyboard has to fit under it -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a caption" data-pane="caption" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Caption · photo 4 of 7</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close caption form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <div class="field" style="margin-top:0">
+        <div class="field__box">
+          <textarea class="field__in" rows="4" maxlength="200" data-capin
+            aria-label="Caption" placeholder="What is happening in this photo?"></textarea>
+        </div>
+        <div class="field__foot">
+          <span class="field__help">Four lines maximum. Leave it empty to remove the caption.</span>
+          <span class="field__n" data-capn>0 / 200</span>
+        </div>
+      </div>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button" data-close>Cancel</button>
+      <button class="btn btn--acid" type="button" data-close>Add caption</button>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-7">
+        <figcaption class="scr__cap"><span class="scr__n">07</span>Saving</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="vw">
+    <div class="vw__plate vw__plate--45" style="background-image:var(--av-01)" aria-hidden="true"></div>
+
+    <header class="vw__top">
+      <div class="vw__bar">
+        <button class="disc" type="button" aria-label="Close photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="vw__spacer"></span>
+        <button class="disc" type="button" aria-label="Save or share this photo" aria-busy="true">
+          <span class="ring">
+            <svg class="anim" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".18"/>
+              <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+              </path>
+            </svg>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <div class="toaster">
+      <div class="toast" role="status" aria-live="polite">
+        <span class="toast__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5V15.5M8.4 11.9 12 15.5l3.6-3.6"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+        </span>
+        <span class="toast__msg">Saving to Photos
+          <small>1.8 MB of 2.9 MB · 62%</small>
+          <span class="track" aria-hidden="true"><span class="track__fill" style="width:62%"></span></span>
+        </span>
+        <button class="toast__act" type="button">Stop</button>
+      </div>
+      <div class="toast" role="status">
+        <span class="toast__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.3 12.3 2.6 2.6 4.8-5.4"/></svg>
+        </span>
+        <span class="toast__msg">Saved to Photos<small>1 photo · Recents</small></span>
+        <button class="toast__act" type="button">Open</button>
+      </div>
+      <div class="toast toast--error" role="alert">
+        <span class="toast__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/></svg>
+        </span>
+        <span class="toast__msg">Couldn’t save<small>SportsHeist has no access to Photos</small></span>
+        <button class="toast__act" type="button">Settings</button>
+      </div>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the share disc in frames 01, 02 and 05, or from
+     "Edit caption" in frame 05.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <!-- live: save and share -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Save or share this photo" data-pane="share" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li>
+          <div class="acts__ctx">
+            <span class="acts__thumb" style="background-image:var(--av-01)" aria-hidden="true"></span>
+            <span class="act__t">
+              <b>taythaytu’s photo</b>
+              <span>Post-Match Breakdown · 12 Aug</span>
+            </span>
+          </div>
+        </li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5V15.5M8.4 11.9 12 15.5l3.6-3.6"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+          <span class="act__t">Save to Photos<small>Full resolution, to your camera roll</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+          <span class="act__t">Share…</span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1"/><path d="M13.8 10.2a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1"/></svg>
+          <span class="act__t">Copy link to photo</span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+          <span class="act__t">Report this photo</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- live: caption form, as a sheet because it follows a sheet-height
+       surface and the keyboard has to fit under it -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a caption" data-pane="caption" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Caption · photo 4 of 7</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close caption form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <div class="field" style="margin-top:0">
+        <div class="field__box">
+          <textarea class="field__in" rows="4" maxlength="200" data-capin
+            aria-label="Caption" placeholder="What is happening in this photo?"></textarea>
+        </div>
+        <div class="field__foot">
+          <span class="field__help">Four lines maximum. Leave it empty to remove the caption.</span>
+          <span class="field__n" data-capn>0 / 200</span>
+        </div>
+      </div>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button" data-close>Cancel</button>
+      <button class="btn btn--acid" type="button" data-close>Add caption</button>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-8">
+        <figcaption class="scr__cap"><span class="scr__n">08</span>Caption form</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="vw">
+    <div class="vw__plate vw__plate--32" style="background-image:var(--av-03)" aria-hidden="true"></div>
+    <span class="scrim" style="opacity:1" aria-hidden="true"></span>
+
+    <div style="position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center">
+      <div class="dlg" role="group" aria-label="Add a caption, specimen">
+        <button class="dlg__close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="tile tile--acid" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 4.5h9L18.5 8.5v11a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1z"/><path d="M14 4.5v4.5h4.5M8 13h8M8 16.5h5"/></svg>
+        </span>
+        <h3 class="dlg__title">Add a caption</h3>
+        <p class="dlg__body">Photo <b>4 of 7</b> in Post-Match Breakdown. Everyone in the room
+          sees the caption under the photo.</p>
+        <div class="field">
+          <label class="field__label" for="capIn">Caption</label>
+          <div class="field__box">
+            <textarea class="field__in" id="capIn" rows="4" maxlength="200" data-capin
+              placeholder="What is happening in this photo?">Second half, minute 71 — the away end still full after the equaliser.</textarea>
+          </div>
+          <div class="field__foot">
+            <span class="field__help">Four lines maximum. Leave it empty to remove the caption.</span>
+            <span class="field__n" data-capn>68 / 200</span>
+          </div>
+        </div>
+        <div class="dlg__act">
+          <button class="btn btn--ghost" type="button">Cancel</button>
+          <button class="btn btn--acid" type="button">Add caption</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the share disc in frames 01, 02 and 05, or from
+     "Edit caption" in frame 05.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <!-- live: save and share -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Save or share this photo" data-pane="share" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li>
+          <div class="acts__ctx">
+            <span class="acts__thumb" style="background-image:var(--av-01)" aria-hidden="true"></span>
+            <span class="act__t">
+              <b>taythaytu’s photo</b>
+              <span>Post-Match Breakdown · 12 Aug</span>
+            </span>
+          </div>
+        </li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5V15.5M8.4 11.9 12 15.5l3.6-3.6"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+          <span class="act__t">Save to Photos<small>Full resolution, to your camera roll</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+          <span class="act__t">Share…</span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1"/><path d="M13.8 10.2a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1"/></svg>
+          <span class="act__t">Copy link to photo</span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+          <span class="act__t">Report this photo</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- live: caption form, as a sheet because it follows a sheet-height
+       surface and the keyboard has to fit under it -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a caption" data-pane="caption" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Caption · photo 4 of 7</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close caption form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <div class="field" style="margin-top:0">
+        <div class="field__box">
+          <textarea class="field__in" rows="4" maxlength="200" data-capin
+            aria-label="Caption" placeholder="What is happening in this photo?"></textarea>
+        </div>
+        <div class="field__foot">
+          <span class="field__help">Four lines maximum. Leave it empty to remove the caption.</span>
+          <span class="field__n" data-capn>0 / 200</span>
+        </div>
+      </div>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button" data-close>Cancel</button>
+      <button class="btn btn--acid" type="button" data-close>Add caption</button>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-9">
+        <figcaption class="scr__cap"><span class="scr__n">09</span>Ground comparison</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+  <div class="vw" style="background:#000">
+    <div class="gnd gnd--black">
+      <div class="gnd__plate" style="background-image:var(--av-01)" aria-hidden="true"></div>
+      <span class="gnd__tag"><b>Proposed</b> #000000 · absence</span>
+    </div>
+    <div class="gnd gnd--canvas">
+      <div class="gnd__plate" style="background-image:var(--av-01)" aria-hidden="true"></div>
+      <span class="gnd__tag is-off"><b>App canvas</b> #030401 · 1.02:1 vs black</span>
+    </div>
+    <div class="gnd gnd--built">
+      <div class="gnd__plate" style="background-image:var(--av-01)" aria-hidden="true"></div>
+      <span class="gnd__tag is-bad"><b>Ships today</b> #2C2C2C · 1.50:1 vs black</span>
+    </div>
+  </div>
+</div><!-- ============================================================
+     LIVE LAYER — outside the scrolling MAIN element.
+
+     Replayed into every frame by the review shell, so there are no
+     ids in here: the script wires each copy against its own root.
+     Open it from the share disc in frames 01, 02 and 05, or from
+     "Edit caption" in frame 05.
+     ============================================================ -->
+<div class="layer tabbar" data-layer>
+  <div class="scrim" data-scrim></div>
+
+  <!-- live: save and share -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Save or share this photo" data-pane="share" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__body sheet__body--last">
+      <ul class="acts">
+        <li>
+          <div class="acts__ctx">
+            <span class="acts__thumb" style="background-image:var(--av-01)" aria-hidden="true"></span>
+            <span class="act__t">
+              <b>taythaytu’s photo</b>
+              <span>Post-Match Breakdown · 12 Aug</span>
+            </span>
+          </div>
+        </li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5V15.5M8.4 11.9 12 15.5l3.6-3.6"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+          <span class="act__t">Save to Photos<small>Full resolution, to your camera roll</small></span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+          <span class="act__t">Share…</span></button></li>
+        <li><button class="act" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1"/><path d="M13.8 10.2a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1"/></svg>
+          <span class="act__t">Copy link to photo</span></button></li>
+        <li><button class="act act--danger" type="button" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+          <span class="act__t">Report this photo</span></button></li>
+      </ul>
+      <div style="margin-top:10px">
+        <button class="btn btn--ghost btn--wide" type="button" data-close>Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- live: caption form, as a sheet because it follows a sheet-height
+       surface and the keyboard has to fit under it -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Add a caption" data-pane="caption" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Caption · photo 4 of 7</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close caption form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <div class="field" style="margin-top:0">
+        <div class="field__box">
+          <textarea class="field__in" rows="4" maxlength="200" data-capin
+            aria-label="Caption" placeholder="What is happening in this photo?"></textarea>
+        </div>
+        <div class="field__foot">
+          <span class="field__help">Four lines maximum. Leave it empty to remove the caption.</span>
+          <span class="field__n" data-capn>0 / 200</span>
+        </div>
+      </div>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button" data-close>Cancel</button>
+      <button class="btn btn--acid" type="button" data-close>Add caption</button>
+    </div>
+  </section>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Two screens nobody has seen yet</h2>
+
+  <p>Every photo in SportsHeist is tappable, and tapping one pushes a brand-new full-screen route.
+    There are two of them: one for a single photo, one for a set of photos you can swipe through.
+    Neither appears anywhere in the specification set, in the Figma file, or in the component
+    library — they were built once, early, and never reviewed. This is the first time they have been
+    drawn.</p>
+
+  <p>What ships today is a purple app bar sitting on a grey field, with a plain white text link
+    reading <em>Tải xuống</em> in the corner, an index counter tucked behind the notch, and no
+    loading state and no failure state at all. If a photo is slow, you get nothing; if it never
+    arrives, you get nothing forever. There is a caption editor hidden in there too, on a grey
+    button, in Vietnamese.</p>
+
+  <p>The nine screens here rebuild both surfaces on the same sheet, dialog and button shells the
+    rest of the library already uses, and add the four states the code is missing: loading, failed,
+    saving, and saved. Frame&nbsp;09 answers the one genuine design question the viewer raises —
+    what colour a photograph should sit on.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Stage</td><td>Viewer ground</td><td class="t-note"><code>#000000</code>, full bleed, one device tall. Nothing on this screen scrolls, so every piece of chrome is positioned against the stage rather than pinned to a scroller. See <b>Ground</b> below for why this is not <code>#030401</code>.</td></tr>
+        <tr><td>Stage</td><td>The photograph</td><td class="t-note">Full width, letterboxed vertically, centred. <code>4:5</code> for portrait and <code>3:2</code> for landscape, so the frame never crops and the letterbox is where the ground shows. Zoom is <code>transform: scale()</code> to a <code>2.4×</code> specimen against the code's <code>maxScale: 5.0</code>.</td></tr>
+        <tr><td>Top chrome</td><td>Scrim gradient</td><td class="t-note"><code>rgba(0,0,0,.80)</code> → transparent over <code>100%</code> of an <code>82 px</code> band, so the controls stay legible over a bright photo without a hard-edged bar. Top <code>34 px</code> is left clear for the status bar and the Dynamic Island.</td></tr>
+        <tr><td>Top chrome</td><td>Close</td><td class="t-note"><code>38 px</code> disc, <code>rgba(0,0,0,.46)</code> + <code>blur(8px)</code>, white <code>1.9</code>-stroke ✕, with the kit's invisible <code>::after</code> expansion to a <code>44 px</code> hit area. Every floating control also carries a <code>1 px rgba(255,255,255,.15)</code> inner rim: a translucent black disc is invisible on a black letterbox, and viewer chrome has to be findable over any photograph and over none.</td></tr>
+        <tr><td>Top chrome</td><td>Attribution</td><td class="t-note"><code>28 px</code> portrait, username <code>13/600</code>, timestamp <code>11</code> at <code>rgba(255,255,255,.66)</code>, both with a <code>0 1 3</code> black text shadow so they survive a pale photo.</td></tr>
+        <tr><td>Top chrome</td><td>Index counter</td><td class="t-note">A <code>28 px</code> pill, <code>rgba(0,0,0,.52)</code> + <code>blur(8px)</code>, current page in white <code>700</code> and the total in <code>rgba(255,255,255,.58)</code>, tabular. Centred in the control row — <em>below</em> the island, not behind it.</td></tr>
+        <tr><td>Top chrome</td><td>Save / share</td><td class="t-note"><code>38 px</code> disc, upload glyph at <code>1.8</code>. Opens the sheet rather than acting immediately, because one tap should not silently write to somebody's camera roll.</td></tr>
+        <tr><td>Bottom chrome</td><td>Page dots</td><td class="t-note"><code>6 px</code> discs at <code>rgba(255,255,255,.34)</code>; current is an <code>18 × 6</code> accent pill. Tappable. Use dots to ten photos; past ten this becomes a thumbnail rail — see <b>Decisions</b>.</td></tr>
+        <tr><td>Bottom chrome</td><td>Caption</td><td class="t-note">Username in <code>600</code>, caption <code>13/1.5</code> at <code>rgba(255,255,255,.92)</code> with a text shadow, over the bottom scrim. Absent entirely when there is no caption — no empty container.</td></tr>
+        <tr><td>Bottom chrome</td><td>Edit caption</td><td class="t-note"><code>34 px</code> pill, <code>1 px rgba(255,255,255,.16)</code> rim, <code>rgba(0,0,0,.46)</code> + blur. Only on photos you posted.</td></tr>
+        <tr><td>Bottom chrome</td><td>Gesture hint</td><td class="t-note"><code>30 px</code> pill: “Pinch to zoom · drag down to close”. Self-dismisses after the first pinch and never returns for that member.</td></tr>
+        <tr><td>Loading</td><td>Plate + ring</td><td class="t-note">The photo's exact footprint, square corners, so nothing moves when the image lands. Fill is <code>--sunken</code> <code>#13171E</code> rather than <code>states.html</code>'s <code>rgba(255,255,255,.055)</code> bone — that alpha is measured against <code>--surface</code> and disappears on a black ground — with the same <code>1.35 s</code> sheen sweep over it. A <code>28 px</code> accent ring and a tracked <code>LOADING PHOTO</code> label sit centred on the plate.</td></tr>
+        <tr><td>Failed</td><td>Tile + reason + reference</td><td class="t-note"><code>52 px</code> red tile on <code>rgba(226,86,74,.12)</code> with a <code>1 px</code> red ring, an <code>18/600</code> headline, the reason in <code>--muted</code>, and the file reference plus the HTTP code in a monospace chip so support can act on it.</td></tr>
+        <tr><td>Sheet</td><td>Save &amp; share</td><td class="t-note"><code>sheets.html</code>'s shell, unchanged: <code>18 px</code> top corners, <code>40 × 4</code> grabber, <code>#1C2129 → #13171E</code> fill, <code>0 −20 50</code> lift, <code>54 px</code> action rows on <code>--sunken</code>, one destructive row last in <code>#E2564A</code>, and a full-width ghost Cancel. Scrim is <code>rgba(0,0,0,.72)</code> + <code>blur(10px)</code> — the same alpha as the system scrim, black because it sits on a photo.</td></tr>
+        <tr><td>Dialog</td><td>Caption form</td><td class="t-note"><code>dialogs.html</code>'s shell: <code>R16</code> on <code>#1C2129</code>, <code>20 px</code> padding, <code>44 px</code> tile, <code>18/600</code> title, <code>13/1.5</code> body, <code>46 px</code> action pair. The affirmative repeats the verb — <b>Add a caption</b> → <b>Add caption</b>. Textarea is <code>forms.html</code>'s control at <code>16 px</code> with a <code>200</code>-character counter.</td></tr>
+        <tr><td>Toast</td><td>Saving / saved / refused</td><td class="t-note"><code>dialogs.html</code>'s inset toast, <code>52 px</code> minimum, <code>3 px</code> semantic leading mark, plus a new <code>3 px</code> determinate track and a byte read-out. Refused pairs red with a drawn ✕ <em>and</em> the word — never colour alone.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Single photo</td><td class="t-note">Attribution in the bar, no counter, no dots. Save/share on the right. Frame&nbsp;01.</td></tr>
+        <tr><td>Zoomed</td><td class="t-note">Attribution is replaced by a tabular zoom read-out and a <code>Fit</code> control, because at <code>2.4×</code> you need a way back and the name is no longer the useful thing. A <code>1 px</code> inner ring marks the pan boundary. Frame&nbsp;02.</td></tr>
+        <tr><td>Loading</td><td class="t-note">Bone at the plate's footprint, accent ring, tracked label. Chrome is reduced to Close only — there is nothing to save yet. Frame&nbsp;03.</td></tr>
+        <tr><td>Failed to load</td><td class="t-note">Red tile, plain-language reason, file reference and HTTP code, <b>Try again</b> as the accent primary and <b>Close</b> as the ghost. The primary is accent, not red: the button is the way out, not the danger. Frame&nbsp;04.</td></tr>
+        <tr><td>Gallery</td><td class="t-note">Counter pill, page dots, caption, edit-caption pill. Attribution moves into the caption line so the bar has room for the counter. Frame&nbsp;05.</td></tr>
+        <tr><td>No caption</td><td class="t-note">The caption block is removed, not emptied. The dots move down to fill the space and the <b>Add a caption</b> pill takes the caption's place.</td></tr>
+        <tr><td>Saving</td><td class="t-note">The save disc goes <code>aria-busy</code> and holds a <code>20 px</code> ring in place of its glyph; the toast carries the byte count, the percentage and a determinate track, plus <b>Stop</b>. Frame&nbsp;07.</td></tr>
+        <tr><td>Saved</td><td class="t-note">Accent toast, <code>1 photo · Recents</code>, <b>Open</b>. Auto-dismisses at four seconds; <b>Open</b> keeps it up while focused.</td></tr>
+        <tr><td>Save refused</td><td class="t-note">Red toast naming the actual cause — no Photos permission — with <b>Settings</b>, not <b>Try again</b>. Retrying a permission failure never works.</td></tr>
+        <tr><td>Not your photo</td><td class="t-note">The <b>Edit caption</b> row and pill are absent. <b>Report this photo</b> is present. On your own photo the reverse.</td></tr>
+        <tr><td>Ground comparison</td><td class="t-note">Frame&nbsp;09 is a specimen, not a screen state: the same photograph letterboxed on <code>#000000</code>, on <code>#030401</code> and on the <code>#2C2C2C</code> that ships today, each band labelled with its measured contrast against black.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">No slide, no fade, no sheen; the SMIL rings are paused with <code>svg.pauseAnimations()</code> rather than left spinning invisibly.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused, unchanged</h3>
+      <ul>
+        <li><b>Sheet shell</b> — <code>sheets.html</code>: <code>18 px</code> top radius, <code>40 × 4</code> grabber, tracked-caps title, <code>54 px</code> action rows, full-width ghost Cancel, drag-to-dismiss past <code>90 px</code></li>
+        <li><b>Dialog shell</b> — <code>dialogs.html</code>: <code>R16</code>, <code>20 px</code> padding, <code>44 px</code> icon tile, <code>46 px</code> action pair, verb repeated on the affirmative</li>
+        <li><b>Toast</b> — <code>dialogs.html</code>: inset, <code>R16</code>, <code>3 px</code> semantic leading mark</li>
+        <li><b>Skeleton</b> — <code>states.html</code>: <code>rgba(255,255,255,.055)</code> bone, one <code>1.35 s</code> sheen</li>
+        <li><b>Ring spinner</b> — <code>states.html</code>: 90° accent arc on a white-18% track, <code>0.9 s</code>, stroke thickening as the ring shrinks</li>
+        <li><b>Textarea</b> — <code>forms.html</code>: <code>R12</code> on <code>--sunken</code>, accent focus ring, <code>16 px</code> input</li>
+        <li><b>Tap-target expansion</b> — <code>create-idea.html</code>'s <code>::after</code> pattern, keeping the sampled <code>38 px</code> disc while meeting <code>44 px</code></li>
+        <li><b>Photography</b> — the portrait set from <code>_assets/avatars.css</code>, on the same username-to-face mapping as the rest of the library</li>
+        <li><b>Index counter as a concept</b> — <code>image_widget.dart:225</code>, <code>'${index}/${length}'</code></li>
+        <li><b>Pinch to zoom</b> — <code>InteractiveViewer(maxScale: 5.0)</code>, and drag-down-to-dismiss, both already in the code</li>
+        <li><b>Caption editing</b> — <code>UDialog().showForm</code> at <code>image_widget.dart:255</code>, a real feature nobody has documented</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Pure-black viewer ground</b> — declared as <code>--photo: #000000</code> and scoped to the viewer only. It is the one place in the system that is not <code>--bg</code>. See <b>Ground</b>, frame&nbsp;09</li>
+        <li><b>A loading state</b> — the code has none; the viewer pushes with the network request un-started</li>
+        <li><b>A failed-to-load state</b> — the code has none. Today a dead URL is a permanently empty screen</li>
+        <li><b>Save-and-share sheet</b> — replaces the bare white text link <code>Tải xuống</code>, which has no hit target of its own and no confirmation</li>
+        <li><b>Determinate save progress</b> — the code shows an indefinite snackbar with no byte count and no way to stop</li>
+        <li><b>A save-refused state</b> — the code checks <code>check['isSuccess']</code> and, if it is false, shows nothing at all</li>
+        <li><b>Page dots</b> — the <code>PageController</code> position made visible, and tappable</li>
+        <li><b>A close control</b> — the shipped leading control is a <code>105 × 40</code> row reading <code>‹ Quay lại</code>. Untranslated, and “back” is the wrong verb: a viewer is dismissed</li>
+        <li><b>Attribution in the bar</b> — the shipped app bar title is the empty string</li>
+        <li><b>English throughout</b> — <code>Tải xuống</code>, <code>Chú thích</code>, <code>Thêm chú thích cho ảnh</code>, <code>Đang tải ảnh về...</code> and <code>Tải ảnh về thư viện thành công</code> are all shipped Vietnamese strings in this one file</li>
+        <li><b>Report a photo</b> — no moderation path exists on any photo surface today</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li>
+      <h3>Is pure black right for a photo viewer, given the canvas is #030401?</h3>
+      <p><b>Our ruling: yes, and it is the only exception in the system.</b> Three reasons.
+        <em>One</em>, <code>#030401</code> is a colour with a green cast — <code>G</code> is higher
+        than <code>R</code> and <code>B</code> — so under a photograph it tints the letterbox and
+        draws a faint frame the photograph did not ask for. <em>Two</em>, black is absence: on OLED
+        the bars switch off, so a dark photo has no edge at all, which is exactly what iOS Photos and
+        every other viewer does. <em>Three</em>, the cost is nothing measurable — black against
+        <code>#030401</code> is <code>1.02:1</code>, invisible, so the cut from app canvas to viewer
+        ground cannot be seen even when you look for it. Frame&nbsp;09 puts the same photograph on all
+        three candidates so the difference can be judged rather than argued.</p>
+      <p>The premise needs one correction, though: <b>the live viewer is not on black.</b>
+        <code>backgroundColor: CColor.black</code> resolves to that <code>MaterialColor</code>'s
+        primary value, <code>0xFF2C2C2C</code>. The shipped ground is a mid grey measuring
+        <code>1.50:1</code> against black — clearly visible, and it flattens every dark photograph
+        in the app. Whichever way this decision goes, <span class="flag">#2C2C2C</span> is wrong and
+        has to change.</p>
+    </li>
+    <li>
+      <h3>Should saving a photo be one tap or two?</h3>
+      <p>Today it is one: <code>Tải xuống</code> writes straight to the camera roll. We put a sheet
+        in the way, because the same control now carries Share, Copy link, Edit caption and Report,
+        and because a single mistap writing to somebody's photo library is not recoverable from
+        inside the app. If you would rather keep one-tap save, we would add a
+        <span class="flag">Save</span> disc beside the sheet disc rather than remove the sheet.</p>
+    </li>
+    <li>
+      <h3>Dots or a thumbnail rail past ten photos?</h3>
+      <p>Dots stop working somewhere around ten — they either shrink below a usable target or run off
+        the screen. We have assumed <span class="flag">dots to ten, a scrolling thumbnail rail
+        beyond</span>. The counter pill stays in both cases, so the number is never lost. We need to
+        know the real maximum: <code>WUpload</code>'s <code>maxCount</code> is per-field and
+        nothing caps a locker-room gallery.</p>
+    </li>
+    <li>
+      <h3>Who can edit a caption, and can it be removed?</h3>
+      <p><code>onChangedDescription</code> is passed only from the upload field, so in practice
+        captions are editable while you are composing and frozen afterwards — but nothing in the
+        code says so. We have built it as <span class="flag">the poster can edit their own caption at
+        any time, and emptying the field removes it</span>. If captions should freeze once the room
+        opens, the pill needs to disappear at that moment rather than fail on submit.</p>
+    </li>
+    <li>
+      <h3>We need one real photograph.</h3>
+      <p><code>_assets</code> contains no full-size imagery. The only photography in the kit is the
+        sixteen portraits in <code>avatars.css</code> at <code>112 × 112</code>, so every plate on
+        this page is one of those upscaled and is visibly soft. The geometry is right; the render is
+        not. One <span class="flag">1080-wide match-day photograph</span> — ideally one portrait and
+        one landscape — would let us show these frames properly. We have not drawn a substitute,
+        because a fake photograph is worse than a soft real one.</p>
+    </li>
+    <li>
+      <h3>Is a report path in scope?</h3>
+      <p>There is no moderation route on any photo surface in the app. We have put
+        <span class="flag">Report this photo</span> in the sheet because a member-photo surface
+        without one is a liability, but it needs somewhere to go. If there is no moderation queue
+        yet, say so and we will pull the row rather than ship a dead end.</p>
+    </li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  var reduce = window.matchMedia &&
+               window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Under prefers-reduced-motion, stop the SMIL rings dead. */
+  if (reduce){
+    Array.prototype.forEach.call(document.querySelectorAll('svg.anim'), function(s){
+      if (s.pauseAnimations) s.pauseAnimations();
+    });
+  }
+
+  /* ============================================================
+     THE SEVEN GALLERY PHOTOS
+     Real content: portrait, poster and caption per page. The
+     portrait set is _assets/avatars.css, which is all the
+     photography the kit has.
+     ============================================================ */
+  var PAGES = [
+    ['--av-01','taythaytu',     'Kick-off. Full house before a ball was kicked.',              '45'],
+    ['--av-02','capitan_7',     'The armband going on for the first time this season.',         '45'],
+    ['--av-12','scout_mode',    'Warm-up, north end. Three of the academy side started.',       '32'],
+    ['--av-03','fan_pulse',     'Second half, minute 71 — the away end still full after the equaliser.', '32'],
+    ['--av-14','dons_mode',     'Ninety-fourth minute. Nobody sat down.',                       '45'],
+    ['--av-07','transfer_brig', 'Full time. The board came out at 4–2.',                        '32'],
+    ['--av-04','club_staff',    'Post-match, the tunnel. Shirts already swapped.',              '45']
+  ];
+
+  /* ============================================================
+     PER-ROOT WIRING
+     The review shell replays everything outside the MAIN element
+     into every device, so every frame gets its own copy of the layer.
+     Each copy is wired against its own root — `.mk` in the review,
+     the document standalone — so a control in frame 05 opens the
+     sheet in frame 05 and nothing else.
+     ============================================================ */
+  var roots = document.querySelectorAll('.mk');
+  if (!roots.length) roots = [document.body];
+  Array.prototype.forEach.call(roots, wire);
+
+  function wire(root){
+    var layer = root.querySelector('[data-layer]');
+    var scrim = layer ? layer.querySelector('[data-scrim]') : null;
+    var pane = null, opener = null;
+
+    /* ---------- the layer ---------- */
+    function focusables(el){
+      return Array.prototype.filter.call(
+        el.querySelectorAll('button, [href], input, select, textarea, [tabindex]'),
+        function(x){
+          return !x.hasAttribute('disabled') &&
+                 x.getAttribute('tabindex') !== '-1' &&
+                 x.offsetParent !== null;
+        });
+    }
+    function open(name, trigger){
+      if (!layer || pane) return;
+      pane = layer.querySelector('[data-pane="' + name + '"]');
+      if (!pane) return;
+      opener = trigger || null;
+      pane.hidden = false;
+      pane.style.transform = '';
+      layer.classList.add('is-open');
+      requestAnimationFrame(function(){ layer.classList.add('is-in'); });
+      pane.setAttribute('tabindex','-1');
+      pane.focus();
+      document.addEventListener('keydown', onKey, true);
+    }
+    function close(){
+      if (!pane) return;
+      var closing = pane;
+      pane = null;
+      layer.classList.remove('is-in');
+      document.removeEventListener('keydown', onKey, true);
+      setTimeout(function(){
+        layer.classList.remove('is-open');
+        closing.hidden = true;
+        closing.style.transform = '';
+      }, reduce ? 0 : 300);
+      if (opener) opener.focus();
+      opener = null;
+    }
+    function onKey(e){
+      if (!pane) return;
+      if (e.key === 'Escape'){ e.preventDefault(); close(); return; }
+      if (e.key !== 'Tab') return;
+      var f = focusables(pane);
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+      else if (!pane.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+    }
+
+    root.addEventListener('click', function(e){
+      if (!e.target.closest) return;
+      var o = e.target.closest('[data-open]');
+      if (o){ open(o.getAttribute('data-open'), o); return; }
+      if (e.target.closest('[data-close]')){ close(); return; }
+      if (scrim && e.target === scrim){ close(); return; }
+
+      /* ---------- gallery paging ---------- */
+      var g = e.target.closest('[data-go]');
+      if (g){ page(g, parseInt(g.getAttribute('data-go'), 10)); return; }
+
+      /* ---------- zoom ---------- */
+      var zr = e.target.closest('[data-zoomreset]');
+      if (zr){ zoom(zr, false); return; }
+      var pl = e.target.closest('[data-plate]');
+      if (pl){ zoom(pl, !pl.classList.contains('is-zoom')); return; }
+    });
+
+    /* ---------- grabber drag ---------- */
+    if (layer){
+      var drag = null;
+      layer.addEventListener('pointerdown', function(e){
+        var g = e.target.closest ? e.target.closest('.sheet__grab') : null;
+        if (!g || !pane) return;
+        drag = { y:e.clientY, t:Date.now(), dy:0 };
+        pane.classList.add('is-dragging');
+        if (g.setPointerCapture) g.setPointerCapture(e.pointerId);
+      });
+      layer.addEventListener('pointermove', function(e){
+        if (!drag || !pane) return;
+        drag.dy = Math.max(0, e.clientY - drag.y);
+        pane.style.transform = 'translateY(' + drag.dy + 'px)';
+        if (scrim) scrim.style.opacity = String(Math.max(0, 1 - drag.dy / 420));
+      });
+      var endDrag = function(){
+        if (!drag || !pane){ drag = null; return; }
+        var d = drag.dy, ms = Math.max(1, Date.now() - drag.t);
+        var fast = d / ms > 0.55;
+        drag = null;
+        pane.classList.remove('is-dragging');
+        if (scrim) scrim.style.opacity = '';
+        if (d > 90 || (fast && d > 24)){ pane.style.transform = 'translateY(101%)'; close(); }
+        else { pane.style.transform = ''; }
+      };
+      layer.addEventListener('pointerup', endDrag);
+      layer.addEventListener('pointercancel', endDrag);
+    }
+
+    /* ---------- gallery ---------- */
+    function page(dot, n){
+      var gal = dot.closest('[data-gallery]');
+      if (!gal) return;
+      var p = PAGES[n - 1];
+      if (!p) return;
+      var plate = gal.querySelector('[data-gplate]');
+      var now   = gal.querySelector('[data-gnow]');
+      var cap   = gal.querySelector('[data-gcap]');
+      if (plate){
+        plate.style.backgroundImage = 'var(' + p[0] + ')';
+        plate.className = 'vw__plate vw__plate--' + p[3];
+        plate.setAttribute('aria-label', 'Photo ' + n + ' of 7, posted by ' + p[1]);
+      }
+      if (now) now.textContent = String(n);
+      if (cap) cap.innerHTML = '<b></b> ' + p[2].replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      if (cap) cap.querySelector('b').textContent = p[1];
+      var counter = gal.querySelector('.count');
+      if (counter) counter.setAttribute('aria-label', 'Photo ' + n + ' of 7');
+      Array.prototype.forEach.call(gal.querySelectorAll('[data-go]'), function(d){
+        d.setAttribute('aria-current', d === dot ? 'true' : 'false');
+      });
+    }
+
+    /* ---------- zoom ---------- */
+    function zoom(el, on){
+      var stage = el.closest('.vw');
+      if (!stage) return;
+      var plate = stage.querySelector('[data-plate]');
+      var val   = stage.querySelector('[data-zoomval]');
+      if (!plate) return;
+      plate.classList.toggle('is-zoom', !!on);
+      if (val) val.textContent = on ? '2.4×' : '1.0×';
+      plate.setAttribute('aria-label', on
+        ? 'Photo posted by taythaytu, zoomed to 2.4 times'
+        : 'Photo posted by taythaytu, fit to screen');
+    }
+
+    /* ---------- caption counter ---------- */
+    Array.prototype.forEach.call(root.querySelectorAll('[data-capin]'), function(ta){
+      var out = ta.closest('.field').querySelector('[data-capn]');
+      var sync = function(){ if (out) out.textContent = ta.value.length + ' / 200'; };
+      ta.addEventListener('input', sync);
+      sync();
+    });
+  }
+})();
+</script>

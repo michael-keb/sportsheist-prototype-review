@@ -1,0 +1,382 @@
+<p class="dek">
+  The bottom-sheet kit: one panel that rises from the bottom of the screen, and the seven jobs it
+  does — sort, filter, pick one of many, pick a date, pick a time, offer a short list of actions,
+  and confirm something irreversible. It replaces four different sheet constructions, two
+  hard-coded sheet heights and one raw Material dropdown currently shipping in the app.
+</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One panel, seven jobs, one set of rules</h2>
+  <p>
+    A bottom sheet is the phone's answer to "choose something without leaving the page". The
+    Backchat sort and filter sheets in the dark-mode export already establish the language —
+    a dark panel with rounded top corners, a small tracked uppercase title on a hairline,
+    full-width rows with the label left and the indicator right, the chosen row washed in a
+    dark green tint, and a full-width accent <strong>Apply</strong> where one is needed. This
+    file takes that language and finishes it.
+  </p>
+  <p>
+    Everything below is the same shell. What changes between the seven is what sits in the
+    scrolling middle and whether the foot carries a button. Nothing else — not the radius, not
+    the grabber, not the scrim, not the height rule — varies. That is the point: today the app
+    ships sheets at <code>330</code>&nbsp;pt, <code>470</code>&nbsp;pt and <code>90%</code>, one
+    of them with square top corners and no grabber at all, and each one styled at the call site.
+  </p>
+  <p>
+    The page is laid out as specimens so all seven can be read at once. Three live examples at
+    the foot behave properly: they slide up over the real scrim, hold keyboard focus inside
+    themselves, and close on a scrim tap, a downward drag of the grabber, the ✕ or Esc. The
+    <strong>Category sheet</strong> is the Hall of Fame surface rebuilt — the shipped version
+    has no top radius and no grabber.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Shell</td><td>Panel</td>
+          <td class="t-note">Full bleed to the screen edges. Top corners <code>18px</code>, bottom
+            corners <code>0</code>. Fill is a vertical gradient <code>#1C2129</code> →
+            <code>#13171E</code> — the two sampled surface tokens, so no new colour. 1&nbsp;px
+            hairline at white&nbsp;7.5% on the top and sides only, and
+            <code>0 −20 50 rgba(0,0,0,.6)</code> to lift it off the canvas.</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Grabber</td>
+          <td class="t-note">A <code>40 × 4</code> pill at white&nbsp;18%, centred in a
+            <code>26px</code> strip so the whole strip is the drag target, not just the bar. It is
+            a real <code>&lt;button&gt;</code>, focusable, and labelled "Drag down to close, or
+            press Escape".</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Title bar</td>
+          <td class="t-note"><code>11px / 700 / .14em</code> uppercase white — the contract's
+            tracked micro-label — on a 1&nbsp;px white&nbsp;7.5% hairline. To its right, in order:
+            an optional count pill, an optional text button (<code>Clear all</code> /
+            <code>Reset</code>), and a <code>30px</code> circular ✕.</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Body</td>
+          <td class="t-note">The only part that scrolls. <code>12px</code> vertical /
+            <code>16px</code> horizontal padding, momentum scrolling, and
+            <code>overscroll-behavior:contain</code> so a flick at the end of the list does not
+            drag the page behind it.</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Foot</td>
+          <td class="t-note">Fixed, never scrolls, filled <code>#13171E</code> on a hairline,
+            padded <code>12px + env(safe-area-inset-bottom)</code>. A sheet with no foot pads its
+            own body by the same inset instead, so no row ever finishes inside the home-indicator
+            gesture zone.</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Height</td>
+          <td class="t-note"><code>min(88vh, 560px)</code>, and never closer than
+            <code>24px + env(safe-area-inset-top)</code> to the status bar. Short sheets are as
+            tall as their content; only long ones hit the cap and scroll.</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Scrim</td>
+          <td class="t-note"><code>rgba(3,4,1,.72)</code> — the canvas at 72% — plus
+            <code>backdrop-filter: blur(10px) saturate(.9)</code>. Identical to the dialogs kit, so
+            every overlay in the product dims the page the same way. Where blur is unsupported it
+            falls back to a flat <code>rgba(3,4,1,.86)</code>.</td>
+        </tr>
+        <tr>
+          <td>Rows</td><td>Option row</td>
+          <td class="t-note">Minimum <code>48px</code> tall, radius <code>12px</code>, fill
+            <code>#13171E</code>, 1&nbsp;px white&nbsp;7.5%. Label <code>13.5px / 500</code> left,
+            indicator right, optional second line in <code>#99A0AE</code>. Rows are spaced
+            <code>8px</code> apart, not divided by hairlines.</td>
+        </tr>
+        <tr>
+          <td>Rows</td><td>Selected row</td>
+          <td class="t-note"><code>rgba(155,226,34,.12)</code> laid over the sunken fill — reading
+            as a dark green wash — with the rim lifted to
+            <code>rgba(155,226,34,.30)</code> and the label switched to <code>#9BE222</code> at
+            weight&nbsp;600. Three cues, all derived from the one accent.</td>
+        </tr>
+        <tr>
+          <td>Rows</td><td>Indicator</td>
+          <td class="t-note"><code>20px</code>. Checkbox is radius&nbsp;6, filling solid
+            <code>#9BE222</code> with a <code>#0B0E06</code> tick when on. Radio is a circle that
+            gains a <code>1.7px</code> accent ring and an accent dot. Both are lifted unchanged
+            from the Forms kit.</td>
+        </tr>
+        <tr>
+          <td>1 · Sort</td><td>Single-select list</td>
+          <td class="t-note">Three radio rows — <code>Most recent</code>,
+            <code>Most immediate</code>, <code>Most popular</code>, the shipped
+            <code>UpcomingLockerRoomsSort</code> values. No foot: tapping a row applies the sort
+            and closes the sheet.</td>
+        </tr>
+        <tr>
+          <td>2 · Filter</td><td>Multi-select list</td>
+          <td class="t-note">Checkbox rows under tracked group headings
+            (<code>Access</code>, <code>Me</code>, <code>Sport</code>). The head carries a live
+            count pill in the accent wash and a <code>Clear all</code> that greys out at zero. The
+            foot carries <code>Apply</code> with the count on it; nothing behind the sheet changes
+            until it is pressed.</td>
+        </tr>
+        <tr>
+          <td>3 · Picker</td><td>Search field</td>
+          <td class="t-note">The Forms control shell at <code>44px</code>, stuck to the top of the
+            scroller on a hairline over <code>#181D25</code>, so it stays put while the list moves
+            under it. Focus gives it the accent border and the <code>3px</code> accent-wash ring.</td>
+        </tr>
+        <tr>
+          <td>3 · Picker</td><td>Club row</td>
+          <td class="t-note">A <code>28px</code> radius-8 crest tile carrying the three-letter club
+            code, the club name, and the radio. Group headings (<code>Champions League</code>,
+            <code>NBA</code>…) scroll with the list and disappear when the whole group is filtered
+            out. Real content: 30 clubs from the club-selection data.</td>
+        </tr>
+        <tr>
+          <td>4 · Date</td><td>Month grid</td>
+          <td class="t-note">Seven columns, Monday first, <code>40px</code> rows. Day numbers
+            <code>13.5px</code> tabular. Selected is a <code>34px</code> accent disc with
+            <code>#0B0E06</code> ink; today is a 1&nbsp;px accent ring; adjacent months are
+            <code>#5B606B</code> and inert. Above the grid, the choice restated in words —
+            <code>Wednesday 12 August 2026</code> — because <code>12</code> alone is not a date.</td>
+        </tr>
+        <tr>
+          <td>4 · Date</td><td>Range variant</td>
+          <td class="t-note">Both ends are accent discs; the days between carry the 12% wash edge
+            to edge so the run reads as one object, and the fill continues through the trailing
+            adjacent-month cells instead of stopping at the month boundary. Head shows the day
+            count; foot is a <code>Cancel</code> / <code>Apply range</code> pair.</td>
+        </tr>
+        <tr>
+          <td>5 · Time</td><td>Three columns</td>
+          <td class="t-note">Hour, minute and AM/PM as three short scrolling lists in sunken
+            panels, <code>180px</code> tall, the chosen value washed in accent. Minutes are
+            quarter hours. Not an iOS wheel — see States.</td>
+        </tr>
+        <tr>
+          <td>5 · Time</td><td>Quick offsets</td>
+          <td class="t-note">A horizontally scrolling row of pills carrying the shipped presets
+            <code>Now</code>, <code>In an hour</code>, <code>In two hours</code>,
+            <code>In three hours</code>, <code>In five hours</code>,
+            <code>In twelve hours</code>. Pressed state is the accent wash with the accent rim.</td>
+        </tr>
+        <tr>
+          <td>6 · Actions</td><td>Context block</td>
+          <td class="t-note">No sheet title. Instead the first row of the list names the object —
+            crest, room topic, host and start time — which is the thing you must be certain of
+            before pressing Delete.</td>
+        </tr>
+        <tr>
+          <td>6 · Actions</td><td>Action rows</td>
+          <td class="t-note">One grouped card, <code>54px</code> rows divided by white&nbsp;4.5%
+            hairlines, leading <code>20px</code> icon in <code>#99A0AE</code>. Exactly one
+            destructive item, last, label and icon in <code>#E2564A</code> with a red-wash hover.
+            A ghost <code>Cancel</code> sits under the card.</td>
+        </tr>
+        <tr>
+          <td>7 · Confirm</td><td>Centred block</td>
+          <td class="t-note">A <code>46px</code> radius-12 tile in the red wash, the question at
+            <code>19px / 700</code> sentence case, the consequence at <code>13px</code> in
+            <code>#99A0AE</code>, and the dialogs kit's <code>46px</code> action pair in the foot —
+            ghost first, destructive second.</td>
+        </tr>
+        <tr>
+          <td>Dropdown</td><td>Anchored menu</td>
+          <td class="t-note">Radius <code>12px</code>, fill <code>#1C2129</code>,
+            <code>0 14 34 rgba(0,0,0,.55)</code>, <code>42px</code> rows, selected row in the
+            accent wash with a tick. Left edge flush with its trigger, top edge <code>6px</code>
+            below the trigger's bottom edge, minimum width equal to the trigger. While open the
+            rest of the group dims to 35% and goes inert.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Row, default</td><td class="t-note">Sunken fill, white&nbsp;7.5% rim, white label,
+          empty indicator. Hover lifts the rim to white&nbsp;14%.</td></tr>
+        <tr><td>Row, selected</td><td class="t-note">Accent wash, accent rim, accent label at
+          weight&nbsp;600, filled indicator.</td></tr>
+        <tr><td>Single vs multi select</td><td class="t-note">Round indicator means one at a time
+          and the sheet closes on tap. Square indicator means as many as you like and an
+          <code>Apply</code> appears in the foot. The shape is the promise.</td></tr>
+        <tr><td>Count, zero</td><td class="t-note">Count pill hidden, <code>Clear all</code>
+          disabled to <code>#5B606B</code>, button reads <code>Apply</code> with no badge.</td></tr>
+        <tr><td>Count, one or more</td><td class="t-note">Pill reads <code>N on</code> in the
+          accent wash; the button gains a dark badge carrying the same figure.</td></tr>
+        <tr><td>Search, no match</td><td class="t-note">Rows and their group headings are removed
+          and a single centred line reads <code>No club matches that.</code> in
+          <code>#5B606B</code>. A clear ✕ appears inside the field as soon as it has content.</td></tr>
+        <tr><td>Long list</td><td class="t-note">Panel stops at <code>min(88vh, 560px)</code>; the
+          body scrolls with the search field pinned and the foot fixed. Scrollbars are hidden, as
+          on iOS.</td></tr>
+        <tr><td>Date, today</td><td class="t-note">1&nbsp;px accent ring, accent numeral. Survives
+          under the selected disc, so a range starting today shows both.</td></tr>
+        <tr><td>Date, unavailable</td><td class="t-note">Adjacent-month days are
+          <code>#5B606B</code> and not focusable; a barred day is <code>#5B606B</code> struck
+          through.</td></tr>
+        <tr><td>Opening</td><td class="t-note">Panel slides <code>translateY(101%) → 0</code> over
+          <code>320ms</code> on <code>cubic-bezier(.16,1,.3,1)</code>; the scrim fades over
+          <code>220ms</code>.</td></tr>
+        <tr><td>Dragging the grabber</td><td class="t-note">The panel follows the finger downward
+          only, and the scrim fades in proportion. Released past <code>90px</code> — or on a fast
+          flick past <code>24px</code> — it dismisses; otherwise it springs back.</td></tr>
+        <tr><td>Focus</td><td class="t-note">Opening moves focus to the panel itself, never to an
+          action, so a destructive button is never primed under the return key. Tab is held inside
+          the panel; the page behind it is <code>aria-hidden</code>. Closing returns focus to the
+          control that opened it.</td></tr>
+        <tr><td>Dismissal</td><td class="t-note">Four ways, all live: tap the scrim, drag the
+          grabber down, press the ✕, press Esc. A single-select row also dismisses on tap.</td></tr>
+        <tr><td>Safe area</td><td class="t-note">The foot — or the body, when there is no foot —
+          absorbs <code>env(safe-area-inset-bottom)</code>. The panel top stops
+          <code>24px + env(safe-area-inset-top)</code> short of the status bar.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">No slide, no fade, no hover transitions; the
+          sheet is simply present or absent.</td></tr>
+        <tr><td>Wide screen (430)</td><td class="t-note">Panel holds at <code>420px</code> centred,
+          exactly as every other screen in the kit. Nothing reflows and nothing overflows
+          sideways.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Sheet construction</b> — dark panel, rounded top corners, grabber, slide-up over a
+          dimming scrim, from the Backchat sort / filter / search sheets</li>
+        <li><b>Small tracked uppercase title on a hairline</b> — the export's sheet-title
+          treatment, re-set to the contract's <code>11 / 700 / .14em</code></li>
+        <li><b>Row with label left, indicator right</b> — the export's option row</li>
+        <li><b>Selected row washed in the accent with an accent indicator</b> — the export's
+          selected state, recoloured from blue to <code>#9BE222</code></li>
+        <li><b>Full-width accent Apply</b> — the export's filter-sheet footer</li>
+        <li><b>Checkbox and radio</b> — the Forms kit, unchanged</li>
+        <li><b>Control shell for the search field</b> — the Forms kit, unchanged</li>
+        <li><b>Action pair, 46 px pill buttons</b> — the Dialogs kit, unchanged</li>
+        <li><b>Scrim at 72% plus a 10 px blur</b> — the Dialogs kit, unchanged</li>
+        <li><b>Sort and filter option names</b> — the shipped
+          <code>UpcomingLockerRoomsSort</code> and <code>LockerRoomsFilter</code> enums</li>
+        <li><b>Time offsets</b> — the shipped create-room presets</li>
+        <li><b>Award category names</b> — <code>Member of the Match / Week / Season</code></li>
+        <li><b>Clubs</b> — the club-selection data</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>One height rule</b> — <code>min(88vh, 560px)</code> with a fixed head and foot,
+          replacing hard-coded <code>330</code> / <code>470</code> / <code>90%</code></li>
+        <li><b>Radius and grabber on every sheet</b> — including the Hall of Fame category sheet,
+          which ships with neither</li>
+        <li><b>Safe-area behaviour</b> — nothing in the export or the build reserves the home
+          indicator; <code>HF-03</code>'s last row currently ends inside the gesture zone</li>
+        <li><b>Radio for single-select</b> — the export draws checkboxes on the single-select sort
+          rows</li>
+        <li><b>Active-filter count and Clear all</b> — no applied-filter marker exists anywhere in
+          the build</li>
+        <li><b>Date picker in the brand</b> — the build themes a third-party
+          <code>table_calendar</code> inline at the call site</li>
+        <li><b>Range variant</b> — no range selection exists</li>
+        <li><b>Time picker</b> — the build has date and offset presets but no time surface</li>
+        <li><b>Action sheet</b> — with a context block and exactly one destructive item</li>
+        <li><b>Confirm sheet</b> — the sheet-form sibling of the dialog</li>
+        <li><b>Correctly anchored dropdown</b> — flush left, 6 px below its trigger, siblings
+          inert</li>
+        <li><b>Focus trap, Esc, drag-to-dismiss</b> — none of the three exist in the build</li>
+        <li><b>Grouped filter rows</b> — <code>Access</code> / <code>Me</code> /
+          <code>Sport</code>, so a multi-select list is readable</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:14px">
+    Two faults recorded in the specs are fixed rather than reproduced. <code>HF-03</code> — the
+    Hall of Fame category sheet — has <b>top corner radius 0 and no drag handle</b>, against the
+    24&nbsp;pt radius the component reference records for sheets; it also puts black rows on a
+    lighter panel, so the interactive elements are darker than the surface they sit on. And on
+    <code>HF-02</code> the Season field opens the <b>stock Material dropdown</b>, whose left edge
+    sits 4&nbsp;pt right of the field's left edge and whose top edge sits 6&nbsp;pt <em>above</em>
+    the field's top edge, so it covers its own trigger, swallows the whole Category field below it
+    and clips the podium's corner. Both are rebuilt here.
+  </p>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Sort rows: checkbox or radio?</h3>
+      <p>The export draws the sort options as rows with a square checkbox tick, but only one sort
+      order can be active. A checkbox says "tick as many as you like" and then refuses to let you.
+      We built <span class="flag">a radio</span>, and used the square checkbox only on the
+      genuinely multi-select filter sheet, so the indicator shape now tells you the rule before
+      you tap. Confirm and we will hold that distinction everywhere.</p>
+    </li>
+    <li>
+      <h3>Is a locked room "closed" or "locked"?</h3>
+      <p>The shipped enum label is <code>Closed rooms only</code>; the room type it filters on is
+      <code>locked</code>, the room card renders <code>Locked room</code> with a padlock, and one
+      export writes <code>Locked rooms only</code>. We used <span class="flag">Locked rooms
+      only</span> because it matches the padlock the user already sees. One word, product-wide,
+      please.</p>
+    </li>
+    <li>
+      <h3>Does "All rooms" survive multi-select?</h3>
+      <p>The shipped filter list leads with <code>All rooms</code> alongside four real filters,
+      which cannot work once more than one can be on. We treated <span class="flag">nothing
+      ticked</span> as "all rooms" and dropped the row, which is what the count pill and
+      <code>Clear all</code> now express. If <code>All rooms</code> must stay as a visible reset,
+      it becomes a text button, not an option.</p>
+    </li>
+    <li>
+      <h3>What is a season actually called?</h3>
+      <p>The Hall of Fame Season control is documented as three rows with no strings recorded, and
+      not one date on any Hall of Fame screen carries a year — on a surface whose filter <em>is</em>
+      the year. We used <span class="flag">2025/26 · 2024/25 · 2023/24</span>. Tell us the real
+      identifiers, and whether a season is a calendar year or a split year.</p>
+    </li>
+    <li>
+      <h3>Should Season stay a dropdown at all?</h3>
+      <p>Our rule: a sheet for more than about six options, anything multi-select, anything needing
+      search or an Apply; a dropdown only for three to six short single-line values changing one
+      field in place. Season passes as <span class="flag">a dropdown</span> and Category passes as
+      a sheet, so we kept the split and made both legible. The alternative — both as sheets — is
+      more consistent and one tap slower. Your call.</p>
+    </li>
+    <li>
+      <h3>Monday-first weeks and quarter-hour times?</h3>
+      <p>The date grid starts on <span class="flag">Monday</span> and the time picker offers
+      <span class="flag">quarter hours</span> only. Monday-first suits AU and EU and is wrong for
+      US audiences; if the app ships to both, the grid needs to follow the device locale rather
+      than a fixed order. And if a locker room may start at 8:37, the minute column needs every
+      value and gets noticeably harder to use.</p>
+    </li>
+    <li>
+      <h3>What replaces the sheet on desktop?</h3>
+      <p>These are phone surfaces. On the desktop shell a sheet rising from the bottom of a
+      1440-wide window is wrong. We would expect the filter and sort sheets to become anchored
+      panels beside their trigger and the pickers to become modals, but the desktop frames in the
+      export do not show either, so that is unbuilt and unsized.</p>
+    </li>
+  </ol>
+</section>

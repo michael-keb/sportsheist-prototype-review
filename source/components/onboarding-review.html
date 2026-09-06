@@ -1,0 +1,1419 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Onboarding · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; /* screen canvas */ --section: #080A0C; /* bordered section container */ --surface: #1C2129; /* cards, controls, tab bar */ --sunken: #13171E; /* inner panels, dark pills */ --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); /* hero */ --hero-a: #0D3617; --hero-b: #17481C; /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* photography extracted from the Figma exports (_assets/avatars.css) */ --av-01:url(data:image/jpeg;base64,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); --av-02:url(data:image/jpeg;base64,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); --av-03:url(data:image/jpeg;base64,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); --av-04:url(data:image/jpeg;base64,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); --av-05:url(data:image/jpeg;base64,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); --av-06:url(data:image/jpeg;base64,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);}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+.mk .frame{padding:30px 0 34px;border-top:1px solid var(--line)}
+.mk .frame:first-of-type{padding-top:30px;border-top:0}
+.mk .framelabel{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap; margin:0 var(--gutter) 22px; font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);}
+.mk .framelabel b{color:var(--acid);font-weight:700}
+.mk .framelabel--in{margin-top:26px}
+.mk .topbar{display:flex;align-items:center;gap:8px;padding:0 var(--gutter)}
+.mk .topbar .spacer{flex:1}
+.mk .icon-btn{display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease);}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn svg{width:17px;height:17px}
+.mk .status-pill{display:inline-flex;align-items:center;gap:7px; height:32px;padding:0 14px;border-radius:var(--r-pill); background:var(--acid-wash); font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--acid);white-space:nowrap;}
+.mk .status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mk .stepper{display:flex;gap:6px;list-style:none; margin:16px var(--gutter) 0;padding:0;}
+.mk .stepper li{flex:1;min-width:0}
+.mk .stepper i{display:block;height:3px;border-radius:var(--r-pill); background:var(--sunken);overflow:hidden;}
+.mk .stepper i b{display:block;height:100%;width:0;border-radius:var(--r-pill);background:var(--acid)}
+.mk .stepper span{display:block;margin-top:7px; font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase; color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .stepper .is-done i b{width:100%}
+.mk .stepper .is-done span{color:var(--muted)}
+.mk .stepper .is-now i b{width:45%}
+.mk .stepper .is-now span{color:var(--text)}
+.mk .stitle{margin:24px var(--gutter) 0; font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1; text-transform:uppercase;}
+.mk .ssub{margin:12px var(--gutter) 0;max-width:32ch;font-size:13px;color:var(--muted)}
+.mk .eyebrow{margin:0 0 10px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .notice{display:flex;gap:12px;align-items:flex-start; margin:20px var(--gutter) 0;padding:14px; border-radius:var(--r-card);background:var(--surface);}
+.mk .notice__icon{width:38px;height:38px;flex:0 0 auto;border-radius:50%; background:var(--acid-wash);color:var(--acid); display:flex;align-items:center;justify-content:center;}
+.mk .notice__icon svg{width:19px;height:19px}
+.mk .notice h3{margin:0 0 5px;font-size:13.5px;font-weight:600;letter-spacing:-.005em}
+.mk .notice p{margin:0;font-size:12.5px;color:var(--muted)}
+.mk .cta{display:flex;align-items:center;justify-content:center;gap:8px; width:100%;height:52px;border:0;border-radius:var(--r-panel); background:var(--acid);color:var(--acid-ink); font:inherit;font-size:13px;font-weight:700;letter-spacing:.08em; text-transform:uppercase;cursor:pointer; transition:background .18s var(--ease);}
+.mk .cta:hover{background:#A8EC33}
+.mk .cta svg{width:16px;height:16px}
+.mk .cta--ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+.mk .cta--ghost:hover{background:var(--surface)}
+.mk .cta[disabled]{background:var(--sunken);color:var(--dim);cursor:not-allowed}
+.mk .cta[disabled]:hover{background:var(--sunken)}
+.mk .foot{margin:24px var(--gutter) 0}
+.mk .hint{margin:9px 0 0;font-size:11.5px;color:var(--muted)}
+.mk .hint--center{text-align:center;color:var(--dim)}
+.mk .crest{display:inline-flex;align-items:center;justify-content:center; width:22px;height:16px;border-radius:4px;flex:0 0 auto; background:rgba(255,255,255,.10); font-size:8.5px;font-weight:800;letter-spacing:.04em;color:rgba(255,255,255,.8);}
+.mk .tiers{margin:20px var(--gutter) 0;display:flex;flex-direction:column;gap:12px}
+.mk .tier{padding:16px;border-radius:var(--r-card); background:var(--section);border:1px solid var(--line);}
+.mk .tier--hero{padding:18px;background:var(--surface);border-color:rgba(155,226,34,.34)}
+.mk .tier__head{display:flex;gap:12px;align-items:center}
+.mk .tier__icon{width:46px;height:46px;flex:0 0 auto;border-radius:var(--r-panel); background:var(--sunken);color:var(--muted); display:flex;align-items:center;justify-content:center;}
+.mk .tier--hero .tier__icon{background:var(--acid-wash);color:var(--acid)}
+.mk .tier__icon svg{width:25px;height:25px}
+.mk .tier__id{min-width:0}
+.mk .badge{display:inline-flex;align-items:center;height:19px;padding:0 8px; border-radius:var(--r-pill); font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase; background:var(--sunken);color:var(--muted);}
+.mk .badge--premium{background:var(--acid);color:var(--acid-ink)}
+.mk .tier__name{margin:7px 0 0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.mk .tier--hero .tier__name{font-size:17px}
+.mk .bens{list-style:none;margin:14px 0 0;padding:0}
+.mk .bens li{display:flex;gap:10px;align-items:flex-start; padding:8px 0;border-top:1px solid var(--line-soft); font-size:13px;}
+.mk .bens li:first-child{border-top:0}
+.mk .tick{width:18px;height:18px;flex:0 0 auto;margin-top:1px;border-radius:50%; background:var(--sunken);color:var(--muted); display:flex;align-items:center;justify-content:center;}
+.mk .tick svg{width:11px;height:11px}
+.mk .tier--hero .tick{background:var(--acid-wash);color:var(--acid)}
+.mk .bens .is-off{color:var(--dim)}
+.mk .bens .is-off .tick{background:transparent;color:var(--dim);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .tier__note{display:flex;gap:9px;align-items:flex-start; margin-top:13px;padding:11px 12px;border-radius:var(--r-panel); background:var(--sunken);font-size:12px;color:var(--muted);}
+.mk .tier__note svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px;color:var(--muted)}
+.mk .tier__note b{color:var(--text);font-weight:600}
+.mk .tier .cta{margin-top:14px}
+.mk .tier--hero .cta{margin-top:16px}
+.mk .group{margin:22px var(--gutter) 0}
+.mk .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
+.mk .f{display:flex;flex-direction:column;min-width:0}
+.mk .f + .f{margin-top:12px}
+.mk .f__label{display:flex;align-items:baseline;gap:6px;min-height:17px;margin:0 0 7px; font-size:12px;font-weight:500;color:var(--muted);}
+.mk .f__label .opt-tag{color:var(--dim);font-weight:400}
+.mk .f__label .fmt{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.1em; text-transform:uppercase;color:var(--dim);}
+.mk .f__box{display:flex;align-items:center;gap:9px; width:100%;height:50px;padding:0 13px; border-radius:var(--r-panel);background:var(--surface);border:1px solid var(--line); color:var(--text);font:inherit;font-size:14px;text-align:left; transition:border-color .18s var(--ease),box-shadow .18s var(--ease);}
+.mk button.f__box{cursor:pointer}
+.mk .f__box input{flex:1;min-width:0;padding:0;border:0;outline:none;background:transparent; color:var(--text);font:inherit;font-size:14px;}
+.mk .f__box input::placeholder{color:var(--dim)}
+.mk .f__val{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk .f__box svg{width:17px;height:17px;flex:0 0 auto;color:var(--muted)}
+.mk .f__box.is-focus{border-color:rgba(155,226,34,.55);box-shadow:0 0 0 3px var(--acid-wash)}
+.mk .f__box.is-error{border-color:#E2564A}
+.mk .tel{display:flex;align-items:stretch;height:50px; border-radius:var(--r-panel);background:var(--surface); border:1px solid var(--line);overflow:hidden;}
+.mk .tel__code{display:flex;align-items:center;gap:7px;padding:0 12px; background:var(--sunken);border:0;border-right:1px solid var(--line); color:var(--text);font:inherit;font-size:14px;font-variant-numeric:tabular-nums; cursor:pointer;}
+.mk .tel__code svg{width:15px;height:15px;color:var(--muted)}
+.mk .tel__num{display:flex;align-items:center;flex:1;min-width:0;padding:0 13px}
+.mk .tel__num input{flex:1;min-width:0;padding:0;border:0;outline:none;background:transparent; color:var(--text);font:inherit;font-size:14px; font-variant-numeric:tabular-nums;letter-spacing:.01em;}
+.mk .linked{display:flex;align-items:center;gap:7px;margin:9px 0 0; font-size:11.5px;color:var(--muted);}
+.mk .linked svg{width:13px;height:13px;flex:0 0 auto;color:var(--acid)}
+.mk .linked button{margin-left:auto;border:0;background:transparent;padding:0; color:var(--acid);font:inherit;font-size:11.5px;font-weight:600;cursor:pointer;}
+.mk .pick{display:flex;align-items:center;gap:16px;margin:16px var(--gutter) 0}
+.mk .group .pick{margin-left:0;margin-right:0}
+.mk .pick__main{position:relative;flex:0 0 auto}
+.mk .avatar{border-radius:50%;flex:0 0 auto; background-color:#20262F;background-size:cover;background-position:center 22%;}
+.mk .pick__main{display:block}
+.mk .pick__avatar{display:flex;align-items:center;justify-content:center; width:88px;height:88px;box-shadow:0 0 0 1px var(--line);}
+.mk .pick__avatar.is-symbol{background-color:var(--sunken);background-image:none!important}
+.mk .pick__mark{display:none;width:46px;height:46px}
+.mk .pick__avatar.is-symbol .pick__mark{display:block}
+.mk .pick__cam{position:absolute;right:-3px;bottom:-3px; width:36px;height:36px;border:0;border-radius:50%; background:var(--acid);color:var(--acid-ink); display:flex;align-items:center;justify-content:center;cursor:pointer; box-shadow:0 0 0 3px var(--bg);}
+.mk .pick__cam svg{width:17px;height:17px}
+.mk .pick__copy{min-width:0}
+.mk .pick__copy p{margin:0;font-size:12.5px;color:var(--muted)}
+.mk .pill-btn{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px; margin-top:10px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:12.5px;font-weight:500;cursor:pointer; transition:background .18s var(--ease);}
+.mk .pill-btn:hover{background:#222833}
+.mk .pill-btn svg{width:14px;height:14px}
+.mk .rail{display:flex;gap:10px;margin-top:16px; padding:2px var(--gutter) 4px;overflow-x:auto; scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}
+.mk .rail::-webkit-scrollbar{display:none}
+.mk .opt{width:48px;height:48px;flex:0 0 auto;padding:0;border:0;border-radius:50%; background-color:#20262F;background-size:cover;background-position:center 22%; cursor:pointer;transition:box-shadow .18s var(--ease);}
+.mk .opt[aria-pressed="true"]{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--acid)}
+.mk .opt--symbol{background:var(--sunken);display:flex;align-items:center;justify-content:center; box-shadow:inset 0 0 0 1px var(--line);}
+.mk .opt--symbol svg{width:24px;height:24px}
+.mk .opt--add{background:var(--sunken);color:var(--muted); display:flex;align-items:center;justify-content:center; box-shadow:inset 0 0 0 1px var(--line);}
+.mk .opt--add svg{width:18px;height:18px}
+.mk .avail{display:flex;align-items:center;gap:9px;margin:11px 0 0;font-size:12.5px}
+.mk .avail__dot{width:20px;height:20px;flex:0 0 auto;border-radius:50%; display:flex;align-items:center;justify-content:center;}
+.mk .avail__dot svg{width:12px;height:12px}
+.mk .avail--ok{color:var(--acid)}
+.mk .avail--ok .avail__dot{background:var(--acid-wash)}
+.mk .avail--bad{color:#E2564A}
+.mk .avail--bad .avail__dot{background:rgba(226,86,74,.14)}
+.mk .avail--wait{color:var(--muted)}
+.mk .avail--wait .avail__dot{background:var(--sunken)}
+.mk .avail--wait .avail__dot svg{width:14px;height:14px;color:var(--acid)}
+.mk .avail b{font-weight:600}
+.mk .sugg{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+.mk .sugg button{height:32px;padding:0 12px;border-radius:var(--r-pill); background:var(--surface);border:1px solid var(--line);color:var(--text); font:inherit;font-size:12.5px;cursor:pointer; transition:background .18s var(--ease);}
+.mk .sugg button:hover{background:#222833}
+.mk .section{margin:0 var(--gutter);padding:12px; border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);}
+.mk .section + .section{margin-top:10px}
+.mk .section .eyebrow{margin:2px 2px 10px}
+.mk .spec{padding:14px;border-radius:var(--r-panel);background:var(--surface)}
+.mk .spec .f__box{background:var(--sunken)}
+.mk .spec .sugg button{background:var(--sunken)}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+}
+.mk .dob{position:relative}
+.mk .dob__cal{flex:0 0 auto;display:grid;place-items:center;width:28px;height:28px;padding:0; border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;position:relative}
+.mk .dob__cal svg{width:19px;height:19px}
+.mk .dob__cal:hover{color:var(--text);background:var(--sunken)}
+.mk .dob__cal:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .dp{position:absolute;top:calc(100% + 8px);right:0;z-index:80;width:276px;padding:12px; background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card); box-shadow:0 18px 44px rgba(0,0,0,.55)}
+.mk .dp[hidden]{display:none}
+.mk .dp__bar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mk .dp__mon{flex:1;text-align:center;font-size:13.5px;font-weight:650;color:var(--text)}
+.mk .dp__nav{width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:8px; background:var(--sunken);color:var(--text);cursor:pointer}
+.mk .dp__nav:hover{background:#181D25}
+.mk .dp__nav:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .dp__nav svg{width:15px;height:15px}
+.mk .dp__dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.mk .dp__dow span{text-align:center;font-size:10px;font-weight:700;letter-spacing:.08em; text-transform:uppercase;color:var(--dim)}
+.mk .dp__grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px}
+.mk .dp__d{height:32px;border:0;border-radius:8px;background:none;color:var(--text); font:inherit;font-size:13px;cursor:pointer}
+.mk .dp__d:hover{background:var(--sunken)}
+.mk .dp__d:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.mk .dp__d[aria-selected="true"]{background:var(--acid);color:var(--acid-ink);font-weight:700}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Onboarding</h1>
+    <p class="dek">The four screens a new person meets: choosing between guest and member, giving the details we
+have to verify, choosing the name and picture everyone else sees, and — new here — always knowing how far
+through they are. Screens 1–3 are the flow itself; the fourth is the stepper component on its own.</p>
+    <div class="meta">
+      <span><b>Component</b> onboarding</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 4</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">Choose your pathway<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Your details<span class="side__tag">02</span></a></li>
+      <li><a class="side__item" href="#scr-3">Your identity<span class="side__tag">03</span></a></li>
+      <li><a class="side__item" href="#scr-4">Stepper spec sheet<span class="side__tag">04</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><span class="side__item" aria-current="page">Onboarding<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">The registration flow, with a spine</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">4 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>Choose your pathway</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="spacer"></span>
+    <span class="status-pill">Step 1 of 4</span>
+  </div>
+
+  <ol class="stepper" aria-label="Registration progress">
+    <li class="is-now" aria-current="step"><i><b></b></i><span>Pathway</span></li>
+    <li><i><b></b></i><span>Details</span></li>
+    <li><i><b></b></i><span>Identity</span></li>
+    <li><i><b></b></i><span>Clubs</span></li>
+  </ol>
+
+  <h1 class="stitle">Choose your pathway</h1>
+  <p class="ssub">Two ways into SportsHeist. Membership is the full app; guest access is a look around.</p>
+
+  <div class="tiers">
+
+    <!-- MEMBER — hero -->
+    <article class="tier tier--hero" aria-label="Member">
+      <div class="tier__head">
+        <span class="tier__icon" aria-hidden="true">
+          <!-- medal with star: the earned half of the matched pair -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8.6" r="5.6"/>
+            <path d="M12 5.9l1.05 2.1 2.3.33-1.67 1.62.39 2.3L12 11.17l-2.07 1.08.39-2.3L8.65 8.33l2.3-.33L12 5.9Z"/>
+            <path d="M8.1 13.2 6.4 21l5.6-2.9 5.6 2.9-1.7-7.8"/>
+          </svg>
+        </span>
+        <span class="tier__id">
+          <span class="badge badge--premium">Premium</span>
+          <h2 class="tier__name">Become a member</h2>
+        </span>
+      </div>
+
+      <ul class="bens">
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>Register with partner clubs</li>
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>Every feature unlocked</li>
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>Make a real difference</li>
+      </ul>
+
+      <p class="tier__note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.9h.01"/></svg>
+        <span><b>Under 18?</b> An adult member must sign you up.</span>
+      </p>
+
+      <button class="cta" type="button">Become a member</button>
+    </article>
+
+    <!-- GUEST — secondary -->
+    <article class="tier" aria-label="Guest">
+      <div class="tier__head">
+        <span class="tier__icon" aria-hidden="true">
+          <!-- same medal silhouette, empty disc: the unearned half -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8.6" r="5.6"/>
+            <path d="M8.1 13.2 6.4 21l5.6-2.9 5.6 2.9-1.7-7.8"/>
+          </svg>
+        </span>
+        <span class="tier__id">
+          <span class="badge">Limited</span>
+          <h2 class="tier__name">Start as a guest</h2>
+        </span>
+      </div>
+
+      <ul class="bens">
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>See partner clubs</li>
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>Browse the app</li>
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>Join club chats</li>
+        <li class="is-off"><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 12h10"/></svg></span>You can’t register with a club</li>
+      </ul>
+
+      <button class="cta cta--ghost" type="button">Continue as guest</button>
+    </article>
+  </div>
+
+  <p class="hint hint--center" style="margin:16px var(--gutter) 0">Guests can become members later — nothing you do here is lost.</p>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Your details</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="spacer"></span>
+    <span class="status-pill">Step 2 of 4</span>
+  </div>
+
+  <ol class="stepper" aria-label="Registration progress">
+    <li class="is-done"><i><b></b></i><span>Pathway</span></li>
+    <li class="is-now" aria-current="step"><i><b></b></i><span>Details</span></li>
+    <li><i><b></b></i><span>Identity</span></li>
+    <li><i><b></b></i><span>Clubs</span></li>
+  </ol>
+
+  <h1 class="stitle">Your details</h1>
+  <p class="ssub">Enter these exactly as they appear on your identity document.</p>
+
+  <div class="notice">
+    <span class="notice__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3l7.5 3v5.6c0 4.4-3 7.8-7.5 9.4-4.5-1.6-7.5-5-7.5-9.4V6L12 3Z"/>
+        <path d="m8.8 11.9 2.3 2.3 4.1-4.6"/>
+      </svg>
+    </span>
+    <span>
+      <h3>We check your ID</h3>
+      <p>Your name and date of birth are verified against an identity document, so they have to match it. Under 18? An adult member must sign you up.</p>
+    </span>
+  </div>
+
+  <!-- legal name -->
+  <div class="group">
+    <p class="eyebrow">Legal name</p>
+    <div class="two">
+      <label class="f">
+        <span class="f__label">First name</span>
+        <span class="f__box"><input type="text" value="Dylan" autocomplete="given-name" spellcheck="false"></span>
+      </label>
+      <label class="f">
+        <span class="f__label">Middle name <span class="opt-tag">optional</span></span>
+        <span class="f__box"><input type="text" value="N" autocomplete="additional-name" spellcheck="false"></span>
+      </label>
+    </div>
+    <label class="f" style="margin-top:12px">
+      <span class="f__label">Last name</span>
+      <span class="f__box"><input type="text" value="Nguyen" autocomplete="family-name" spellcheck="false"></span>
+    </label>
+  </div>
+
+  <!-- dob + gender -->
+  <div class="group">
+    <p class="eyebrow">About you</p>
+    <div class="two">
+      <div class="f">
+        <span class="f__label">Date of birth <span class="fmt">dd/mm/yyyy</span></span>
+        <button class="f__box" type="button" aria-label="Date of birth, 2 June 2001">
+          <span class="f__val" style="font-variant-numeric:tabular-nums">02/06/2001</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.5v3M16 3.5v3M3.5 10h17"/></svg>
+        </button>
+      </div>
+      <div class="f">
+        <span class="f__label">Gender</span>
+        <button class="f__box" type="button" aria-haspopup="listbox" aria-label="Gender, Male">
+          <span class="f__val">Male</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+    <p class="hint">2 June 2001 — that makes you 25.</p>
+  </div>
+
+  <!-- residence -->
+  <div class="group">
+    <p class="eyebrow">Where you live</p>
+    <div class="f">
+      <span class="f__label">Country</span>
+      <button class="f__box" type="button" aria-haspopup="listbox" aria-label="Country, Italy">
+        <span class="crest" aria-hidden="true">IT</span>
+        <span class="f__val">Italy</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="f">
+      <span class="f__label">Province / state</span>
+      <button class="f__box" type="button" aria-haspopup="listbox" aria-label="Province or state, Lazio">
+        <span class="f__val">Lazio</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="f">
+      <span class="f__label">Residential address</span>
+      <span class="f__box"><input type="text" value="Via dei Serpenti 42, Roma" autocomplete="street-address"></span>
+    </div>
+    <p class="linked">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13.5a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1 1"/><path d="M14 10.5a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1-1"/></svg>
+      Province and dial code follow your country.
+    </p>
+  </div>
+
+  <!-- mobile -->
+  <div class="group">
+    <p class="eyebrow">Contact</p>
+    <div class="f">
+      <span class="f__label">Mobile number</span>
+      <div class="tel">
+        <button class="tel__code" type="button" aria-label="Dial code, Italy +39">
+          <span class="crest" aria-hidden="true">IT</span>+39
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+        <span class="tel__num"><input type="tel" value="340 118 4127" autocomplete="tel-national"></span>
+      </div>
+    </div>
+    <p class="linked">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4.5 4.5L19 7"/></svg>
+      Matches your country, Italy.
+      <button type="button">Change</button>
+    </p>
+  </div>
+
+  <div class="foot">
+    <button class="cta" type="button">Continue</button>
+    <p class="hint hint--center">Next: your identity.</p>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-3">
+        <figcaption class="scr__cap"><span class="scr__n">03</span>Your identity</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="topbar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="spacer"></span>
+    <span class="status-pill">Step 3 of 4</span>
+  </div>
+
+  <ol class="stepper" aria-label="Registration progress">
+    <li class="is-done"><i><b></b></i><span>Pathway</span></li>
+    <li class="is-done"><i><b></b></i><span>Details</span></li>
+    <li class="is-now" aria-current="step"><i><b></b></i><span>Identity</span></li>
+    <li><i><b></b></i><span>Clubs</span></li>
+  </ol>
+
+  <h1 class="stitle">Your identity</h1>
+  <p class="ssub">This is how you appear to everyone else. The details you just gave us are never shown.</p>
+
+  <div class="notice">
+    <span class="notice__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4l16 16"/>
+        <path d="M9.9 5.2A8.6 8.6 0 0 1 12 5c4.2 0 7.6 2.7 9 7a13 13 0 0 1-2.2 3.4"/>
+        <path d="M6.4 7.6A11.4 11.4 0 0 0 3 12c1.4 4.3 4.8 7 9 7a9 9 0 0 0 4-.9"/>
+        <path d="M10.3 10.3a2.4 2.4 0 0 0 3.4 3.4"/>
+      </svg>
+    </span>
+    <span>
+      <h3>Use an avatar, not your face</h3>
+      <p>A symbol, crest or image you like keeps your face off a public profile and still makes you recognisable in chats and standings.</p>
+    </span>
+  </div>
+
+  <div class="group">
+    <p class="eyebrow">Profile picture</p>
+    <div class="pick">
+      <span class="pick__main">
+        <span class="avatar pick__avatar is-symbol" role="img" aria-label="Chosen picture: peaks mark">
+          <svg class="pick__mark" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M2 19 L7 10 L12 19 Z" fill="#9BE222"/>
+            <path d="M11 19 L16.5 8 L22 19 Z" fill="#9BE222" opacity=".55"/>
+          </svg>
+        </span>
+        <button class="pick__cam" type="button" aria-label="Upload your own image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5a2 2 0 0 1 2-2h1.6l1.3-2h6.2l1.3 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5Z"/><circle cx="12" cy="13.3" r="3.2"/></svg>
+        </button>
+      </span>
+      <span class="pick__copy">
+        <p>A mark, one of ours, or an image of your own.</p>
+        <button class="pill-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Upload
+        </button>
+      </span>
+    </div>
+  </div>
+
+  <div class="rail" role="group" aria-label="Avatar options">
+    <button class="opt" type="button" aria-pressed="false" style="background-image:var(--av-01)" aria-label="Avatar 1"></button>
+    <button class="opt" type="button" aria-pressed="false" style="background-image:var(--av-02)" aria-label="Avatar 2"></button>
+    <button class="opt" type="button" aria-pressed="false" style="background-image:var(--av-03)" aria-label="Avatar 3"></button>
+    <button class="opt" type="button" aria-pressed="false" style="background-image:var(--av-04)" aria-label="Avatar 4"></button>
+    <button class="opt opt--symbol" type="button" aria-pressed="true" aria-label="Peaks mark">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M2 19 L7 10 L12 19 Z" fill="#9BE222"/>
+        <path d="M11 19 L16.5 8 L22 19 Z" fill="#9BE222" opacity=".55"/>
+      </svg>
+    </button>
+    <button class="opt" type="button" aria-pressed="false" style="background-image:var(--av-05)" aria-label="Avatar 5"></button>
+    <button class="opt" type="button" aria-pressed="false" style="background-image:var(--av-06)" aria-label="Avatar 6"></button>
+    <button class="opt opt--add" type="button" aria-label="More avatars">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <div class="group">
+    <p class="eyebrow">Username</p>
+    <div class="f" data-username>
+      <span class="f__label">Username</span>
+      <span class="f__box is-error"><input type="text" value="dylan_n" spellcheck="false" autocapitalize="none" aria-invalid="true" aria-describedby="u-msg"></span>
+    </div>
+    <p class="avail avail--bad" id="u-msg">
+      <span class="avail__dot" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 7l10 10M17 7 7 17"/></svg></span>
+      <span><b>dylan_n</b> is taken. Try one of these:</span>
+    </p>
+    <div class="sugg" role="group" aria-label="Available alternatives">
+      <button type="button">dylan_n7</button>
+      <button type="button">dylan_nbar</button>
+      <button type="button">dylan_nine</button>
+    </div>
+    <p class="hint">3–20 characters, letters, numbers and underscores. A nickname is fine — don’t pose as someone else.</p>
+  </div>
+
+  <div class="foot">
+    <button class="cta" type="button" disabled>Continue</button>
+    <p class="hint hint--center">Pick an available username to continue.</p>
+  </div>
+
+  <!-- state specimens -->
+  <p class="framelabel framelabel--in">Username · other states</p>
+  <div class="section">
+    <p class="eyebrow">Checking</p>
+    <div class="spec">
+      <div class="f">
+        <span class="f__label">Username</span>
+        <span class="f__box is-focus"><input type="text" value="dylan_n7" spellcheck="false" autocapitalize="none"></span>
+      </div>
+      <p class="avail avail--wait">
+        <span class="avail__dot" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3.6a8.4 8.4 0 1 1-8.4 8.4" opacity=".9"/><path d="M3.6 12A8.4 8.4 0 0 1 12 3.6" opacity=".18"/></svg>
+        </span>
+        Checking availability…
+      </p>
+    </div>
+  </div>
+  <div class="section">
+    <p class="eyebrow">Available</p>
+    <div class="spec">
+      <div class="f">
+        <span class="f__label">Username</span>
+        <span class="f__box"><input type="text" value="dylan_n7" spellcheck="false" autocapitalize="none"></span>
+      </div>
+      <p class="avail avail--ok">
+        <span class="avail__dot" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>
+        <span><b>dylan_n7</b> is available</span>
+      </p>
+    </div>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-4">
+        <figcaption class="scr__cap"><span class="scr__n">04</span>Stepper spec sheet</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <h1 class="stitle">Progress</h1>
+  <p class="ssub">One component, four positions plus a finished state. It sits directly under the back arrow on every registration screen.</p>
+
+  <div class="group">
+    <div class="section">
+      <p class="eyebrow">Step 1 · pathway</p>
+      <div class="topbar" style="padding:0 2px">
+        <span class="status-pill">Step 1 of 4</span>
+      </div>
+      <ol class="stepper" style="margin:14px 2px 2px" aria-label="Step 1 of 4">
+        <li class="is-now" aria-current="step"><i><b></b></i><span>Pathway</span></li>
+        <li><i><b></b></i><span>Details</span></li>
+        <li><i><b></b></i><span>Identity</span></li>
+        <li><i><b></b></i><span>Clubs</span></li>
+      </ol>
+    </div>
+
+    <div class="section">
+      <p class="eyebrow">Step 2 · details</p>
+      <div class="topbar" style="padding:0 2px">
+        <span class="status-pill">Step 2 of 4</span>
+      </div>
+      <ol class="stepper" style="margin:14px 2px 2px" aria-label="Step 2 of 4">
+        <li class="is-done"><i><b></b></i><span>Pathway</span></li>
+        <li class="is-now" aria-current="step"><i><b></b></i><span>Details</span></li>
+        <li><i><b></b></i><span>Identity</span></li>
+        <li><i><b></b></i><span>Clubs</span></li>
+      </ol>
+    </div>
+
+    <div class="section">
+      <p class="eyebrow">Step 3 · identity</p>
+      <div class="topbar" style="padding:0 2px">
+        <span class="status-pill">Step 3 of 4</span>
+      </div>
+      <ol class="stepper" style="margin:14px 2px 2px" aria-label="Step 3 of 4">
+        <li class="is-done"><i><b></b></i><span>Pathway</span></li>
+        <li class="is-done"><i><b></b></i><span>Details</span></li>
+        <li class="is-now" aria-current="step"><i><b></b></i><span>Identity</span></li>
+        <li><i><b></b></i><span>Clubs</span></li>
+      </ol>
+    </div>
+
+    <div class="section">
+      <p class="eyebrow">Step 4 · clubs</p>
+      <div class="topbar" style="padding:0 2px">
+        <span class="status-pill">Step 4 of 4</span>
+      </div>
+      <ol class="stepper" style="margin:14px 2px 2px" aria-label="Step 4 of 4">
+        <li class="is-done"><i><b></b></i><span>Pathway</span></li>
+        <li class="is-done"><i><b></b></i><span>Details</span></li>
+        <li class="is-done"><i><b></b></i><span>Identity</span></li>
+        <li class="is-now" aria-current="step"><i><b></b></i><span>Clubs</span></li>
+      </ol>
+    </div>
+
+    <div class="section">
+      <p class="eyebrow">Registration complete</p>
+      <div class="topbar" style="padding:0 2px">
+        <span class="status-pill">All 4 done</span>
+      </div>
+      <ol class="stepper" style="margin:14px 2px 2px" aria-label="Registration complete">
+        <li class="is-done"><i><b></b></i><span>Pathway</span></li>
+        <li class="is-done"><i><b></b></i><span>Details</span></li>
+        <li class="is-done"><i><b></b></i><span>Identity</span></li>
+        <li class="is-done"><i><b></b></i><span>Clubs</span></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="group">
+    <p class="eyebrow">Guest pathway</p>
+    <div class="section">
+      <p class="hint" style="margin:2px 2px 0;color:var(--muted)">A guest leaves the flow at step 1, so the stepper leaves with them. Guests see no registration chrome at all until they choose to become a member, at which point they enter at step 2 of 4.</p>
+    </div>
+  </div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The registration flow, with a spine</h2>
+
+  <p>The live registration is four screens long and tells you nothing about that. There is no stepper, no
+  "2 of 4", no back-context — you answer questions until they stop. Every frame here carries the same
+  progress component under the back arrow, so the flow has a beginning, a middle and an end. Frame 4 shows
+  that component at all five positions.</p>
+
+  <p>The pathway screen is the product's only pricing and tier surface, and the live build renders both
+  tiers in the same box, at the same size, with the same button. It gives no steer at all. Here the member
+  card is the hero — lighter fill, an accent ring, a bigger title, a solid accent button — and the guest
+  card recedes into the dark section fill with an outline button. The <code>PREMIUM</code> badge has moved
+  out of the middle of a bullet list, where it appeared to qualify one benefit, into the card header where
+  it qualifies the tier.</p>
+
+  <p>Two pieces of copy in the live build are doing real work and were nearly invisible: <b>we check your
+  ID</b> — the legal backbone of a product that signs children up through adults — and <b>use an avatar,
+  not a real photo</b>, which is genuinely good privacy thinking. Both were set in the screen's lowest text
+  emphasis. Both are now framed notices with an accent icon, a white headline and body copy, at the top of
+  the group they govern.</p>
+
+  <p>The product name appeared five times in the thirteen strings on the live pathway screen, including
+  <code>Browse Sports Heist app</code>. It appears once here, in the line under the title, spelled
+  <b>SportsHeist</b>.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. Each screen gets its own
+      device above, numbered and captioned; nothing stacks in one scroll.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>All frames</td><td>Top bar</td><td class="t-note">Back arrow as the standard icon button — <code>38px</code> circle, <code>#1C2129</code>, <code>1.9</code>-stroke icon — with the step-count status pill pushed right: <code>32px</code>, accent wash <code>rgba(155,226,34,.12)</code>, accent text <code>11px/700/.11em</code> uppercase, <code>6px</code> leading dot.</td></tr>
+        <tr><td>All frames</td><td>Stepper</td><td class="t-note">Four equal columns at the <code>16px</code> gutter, <code>6px</code> apart. Each is a <code>3px</code> track in <code>#13171E</code> with a pill radius, plus a <code>9.5px/700/.1em</code> uppercase label. Completed = track filled to <code>100%</code> in <code>#9BE222</code>, label <code>#99A0AE</code>. Current = filled to <code>45%</code>, label white. Upcoming = empty track, label <code>#5B606B</code>.</td></tr>
+        <tr><td>All frames</td><td>Screen title</td><td class="t-note"><code>34px/800/-.025em</code> uppercase white at the gutter, <code>line-height:1</code>, wrapping to two lines where needed. Support line under it at <code>13px</code> in <code>#99A0AE</code>, capped at <code>32ch</code>.</td></tr>
+        <tr><td>Frame 1</td><td>Member card (hero)</td><td class="t-note"><code>#1C2129</code> fill, <code>16px</code> radius, <code>18px</code> padding, <code>1px</code> ring in <code>rgba(155,226,34,.34)</code>. Header is a <code>46px</code> accent-wash icon tile, the tier badge, then the title at <code>17px/600</code>.</td></tr>
+        <tr><td>Frame 1</td><td>Tier badge</td><td class="t-note"><code>PREMIUM</code> as a solid <code>#9BE222</code> pill with <code>#0B0E06</code> text at <code>9.5px/800/.14em</code>, <code>19px</code> tall, in the card header above the title. The guest badge is the same pill in <code>#13171E</code> with <code>#99A0AE</code> text, reading <code>LIMITED</code>.</td></tr>
+        <tr><td>Frame 1</td><td>Tier icons</td><td class="t-note">A matched pair on one <code>24</code>-box grid at <code>1.8</code> stroke: the same medal silhouette twice, with a star inside the disc on the member card and an empty disc on the guest card. Member renders accent on accent wash, guest renders <code>#99A0AE</code> on <code>#13171E</code>. No second colour, no fill, no gold.</td></tr>
+        <tr><td>Frame 1</td><td>Benefit rows</td><td class="t-note"><code>8px</code> vertical padding, <code>1px</code> <code>rgba(255,255,255,.045)</code> top border, first row none. <code>18px</code> tick disc — accent on accent wash in the member card, <code>#99A0AE</code> on <code>#13171E</code> in the guest card. Body copy <code>13px</code>.</td></tr>
+        <tr><td>Frame 1</td><td>Exclusion row</td><td class="t-note">Fourth guest row: a minus glyph in a <code>1px</code> hairline ring, label in <code>#5B606B</code> — the one thing the guest tier cannot do, stated on the card rather than left to inference.</td></tr>
+        <tr><td>Frame 1</td><td>Under-18 note</td><td class="t-note"><code>#13171E</code> panel, <code>12px</code> radius, info glyph, <code>12px</code> copy with the question <b>bolded white</b>. Lifted out of the muted paragraph it lived in.</td></tr>
+        <tr><td>Frame 1</td><td>Buttons</td><td class="t-note">Both <code>52px</code> tall at <code>12px</code> radius with <code>13px/700/.08em</code> uppercase labels. Member = solid <code>#9BE222</code> on <code>#0B0E06</code>. Guest = transparent with a <code>1px</code> <code>rgba(255,255,255,.075)</code> outline and white label.</td></tr>
+        <tr><td>Frame 2</td><td>ID notice</td><td class="t-note"><code>#1C2129</code> card, <code>16px</code> radius, <code>14px</code> padding, <code>38px</code> accent-wash disc with a shield-check glyph, headline <code>13.5px/600</code> white, body <code>12.5px</code> <code>#99A0AE</code>. Sits directly under the title, above every field.</td></tr>
+        <tr><td>Frame 2</td><td>Field</td><td class="t-note">Label <code>12px/500</code> <code>#99A0AE</code> in a <code>17px</code> minimum-height row, <code>7px</code> above a <code>50px</code> control: <code>#1C2129</code> fill, <code>1px</code> hairline, <code>12px</code> radius, value at <code>14px</code>. Selects and the date field carry a <code>1.9</code>-stroke chevron or calendar glyph in <code>#99A0AE</code>.</td></tr>
+        <tr><td>Frame 2</td><td>Two-up row</td><td class="t-note"><code>1fr 1fr</code> grid with a <code>12px</code> gap, <code>align-items:end</code> and a fixed label row height, so both labels and both boxes share a baseline. Measured identical to the pixel in both pairs.</td></tr>
+        <tr><td>Frame 2</td><td>Date of birth</td><td class="t-note">Format hint <code>DD/MM/YYYY</code> right-aligned in the label row at <code>10px/700/.1em</code> <code>#5B606B</code>, and the date echoed back in words below the field — <code>2 June 2001 — that makes you 25.</code></td></tr>
+        <tr><td>Frame 2</td><td>Country group</td><td class="t-note">Country first, then province, then street address. Country carries a <code>22×16</code> code tile (<code>IT</code>) rather than an emoji flag. A linked-icon line under the group states that province and dial code follow the country.</td></tr>
+        <tr><td>Frame 2</td><td>Mobile number</td><td class="t-note">One <code>50px</code> box, <code>12px</code> radius. Dial-code zone is <code>#13171E</code> with a <code>1px</code> hairline divider against the number zone — the two zones are now visibly two controls. Number in tabular figures. Confirmation line below: <code>Matches your country, Italy.</code> with a <code>Change</code> action in accent.</td></tr>
+        <tr><td>Frame 3</td><td>Privacy notice</td><td class="t-note">Same notice card as frame 2 with an eye-off glyph. Headline <code>Use an avatar, not your face</code>.</td></tr>
+        <tr><td>Frame 3</td><td>Picture picker</td><td class="t-note"><code>88px</code> circle at the gutter with a <code>36px</code> accent camera button overlapping its bottom-right, ringed <code>3px</code> in the canvas colour. Beside it, one line of copy and an <code>Upload</code> pill. Below, a scrolling rail of <code>48px</code> options; the chosen one carries a <code>2px</code> canvas gap and a <code>2px</code> accent ring.</td></tr>
+        <tr><td>Frame 3</td><td>Mark option</td><td class="t-note">One rail option is the brand's peaks mark in <code>#9BE222</code> on <code>#13171E</code>, shown as the current choice so the screen practises the advice it gives. Photographic options sit either side of it.</td></tr>
+        <tr><td>Frame 3</td><td>Username field</td><td class="t-note">Standard field shown in its failed state: <code>1px</code> border in <code>#E2564A</code>, <code>aria-invalid</code>, message row below with a <code>20px</code> disc in <code>rgba(226,86,74,.14)</code> and an x glyph, then three suggestion pills at <code>32px</code> / pill radius. Rules line in <code>#99A0AE</code> underneath.</td></tr>
+        <tr><td>Frame 3</td><td>Blocked CTA</td><td class="t-note">Continue disabled: <code>#13171E</code> fill, <code>#5B606B</code> label, with the reason stated under it. Choosing a suggestion clears the error, switches the message to available and unlocks the button.</td></tr>
+        <tr><td>Frame 4</td><td>Progress sheet</td><td class="t-note">Five bordered section containers (<code>#080A0C</code>, <code>1px</code> hairline, <code>16px</code> radius) each holding the step pill and the stepper at one position, plus a note on what happens to the stepper when someone takes the guest pathway.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Stepper — upcoming</td><td class="t-note">Empty <code>#13171E</code> track, label <code>#5B606B</code>.</td></tr>
+        <tr><td>Stepper — current</td><td class="t-note">Track filled <code>45%</code> in <code>#9BE222</code>, label white. The part-filled bar is what separates "here" from "done" without a second colour.</td></tr>
+        <tr><td>Stepper — done</td><td class="t-note">Track filled <code>100%</code>, label <code>#99A0AE</code>.</td></tr>
+        <tr><td>Stepper — complete</td><td class="t-note">All four filled, pill reads <code>ALL 4 DONE</code>.</td></tr>
+        <tr><td>Field — default</td><td class="t-note"><code>#1C2129</code> fill, <code>1px</code> <code>rgba(255,255,255,.075)</code> border.</td></tr>
+        <tr><td>Field — focused</td><td class="t-note">Border <code>rgba(155,226,34,.55)</code> plus a <code>3px</code> accent-wash halo. The live build renders no focus treatment at all.</td></tr>
+        <tr><td>Field — error</td><td class="t-note">Border <code>#E2564A</code>, message row in the same red. No other element on the screen uses red.</td></tr>
+        <tr><td>Username — checking</td><td class="t-note"><code>#13171E</code> disc with a three-quarter accent ring and <code>Checking availability…</code> in <code>#99A0AE</code>. Static here; it spins in build.</td></tr>
+        <tr><td>Username — available</td><td class="t-note">Accent-wash disc, accent tick, name bolded in the accent message.</td></tr>
+        <tr><td>Username — taken</td><td class="t-note">Red disc, x glyph, three alternatives as pills, Continue disabled. New — the live build has no design for this at all.</td></tr>
+        <tr><td>Picture — mark chosen</td><td class="t-note"><code>#13171E</code> circle with the <code>46px</code> peaks mark.</td></tr>
+        <tr><td>Picture — photo chosen</td><td class="t-note">Cover-filled circle, focal point <code>center 22%</code>, matching every other avatar in the app.</td></tr>
+        <tr><td>CTA — disabled</td><td class="t-note"><code>#13171E</code> fill, <code>#5B606B</code> label, reason stated underneath.</td></tr>
+        <tr><td>Guest pathway</td><td class="t-note">Leaves the flow at step 1, so the stepper leaves with them; re-entry on becoming a member starts at step 2 of 4.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions suppressed; nothing animates by default in these frames.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Token block</b> — copied verbatim from <code>merits.html</code>; no value invented, no colour added beyond the semantic red <code>#E2564A</code> for failed validation</li>
+        <li><b>Icon button</b> — the <code>38px</code> circle carries the back arrow</li>
+        <li><b>Status pill</b> — accent wash with a leading dot, reused as the step counter</li>
+        <li><b>Section container</b> — <code>#080A0C</code> with a hairline, used for the progress sheet in frame 4</li>
+        <li><b>Row construction</b> — hairline-separated rows for the benefit lists</li>
+        <li><b>Avatar</b> — circle, cover fill, focal point <code>center 22%</code></li>
+        <li><b>Code tile</b> — the crest square from the Merits leaderboard, reused for country codes</li>
+        <li><b>Peaks mark</b> — the accent triangles from the hero banner, reused as a picture option</li>
+        <li><b>Portraits</b> — from <code>_assets/avatars.css</code></li>
+        <li><b>Content and field order</b> — from <code>AU-04</code>, <code>AU-09</code>, <code>AU-10</code>, including the <code>PREMIUM</code> label and the two-up field pairs</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Stepper</b> — four labelled segments with a part-filled current bar, plus a step-count pill. Nothing like it exists in the live flow</li>
+        <li><b>Four-step model</b> — <code>Pathway → Details → Identity → Clubs</code>, read off the captured exits</li>
+        <li><b>Tier hierarchy</b> — hero fill, accent ring, larger title and a solid button on the member card against a recessed guest card</li>
+        <li><b>Tier badge in the header</b> — <code>PREMIUM</code> moved off the benefit row; <code>LIMITED</code> added as its guest counterpart</li>
+        <li><b>Matched icon pair</b> — one medal silhouette drawn twice, star and no star, replacing a flat grey person glyph opposite a gold rosette</li>
+        <li><b>Exclusion row</b> — what the guest tier cannot do, stated on the card</li>
+        <li><b>Primary button</b> — <code>52px</code>, <code>12px</code> radius, uppercase <code>13px/700/.08em</code>; the pattern table has no CTA, so this is a proposal</li>
+        <li><b>Notice card</b> — the frame for the ID-check and privacy messages that were previously muted body copy</li>
+        <li><b>Aligned two-up row</b> — grid with a fixed label row, fixing the <code>~8pt</code> misalignment in both live pairs</li>
+        <li><b>Geography chain</b> — country drives province and dial code, so the form can no longer hold a Vietnamese dial code, a Vietnamese address and an Italian country at once</li>
+        <li><b>Date-of-birth format hint and age echo</b> — resolves <code>02/06/2001</code> being readable two ways</li>
+        <li><b>Divided phone control</b> — a fill change and hairline between the dial code and the number</li>
+        <li><b>Username states</b> — checking, available, taken, plus suggestion pills and a disabled CTA with its reason</li>
+        <li><b>Mark as a picture option</b> — the brand peaks as a non-photographic choice, shown selected</li>
+        <li><b>Focus treatment</b> — accent border and halo on the focused control</li>
+        <li><b>Copy</b> — every string on frames 1–3 rewritten; the product name used once instead of five times, and <code>Browse Sports Heist app</code> retired</li>
+        <li><b>In-flow primary buttons</b> — review scaffolding only. Each screen already stands alone on its own device; in build the primary button is pinned above the safe area</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Is membership required, or is guest access real?</h3><p>The screen before this one states that membership is mandatory. This one offers a guest pathway with its own benefit list and its own button. Both cannot be true, and the contradiction is load-bearing: it decides whether the pathway screen is a fork or a soft sell. We have built it as a real fork with a strong steer toward membership — <span class="flag">guest access exists and is genuinely usable</span>. If membership is actually mandatory, the guest card should become a "look around first" link and the sign-up copy needs rewriting.</p></li>
+    <li><h3>What does membership cost?</h3><p><code>PREMIUM</code> appears in the live build with no price, no comparison and no inclusion list, on the product's only tier screen. We have kept the badge and added <span class="flag">no price anywhere</span>, and labelled the other tier <span class="flag">LIMITED</span>. If there is a fee, a subscription or a club-paid arrangement, this screen is where it belongs and the cards need a price line.</p></li>
+    <li><h3>Can a guest become a member later?</h3><p>We tell them so, under the cards, and frame 4 assumes they rejoin the flow at <span class="flag">step 2 of 4</span> with the pathway step already complete. If there is no upgrade path, that line and that behaviour both come out.</p></li>
+    <li><h3>Is registration four steps?</h3><p>The stepper is <span class="flag">Pathway, Details, Identity, Clubs</span>, taken from the captured entry and exit points. Email and password are collected somewhere too — if that is its own screen the count becomes five, and if club selection can be skipped it may not deserve a segment. Confirm the real sequence before build; the labels are the flow's public promise.</p></li>
+    <li><h3>Is the legal name ever shown to other members?</h3><p>Frame 3 says the details from step 2 are never shown, which is what makes the username and avatar advice coherent. We have assumed <span class="flag">legal name and address are never public</span>. If a club sees a member's real name, the copy has to say so instead.</p></li>
+    <li><h3>What are the username rules?</h3><p>Shown as <span class="flag">3–20 characters, letters, numbers and underscores</span> and three generated suggestions. Both are placeholders for whatever the API enforces — we need the real constraint, the reserved-word list, and whether suggestions come from the server.</p></li>
+    <li><h3>Which field owns geography?</h3><p>We made <span class="flag">country the master</span>: it filters province and sets the dial code, and the dial code can still be changed by hand with a warning line. Confirm that a member can hold a phone number from a country other than their residence — there are legitimate reasons for that, and the alternative is to hard-lock it.</p></li>
+    <li><h3>What happens on the under-18 path?</h3><p>It is stated twice in the live build and branches nowhere. We have kept it as a note on the member card and in the ID notice. Before build we need the actual mechanism — a guardian's email, a code from an existing member, a blocked state — because a note that leads nowhere is the worst version of it.</p></li>
+    <li><h3>Gender options?</h3><p>The repository offers two. We show <code>Male</code> as a filled example and have not invented a list. Confirm the options, whether the field is required, and whether it exists for ID matching or for something else.</p></li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  /* avatar rail — single choice, mirrors into the large avatar */
+  var rail = document.querySelector('.rail');
+  var big  = document.querySelector('.pick__avatar');
+  if (rail && big){
+    rail.addEventListener('click', function(e){
+      var b = e.target.closest('.opt'); if(!b || b.classList.contains('opt--add')) return;
+      rail.querySelectorAll('.opt').forEach(function(x){
+        x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+      });
+      if (b.classList.contains('opt--symbol')){
+        big.classList.add('is-symbol');
+        big.style.backgroundImage = '';
+        big.setAttribute('aria-label','Chosen picture: peaks mark');
+      } else {
+        big.classList.remove('is-symbol');
+        big.style.backgroundImage = b.style.backgroundImage;
+        big.setAttribute('aria-label','Chosen picture: ' + (b.getAttribute('aria-label')||''));
+      }
+    });
+  }
+
+  /* taken → suggestion accepted → available, CTA unlocks */
+  var block = document.querySelector('[data-username]');
+  var sugg  = document.querySelector('.sugg');
+  if (block && sugg){
+    var input = block.querySelector('input');
+    var box   = block.querySelector('.f__box');
+    var msg   = document.getElementById('u-msg');
+    var foot  = block.closest('.group').nextElementSibling;
+    sugg.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      var name = b.textContent.trim();
+      input.value = name;
+      input.setAttribute('aria-invalid','false');
+      box.classList.remove('is-error');
+      msg.className = 'avail avail--ok';
+      msg.innerHTML = '<span class="avail__dot" aria-hidden="true">'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" '
+        + 'stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>'
+        + '<span><b>' + name + '</b> is available</span>';
+      sugg.remove();
+      if (foot){
+        var cta = foot.querySelector('.cta');
+        var hint = foot.querySelector('.hint');
+        if (cta) cta.disabled = false;
+        if (hint) hint.textContent = 'Next: your clubs.';
+      }
+    });
+  }
+})();
+
+/* ---- date picker (canonical — _assets/date-picker.md) ----
+   Two field shapes exist in this library: a three-input .dob group, and a single
+   button showing a formatted value. Both had a calendar glyph that did nothing. */
+function initDatePickers(root){
+  var MON=['January','February','March','April','May','June','July',
+           'August','September','October','November','December'];
+  var TRIG='.dob__cal, .f__box[aria-label^="Date"]';   /* .f__box is a GENERIC field box — Gender, Country and Province use it too.
+       Matching it bare attached a calendar to every field on the screen. */
+  root.querySelectorAll(TRIG).forEach(function(btn){
+    if(btn.__dp) return; btn.__dp=true;
+    if(btn.tagName!=='BUTTON'){                       // upgrade a decorative svg
+      var b=document.createElement('button');
+      b.type='button'; b.className='dob__cal';
+      b.setAttribute('aria-label','Choose a date');
+      b.setAttribute('aria-haspopup','dialog'); b.setAttribute('aria-expanded','false');
+      b.innerHTML=btn.outerHTML; btn.replaceWith(b); btn=b; btn.__dp=true;
+    }
+    var field=btn.closest('.dob')||btn.parentElement;
+    field.style.position='relative';
+    var D=field.querySelector('[data-part="d"]'),
+        M=field.querySelector('[data-part="m"]'),
+        Y=field.querySelector('[data-part="y"]'),
+        VAL=btn.querySelector('.f__val');
+    var pop=document.createElement('div');
+    pop.className='dp'; pop.hidden=true; pop.setAttribute('role','dialog');
+    pop.setAttribute('aria-label','Choose a date');
+    pop.innerHTML='<div class="dp__bar">'+
+      '<button class="dp__nav" type="button" data-go="-1" aria-label="Previous month">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>'+
+      '<div class="dp__mon" aria-live="polite"></div>'+
+      '<button class="dp__nav" type="button" data-go="1" aria-label="Next month">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>'+
+      '</div><div class="dp__dow"><span>M</span><span>T</span><span>W</span><span>T</span>'+
+      '<span>F</span><span>S</span><span>S</span></div><div class="dp__grid"></div>';
+    field.appendChild(pop);
+    var grid=pop.querySelector('.dp__grid'), label=pop.querySelector('.dp__mon');
+    function seed(){
+      if(D){var d=+D.value,m=+M.value,y=+Y.value;
+            if(d>0&&m>0&&y>1000) return new Date(y,m-1,d);}
+      if(VAL){var p=(VAL.textContent||'').split('/');
+              if(p.length===3) return new Date(+p[2],+p[1]-1,+p[0]);}
+      return new Date(2010,8,2);
+    }
+    var view=seed(), sel=seed();
+    function draw(){
+      label.textContent=MON[view.getMonth()]+' '+view.getFullYear();
+      grid.innerHTML='';
+      var lead=(new Date(view.getFullYear(),view.getMonth(),1).getDay()+6)%7;
+      var days=new Date(view.getFullYear(),view.getMonth()+1,0).getDate();
+      for(var i=0;i<lead;i++) grid.appendChild(document.createElement('span'));
+      for(var n=1;n<=days;n++){(function(n){
+        var b=document.createElement('button');
+        b.type='button'; b.className='dp__d'; b.textContent=n;
+        if(sel&&sel.getDate()===n&&sel.getMonth()===view.getMonth()&&
+           sel.getFullYear()===view.getFullYear()) b.setAttribute('aria-selected','true');
+        b.addEventListener('click',function(){
+          sel=new Date(view.getFullYear(),view.getMonth(),n);
+          var dd=String(n).padStart(2,'0'), mm=String(view.getMonth()+1).padStart(2,'0'),
+              yy=String(view.getFullYear());
+          if(D){D.value=dd;M.value=mm;Y.value=yy;
+                [D,M,Y].forEach(function(i){i.dispatchEvent(new Event('input',{bubbles:true}))});}
+          if(VAL){VAL.textContent=dd+'/'+mm+'/'+yy;
+                  btn.setAttribute('aria-label','Date of birth, '+dd+'/'+mm+'/'+yy);}
+          close(); btn.focus();
+        });
+        grid.appendChild(b);})(n);}
+    }
+    function open(){view=seed();sel=seed();draw();pop.hidden=false;
+      btn.setAttribute('aria-expanded','true');
+      document.addEventListener('mousedown',away,true);
+      document.addEventListener('keydown',esc,true);}
+    function close(){pop.hidden=true;btn.setAttribute('aria-expanded','false');
+      document.removeEventListener('mousedown',away,true);
+      document.removeEventListener('keydown',esc,true);}
+    function away(e){if(!field.contains(e.target))close()}
+    function esc(e){if(e.key==='Escape'){close();btn.focus()}}
+    btn.addEventListener('click',function(e){e.preventDefault();pop.hidden?open():close()});
+    pop.addEventListener('click',function(e){
+      var nav=e.target.closest('[data-go]'); if(!nav) return;
+      view=new Date(view.getFullYear(),view.getMonth()+ +nav.dataset.go,1); draw();
+    });
+  });
+}
+initDatePickers(document);
+</script>

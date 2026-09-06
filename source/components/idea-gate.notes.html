@@ -1,0 +1,170 @@
+<p class="dek">The screen a member meets on the way to writing an Idea — the one that says whether
+they are allowed to post, and what it costs. It has been in the app since the beginning, it is
+reachable from five places in the War Room, and it has never been captured or rebuilt.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>A gate that currently gates nothing</h2>
+  <p>The route is called <code>warningIdea</code>. What it actually does is show a lamp
+    illustration, the shouted line <b>SUBMIT YOUR IDEA!</b>, one centred paragraph, and a
+    <b>CONTINUE</b> button whose entire body is a push to the create-idea form. There is no
+    permission check, no balance check, no match check, no cost figure and no branch of any kind.
+    <code>warningIdea</code> appears seven times in <code>lib/</code> — three of those are its own
+    route declaration; the other five are unconditional pushes from an app-bar action on the Ideas,
+    Voting, Results and War Room screens. A full-screen interruption that always says the same
+    thing and always continues.</p>
+  <p>The paragraph it shows is not wrong. It says an Idea becomes a Proposal with enough Likes in
+    time, otherwise it lapses, and that members then vote to Support or Reject. What it never
+    mentions is that <b>posting locks 25.0 Credits, and lapsing forfeits them</b> — which is the
+    only thing on this screen a member can get wrong at a price.</p>
+  <p>So this rebuild does two things. It turns the paragraph into a three-step account of what
+    happens to the Idea <em>and</em> to the money, with the figure on screen. And it gates on the
+    three signals the app already fetches before this screen is even reachable: the club's
+    per-category posting permission, the member's available Credits against the deposit, and
+    whether the fixture will outlast the Idea's own stages. Frames 02, 03 and 04 are those three
+    branches; frame 05 is what the member sees once they have asked not to be shown the gate
+    again.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Frame 01, the eligible gate. Order matches the reading order on screen.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>App bar</td><td>Back · title</td><td class="t-note"><code>56px</code> bar with a <code>1px --line-soft</code> base, <code>38px</code> bare icon button with an <code>::after</code> inset to <code>44px</code>, title <code>15/800/.08em</code> uppercase. From <code>create-idea.html</code>, so the gate and the form it leads to share one bar. No step meter: this is before step 1.</td></tr>
+        <tr><td>Lockup</td><td>Illustration tile</td><td class="t-note"><code>72px</code> tile at <code>20px</code> radius on <code>--acid-wash</code>, holding a drawn <code>24</code>-box lamp at <code>1.5</code> stroke. Replaces the live screen's raster pair — a <code>164pt</code> <code>stack_create.png</code> photograph with a <code>129 × 170</code> <code>idea_light.svg</code> laid over it, both authored for a white scaffold. See <b>Decisions</b>.</td></tr>
+        <tr><td>Lockup</td><td>Headline</td><td class="t-note"><code>30/800/-.025em</code> uppercase, <b>START AN IDEA</b>. Replaces <b>SUBMIT YOUR IDEA!</b> — the exclamation mark and the Bebas are both gone, and the verb now matches the button.</td></tr>
+        <tr><td>Lockup</td><td>Lead</td><td class="t-note"><code>13.5/1.5</code> <code>--muted</code>, centred, max <code>30em</code>. A rewrite of <code>ideaPage.info create</code> — same three facts, no hard line breaks. The shipped string carries three literal <code>\n</code>s, so it wraps twice on every screen width.</td></tr>
+        <tr><td>Byline</td><td>Posting as</td><td class="t-note"><code>--sunken</code> pill with a <code>1px --line</code> ring, a <code>26px</code> portrait (<code>--av-16</code>, dylan_n — the same face <code>locker-room.html</code> and <code>create-idea.html</code> use for "you"), and the club crest plate at <code>22px</code> in the <code>rgba(255,255,255,.94)</code> fixed plate with its <code>rgba(0,0,0,.13)</code> inner hairline, per the crest-plate spec.</td></tr>
+        <tr><td>Rail</td><td>What happens next</td><td class="t-note">Three numbered steps: <code>30px</code> <code>--sunken</code> discs on a <code>1px --line</code> connector, title <code>14.5/600</code>, body <code>12.5/1.45</code> <code>--muted</code>, and a money line under each one. Step 2's money line is accent (<b>returned in full</b>), step 3's carries the red down-arrow glyph with white text (<b>forfeited</b>) — icon plus a word, never colour alone.</td></tr>
+        <tr><td>Deposit</td><td>Amount lockup</td><td class="t-note"><code>create-idea.html</code>'s <code>.amount</code>: <code>38/800/-.035em</code> tabular figure, <code>11/700/.13em</code> caps unit, on <code>--sunken</code> at <code>--r-panel</code>. Trailing <code>--dim</code> caption names the scope — <b>per idea, at Barcelona</b> — because the figure is a club setting.</td></tr>
+        <tr><td>Deposit</td><td>Balance rows</td><td class="t-note"><code>940.0</code> available → <code>−25.0</code> → <code>915.0</code> left, tabular, with the total row on a <code>3%</code> white wash and its key in white <code>600</code>.</td></tr>
+        <tr><td>Deposit</td><td>Two caveat rows</td><td class="t-note"><b>Nothing is locked yet</b> — the deposit is taken at post, not at open, so writing and discarding is free. And the automatic refund if the match ends first, which is what <code>result/result_count.dart</code> already tells members <em>after</em> the fact.</td></tr>
+        <tr><td>Eligibility</td><td>Category rows</td><td class="t-note">One row per member-postable category, each with a name, a one-line plain-English gloss, and a state that is a <b>word plus a glyph</b> — <code>OPEN</code> with an accent tick, <code>CLUB ONLY</code> with a red cross. Off-field and management decisions are not listed at all.</td></tr>
+        <tr><td>Consent</td><td>Don't show this again</td><td class="t-note"><code>create-idea.html</code>'s <code>.consent</code> row unchanged: <code>56px</code> minimum, <code>24px</code> box at <code>7px</code> radius, <code>1.6px</code> inset ring unchecked, acid fill with <code>--acid-ink</code> tick when checked. The label restates the deposit in full, so the thing being dismissed is named in the act of dismissing it.</td></tr>
+        <tr><td>Footer</td><td>Action row</td><td class="t-note"><b>Not now</b> (ghost, left) · <b>Start an idea</b> (acid, right), equal widths, <code>10px</code> gap, <code>52px</code> tall per <code>forms.html</code>. Followed by a <code>--dim</code> line promising the deposit is confirmed again before anything is locked.</td></tr>
+        <tr><td>Dialogs</td><td>Shell</td><td class="t-note"><code>dialogs.html</code> unchanged: <code>100% − 40</code> wide capped at <code>340</code>, <code>--surface</code> at <code>--r-card</code>, <code>1px --line</code>, <code>0 24 60 rgba(0,0,0,.55)</code>, <code>20px</code> padding, <code>30px</code> close top right, over a <code>rgba(3,4,1,.72)</code> scrim with a <code>10px</code> backdrop blur. Action row at <code>46px</code>.</td></tr>
+        <tr><td>Frame 05</td><td>Inline banner</td><td class="t-note"><code>dialogs.html</code>'s info banner: <code>--sunken</code> at <code>--r-panel</code>, <code>18px</code> padlock glyph, title line <code>13/600</code> white, body <code>12.5</code> <code>--muted</code>, trailing accent <b>Details</b> link.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>01 · Eligible</td><td class="t-note">The gate in full. Both categories open, balance clears the deposit, the match has time. Primary is acid and enabled.</td></tr>
+        <tr><td>02 · Late in the match</td><td class="t-note">A <b>caution</b>, not a block. Warning dialog — red glyph on the <b>neutral</b> wash, no ring, one step below error. Names the minutes left, states that the Idea would be cancelled and the deposit returned, and offers the Position category as the alternative that survives the whistle. Primary stays acid: <b>Start it anyway</b>.</td></tr>
+        <tr><td>03 · Category closed</td><td class="t-note">A <b>block with an exit</b>. Padlock on the <b>neutral</b> tile — a club rule is not a failure and nothing has cost anything. The title is the way out (<b>Post a Position idea instead?</b>), the affirmative repeats it (<b>Post a Position</b>), and the body says explicitly that this is the club's setting, not the member's account.</td></tr>
+        <tr><td>04 · Short of Credits</td><td class="t-note">A <b>block with a purchase</b>. Neutral tile, the shortfall stated as a figure (<code>25.0</code> needed, <code>12.0</code> available, <code>13.0</code> short), an explanation of why the <code>300.0</code> already locked on 12 live Ideas cannot cover it, and the wallet's own top-up as the primary.</td></tr>
+        <tr><td>05 · Suppressed</td><td class="t-note">The gate no longer appears. Step 1 of the form carries a one-line banner with the figure, the balance after it, and a <b>Details</b> route back to the full explanation.</td></tr>
+        <tr><td>Both blocked</td><td class="t-note">Not drawn. If a club closes <em>both</em> member categories, the gate cannot offer an alternative and the correct behaviour is to remove the entry point from the app bar entirely rather than show a dead end. Flagged in <b>Decisions</b>.</td></tr>
+        <tr><td>Consent checked</td><td class="t-note">Box takes the acid fill with an <code>--acid-ink</code> tick; <code>aria-checked="true"</code>. Interactive in this file.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions off.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the library and the code</h3>
+      <ul>
+        <li><b>Dialog shell, scrim, state tiles, action row and the verb convention</b> — <code>dialogs.html</code>, unchanged</li>
+        <li><b>Inline info banner</b> — <code>dialogs.html</code></li>
+        <li><b>Frame, app bar, spec rows, amount lockup, consent row</b> — <code>create-idea.html</code>, so the gate and the form read as one flow</li>
+        <li><b>Club crest plate</b> — the <code>rgba(255,255,255,.94)</code> fixed plate from <code>club-selection.html</code></li>
+        <li><b>Credits as the one noun, and 25.0 as the deposit</b> — <code>wallet.html</code> and <code>create-idea.html</code></li>
+        <li><b>6-minute Ideas stage, 3-minute vote, 120 Likes</b> — the same figures <code>create-idea.html</code> uses</li>
+        <li><b>The lifecycle itself</b> — a rewrite of the shipped <code>ideaPage.info create</code> string, which is the live screen's entire content</li>
+        <li><b>The cancellation-and-refund rule</b> — the two strings in <code>result/result_count.dart</code></li>
+        <li><b>The late-post concern</b> — <code>ideaPage.this game still run</code>, which the build already ships</li>
+        <li><b>The permission model</b> — <code>ConfigClub.permissions.member_post_idea_positions</code> and <code>member_post_idea_on_field_decision</code>, real per-club server fields</li>
+        <li><b>The deposit figure's source</b> — <code>ConfigClub.creditPostIdea</code>, a real server field</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Any gating at all.</b> The live screen reads no permission, no balance, no match state, and has no branch. All four of frames 02–05 are new.</li>
+        <li><b>The cost on screen.</b> The live gate never mentions Credits. The amount lockup, the balance rows, the per-step money lines and the "nothing is locked yet" row are all new.</li>
+        <li><b>The permission check.</b> The two permission fields are read in exactly one place today — <code>ideas/drop_down/title.dart</code> — to size the category list on the form. Reading them at the gate is new, <b>and it closes a live hole</b>: <code>findList()</code> returns <code>0</code> when both permissions are false and index <code>0</code> is then rendered anyway, so a member with no posting permission at all is still offered Positions and can still submit.</li>
+        <li><b>The balance check.</b> Derivable from <code>creditPostIdea</code> and the wallet today, checked nowhere. As shipped, the first time a member learns they cannot afford to post is <em>after</em> writing the Idea, at the confirm dialog.</li>
+        <li><b>The match-window check.</b> The app tells a member their Idea was cancelled for running past the whistle; nothing warns them beforehand.</li>
+        <li><b>The three-step rail</b> — new; the live screen is one centred paragraph</li>
+        <li><b>The eligibility panel</b> — new; a member cannot see what their club allows anywhere in the product</li>
+        <li><b>Don't show this again, and the banner that replaces the gate</b> — new</li>
+        <li><b>Drawn lamp glyph in a 72 px tile</b> — new, replacing two rasters authored for a white scaffold. <code>72px</code> is a new tile size and only this screen uses it.</li>
+        <li><b>Verb pair.</b> <b>Start an idea</b> / <b>Not now</b>, replacing <b>CONTINUE</b> — which names neither the act nor its cost, and is shouted.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Is 25.0 Credits the deposit?</h3>
+      <p><span class="flag">25.0</span> is carried over from <code>wallet.html</code> and
+        <code>create-idea.html</code>, whose ledger arithmetic derives from it. <b>The figure is
+        invented</b> — no pricing exists anywhere in the repository; the server holds it in
+        <code>credit_post_idea</code> and the app renders whatever arrives. The number needs a
+        product answer, and if it is per-club or per-category the gate has to say which,
+        because the panel currently states one figure for both categories.</p></li>
+    <li><h3>Which balance is right — 940.0 or 340?</h3>
+      <p><code>wallet.html</code> shows <span class="flag">1,240.0 total = 940.0 available +
+        300.0 locked</span> and this gate follows it. <code>create-idea.html</code>'s confirm
+        dialog shows <b>340 → 315</b> for the same act. Two components describing the same
+        member's money with different figures will be the first thing anyone notices; one of them
+        has to move before build.</p></li>
+    <li><h3>Should the gate really check the balance up front?</h3>
+      <p>We think yes — telling somebody they can't afford it before they write 200 words is
+        plainly kinder than after. But it changes the shape of the flow: the gate becomes a screen
+        that can <em>refuse</em>, which means it needs the wallet's balance loaded before it
+        paints, and a decision about what happens if the balance changes between the gate and the
+        post. We have assumed <span class="flag">the confirm dialog on the last step re-checks and
+        is the authority</span>.</p></li>
+    <li><h3>What happens when a club closes both member categories?</h3>
+      <p>Frame 03 offers Positions as the way out of a closed On-field decisions. If a club
+        switches <em>both</em> off, there is no alternative to offer and the gate becomes a dead
+        end. We think the right answer is <span class="flag">to remove the entry point from the
+        app bar entirely</span> rather than show a screen that only says no — but that is five
+        call sites to change, and it needs confirming.</p></li>
+    <li><h3>Can the gate be dismissed permanently?</h3>
+      <p>We have proposed <span class="flag">yes</span>, with the cost surviving as a banner on the
+        form and as the existing confirm dialog. The reasoning is that a screen pushed from five
+        places, showing the same paragraph every time, is not read — it is tapped through, which is
+        exactly how somebody ends up surprised by a forfeited deposit. If legal or compliance need
+        the full disclosure every time, say so and the checkbox comes out.</p></li>
+    <li><h3>Do you want the illustrated lamp back?</h3>
+      <p>The live screen composites <code>assets/images/ideas/stack_create.png</code> (a
+        <code>164pt</code> photograph) with <code>assets/svgs/idea/idea_light.svg</code>
+        (<code>129 × 170</code>), both authored against a white scaffold. Neither has a dark-mode
+        export, so this file uses <span class="flag">a drawn 24-box lamp in a 72 px acid-wash
+        tile</span>. If the illustration is wanted, it needs re-cutting for <code>#030401</code> —
+        we would rather ask than draw a substitute.</p></li>
+    <li><h3>Are the category names right for members?</h3>
+      <p><b>Positions</b> and <b>On-field decisions</b> are the code's names. The one-line glosses
+        under them (<span class="flag">"Who plays, who captains, who is rested"</span> /
+        <span class="flag">"Instructions the coach can carry out during the match"</span>) are
+        ours, written from <code>CLString</code>'s longer definitions. They are the first plain
+        explanation of the categories anywhere in the product and they should be signed off as
+        copy, not inherited from a mock-up.</p></li>
+    <li><h3>What counts as "too late" in a match?</h3>
+      <p>Frame 02 fires when the remaining match time is under the Idea's own stage total —
+        <span class="flag">6 + 3 = 9 minutes</span> at Barcelona, so the caution appears inside the
+        last nine minutes plus stoppage. That rule is ours. Whether stoppage time is known to the
+        client, and whether the threshold should carry a margin, are open.</p></li>
+  </ol>
+</section>

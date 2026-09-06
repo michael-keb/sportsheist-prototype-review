@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en" data-component="launch">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Splash &amp; app entry</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — SPLASH & APP ENTRY
+   AU-01 Splash · AU-01 cold-start failure (new) ·
+   AU-03 Entry fork (rewritten) · AU-03 sign-up leave-app confirm
+   (the CURRENT SHIPPED behaviour, not a proposal) ·
+   AU-13 notification priming (new)
+
+   The five frames that run in front of auth.html. Frame 3 hands
+   straight to auth.html's Get Started / Log in frames, so this file
+   takes auth.html's geometry unchanged:
+     --pad     20px   the auth gutter, measured 353 in 393
+     --h-act   64px   ONE height for every action, from the button
+                      component on the Get Started Figma page
+     verb pair Log in / Sign up
+   Token block copied verbatim from merits.html; --red / --red-wash /
+   --red-line / --neutral-wash are states.html's, needed by the icon
+   tile on frame 2.
+
+   NOTHING IS PINNED. Every frame is a 852 px flex column and every
+   action sits inside it, so there is no fixed layer that would have
+   to live outside <main class="screen">.
+
+   Six things the live violet build does that these frames fix,
+   commented where they are fixed:
+     · AU-01 renders no loading indicator at all, so a slow token
+       check is an indistinguishable dead screen
+     · AU-01 has no failure frame — splash.dart routes to
+       CRoute.introduction after a 1 s delay on BOTH fails and
+       logOut, so a member whose network dropped is shown the
+       signed-out flow
+     · AU-03 poses "ARE YOU A MEMBER?" and answers it with
+       YES, CONTINUE / SIGN UP
+     · AU-03's body copy says membership is required; AU-04 offers
+       a guest path on the very next screen
+     · AU-13 fires the iOS permission alert on the first
+       authenticated frame with no in-app priming, alongside a
+       snackbar and an empty state — three overlays in one frame
+     · AU-13's OS alert carries the display name Sports Heist(stg)
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;   /* screen canvas                   */
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls, tab bar        */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* hero */
+  --hero-a:        #0D3617;
+  --hero-b:        #17481C;
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* dialog shell + scrim — dialogs.html's values, taken unchanged
+     for frame 4's leave-app confirm */
+  --dlg-inset:     20px;
+  --dlg-max:       340px;
+  --dlg-pad:       20px;
+  --scrim:         rgba(3,4,1,.72);
+  --scrim-blur:    10px;
+
+  /* semantic red — the only other hue in the palette. states.html */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.12);
+  --red-line:      rgba(226,86,74,.28);
+  --neutral-wash:  rgba(255,255,255,.06);
+
+  /* ---- taken from auth.html, which measured them off the
+     Get Started Figma page. These frames run into that one, so they
+     cannot disagree with it. ------------------------------------ */
+  --pad:           20px;
+  --h-act:         64px;
+  --glow:          rgba(39,100,37,.16);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+
+/* ============================================================
+   REVIEW CHROME — frame shell + label. Not part of any screen.
+   Identical to auth.html so the two files read as one set.
+   ============================================================ */
+.framehead{display:flex;align-items:center;gap:10px;margin:0 var(--pad) 9px;flex-wrap:wrap}
+.framelabel{
+  margin:0;flex:1;min-width:130px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.framelabel b{color:var(--acid);font-weight:700}
+.statebar{display:flex;gap:5px}
+.statebar button{
+  height:25px;padding:0 10px;border:0;border-radius:var(--r-pill);
+  background:var(--surface);color:var(--muted);
+  font:inherit;font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;cursor:pointer;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.statebar button[aria-pressed="true"]{background:var(--acid-wash);color:var(--acid)}
+.statebar button:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+/* The state bar lives INSIDE its frame. Only the frame's own content is
+   emitted into the review device and the prototype, so a bar parked in the
+   .framehead outside the frame rendered on every screen at once and only
+   ever drove the one it named. Floated top-right, clear of the island. */
+.statebar--float{position:absolute;top:14px;right:var(--pad);z-index:4}
+
+.frame{
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+  min-height:852px;margin:0 0 36px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:
+    radial-gradient(circle 460px at -6% 2.4%, var(--glow), rgba(39,100,37,0) 100%),
+    radial-gradient(circle 460px at 82% 110%, var(--glow), rgba(39,100,37,0) 100%),
+    var(--bg);
+}
+
+/* in-page specimen furniture — dialogs.html / states.html */
+.spec{margin:6px 0 0}
+.spec__label{
+  display:flex;align-items:center;gap:9px;margin:0 var(--pad) 9px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.spec__label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.spec__note{margin:11px var(--pad) 0;font-size:11.5px;line-height:1.5;color:var(--dim)}
+.spec__note b{color:var(--muted);font-weight:600}
+.spec__note + .spec__note{margin-top:7px}
+
+/* ============================================================
+   ACTIONS — one height (--h-act), one casing (Title Case).
+   Lifted from auth.html unchanged.
+   ============================================================ */
+.btn{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  width:100%;height:var(--h-act);flex:0 0 auto;
+  border:0;border-radius:var(--r-pill);background:var(--surface);
+  color:var(--text);font:inherit;font-size:17px;font-weight:500;
+  letter-spacing:-.005em;cursor:pointer;
+  transition:filter .18s var(--ease),transform .12s var(--ease);
+}
+.btn:hover{filter:brightness(1.16)}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.btn__label{position:relative;z-index:1;display:inline-flex;align-items:center}
+
+/* leading acid disc — 46 px inside a 9 px inset, so the disc never
+   changes the height of the pill. */
+.btn__disc{
+  position:absolute;left:9px;top:9px;width:46px;height:46px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;background:var(--acid);color:var(--acid-ink);
+}
+.btn__disc svg{width:19px;height:19px}
+
+/* acid variant — same 64 px track, acid pill filling the 9 px inset.
+   Ink on the accent is --acid-ink; white on the accent is 1.58:1 and
+   is never used. */
+.btn--acid{color:var(--acid-ink)}
+.btn__fill{
+  position:absolute;inset:9px;border-radius:23px;background:var(--acid);
+  transition:opacity .18s var(--ease);
+}
+.btn__arrow{
+  position:absolute;right:24px;top:50%;transform:translateY(-50%);
+  z-index:1;display:flex;color:var(--acid-ink);
+}
+.btn__arrow svg{width:17px;height:17px}
+.btn[aria-disabled="true"]{pointer-events:none}
+/* retrying holds the accent rather than greying out — the request is
+   in flight, not unavailable. The live build shows WLoading's
+   #2196F3 Material dot-ring here, the only blue in the product. */
+.btn[aria-busy="true"]{pointer-events:none}
+.btn[aria-busy="true"] .btn__fill{opacity:.55}
+.btn[aria-busy="true"] .btn__arrow{display:none}
+.btn__label--busy{display:none}
+.btn[aria-busy="true"] .btn__label--idle{display:none}
+.btn[aria-busy="true"] .btn__label--busy{display:inline-flex}
+
+.act{margin:14px var(--pad) 0}
+.act--push{margin-top:auto}
+.act + .act{margin-top:12px}
+/* the last thing in a frame: centred text link, 30 px clear of the
+   frame edge so it never sits under the home indicator. */
+.act--foot{margin:16px var(--pad) 30px;text-align:center}
+
+/* ============================================================
+   TEXT LINK — auth.html's single style
+   ============================================================ */
+.tlink{
+  position:relative;
+  display:inline-block;border:0;background:none;padding:0;
+  font:inherit;font-size:13.5px;font-weight:600;color:var(--acid);
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;
+  cursor:pointer;
+}
+/* 44 px hit area without changing the drawn size — the contract's
+   ::after expansion, from create-idea.html. */
+.tlink::after{content:"";position:absolute;inset:-13px -8px;border-radius:8px}
+.tlink:hover{filter:brightness(1.12)}
+.tlink:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:4px}
+.prompt{
+  margin:0 var(--pad) 30px;padding-top:22px;
+  text-align:center;font-size:13.5px;line-height:1.5;color:var(--muted);
+}
+.prompt .tlink{margin-left:5px}
+
+/* ============================================================
+   HEADER · TITLE · NOTE — auth.html
+   ============================================================ */
+.topbar{display:flex;align-items:center;gap:8px;margin:12px var(--pad) 0;min-height:38px}
+.icon-btn{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.icon-btn:hover{background:#222833}
+.icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.icon-btn svg{width:18px;height:18px}
+
+.title{
+  margin:22px var(--pad) 0;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1.04;
+  text-transform:uppercase;
+}
+.subtitle{
+  margin:14px var(--pad) 0;max-width:334px;
+  font-size:15px;font-weight:400;line-height:1.55;color:var(--muted);
+}
+.subtitle b{color:var(--text);font-weight:600}
+
+.note{
+  display:flex;align-items:flex-start;gap:8px;
+  margin:20px var(--pad) 0;padding:12px 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--section);
+  font-size:12px;line-height:1.45;color:var(--muted);
+}
+.note svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px;color:var(--dim)}
+.note b{color:var(--text);font-weight:600}
+.note--last{margin-bottom:30px}
+
+/* the shipped lockup: app_icon.svg in --acid beside app_name.svg in
+   white, 143.5 wide — auth.html's Get Started measurement. */
+.lockup{display:flex;align-items:center;justify-content:center;gap:8px}
+.lockup__sh{width:25px;height:28px;flex:0 0 auto}
+.lockup__word{width:110px;height:26px;flex:0 0 auto}
+
+/* ============================================================
+   ICON TILE — the one state marker, shared with states.html and
+   dialogs.html. Variant changes wash and icon colour only.
+   ============================================================ */
+.tile{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:52px;height:52px;border-radius:14px;flex:0 0 auto;
+}
+.tile svg{width:25px;height:25px}
+.tile--neutral{background:var(--neutral-wash);color:var(--text)}
+.tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+
+/* ============================================================
+   LOADING MARKERS — states.html, verbatim geometry
+   Peaks: the brand's three peaks cycling opacity on a 160 ms
+   stagger, where a whole screen is waiting.
+   Ring:  a 90° accent arc on a white-18% track, where a control
+   is waiting. Both are SMIL, so both stop dead on
+   svg.pauseAnimations() under prefers-reduced-motion.
+   ============================================================ */
+.peaks{display:block;color:var(--acid);margin:0 auto}
+.spin{width:17px;height:17px;margin-right:9px}
+
+/* ============================================================
+   FRAME 1 — SPLASH (AU-01)
+   ------------------------------------------------------------
+   The old splash was the product's most brand-dense screen: a
+   full-bleed violet-to-gold mesh gradient carrying a stacked
+   monogram and wordmark, and nothing else — no spinner, no copy,
+   no failure path.
+
+   Rebuilt from this brand's own language, four layers, no new
+   values:
+     1  the canvas and the two #276425 glow discs that auth.html
+        measured on Get Started, so the splash and the frame it
+        hands to share one ground
+     2  the hero pattern's faint white triangles at 2.4-3%, scaled
+        from a 343x132 banner to the whole 393x852 frame
+     3  the shipped lockup, stacked rather than horizontal, its
+        optical centre at 38% of frame height — the one measurement
+        worth keeping from the old screen
+     4  the three-peak loader from states.html at 116x49
+
+   The peaks are deliberately doing two jobs: they are the brand
+   motif AND the waiting marker. That is why no static acid range
+   sits at the bottom of this frame — one peak form, animating, is
+   stronger than a static range plus a second animating mark.
+   ============================================================ */
+.splash{position:absolute;inset:0;overflow:hidden}
+.splash__field{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+.splash__lock{
+  position:absolute;left:0;right:0;top:38%;transform:translateY(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:22px;
+}
+.splash__lock .lockup__sh{width:56px;height:62px}
+.splash__lock .lockup__word{width:196px;height:46px}
+
+.splash__load{position:absolute;left:var(--pad);right:var(--pad);top:64%;text-align:center}
+/* the tracked micro-label carrying the only status on the screen.
+   states.html set this in --dim; --dim on the canvas is 2.56:1 and
+   the contract reserves it for decoration, so the one line that
+   tells the member what is happening is --muted (~5:1). */
+.splash__cap{
+  margin:16px 0 0;font-size:11px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);
+}
+.splash__foot{
+  position:absolute;left:var(--pad);right:var(--pad);bottom:30px;margin:0;
+  text-align:center;font-size:11.5px;line-height:1.5;color:var(--dim);
+}
+
+/* the slow-network banner. states.html's banner construction:
+   in-flow radius, sunken fill, never red — a slow connection is a
+   condition, not a fault. */
+.slow{
+  position:absolute;left:var(--pad);right:var(--pad);bottom:26px;
+  display:flex;align-items:flex-start;gap:11px;
+  padding:12px 13px;border-radius:var(--r-panel);
+  background:var(--neutral-wash);border:1px solid var(--line);
+}
+.slow__icon{flex:0 0 auto;margin-top:1px;color:var(--text)}
+.slow__icon svg{width:18px;height:18px}
+.slow__txt{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.slow__txt b{display:block;color:var(--text);font-size:13px;font-weight:600;margin-bottom:2px}
+
+#splash[data-state="checking"] .slow{display:none}
+#splash[data-state="slow"] .splash__foot{display:none}
+
+/* ============================================================
+   FRAME 2 — COLD-START FAILURE (new; AU-01 has no such frame)
+   ------------------------------------------------------------
+   splash.dart routes to CRoute.introduction after a 1 s delay on
+   AppStatus.fails AND on AppStatus.logOut, so a member whose token
+   check merely timed out is dropped into the signed-out flow. The
+   most important line on this frame is therefore "you're still
+   signed in".
+
+   Construction is states.html's error panel with the panel taken
+   off: on a cold start there is no surrounding screen for the
+   error to sit inside, so it owns the canvas. Same tile, same
+   three-part copy — what happened, why, the one thing to do next.
+   ============================================================ */
+/* auto top AND bottom margins, so the block settles between the
+   lockup above it and the action stack below without either needing
+   a fixed offset. Nothing on this frame is position:fixed. */
+.fail{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  margin:auto var(--pad);padding:20px 0;
+}
+.fail h2{margin:16px 0 0;font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.fail p{margin:9px auto 0;max-width:33ch;font-size:13.5px;line-height:1.55;color:var(--muted)}
+.fail p b{color:var(--text);font-weight:600}
+/* .fail p sets a 33ch measure for the body copy; the note is also a
+   <p>, so it has to opt out of it and keep the note's own 12 px. */
+.fail .note{
+  margin-left:0;margin-right:0;width:100%;max-width:none;
+  text-align:left;font-size:12px;line-height:1.45;
+}
+.fail__ref{
+  display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+  padding:8px 13px;border-radius:var(--r-pill);background:var(--sunken);
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.fail__lock{margin:38px 0 0;opacity:.62}
+
+.fv{display:none;flex-direction:column;flex:1 1 auto}
+#fail[data-state="offline"] .fv--offline,
+#fail[data-state="server"]  .fv--server{display:flex}
+
+/* ============================================================
+   FRAME 3 — ENTRY FORK (replaces AU-03 PreLoginPage)
+   ------------------------------------------------------------
+   The old screen asks ARE YOU A MEMBER? and offers YES, CONTINUE /
+   SIGN UP — labels that do not answer the question, over body copy
+   ("you must be a registered member") that the next screen
+   contradicts by offering a guest path.
+
+   Rewritten as one statement and two destinations. The question is
+   gone: this screen decides whether you already have a SportsHeist
+   account, which has nothing to do with club membership. Member vs
+   guest is decided one screen later, in onboarding.html's pathway
+   fork, and the note at the bottom of this frame says so instead of
+   claiming membership is compulsory.
+
+   It does NOT reuse the Get Started hero photograph the way AU-03
+   reuses the AU-02 montage — showing the welcome image twice makes
+   the second screen read as though the first did not take.
+   ============================================================ */
+.fork{margin:0 var(--pad)}
+.fork--push{margin-top:auto}
+.fork__item + .fork__item{margin-top:18px}
+.fork__note{
+  margin:9px 4px 0;text-align:center;
+  font-size:12.5px;line-height:1.45;color:var(--muted);
+}
+.gs-heading{
+  margin:32px var(--pad) 0;
+  text-align:center;font-size:24px;font-weight:700;letter-spacing:-.012em;line-height:1.2;
+}
+.gs-sub{
+  margin:14px var(--pad) 0;
+  text-align:center;font-size:15px;font-weight:400;line-height:24px;color:var(--muted);
+}
+/* the identity block and the fork each take half the free space, so
+   the lockup settles near the optical centre and the two actions
+   stay in the thumb zone. One 260 px void split into two, rather
+   than a single dead 260 px band above the buttons. */
+.fork__lock{margin:auto 0 0}
+
+/* ============================================================
+   FRAME 4 — SIGN-UP LEAVES THE APP, AS SHIPPED TODAY
+   ------------------------------------------------------------
+   NOT A PROPOSAL. This is what the App Store build does when the
+   entry fork's sign-up control is pressed:
+   lib/pages/access/pre_login.dart:29-53 builds `btnNo` and hangs
+   UDialog().customSimpleDialog(...) off its onPressed. Confirming
+   calls launchUrlString("${Environment.url}/en/auth/signup") —
+   production https://sport-heist.thedigitalba.com.au — and then
+   context.pop(). There is no in-app registration: RegisterPage
+   exists but its only link is commented out at login.dart:227.
+
+   Both dialog strings are HARDCODED LITERALS in pre_login.dart,
+   not .tr() lookups, so they are English-only in every locale.
+   The two matching en.json keys exist and are unused:
+     pages.login.pre_login.exit_title   = 'LEAVING THE APP'
+     pages.login.pre_login.exit_content = 'To sign up, you will
+       need to go to the\n club's website. Do you want to proeed?'
+   The button labels ARE translated, and come from
+   customSimpleDialog's own defaults (dialogs.dart:1002, :1027):
+     btnCancelText ?? pages.login.pre_login.no      = 'NO'
+     btnOkText     ?? pages.login.pre_login.onlyYes = 'YES'
+
+   The panel is dialogs.html's shell, unchanged in construction and
+   in every value — R16 --surface card, 340 max width, 20 inset,
+   20 padding, 30 close disc, 44 icon tile, 18/600 title, 13/1.5
+   body, 46 action row split 10. It is only re-SCOPED under .dlg,
+   because this file already owns .btn and .act for the 64 px
+   full-width action and the two definitions cannot both be global.
+   The scrim is position:absolute, not dialogs.html's fixed overlay,
+   so it stays inside the 852 px frame.
+   ============================================================ */
+/* the screen the dialog is raised from. create-idea.html's backdrop
+   treatment — .9 opacity under the scrim, not a heavier dim, because
+   the scrim is already doing the work and a dialog that hides its own
+   screen loses the context that says where it came from. It keeps the
+   frame's flex column so the fork's auto margins still resolve. */
+.behind{
+  display:flex;flex-direction:column;flex:1 1 auto;
+  opacity:.9;pointer-events:none;
+}
+.scrim{
+  position:absolute;inset:0;z-index:2;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--scrim);
+  -webkit-backdrop-filter:blur(var(--scrim-blur));backdrop-filter:blur(var(--scrim-blur));
+}
+.dlg{
+  position:relative;
+  width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max);
+  margin:0 auto;padding:var(--dlg-pad);
+  border-radius:var(--r-card);background:var(--surface);
+  border:1px solid var(--line);
+  box-shadow:0 24px 60px rgba(0,0,0,.55);
+}
+.dlg__close{
+  position:absolute;top:12px;right:12px;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:50%;
+  background:var(--sunken);border:1px solid var(--line-soft);color:var(--muted);
+  cursor:pointer;transition:color .18s var(--ease),background .18s var(--ease);
+}
+.dlg__close svg{width:15px;height:15px}
+.dlg__close:hover{color:var(--text);background:#1A1F27}
+.dlg__close:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.dlg__title{
+  margin:14px 0 0;padding-right:26px;
+  font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.2;
+}
+.dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.dlg__body b{color:var(--text);font-weight:600}
+/* dialogs.html's base 44 px tile. This file's own .tile is the 52 px
+   --lg variant, which is the full-screen size, not the dialog size. */
+.dlg .tile{width:44px;height:44px;border-radius:var(--r-panel)}
+.dlg .tile svg{width:22px;height:22px}
+/* dialogs.html's action row and 46 px buttons, scoped */
+.dlg .act{display:flex;gap:10px;margin:18px 0 0}
+.dlg .btn{
+  position:relative;flex:1 1 0;min-width:0;width:auto;height:46px;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em;
+  white-space:nowrap;cursor:pointer;
+  transition:background .18s var(--ease),opacity .18s var(--ease);
+}
+.dlg .btn--acid{background:var(--acid);color:var(--acid-ink)}
+.dlg .btn--acid:hover{background:#A8EC33;filter:none}
+.dlg .btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.dlg .btn--ghost:hover{background:#181D25;filter:none}
+/* review chrome, not part of the screen */
+.livetag{
+  display:inline-flex;align-items:center;gap:7px;flex:0 1 auto;
+  height:25px;padding:0 11px;border-radius:var(--r-pill);
+  background:var(--neutral-wash);border:1px solid var(--line);
+  font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);white-space:nowrap;
+}
+.livetag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.livetag--float{position:absolute;top:14px;left:var(--pad);z-index:3}
+
+/* ============================================================
+   FRAME 5 — NOTIFICATION PRIMING (new; precedes AU-13's OS alert)
+   ------------------------------------------------------------
+   The live build calls FirebaseMessagingService._requestPermission()
+   from login.dart on successful sign-in, so the iOS alert lands on
+   the first authenticated frame at the same moment as the
+   "Update profile successfully" snackbar and the empty War Room —
+   three overlays, no explanation, and one irreversible answer.
+
+   This frame is that explanation, on its own, before the OS is
+   asked. The benefit list is onboarding.html's .bens row.
+   ============================================================ */
+.bens{list-style:none;margin:20px var(--pad) 0;padding:0}
+.bens li{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:10px 0;border-top:1px solid var(--line-soft);
+  font-size:13.5px;line-height:1.4;
+}
+.bens li:first-child{border-top:0}
+.tick{
+  width:18px;height:18px;flex:0 0 auto;margin-top:2px;border-radius:50%;
+  background:var(--acid-wash);color:var(--acid);
+  display:flex;align-items:center;justify-content:center;
+}
+.tick svg{width:11px;height:11px}
+.bens .is-off{color:var(--muted)}
+.bens .is-off .tick{background:transparent;color:var(--dim);box-shadow:inset 0 0 0 1px var(--line)}
+
+.pv{display:none;flex-direction:column;flex:1 1 auto}
+#prime[data-state="priming"]  .pv--priming,
+#prime[data-state="declined"] .pv--declined{display:flex}
+
+/* ============================================================
+   THE iOS SYSTEM ALERT — a specimen, not a component
+   ------------------------------------------------------------
+   Drawn at iOS's real geometry (270 pt wide, R14, 17/600 title,
+   13/400 message, 44 pt buttons split by hairlines) and rendered
+   GREYSCALE. iOS paints those two labels in system blue #007AFF,
+   which the app cannot change and which appears nowhere in this
+   brand; drawing it grey keeps a colour we do not own out of the
+   library while still showing the client exactly what they inherit.
+   Nothing here is stylable by us except the app's display name.
+   ============================================================ */
+.oswrap{
+  margin:0 var(--pad);padding:26px 14px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+  display:flex;justify-content:center;
+}
+.osalert{
+  width:270px;max-width:100%;
+  border-radius:14px;overflow:hidden;
+  background:#E9E9E9;color:#0B0B0B;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  text-align:center;
+  box-shadow:0 18px 44px rgba(0,0,0,.55);
+}
+.osalert__body{padding:19px 16px 15px}
+.osalert__title{margin:0;font-size:17px;font-weight:600;line-height:1.29;letter-spacing:-.01em}
+.osalert__msg{margin:4px 0 0;font-size:13px;font-weight:400;line-height:1.31;color:#151515}
+.osalert__acts{display:flex;border-top:1px solid rgba(0,0,0,.22)}
+.osalert__btn{
+  flex:1 1 0;height:44px;border:0;background:none;
+  font:inherit;font-size:17px;color:#3A3A3C;cursor:default;
+}
+.osalert__btn + .osalert__btn{border-left:1px solid rgba(0,0,0,.22);font-weight:600;color:#0B0B0B}
+.oscap{
+  margin:12px var(--pad) 0;padding:11px 13px;
+  border:1px solid var(--red-line);border-radius:var(--r-panel);background:var(--red-wash);
+  display:flex;align-items:flex-start;gap:9px;
+  font-size:12px;line-height:1.45;color:var(--muted);
+}
+.oscap svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px;color:var(--red)}
+.oscap b{color:var(--text);font-weight:600}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+  <!-- ==========================================================
+       FRAME 1 — SPLASH (AU-01)
+       ========================================================== -->
+  <div class="framehead">
+    <p class="framelabel"><b>Frame 1</b> Splash &middot; AU-01</p>
+  </div>
+
+  <section class="frame" id="splash" data-state="checking" data-title="Splash" aria-label="Splash">
+    <div class="statebar statebar--float" role="group" aria-label="Splash states">
+      <button type="button" data-frame="splash" data-go="checking" aria-pressed="true">Checking</button>
+      <button type="button" data-frame="splash" data-go="slow" aria-pressed="false">Slow</button>
+    </div>
+    <div class="splash">
+
+      <!-- layer 2: the hero pattern's triangle field, scaled to the
+           whole frame. 2.4-3% white, exactly as in merits.html. -->
+      <svg class="splash__field" viewBox="0 0 393 852" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M-20 852 L96 596 L212 852 Z"  fill="#fff" opacity=".030"/>
+        <path d="M178 852 L300 560 L422 852 Z" fill="#fff" opacity=".024"/>
+        <path d="M232 0 L360 0 L232 214 Z"     fill="#fff" opacity=".026"/>
+        <path d="M0 0 L0 178 L84 0 Z"          fill="#fff" opacity=".022"/>
+      </svg>
+
+      <!-- layer 3: the shipped lockup, stacked. app_icon.svg in
+           --acid over app_name.svg in white — the same two vectors
+           auth.html uses horizontally on Get Started. Not type. -->
+      <div class="splash__lock lockup" role="img" aria-label="SportsHeist">
+        <svg class="lockup__sh" viewBox="0 0 81 90" fill="none" aria-hidden="true">
+          <path fill="#9BE222" fill-rule="evenodd" clip-rule="evenodd" d="M0 90H59.7728C71.4499 90 81 79.3816 81 66.4147V54.4183L56.4543 41.0228L33.2224 53.7034L54.8693 65.5188V84.4459L0 54.5088V90ZM47.7845 36.2966L24.5462 48.97L0.000460651 35.5741V23.5858C4.49425e-07 10.6189 9.55009 0 21.2268 0H81V35.4841L26.1376 5.54645V24.4812L47.7845 36.2966Z"/>
+        </svg>
+        <svg class="lockup__word" viewBox="0 0 215 51" fill="none" aria-hidden="true">
+          <path fill="#FFFFFF" d="M8.65236 50.0975C3.46618 50.0975 0.73291 47.3299 0.73291 42.0715V32.5234H7.46094V41.7256C7.46094 43.0402 7.88144 43.7321 8.65236 43.7321C9.56345 43.7321 9.98395 43.0402 9.98395 41.7256V35.9137C9.98395 27.5418 0.73291 26.2964 0.73291 15.5029V8.30719C0.73291 3.04882 3.53625 0.28125 8.86261 0.28125C14.3291 0.28125 17.0624 3.04882 16.8521 8.30719L16.2915 18.7548H9.56345L10.1241 8.65314C10.1942 7.33855 9.7737 6.64665 8.86261 6.64665C8.02161 6.64665 7.53102 7.33855 7.53102 8.65314V14.9494C7.53102 22.9753 16.8521 24.5667 16.8521 35.3602V42.0715C16.8521 47.3299 13.9787 50.0975 8.65236 50.0975ZM30.4385 0.973141C35.6948 0.973141 38.4981 3.74071 38.4981 8.86071V28.4412C38.4981 33.4921 35.6948 36.2596 30.4385 36.2596H29.177V49.4056H22.3789V0.973141H30.4385ZM31.7 28.0953V9.20665C31.7 7.96125 31.2795 7.33855 30.4385 7.33855H29.177V29.8942H30.4385C31.2795 29.8942 31.7 29.2023 31.7 28.0953ZM51.8743 50.0975C46.618 50.0975 43.8146 47.3299 43.8146 42.1407V8.30719C43.8146 3.04882 46.618 0.28125 51.8743 0.28125C57.1305 0.28125 59.9339 3.04882 59.9339 8.30719V42.1407C59.9339 47.3299 57.1305 50.0975 51.8743 50.0975ZM51.8743 43.7321C52.7153 43.7321 53.2059 43.0402 53.2059 41.7256V8.65314C53.2059 7.33855 52.7153 6.64665 51.8743 6.64665C51.0333 6.64665 50.5427 7.33855 50.5427 8.65314V41.7256C50.5427 43.0402 51.0333 43.7321 51.8743 43.7321ZM65.3873 49.4056V0.973141H73.4469C78.7031 0.973141 81.5065 3.74071 81.5065 8.86071V16.1256C81.5065 21.1764 79.4741 23.8748 75.6195 23.8748H75.1289V24.8434H79.5442L81.927 49.4056H75.199L73.4469 28.6488H72.2555V49.4056H65.3873ZM72.2555 22.8369H73.4469C74.2879 22.8369 74.7084 22.145 74.7084 20.8996V9.20665C74.7084 7.96125 74.2879 7.33855 73.4469 7.33855H72.2555V22.8369ZM100.348 0.973141V7.33855H96.6331V49.4056H89.835V7.33855H86.0504V0.973141H100.348ZM113.025 50.0975C107.839 50.0975 105.106 47.3299 105.106 42.0715V32.5234H111.834V41.7256C111.834 43.0402 112.254 43.7321 113.025 43.7321C113.936 43.7321 114.357 43.0402 114.357 41.7256V35.9137C114.357 27.5418 105.106 26.2964 105.106 15.5029V8.30719C105.106 3.04882 107.909 0.28125 113.235 0.28125C118.702 0.28125 121.435 3.04882 121.225 8.30719L120.664 18.7548H113.936L114.497 8.65314C114.567 7.33855 114.146 6.64665 113.235 6.64665C112.394 6.64665 111.904 7.33855 111.904 8.65314V14.9494C111.904 22.9753 121.225 24.5667 121.225 35.3602V42.0715C121.225 47.3299 118.351 50.0975 113.025 50.0975ZM136.423 0.973141H143.221V49.4056H136.423V26.9883H133.55V49.4056H126.752V0.973141H133.55V20.6229H136.423V0.973141ZM148.94 49.4056V0.973141H162.186V7.33855H155.738V21.6607H161.485V28.0261H155.738V43.0402H162.186V49.4056H148.94ZM167.159 49.4056V0.973141H173.957V49.4056H167.159ZM187.407 50.0975C182.221 50.0975 179.487 47.3299 179.487 42.0715V32.5234H186.215V41.7256C186.215 43.0402 186.636 43.7321 187.407 43.7321C188.318 43.7321 188.738 43.0402 188.738 41.7256V35.9137C188.738 27.5418 179.487 26.2964 179.487 15.5029V8.30719C179.487 3.04882 182.291 0.28125 187.617 0.28125C193.083 0.28125 195.817 3.04882 195.607 8.30719L195.046 18.7548H188.318L188.878 8.65314C188.949 7.33855 188.528 6.64665 187.617 6.64665C186.776 6.64665 186.285 7.33855 186.285 8.65314V14.9494C186.285 22.9753 195.607 24.5667 195.607 35.3602V42.0715C195.607 47.3299 192.733 50.0975 187.407 50.0975ZM214.589 0.973141V7.33855H210.875V49.4056H204.077V7.33855H200.292V0.973141H214.589Z"/>
+        </svg>
+      </div>
+
+      <!-- layer 4: the three-peak marker from states.html. The old
+           screen renders no loading indicator at all. -->
+      <div class="splash__load" role="status">
+        <svg class="peaks anim" viewBox="0 0 62 26" width="116" height="49" aria-hidden="true">
+          <path d="M2 24 L11 6 L20 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin="0s" repeatCount="indefinite"/>
+          </path>
+          <path d="M22 24 L31 3 L40 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".16s" repeatCount="indefinite"/>
+          </path>
+          <path d="M42 24 L51 8 L60 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".32s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+        <p class="splash__cap">Checking your session</p>
+      </div>
+
+      <!-- the commitment that makes the wait bearable. No progress
+           bar: we cannot honestly estimate a token round-trip, and a
+           fake bar stalled at 90% is worse than a mark that moves. -->
+      <p class="splash__foot">If this hasn&rsquo;t finished in 15 seconds we&rsquo;ll stop and tell you
+        what went wrong, rather than leaving you here.</p>
+
+      <!-- SLOW: shown from about 4 s. The wait is now long enough to
+           need naming, but the app has not failed, so this is a
+           condition and never red. -->
+      <div class="slow" role="status">
+        <span class="slow__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.4 2.2"/>
+          </svg>
+        </span>
+        <span class="slow__txt">
+          <b>Still checking your session</b>
+          Your connection looks slow. We&rsquo;ll stop after 15 seconds and tell you what happened.
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       FRAME 2 — COLD-START FAILURE (new)
+       ========================================================== -->
+  <div class="framehead">
+    <p class="framelabel"><b>Frame 2</b> Cold-start failure &middot; new</p>
+  </div>
+
+  <section class="frame" id="fail" data-state="offline" data-title="Cold-start failure" aria-label="Cold-start failure">
+    <div class="statebar statebar--float" role="group" aria-label="Failure states">
+      <button type="button" data-frame="fail" data-go="offline" aria-pressed="true">Offline</button>
+      <button type="button" data-frame="fail" data-go="server" aria-pressed="false">Server</button>
+    </div>
+    <svg class="splash__field" viewBox="0 0 393 852" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M-20 852 L96 596 L212 852 Z"  fill="#fff" opacity=".030"/>
+      <path d="M178 852 L300 560 L422 852 Z" fill="#fff" opacity=".024"/>
+      <path d="M232 0 L360 0 L232 214 Z"     fill="#fff" opacity=".026"/>
+      <path d="M0 0 L0 178 L84 0 Z"          fill="#fff" opacity=".022"/>
+    </svg>
+
+    <!-- ---------- offline: the device has no connection ---------- -->
+    <div class="fv fv--offline">
+      <!-- the lockup stays, small and quiet, so the member can see
+           WHICH app has stopped. It is the only thing carried over
+           from the splash frame. -->
+      <div class="lockup fail__lock" role="img" aria-label="SportsHeist">
+        <svg class="lockup__sh" viewBox="0 0 81 90" fill="none" aria-hidden="true">
+          <path fill="#9BE222" fill-rule="evenodd" clip-rule="evenodd" d="M0 90H59.7728C71.4499 90 81 79.3816 81 66.4147V54.4183L56.4543 41.0228L33.2224 53.7034L54.8693 65.5188V84.4459L0 54.5088V90ZM47.7845 36.2966L24.5462 48.97L0.000460651 35.5741V23.5858C4.49425e-07 10.6189 9.55009 0 21.2268 0H81V35.4841L26.1376 5.54645V24.4812L47.7845 36.2966Z"/>
+        </svg>
+        <svg class="lockup__word" viewBox="0 0 215 51" fill="none" aria-hidden="true">
+          <path fill="#FFFFFF" d="M8.65236 50.0975C3.46618 50.0975 0.73291 47.3299 0.73291 42.0715V32.5234H7.46094V41.7256C7.46094 43.0402 7.88144 43.7321 8.65236 43.7321C9.56345 43.7321 9.98395 43.0402 9.98395 41.7256V35.9137C9.98395 27.5418 0.73291 26.2964 0.73291 15.5029V8.30719C0.73291 3.04882 3.53625 0.28125 8.86261 0.28125C14.3291 0.28125 17.0624 3.04882 16.8521 8.30719L16.2915 18.7548H9.56345L10.1241 8.65314C10.1942 7.33855 9.7737 6.64665 8.86261 6.64665C8.02161 6.64665 7.53102 7.33855 7.53102 8.65314V14.9494C7.53102 22.9753 16.8521 24.5667 16.8521 35.3602V42.0715C16.8521 47.3299 13.9787 50.0975 8.65236 50.0975ZM30.4385 0.973141C35.6948 0.973141 38.4981 3.74071 38.4981 8.86071V28.4412C38.4981 33.4921 35.6948 36.2596 30.4385 36.2596H29.177V49.4056H22.3789V0.973141H30.4385ZM31.7 28.0953V9.20665C31.7 7.96125 31.2795 7.33855 30.4385 7.33855H29.177V29.8942H30.4385C31.2795 29.8942 31.7 29.2023 31.7 28.0953ZM51.8743 50.0975C46.618 50.0975 43.8146 47.3299 43.8146 42.1407V8.30719C43.8146 3.04882 46.618 0.28125 51.8743 0.28125C57.1305 0.28125 59.9339 3.04882 59.9339 8.30719V42.1407C59.9339 47.3299 57.1305 50.0975 51.8743 50.0975ZM51.8743 43.7321C52.7153 43.7321 53.2059 43.0402 53.2059 41.7256V8.65314C53.2059 7.33855 52.7153 6.64665 51.8743 6.64665C51.0333 6.64665 50.5427 7.33855 50.5427 8.65314V41.7256C50.5427 43.0402 51.0333 43.7321 51.8743 43.7321ZM65.3873 49.4056V0.973141H73.4469C78.7031 0.973141 81.5065 3.74071 81.5065 8.86071V16.1256C81.5065 21.1764 79.4741 23.8748 75.6195 23.8748H75.1289V24.8434H79.5442L81.927 49.4056H75.199L73.4469 28.6488H72.2555V49.4056H65.3873ZM72.2555 22.8369H73.4469C74.2879 22.8369 74.7084 22.145 74.7084 20.8996V9.20665C74.7084 7.96125 74.2879 7.33855 73.4469 7.33855H72.2555V22.8369ZM100.348 0.973141V7.33855H96.6331V49.4056H89.835V7.33855H86.0504V0.973141H100.348ZM113.025 50.0975C107.839 50.0975 105.106 47.3299 105.106 42.0715V32.5234H111.834V41.7256C111.834 43.0402 112.254 43.7321 113.025 43.7321C113.936 43.7321 114.357 43.0402 114.357 41.7256V35.9137C114.357 27.5418 105.106 26.2964 105.106 15.5029V8.30719C105.106 3.04882 107.909 0.28125 113.235 0.28125C118.702 0.28125 121.435 3.04882 121.225 8.30719L120.664 18.7548H113.936L114.497 8.65314C114.567 7.33855 114.146 6.64665 113.235 6.64665C112.394 6.64665 111.904 7.33855 111.904 8.65314V14.9494C111.904 22.9753 121.225 24.5667 121.225 35.3602V42.0715C121.225 47.3299 118.351 50.0975 113.025 50.0975ZM136.423 0.973141H143.221V49.4056H136.423V26.9883H133.55V49.4056H126.752V0.973141H133.55V20.6229H136.423V0.973141ZM148.94 49.4056V0.973141H162.186V7.33855H155.738V21.6607H161.485V28.0261H155.738V43.0402H162.186V49.4056H148.94ZM167.159 49.4056V0.973141H173.957V49.4056H167.159ZM187.407 50.0975C182.221 50.0975 179.487 47.3299 179.487 42.0715V32.5234H186.215V41.7256C186.215 43.0402 186.636 43.7321 187.407 43.7321C188.318 43.7321 188.738 43.0402 188.738 41.7256V35.9137C188.738 27.5418 179.487 26.2964 179.487 15.5029V8.30719C179.487 3.04882 182.291 0.28125 187.617 0.28125C193.083 0.28125 195.817 3.04882 195.607 8.30719L195.046 18.7548H188.318L188.878 8.65314C188.949 7.33855 188.528 6.64665 187.617 6.64665C186.776 6.64665 186.285 7.33855 186.285 8.65314V14.9494C186.285 22.9753 195.607 24.5667 195.607 35.3602V42.0715C195.607 47.3299 192.733 50.0975 187.407 50.0975ZM214.589 0.973141V7.33855H210.875V49.4056H204.077V7.33855H200.292V0.973141H214.589Z"/>
+        </svg>
+      </div>
+
+      <div class="fail" role="alert">
+        <!-- neutral, not red: being offline is a condition, not a
+             fault, and nobody has done anything wrong. -->
+        <span class="tile tile--neutral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 8.5a13 13 0 0 1 6-3.1M20 8.5a13 13 0 0 0-3.4-2.3"/>
+            <path d="M7.2 12.4a8.6 8.6 0 0 1 3-1.7M16.8 12.4a8.6 8.6 0 0 0-2-1.4"/>
+            <path d="M10.2 16.1a4 4 0 0 1 3.6 0M12 19.6h.01"/>
+            <path d="M3.5 3.5 20.5 20.5"/>
+          </svg>
+        </span>
+        <h2>We can&rsquo;t reach the server</h2>
+        <p>SportsHeist couldn&rsquo;t check your session, so it doesn&rsquo;t know which club to open.
+          <b>You&rsquo;re still signed in</b> &mdash; nothing has been lost.</p>
+
+        <p class="note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+          </svg>
+          <span>Last synced <b>16:42 today</b>. Your saved War Room can still be read &mdash;
+            posting and voting need a connection.</span>
+        </p>
+      </div>
+
+      <div class="act">
+        <button class="btn btn--acid" type="button" data-retry>
+          <span class="btn__fill" aria-hidden="true"></span>
+          <span class="btn__label btn__label--idle">Try Again</span>
+          <span class="btn__label btn__label--busy">
+            <svg class="spin anim" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3.2" opacity=".3"/>
+              <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+              </path>
+            </svg>
+            Trying&hellip;
+          </span>
+          <span class="btn__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></svg>
+          </span>
+        </button>
+      </div>
+      <div class="act">
+        <button class="btn" type="button">
+          <span class="btn__label">Open What&rsquo;s Saved</span>
+        </button>
+      </div>
+
+      <p class="prompt">Not your account?<button class="tlink" type="button">Log in</button></p>
+    </div>
+
+    <!-- ---------- server: the device is online, we are not ---------- -->
+    <div class="fv fv--server">
+      <div class="lockup fail__lock" role="img" aria-label="SportsHeist">
+        <svg class="lockup__sh" viewBox="0 0 81 90" fill="none" aria-hidden="true">
+          <path fill="#9BE222" fill-rule="evenodd" clip-rule="evenodd" d="M0 90H59.7728C71.4499 90 81 79.3816 81 66.4147V54.4183L56.4543 41.0228L33.2224 53.7034L54.8693 65.5188V84.4459L0 54.5088V90ZM47.7845 36.2966L24.5462 48.97L0.000460651 35.5741V23.5858C4.49425e-07 10.6189 9.55009 0 21.2268 0H81V35.4841L26.1376 5.54645V24.4812L47.7845 36.2966Z"/>
+        </svg>
+        <svg class="lockup__word" viewBox="0 0 215 51" fill="none" aria-hidden="true">
+          <path fill="#FFFFFF" d="M8.65236 50.0975C3.46618 50.0975 0.73291 47.3299 0.73291 42.0715V32.5234H7.46094V41.7256C7.46094 43.0402 7.88144 43.7321 8.65236 43.7321C9.56345 43.7321 9.98395 43.0402 9.98395 41.7256V35.9137C9.98395 27.5418 0.73291 26.2964 0.73291 15.5029V8.30719C0.73291 3.04882 3.53625 0.28125 8.86261 0.28125C14.3291 0.28125 17.0624 3.04882 16.8521 8.30719L16.2915 18.7548H9.56345L10.1241 8.65314C10.1942 7.33855 9.7737 6.64665 8.86261 6.64665C8.02161 6.64665 7.53102 7.33855 7.53102 8.65314V14.9494C7.53102 22.9753 16.8521 24.5667 16.8521 35.3602V42.0715C16.8521 47.3299 13.9787 50.0975 8.65236 50.0975ZM30.4385 0.973141C35.6948 0.973141 38.4981 3.74071 38.4981 8.86071V28.4412C38.4981 33.4921 35.6948 36.2596 30.4385 36.2596H29.177V49.4056H22.3789V0.973141H30.4385ZM31.7 28.0953V9.20665C31.7 7.96125 31.2795 7.33855 30.4385 7.33855H29.177V29.8942H30.4385C31.2795 29.8942 31.7 29.2023 31.7 28.0953ZM51.8743 50.0975C46.618 50.0975 43.8146 47.3299 43.8146 42.1407V8.30719C43.8146 3.04882 46.618 0.28125 51.8743 0.28125C57.1305 0.28125 59.9339 3.04882 59.9339 8.30719V42.1407C59.9339 47.3299 57.1305 50.0975 51.8743 50.0975ZM51.8743 43.7321C52.7153 43.7321 53.2059 43.0402 53.2059 41.7256V8.65314C53.2059 7.33855 52.7153 6.64665 51.8743 6.64665C51.0333 6.64665 50.5427 7.33855 50.5427 8.65314V41.7256C50.5427 43.0402 51.0333 43.7321 51.8743 43.7321ZM65.3873 49.4056V0.973141H73.4469C78.7031 0.973141 81.5065 3.74071 81.5065 8.86071V16.1256C81.5065 21.1764 79.4741 23.8748 75.6195 23.8748H75.1289V24.8434H79.5442L81.927 49.4056H75.199L73.4469 28.6488H72.2555V49.4056H65.3873ZM72.2555 22.8369H73.4469C74.2879 22.8369 74.7084 22.145 74.7084 20.8996V9.20665C74.7084 7.96125 74.2879 7.33855 73.4469 7.33855H72.2555V22.8369ZM100.348 0.973141V7.33855H96.6331V49.4056H89.835V7.33855H86.0504V0.973141H100.348ZM113.025 50.0975C107.839 50.0975 105.106 47.3299 105.106 42.0715V32.5234H111.834V41.7256C111.834 43.0402 112.254 43.7321 113.025 43.7321C113.936 43.7321 114.357 43.0402 114.357 41.7256V35.9137C114.357 27.5418 105.106 26.2964 105.106 15.5029V8.30719C105.106 3.04882 107.909 0.28125 113.235 0.28125C118.702 0.28125 121.435 3.04882 121.225 8.30719L120.664 18.7548H113.936L114.497 8.65314C114.567 7.33855 114.146 6.64665 113.235 6.64665C112.394 6.64665 111.904 7.33855 111.904 8.65314V14.9494C111.904 22.9753 121.225 24.5667 121.225 35.3602V42.0715C121.225 47.3299 118.351 50.0975 113.025 50.0975ZM136.423 0.973141H143.221V49.4056H136.423V26.9883H133.55V49.4056H126.752V0.973141H133.55V20.6229H136.423V0.973141ZM148.94 49.4056V0.973141H162.186V7.33855H155.738V21.6607H161.485V28.0261H155.738V43.0402H162.186V49.4056H148.94ZM167.159 49.4056V0.973141H173.957V49.4056H167.159ZM187.407 50.0975C182.221 50.0975 179.487 47.3299 179.487 42.0715V32.5234H186.215V41.7256C186.215 43.0402 186.636 43.7321 187.407 43.7321C188.318 43.7321 188.738 43.0402 188.738 41.7256V35.9137C188.738 27.5418 179.487 26.2964 179.487 15.5029V8.30719C179.487 3.04882 182.291 0.28125 187.617 0.28125C193.083 0.28125 195.817 3.04882 195.607 8.30719L195.046 18.7548H188.318L188.878 8.65314C188.949 7.33855 188.528 6.64665 187.617 6.64665C186.776 6.64665 186.285 7.33855 186.285 8.65314V14.9494C186.285 22.9753 195.607 24.5667 195.607 35.3602V42.0715C195.607 47.3299 192.733 50.0975 187.407 50.0975ZM214.589 0.973141V7.33855H210.875V49.4056H204.077V7.33855H200.292V0.973141H214.589Z"/>
+        </svg>
+      </div>
+
+      <div class="fail" role="alert">
+        <!-- red, with an icon and a reference: this one IS a fault,
+             and it is ours. Red never carries the meaning alone. -->
+        <span class="tile tile--red" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/>
+          </svg>
+        </span>
+        <h2>SportsHeist didn&rsquo;t start</h2>
+        <p>Something failed on our side before we got as far as your club. Your device is online,
+          so this isn&rsquo;t your connection.</p>
+        <span class="fail__ref">Logged as 8F2-4471</span>
+
+        <p class="note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+          </svg>
+          <span>Quote that reference if you get in touch. <b>You&rsquo;re still signed in</b> &mdash;
+            you won&rsquo;t have to log in again once this clears.</span>
+        </p>
+      </div>
+
+      <div class="act">
+        <button class="btn btn--acid" type="button" data-retry>
+          <span class="btn__fill" aria-hidden="true"></span>
+          <span class="btn__label btn__label--idle">Try Again</span>
+          <span class="btn__label btn__label--busy">
+            <svg class="spin anim" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3.2" opacity=".3"/>
+              <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+              </path>
+            </svg>
+            Trying&hellip;
+          </span>
+          <span class="btn__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></svg>
+          </span>
+        </button>
+      </div>
+      <div class="act">
+        <button class="btn" type="button">
+          <span class="btn__label">Contact Us</span>
+        </button>
+      </div>
+
+      <p class="prompt">Not your account?<button class="tlink" type="button">Log in</button></p>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       FRAME 3 — ENTRY FORK (replaces AU-03)
+       ========================================================== -->
+  <div class="framehead">
+    <p class="framelabel"><b>Frame 3</b> Entry fork &middot; replaces AU-03</p>
+  </div>
+
+  <section class="frame" data-title="Entry fork" aria-label="Entry fork">
+    <div class="topbar">
+      <button class="icon-btn" type="button" aria-label="Back to Get Started">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+    </div>
+
+    <div class="lockup fork__lock" role="img" aria-label="SportsHeist">
+      <svg class="lockup__sh" viewBox="0 0 81 90" fill="none" aria-hidden="true">
+        <path fill="#9BE222" fill-rule="evenodd" clip-rule="evenodd" d="M0 90H59.7728C71.4499 90 81 79.3816 81 66.4147V54.4183L56.4543 41.0228L33.2224 53.7034L54.8693 65.5188V84.4459L0 54.5088V90ZM47.7845 36.2966L24.5462 48.97L0.000460651 35.5741V23.5858C4.49425e-07 10.6189 9.55009 0 21.2268 0H81V35.4841L26.1376 5.54645V24.4812L47.7845 36.2966Z"/>
+      </svg>
+      <svg class="lockup__word" viewBox="0 0 215 51" fill="none" aria-hidden="true">
+        <path fill="#FFFFFF" d="M8.65236 50.0975C3.46618 50.0975 0.73291 47.3299 0.73291 42.0715V32.5234H7.46094V41.7256C7.46094 43.0402 7.88144 43.7321 8.65236 43.7321C9.56345 43.7321 9.98395 43.0402 9.98395 41.7256V35.9137C9.98395 27.5418 0.73291 26.2964 0.73291 15.5029V8.30719C0.73291 3.04882 3.53625 0.28125 8.86261 0.28125C14.3291 0.28125 17.0624 3.04882 16.8521 8.30719L16.2915 18.7548H9.56345L10.1241 8.65314C10.1942 7.33855 9.7737 6.64665 8.86261 6.64665C8.02161 6.64665 7.53102 7.33855 7.53102 8.65314V14.9494C7.53102 22.9753 16.8521 24.5667 16.8521 35.3602V42.0715C16.8521 47.3299 13.9787 50.0975 8.65236 50.0975ZM30.4385 0.973141C35.6948 0.973141 38.4981 3.74071 38.4981 8.86071V28.4412C38.4981 33.4921 35.6948 36.2596 30.4385 36.2596H29.177V49.4056H22.3789V0.973141H30.4385ZM31.7 28.0953V9.20665C31.7 7.96125 31.2795 7.33855 30.4385 7.33855H29.177V29.8942H30.4385C31.2795 29.8942 31.7 29.2023 31.7 28.0953ZM51.8743 50.0975C46.618 50.0975 43.8146 47.3299 43.8146 42.1407V8.30719C43.8146 3.04882 46.618 0.28125 51.8743 0.28125C57.1305 0.28125 59.9339 3.04882 59.9339 8.30719V42.1407C59.9339 47.3299 57.1305 50.0975 51.8743 50.0975ZM51.8743 43.7321C52.7153 43.7321 53.2059 43.0402 53.2059 41.7256V8.65314C53.2059 7.33855 52.7153 6.64665 51.8743 6.64665C51.0333 6.64665 50.5427 7.33855 50.5427 8.65314V41.7256C50.5427 43.0402 51.0333 43.7321 51.8743 43.7321ZM65.3873 49.4056V0.973141H73.4469C78.7031 0.973141 81.5065 3.74071 81.5065 8.86071V16.1256C81.5065 21.1764 79.4741 23.8748 75.6195 23.8748H75.1289V24.8434H79.5442L81.927 49.4056H75.199L73.4469 28.6488H72.2555V49.4056H65.3873ZM72.2555 22.8369H73.4469C74.2879 22.8369 74.7084 22.145 74.7084 20.8996V9.20665C74.7084 7.96125 74.2879 7.33855 73.4469 7.33855H72.2555V22.8369ZM100.348 0.973141V7.33855H96.6331V49.4056H89.835V7.33855H86.0504V0.973141H100.348ZM113.025 50.0975C107.839 50.0975 105.106 47.3299 105.106 42.0715V32.5234H111.834V41.7256C111.834 43.0402 112.254 43.7321 113.025 43.7321C113.936 43.7321 114.357 43.0402 114.357 41.7256V35.9137C114.357 27.5418 105.106 26.2964 105.106 15.5029V8.30719C105.106 3.04882 107.909 0.28125 113.235 0.28125C118.702 0.28125 121.435 3.04882 121.225 8.30719L120.664 18.7548H113.936L114.497 8.65314C114.567 7.33855 114.146 6.64665 113.235 6.64665C112.394 6.64665 111.904 7.33855 111.904 8.65314V14.9494C111.904 22.9753 121.225 24.5667 121.225 35.3602V42.0715C121.225 47.3299 118.351 50.0975 113.025 50.0975ZM136.423 0.973141H143.221V49.4056H136.423V26.9883H133.55V49.4056H126.752V0.973141H133.55V20.6229H136.423V0.973141ZM148.94 49.4056V0.973141H162.186V7.33855H155.738V21.6607H161.485V28.0261H155.738V43.0402H162.186V49.4056H148.94ZM167.159 49.4056V0.973141H173.957V49.4056H167.159ZM187.407 50.0975C182.221 50.0975 179.487 47.3299 179.487 42.0715V32.5234H186.215V41.7256C186.215 43.0402 186.636 43.7321 187.407 43.7321C188.318 43.7321 188.738 43.0402 188.738 41.7256V35.9137C188.738 27.5418 179.487 26.2964 179.487 15.5029V8.30719C179.487 3.04882 182.291 0.28125 187.617 0.28125C193.083 0.28125 195.817 3.04882 195.607 8.30719L195.046 18.7548H188.318L188.878 8.65314C188.949 7.33855 188.528 6.64665 187.617 6.64665C186.776 6.64665 186.285 7.33855 186.285 8.65314V14.9494C186.285 22.9753 195.607 24.5667 195.607 35.3602V42.0715C195.607 47.3299 192.733 50.0975 187.407 50.0975ZM214.589 0.973141V7.33855H210.875V49.4056H204.077V7.33855H200.292V0.973141H214.589Z"/>
+      </svg>
+    </div>
+
+    <!-- ONE STATEMENT. Not a question, and nothing about club
+         membership — that is decided on the next screen. -->
+    <h1 class="gs-heading">Everything runs off one account</h1>
+    <p class="gs-sub">Log in if you&rsquo;ve used SportsHeist before.<br>If you&rsquo;re new, sign up
+      &mdash; it takes about two minutes.</p>
+
+    <!-- TWO DESTINATIONS, each labelled with where it goes. The old
+         screen's YES, CONTINUE / SIGN UP answered neither half of
+         the question it posed. -->
+    <div class="fork fork--push">
+      <div class="fork__item">
+        <button class="btn btn--acid" type="button">
+          <span class="btn__fill" aria-hidden="true"></span>
+          <span class="btn__label">Log In</span>
+          <span class="btn__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></svg>
+          </span>
+        </button>
+        <p class="fork__note">You already have a SportsHeist account.</p>
+      </div>
+
+      <div class="fork__item">
+        <button class="btn" type="button">
+          <span class="btn__disc" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15.4 20v-1.6a3.6 3.6 0 0 0-3.6-3.6H7a3.6 3.6 0 0 0-3.6 3.6V20"/>
+              <circle cx="9.4" cy="7.6" r="3.6"/><path d="M18.6 8.4v5.2M16 11h5.2"/>
+            </svg>
+          </span>
+          <span class="btn__label">Sign Up</span>
+        </button>
+        <p class="fork__note">New here. You&rsquo;ll choose member or guest next.</p>
+      </div>
+    </div>
+
+    <!-- the contradiction, fixed. AU-03's body copy reads "you must
+         be a registered member"; AU-04 then offers a guest path. -->
+    <p class="note note--last">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+      </svg>
+      <span><b>You don&rsquo;t have to be a club member.</b> Signing up lets you look around as a
+        guest, and you can register with a club whenever you&rsquo;re ready.</span>
+    </p>
+  </section>
+
+  <!-- ==========================================================
+       FRAME 4 — SIGN-UP LEAVES THE APP, AS SHIPPED TODAY
+       THIS IS NOT A PROPOSAL. Frame 3 above proposes an in-app
+       sign-up; this frame is what the App Store build actually
+       does when the sign-up control on that screen is pressed —
+       pre_login.dart:29-53, UDialog().customSimpleDialog(...),
+       then launchUrlString(".../en/auth/signup") and context.pop().
+       Copy is verbatim from the source, typo included.
+       The screen behind is frame 3 held back to 34%: it is context
+       for where the dialog is raised from, not a second screen.
+       ========================================================== -->
+  <div class="framehead">
+    <p class="framelabel"><b>Frame 4</b> Sign-up leaves the app &middot; shipped today</p>
+  </div>
+
+  <section class="frame" data-title="Sign-up leaves the app · shipped today"
+           aria-label="Sign-up leave-app confirmation, as shipped today">
+    <p class="livetag livetag--float">Shipped today</p>
+
+    <div class="behind" aria-hidden="true">
+      <div class="topbar">
+        <span class="icon-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        </span>
+      </div>
+
+      <div class="lockup fork__lock">
+        <svg class="lockup__sh" viewBox="0 0 81 90" fill="none">
+          <path fill="#9BE222" fill-rule="evenodd" clip-rule="evenodd" d="M0 90H59.7728C71.4499 90 81 79.3816 81 66.4147V54.4183L56.4543 41.0228L33.2224 53.7034L54.8693 65.5188V84.4459L0 54.5088V90ZM47.7845 36.2966L24.5462 48.97L0.000460651 35.5741V23.5858C4.49425e-07 10.6189 9.55009 0 21.2268 0H81V35.4841L26.1376 5.54645V24.4812L47.7845 36.2966Z"/>
+        </svg>
+        <svg class="lockup__word" viewBox="0 0 215 51" fill="none">
+          <path fill="#FFFFFF" d="M8.65236 50.0975C3.46618 50.0975 0.73291 47.3299 0.73291 42.0715V32.5234H7.46094V41.7256C7.46094 43.0402 7.88144 43.7321 8.65236 43.7321C9.56345 43.7321 9.98395 43.0402 9.98395 41.7256V35.9137C9.98395 27.5418 0.73291 26.2964 0.73291 15.5029V8.30719C0.73291 3.04882 3.53625 0.28125 8.86261 0.28125C14.3291 0.28125 17.0624 3.04882 16.8521 8.30719L16.2915 18.7548H9.56345L10.1241 8.65314C10.1942 7.33855 9.7737 6.64665 8.86261 6.64665C8.02161 6.64665 7.53102 7.33855 7.53102 8.65314V14.9494C7.53102 22.9753 16.8521 24.5667 16.8521 35.3602V42.0715C16.8521 47.3299 13.9787 50.0975 8.65236 50.0975ZM30.4385 0.973141C35.6948 0.973141 38.4981 3.74071 38.4981 8.86071V28.4412C38.4981 33.4921 35.6948 36.2596 30.4385 36.2596H29.177V49.4056H22.3789V0.973141H30.4385ZM31.7 28.0953V9.20665C31.7 7.96125 31.2795 7.33855 30.4385 7.33855H29.177V29.8942H30.4385C31.2795 29.8942 31.7 29.2023 31.7 28.0953ZM51.8743 50.0975C46.618 50.0975 43.8146 47.3299 43.8146 42.1407V8.30719C43.8146 3.04882 46.618 0.28125 51.8743 0.28125C57.1305 0.28125 59.9339 3.04882 59.9339 8.30719V42.1407C59.9339 47.3299 57.1305 50.0975 51.8743 50.0975ZM51.8743 43.7321C52.7153 43.7321 53.2059 43.0402 53.2059 41.7256V8.65314C53.2059 7.33855 52.7153 6.64665 51.8743 6.64665C51.0333 6.64665 50.5427 7.33855 50.5427 8.65314V41.7256C50.5427 43.0402 51.0333 43.7321 51.8743 43.7321ZM65.3873 49.4056V0.973141H73.4469C78.7031 0.973141 81.5065 3.74071 81.5065 8.86071V16.1256C81.5065 21.1764 79.4741 23.8748 75.6195 23.8748H75.1289V24.8434H79.5442L81.927 49.4056H75.199L73.4469 28.6488H72.2555V49.4056H65.3873ZM72.2555 22.8369H73.4469C74.2879 22.8369 74.7084 22.145 74.7084 20.8996V9.20665C74.7084 7.96125 74.2879 7.33855 73.4469 7.33855H72.2555V22.8369ZM100.348 0.973141V7.33855H96.6331V49.4056H89.835V7.33855H86.0504V0.973141H100.348ZM113.025 50.0975C107.839 50.0975 105.106 47.3299 105.106 42.0715V32.5234H111.834V41.7256C111.834 43.0402 112.254 43.7321 113.025 43.7321C113.936 43.7321 114.357 43.0402 114.357 41.7256V35.9137C114.357 27.5418 105.106 26.2964 105.106 15.5029V8.30719C105.106 3.04882 107.909 0.28125 113.235 0.28125C118.702 0.28125 121.435 3.04882 121.225 8.30719L120.664 18.7548H113.936L114.497 8.65314C114.567 7.33855 114.146 6.64665 113.235 6.64665C112.394 6.64665 111.904 7.33855 111.904 8.65314V14.9494C111.904 22.9753 121.225 24.5667 121.225 35.3602V42.0715C121.225 47.3299 118.351 50.0975 113.025 50.0975ZM136.423 0.973141H143.221V49.4056H136.423V26.9883H133.55V49.4056H126.752V0.973141H133.55V20.6229H136.423V0.973141ZM148.94 49.4056V0.973141H162.186V7.33855H155.738V21.6607H161.485V28.0261H155.738V43.0402H162.186V49.4056H148.94ZM167.159 49.4056V0.973141H173.957V49.4056H167.159ZM187.407 50.0975C182.221 50.0975 179.487 47.3299 179.487 42.0715V32.5234H186.215V41.7256C186.215 43.0402 186.636 43.7321 187.407 43.7321C188.318 43.7321 188.738 43.0402 188.738 41.7256V35.9137C188.738 27.5418 179.487 26.2964 179.487 15.5029V8.30719C179.487 3.04882 182.291 0.28125 187.617 0.28125C193.083 0.28125 195.817 3.04882 195.607 8.30719L195.046 18.7548H188.318L188.878 8.65314C188.949 7.33855 188.528 6.64665 187.617 6.64665C186.776 6.64665 186.285 7.33855 186.285 8.65314V14.9494C186.285 22.9753 195.607 24.5667 195.607 35.3602V42.0715C195.607 47.3299 192.733 50.0975 187.407 50.0975ZM214.589 0.973141V7.33855H210.875V49.4056H204.077V7.33855H200.292V0.973141H214.589Z"/>
+        </svg>
+      </div>
+
+      <h1 class="gs-heading">Everything runs off one account</h1>
+      <p class="gs-sub">Log in if you&rsquo;ve used SportsHeist before.<br>If you&rsquo;re new, sign up
+        &mdash; it takes about two minutes.</p>
+
+      <div class="fork fork--push">
+        <div class="fork__item">
+          <span class="btn btn--acid">
+            <span class="btn__fill"></span>
+            <span class="btn__label">Log In</span>
+            <span class="btn__arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></svg>
+            </span>
+          </span>
+          <p class="fork__note">You already have a SportsHeist account.</p>
+        </div>
+
+        <!-- the control that raises the dialog -->
+        <div class="fork__item">
+          <span class="btn">
+            <span class="btn__disc">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15.4 20v-1.6a3.6 3.6 0 0 0-3.6-3.6H7a3.6 3.6 0 0 0-3.6 3.6V20"/>
+                <circle cx="9.4" cy="7.6" r="3.6"/><path d="M18.6 8.4v5.2M16 11h5.2"/>
+              </svg>
+            </span>
+            <span class="btn__label">Sign Up</span>
+          </span>
+          <p class="fork__note">New here. You&rsquo;ll choose member or guest next.</p>
+        </div>
+      </div>
+
+      <p class="note note--last">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+        </svg>
+        <span><b>You don&rsquo;t have to be a club member.</b> Signing up lets you look around as a
+          guest, and you can register with a club whenever you&rsquo;re ready.</span>
+      </p>
+    </div>
+
+    <!-- dialogs.html's shell, re-scoped but not redesigned. Both
+         strings below are verbatim from pre_login.dart:32 and :35 —
+         including "proeed", which is the spelling in the source. -->
+    <div class="scrim">
+      <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="pl-t" aria-describedby="pl-b">
+        <button class="dlg__close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="tile tile--neutral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/>
+            <path d="M18 14.5v4a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6h4"/>
+          </svg>
+        </span>
+        <h3 class="dlg__title" id="pl-t">LEAVING THE APP</h3>
+        <p class="dlg__body" id="pl-b">To sign up, you will need to go to the club&rsquo;s website. Do
+          you want to proeed?</p>
+        <div class="act">
+          <button class="btn btn--ghost" type="button">NO</button>
+          <button class="btn btn--acid" type="button">YES</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       FRAME 5 — NOTIFICATION PRIMING (new)
+       ========================================================== -->
+  <div class="framehead">
+    <p class="framelabel"><b>Frame 5</b> Notification priming &middot; before AU-13</p>
+  </div>
+
+  <section class="frame" id="prime" data-state="priming" data-title="Notification priming" aria-label="Notification priming">
+    <div class="statebar statebar--float" role="group" aria-label="Priming states">
+      <button type="button" data-frame="prime" data-go="priming" aria-pressed="true">Priming</button>
+      <button type="button" data-frame="prime" data-go="declined" aria-pressed="false">Declined</button>
+    </div>
+
+    <!-- ---------- priming: our screen, before the OS is asked ---------- -->
+    <div class="pv pv--priming">
+      <div class="topbar"></div>
+
+      <h1 class="title">Turn on<br>alerts</h1>
+      <p class="subtitle">Votes close on a deadline. Without alerts you&rsquo;d find out after your
+        club has already acted.</p>
+
+      <ul class="bens">
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>A new idea opens for voting in your club</li>
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>24 hours before a vote you can still cast closes</li>
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>The result, and what the club does next</li>
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>Replies to an idea you posted</li>
+        <li class="is-off"><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 12h10"/></svg></span>No marketing, no match scores, nothing else</li>
+      </ul>
+
+      <!-- the whole reason this screen exists: iOS grants one prompt
+           per install, so the member has to understand the question
+           BEFORE the system asks it. -->
+      <p class="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+        </svg>
+        <span>The next tap opens <b>iOS&rsquo;s own permission alert</b>. iOS only allows one, so if
+          you decline there we can&rsquo;t ask again &mdash; you&rsquo;d have to turn alerts on in
+          Settings. Every alert above can be switched off individually later.</span>
+      </p>
+
+      <div class="act act--push">
+        <button class="btn btn--acid" type="button">
+          <span class="btn__fill" aria-hidden="true"></span>
+          <span class="btn__label">Turn On Alerts</span>
+          <span class="btn__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></svg>
+          </span>
+        </button>
+      </div>
+
+      <div class="act--foot">
+        <button class="tlink" type="button">Not now</button>
+      </div>
+    </div>
+
+    <!-- ---------- declined: the state the live build has no
+         follow-up for at all ---------- -->
+    <div class="pv pv--declined">
+      <div class="topbar"></div>
+
+      <div class="fail" role="status">
+        <span class="tile tile--neutral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 6.4a4.6 4.6 0 0 1 7.6 3.4v3.4l1.6 3H8.4"/>
+            <path d="M6.9 9.4v.4l-1.5 3.4"/><path d="M10.2 19.6a2 2 0 0 0 3.6 0"/>
+            <path d="M3.5 3.5 20.5 20.5"/>
+          </svg>
+        </span>
+        <h2>Alerts are off</h2>
+        <p>Nothing is broken &mdash; you just won&rsquo;t hear about votes until you open the app.
+          <b>iOS only lets us ask once</b>, so we can&rsquo;t show that prompt again.</p>
+
+        <p class="note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+          </svg>
+          <span>Turn them on any time in <b>Settings &rsaquo; Notifications &rsaquo; SportsHeist</b>,
+            or from Alerts in your account settings.</span>
+        </p>
+      </div>
+
+      <div class="act">
+        <button class="btn btn--acid" type="button">
+          <span class="btn__fill" aria-hidden="true"></span>
+          <span class="btn__label">Open Settings</span>
+          <span class="btn__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M11 5h8v8"/></svg>
+          </span>
+        </button>
+      </div>
+
+      <div class="act--foot">
+        <button class="tlink" type="button">Continue without alerts</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       SPECIMEN — the iOS system alert that frame 5 hands off to.
+       In the flow it appears the instant "Turn On Alerts" is tapped.
+       Shown here beneath the frame because it is NOT ours: the app
+       supplies the display name and the trigger point, and nothing
+       else about it can be changed.
+       ========================================================== -->
+  <div class="spec">
+    <p class="spec__label">Not ours &middot; the iOS system alert</p>
+
+    <div class="oswrap">
+      <div class="osalert" role="img" aria-label="iOS system notification permission alert, rendered greyscale as a specimen">
+        <div class="osalert__body">
+          <p class="osalert__title">&ldquo;SportsHeist&rdquo; Would Like to Send You Notifications</p>
+          <p class="osalert__msg">Notifications may include alerts, sounds, and icon badges. These can
+            be configured in Settings.</p>
+        </div>
+        <div class="osalert__acts">
+          <span class="osalert__btn">Don&rsquo;t Allow</span>
+          <span class="osalert__btn">Allow</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="spec__note">
+      Drawn at iOS's real geometry &mdash; <b>270 pt</b> wide, <code>R14</code>, title
+      <code>17/600</code>, message <code>13/400</code>, <code>44 pt</code> buttons split by
+      hairlines &mdash; and rendered <b>greyscale on purpose</b>. iOS paints those two labels in
+      system blue <code>#007AFF</code>, a hue that appears nowhere in this brand and that the app
+      cannot override; greying it keeps a colour we do not own out of the library while still
+      showing exactly what is inherited.
+    </p>
+
+    <p class="oscap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/>
+      </svg>
+      <span>The shipped build renders this title as
+        <b><code>&ldquo;Sports Heist(stg)&rdquo; Would Like to Send You Notifications</code></b> &mdash;
+        the staging flavour suffix leaking through <code>CFBundleDisplayName</code>. It is a build
+        setting in <code>ios/Runner/Info.plist</code> and the Android manifest label, not a design
+        value, and it must read <code>SportsHeist</code> before release.</span>
+    </p>
+  </div>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* prefers-reduced-motion: the CSS block kills transitions; SMIL has
+     to be stopped on the document timeline. states.html's handling. */
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce){
+    Array.prototype.forEach.call(document.querySelectorAll('svg.anim'), function(s){
+      if (s.pauseAnimations) s.pauseAnimations();
+    });
+  }
+
+  /* one state bar per frame */
+  Array.prototype.forEach.call(document.querySelectorAll('.statebar'), function(bar){
+    bar.addEventListener('click', function(e){
+      var b = e.target.closest('[data-go]');
+      if (!b) return;
+      var frame = document.getElementById(b.getAttribute('data-frame'));
+      if (!frame) return;
+      frame.setAttribute('data-state', b.getAttribute('data-go'));
+      Array.prototype.forEach.call(bar.querySelectorAll('[data-go]'), function(x){
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+    });
+  });
+
+  /* Try Again — the in-button ring, so a second attempt is visible
+     without the frame redrawing, and the control cannot be pressed
+     twice. Returns to idle because we have nothing to route to here. */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-retry]'), function(b){
+    b.addEventListener('click', function(){
+      if (b.getAttribute('aria-busy') === 'true') return;
+      b.setAttribute('aria-busy','true');
+      setTimeout(function(){ b.removeAttribute('aria-busy'); }, 1700);
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en" data-component="states">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Empty, loading and error states</title>
+
+<style>
+/* ============================================================
+   SPORTSHEIST — EMPTY / LOADING / ERROR STATES
+   Token block copied verbatim from merits.html. The four
+   additions are the same four dialogs.html declares, derived
+   from the contract's one sanctioned semantic colour, plus two
+   skeleton values built as white alphas so a bone reads
+   correctly on --section, --surface and --sunken alike.
+
+   What this replaces in the live build:
+     · C-21 / EmptyContainer — a pure #000000 panel, a lilac
+       hairline and one shouted line of Bebas with no action.
+       NO PROPOSALS AT THE MOMENT is the first thing a new
+       member sees inside their club.
+     · the grey-300-on-grey-100 shimmer, which is a light-theme
+       skeleton running on a dark screen.
+     · WLoading, whose `color ?? Colors.blue` default paints a
+       Material #2196F3 dot-ring in every waiting state.
+     · the OOPS! modal, which pipes a raw HTTP 403 string
+       ("You do not have permission to access this resource.")
+       to the member, and is reused for payment failures.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls, tab bar        */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* semantic red — the only other hue in the system */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.12);
+  --red-line:      rgba(226,86,74,.28);
+
+  /* neutral wash — where a state must NOT read as red or acid */
+  --neutral-wash:  rgba(255,255,255,.06);
+
+  /* skeleton — white alphas, so one bone works on every surface */
+  --bone:          rgba(255,255,255,.055);
+  --sheen:         rgba(255,255,255,.06);
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* The only keyframes in the file. A shimmer has to loop, and a
+   transition cannot loop, so this one sweep is declared here at
+   the top level and switched off under prefers-reduced-motion.
+   Every other movement in this file is a transition or SMIL. */
+@keyframes shim{to{transform:translateX(100%)}}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 176px}
+
+/* ============================================================
+   PAGE FURNITURE
+   ============================================================ */
+.top{margin:6px var(--gutter) 0}
+.eyebrow{
+  margin:0 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.title{margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;text-transform:uppercase}
+.sub{margin:10px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+
+.label{margin:30px var(--gutter) 12px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.note{margin:8px var(--gutter) 0;font-size:12px;line-height:1.45;color:var(--muted)}
+.note b{color:var(--text);font-weight:600}
+.note--tight{margin-top:6px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+
+/* specimen wrapper — the micro-label that groups each specimen */
+.spec{margin-top:20px}
+.spec__label{
+  display:flex;align-items:center;gap:9px;margin:0 var(--gutter) 9px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.spec__label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.spec__note{margin:9px var(--gutter) 0;font-size:11.5px;line-height:1.45;color:var(--dim)}
+.spec__note b{color:var(--muted);font-weight:600}
+/* the dock carries an offline strip as well as the tab bar, so the last
+   specimen needs a little more clearance than the contract's 110 px */
+.screen > .spec:last-child{margin-bottom:48px}
+
+/* ============================================================
+   CONTROLS — same three controls as dialogs.html
+   ============================================================ */
+.btn{
+  position:relative;flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em;
+  cursor:pointer;transition:background .18s var(--ease),opacity .18s var(--ease);
+  white-space:nowrap;
+}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.btn--ghost:hover{background:#181D25}
+.btn svg{width:17px;height:17px;flex:0 0 auto}
+
+.pill-btn{
+  display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 16px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease);position:relative;
+}
+.pill-btn:hover{background:#222833}
+.pill-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.pill-btn--acid:hover{background:#A8EC33}
+.pill-btn svg{width:15px;height:15px;flex:0 0 auto}
+
+.link-btn{
+  display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 6px;
+  border:0;background:transparent;color:var(--acid);
+  font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:opacity .18s var(--ease);
+}
+.link-btn:hover{opacity:.78}
+.link-btn svg{width:13px;height:13px}
+
+.btn:focus-visible,.pill-btn:focus-visible,.link-btn:focus-visible,.banner__link:focus-visible{
+  outline:2px solid var(--acid);outline-offset:2px;
+}
+
+/* in-button loading: the label keeps its box, the spinner overlays it,
+   so the control cannot change width and cannot be pressed twice */
+.btn__label,.pill-btn__label{display:inline-block}
+.btn__spin,.pill-btn__spin{position:absolute;inset:0;display:none;align-items:center;justify-content:center}
+.btn[aria-busy="true"],.pill-btn[aria-busy="true"]{pointer-events:none;opacity:.85}
+.btn[aria-busy="true"] .btn__label,.pill-btn[aria-busy="true"] .pill-btn__label{visibility:hidden}
+.btn[aria-busy="true"] .btn__spin,.pill-btn[aria-busy="true"] .pill-btn__spin{display:flex}
+.btn[aria-busy="true"] svg:not(.anim),.pill-btn[aria-busy="true"] svg:not(.anim){visibility:hidden}
+
+.act{display:flex;gap:10px;margin-top:16px;width:100%}
+.act--single .btn{width:100%}
+
+/* ============================================================
+   ICON TILE — the one state marker, shared with dialogs.html.
+   Variant changes wash and icon colour only.
+   ============================================================ */
+.tile{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:52px;height:52px;border-radius:14px;flex:0 0 auto;
+}
+.tile svg{width:25px;height:25px}
+.tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.tile--neutral{background:var(--neutral-wash);color:var(--text)}
+.tile--acid{background:var(--acid-wash);color:var(--acid)}
+
+/* ============================================================
+   THE STATE PANEL — one panel serves empty and error.
+   Empty states carry a peak illustration; errors carry the tile.
+   Both sit in the slot the missing content would have filled, so
+   both use the section fill and the section hairline.
+   ============================================================ */
+.empty,.state{
+  margin:0 var(--gutter);padding:24px 20px 22px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.empty h3,.state h3{margin:14px 0 0;font-size:17px;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+.empty p,.state p{
+  margin:7px auto 0;max-width:31ch;
+  font-size:12.5px;line-height:1.5;color:var(--muted);
+}
+.empty p b,.state p b{color:var(--text);font-weight:600}
+.empty .pill-btn,.state .pill-btn{margin-top:16px}
+.empty .link-btn,.state .link-btn{margin-top:4px}
+
+/* "nothing to do here" — the line that replaces an action */
+.wait{
+  display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+  padding:8px 13px;border-radius:var(--r-pill);background:var(--sunken);
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+}
+.wait svg{width:13px;height:13px;flex:0 0 auto}
+
+/* the welcome variant — the only empty state that gets a hero
+   headline, two lines of orientation and a second action */
+.empty--welcome{padding:28px 20px 24px}
+.empty--welcome h3{margin-top:16px;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.empty--welcome p{max-width:33ch;font-size:13px}
+.empty--welcome .pill-btn{height:46px;padding:0 22px;font-size:14.5px;font-weight:700}
+
+/* ============================================================
+   ILLUSTRATION — "the range"
+   One 132 × 88 frame, three drawing rules, no other marks:
+     surface fill, no stroke      = context (the range behind)
+     accent wash + 1.8 stroke     = something that exists
+     1.8 accent stroke, 5-5 dash  = something that should exist
+                                    and does not yet
+   Everything is seated on one ground line at y = 72. Nothing
+   curves except the circles the brand already uses for members
+   and for the search lens.
+   ============================================================ */
+.ill{display:block;width:132px;height:88px;margin:0 auto}
+.empty--welcome .ill{width:168px;height:112px}
+
+/* ============================================================
+   LOADING — skeletons
+   Bones are white alphas so the same bone reads on --section,
+   --surface and --sunken. The sheen is one 1.5 s sweep.
+   ============================================================ */
+.bone{position:relative;overflow:hidden;background:var(--bone);border-radius:5px;flex:0 0 auto}
+.bone--pill{border-radius:var(--r-pill)}
+.bone--circ{border-radius:50%}
+.bone::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 18%,var(--sheen) 50%,transparent 82%);
+  transform:translateX(-100%);
+  animation:shim 1.5s linear infinite;
+}
+
+/* skeleton idea card — geometry taken from .sh-idea-card:
+   surface fill, 16 px radius, 16 px padding, 22 px author
+   avatars, 17 px title, 13 px body, meta row, sunken gauge
+   panel with a 64 px ring */
+.skel-card{
+  margin:0 var(--gutter);padding:16px;
+  border-radius:var(--r-card);background:var(--surface);
+  box-shadow:inset 0 1px 0 var(--line-soft);
+}
+.skel-card__author{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.skel-stack{display:flex}
+.skel-stack .bone + .bone{margin-left:-9px;box-shadow:0 0 0 1.5px var(--surface)}
+.skel-line{height:11px}
+.skel-title{height:15px;margin-bottom:8px}
+.skel-card__meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:16px 0 10px}
+.skel-gauge{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;border-radius:var(--r-panel);background:var(--sunken);
+}
+.skel-gauge__txt{flex:1;min-width:0}
+
+/* skeleton ranked rows — geometry taken from the merits board:
+   22 px rank slot, 34 px avatar, name over club, score, delta */
+.skel-board{margin:0 var(--gutter);border-radius:var(--r-panel);background:var(--surface);overflow:hidden}
+.skel-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.skel-row:first-child{border-top:0}
+.skel-row__id{flex:1;min-width:0}
+
+/* ============================================================
+   LOADING — the two markers
+   Ring: a 90° accent arc sweeping a white-18 % track. This is
+   the spinner everywhere a control or a line is waiting.
+   Peaks: the brand's three peaks, cycling opacity on a 160 ms
+   stagger. Used where a whole panel or a whole screen is
+   waiting. Both are SMIL, so no keyframes and both stop dead
+   on svg.pauseAnimations() under prefers-reduced-motion.
+   ============================================================ */
+.ring{display:inline-flex;color:var(--acid)}
+.ring svg{display:block}
+.peaks{display:block;color:var(--acid)}
+
+.loadbay{
+  margin:0 var(--gutter);padding:26px 20px;
+  border-radius:var(--r-card);background:var(--section);border:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.loadbay h3{margin:14px 0 0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.loadbay p{margin:6px auto 0;max-width:30ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+
+.rings{
+  display:flex;align-items:center;gap:20px;
+  margin:0 var(--gutter);padding:16px 18px;
+  border-radius:var(--r-panel);background:var(--surface);
+}
+.rings p{margin:0;flex:1;font-size:11.5px;line-height:1.45;color:var(--dim)}
+.rings p b{color:var(--muted);font-weight:600}
+
+.btnpair{display:flex;gap:10px;margin:0 var(--gutter)}
+.pillpair{display:flex;gap:10px;margin:10px var(--gutter) 0;align-items:center}
+
+/* ============================================================
+   FIRST LOAD — the same composition twice: once framed here so
+   it can be read on the page, once live and full-bleed.
+   ============================================================ */
+.frame{
+  position:relative;height:352px;margin:0 var(--gutter);
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--bg);overflow:hidden;
+}
+.boot{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:0 24px;text-align:center;background:var(--bg);
+}
+.boot__mark{margin-bottom:20px}
+.boot__word{margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;text-transform:uppercase}
+.boot__cap{
+  margin:12px 0 0;font-size:11px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.boot__foot{
+  position:absolute;left:24px;right:24px;bottom:22px;margin:0;
+  font-size:11.5px;line-height:1.45;color:var(--dim);
+}
+/* live layer. `tabbar` is the review-shell hook: the review page
+   rewrites .tabbar to position:absolute so a screen-pinned layer
+   stays inside the device frame. */
+.bootlayer{position:fixed;inset:0;z-index:70;display:none}
+.bootlayer.is-open{display:block}
+.bootlayer .boot{position:absolute;inset:0}
+.boot__exit{
+  position:absolute;top:14px;right:14px;z-index:2;
+  display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
+  border:1px solid var(--line-soft);border-radius:50%;
+  background:var(--surface);color:var(--muted);cursor:pointer;
+  transition:color .18s var(--ease);
+}
+.boot__exit svg{width:15px;height:15px}
+.boot__exit:hover{color:var(--text)}
+
+/* ============================================================
+   BANNERS — in-flow, so panel radius and the sunken fill.
+   Offline is neutral: being offline is a condition, not a fault.
+   ============================================================ */
+.banner{
+  display:flex;align-items:flex-start;gap:11px;
+  margin:0 var(--gutter);padding:12px 13px;
+  border-radius:var(--r-panel);background:var(--sunken);
+  border:1px solid var(--line-soft);
+}
+.banner__icon{flex:0 0 auto;color:var(--muted);margin-top:1px}
+.banner__icon svg{width:18px;height:18px}
+.banner__txt{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.banner__txt b{display:block;color:var(--text);font-size:13px;font-weight:600;margin-bottom:2px}
+.banner__link{
+  flex:0 0 auto;align-self:center;height:32px;padding:0 12px;
+  border:0;border-radius:var(--r-pill);background:var(--acid-wash);color:var(--acid);
+  font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
+  transition:background .18s var(--ease);
+}
+.banner__link:hover{background:rgba(155,226,34,.2)}
+.banner--offline{background:var(--neutral-wash);border-color:var(--line)}
+.banner--offline .banner__icon{color:var(--text)}
+
+/* the offline strip in its real position: docked above the tab bar */
+.dock{
+  position:fixed;left:0;right:0;bottom:0;max-width:420px;margin:0 auto;
+  padding:0 var(--gutter) calc(14px + env(safe-area-inset-bottom,0px));
+  pointer-events:none;
+}
+.dock .banner{margin:0 0 10px;pointer-events:auto;box-shadow:0 14px 34px rgba(0,0,0,.5)}
+.tabbar__inner{
+  display:flex;align-items:center;justify-content:space-between;
+  height:58px;padding:0 10px;border-radius:var(--r-pill);background:var(--surface);
+  box-shadow:0 10px 30px rgba(0,0,0,.6);pointer-events:auto;
+}
+.tab{
+  display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 12px;
+  border:0;border-radius:var(--r-pill);background:transparent;color:var(--text);
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.tab svg{width:19px;height:19px;flex:0 0 auto}
+.tab__label{display:none}
+.tab[aria-current="page"]{background:var(--acid);color:var(--acid-ink)}
+.tab[aria-current="page"] .tab__label{display:inline}
+.tab:not([aria-current="page"]):hover{color:var(--acid)}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
+  .bone::after{display:none}
+  .bone{background:rgba(255,255,255,.08)}
+}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+  <header class="top">
+    <p class="eyebrow">System · states</p>
+    <h1 class="title">States</h1>
+    <p class="sub">
+      Ten empty states, four loading states, six errors and two banners. Every one carries a
+      heading, a line of explanation and — where an action exists — one primary action. Where no
+      action exists it says what will happen instead, rather than leaving a dead end.
+    </p>
+  </header>
+
+  <!-- ==================================================================
+       EMPTY STATES
+       ================================================================== -->
+  <h2 class="label">Empty states</h2>
+  <p class="note">
+    One panel, ten illustrations. Every illustration is drawn in the same 132&nbsp;×&nbsp;88 frame
+    on the same ground line, from the peak geometry already in the brand: <b>surface fill</b> is
+    context, <b>accent wash with an accent stroke</b> is something that exists, and a
+    <b>dashed accent outline</b> is something that should exist and does not yet.
+  </p>
+
+  <!-- ---------- 1 · the welcome (was NO PROPOSALS AT THE MOMENT) ---------- -->
+  <div class="spec">
+    <p class="spec__label">No proposals in voting · a new member's first screen</p>
+    <div class="empty empty--welcome">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M2 72 L26 40 L50 72 Z" fill="#1C2129" opacity=".55"/>
+        <path d="M84 72 L108 34 L132 72 Z" fill="#1C2129" opacity=".4"/>
+        <path d="M6 72H126" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M14 72 L34 48 L54 72 Z" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+        <path d="M46 72 L70 26 L94 72 Z" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+        <path d="M86 72 L106 52 L126 72 Z" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+        <circle cx="70" cy="20" r="3.4" fill="#9BE222"/>
+      </svg>
+      <h3>Welcome to the Barcelona war room</h3>
+      <p>
+        Nothing is on the ballot this week. Members propose what the club should do, everyone votes
+        on Friday, and the result goes to the board with the number of votes attached. Yours can be
+        the first idea in.
+      </p>
+      <button class="pill-btn pill-btn--acid" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Post the first idea
+      </button>
+      <button class="link-btn" type="button">
+        How voting works
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <p class="spec__note">
+      Replaces <b>C-21 / EmptyContainer</b> — a <code>#000000</code> panel with a lilac hairline and
+      one line of shouted Bebas, <code>NO PROPOSALS AT THE MOMENT</code>, no explanation and nothing
+      to do. This is the only empty state that gets a hero headline and a second action, because it
+      is the only one that has to teach the product.
+    </p>
+  </div>
+
+  <!-- ---------- 2 · no ideas yet ---------- -->
+  <div class="spec">
+    <p class="spec__label">No ideas yet · war room feed</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M2 72 L28 36 L54 72 Z" fill="#1C2129"/>
+        <path d="M78 72 L106 30 L132 72 Z" fill="#1C2129" opacity=".7"/>
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M40 72 L66 26 L92 72 Z" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+        <path d="M66 8v13M59.5 14.5h13" stroke="#9BE222" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      <h3>No ideas yet this week</h3>
+      <p>
+        The board clears every Monday and nobody at Barcelona has posted since. Anything you put up
+        before Wednesday goes on Friday's ballot.
+      </p>
+      <button class="pill-btn pill-btn--acid" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        New idea
+      </button>
+    </div>
+  </div>
+
+  <!-- ---------- 3 · no results yet ---------- -->
+  <div class="spec">
+    <p class="spec__label">No results yet · ballot still open</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M2 72 L28 36 L54 72 Z" fill="#1C2129"/>
+        <path d="M78 72 L106 30 L132 72 Z" fill="#1C2129" opacity=".7"/>
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M40 72 L58 44 L74 44 L92 72 Z" fill="rgba(155,226,34,.18)"/>
+        <path d="M40 72 L58 44 M74 44 L92 72 M58 44H74" stroke="#9BE222" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M58 44 L66 26 L74 44" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+      </svg>
+      <h3>Voting is still open</h3>
+      <p>
+        Results appear here the moment the ballot closes, Friday at 18:00. <b>412 of 1,284</b>
+        Barcelona members have voted so far.
+      </p>
+      <button class="pill-btn pill-btn--acid" type="button">Cast your vote</button>
+    </div>
+  </div>
+
+  <!-- ---------- 4 · no locker rooms in session ---------- -->
+  <div class="spec">
+    <p class="spec__label">No locker rooms in session</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M2 72 L28 40 L54 72 Z" fill="#1C2129"/>
+        <path d="M82 72 L108 36 L132 72 Z" fill="#1C2129" opacity=".7"/>
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M44 72 L66 36 L88 72 Z" fill="rgba(155,226,34,.18)"/>
+        <path d="M44 72 L66 36 L88 72" stroke="#9BE222" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="66" cy="44" r="3" fill="#9BE222"/>
+        <path d="M52 28 L44 20 M52 20 L46 14" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="4 4" stroke-linecap="round"/>
+        <path d="M80 28 L88 20 M80 20 L86 14" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="4 4" stroke-linecap="round"/>
+      </svg>
+      <h3>No rooms open right now</h3>
+      <p>
+        Locker rooms run live — usually within the hour after full time, and on Thursday nights.
+        Nothing is in session at Barcelona.
+      </p>
+      <button class="pill-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16M10 20.2h4"/></svg>
+        Tell me when one opens
+      </button>
+    </div>
+  </div>
+
+  <!-- ---------- 5 · no upcoming rooms ---------- -->
+  <div class="spec">
+    <p class="spec__label">No upcoming rooms · nothing to act on</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M2 72 L24 44 L46 72 Z" fill="#1C2129" opacity=".6"/>
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M58 68v7M86 68v7M114 68v7" stroke="rgba(255,255,255,.12)" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M30 64v14" stroke="#9BE222" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M62 72 L86 38 L110 72 Z" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+      </svg>
+      <h3>Nothing scheduled yet</h3>
+      <p>
+        Rooms usually go up two days before a fixture. Barcelona play Sevilla on Sunday, so expect
+        one on Friday.
+      </p>
+      <span class="wait">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+        We'll alert you when it's up
+      </span>
+    </div>
+    <p class="spec__note">
+      Nothing the member can do moves this forward, so the action slot carries the promise instead
+      of a button. <b>Two of the ten</b> states use this treatment — this one and Transactions.
+    </p>
+  </div>
+
+  <!-- ---------- 6 · no alerts ---------- -->
+  <div class="spec">
+    <p class="spec__label">No alerts</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M2 72 L28 38 L54 72 Z" fill="#1C2129"/>
+        <path d="M80 72 L106 32 L132 72 Z" fill="#1C2129" opacity=".7"/>
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M42 72 L66 34 L90 72 Z" fill="rgba(155,226,34,.18)"/>
+        <path d="M42 72 L66 34 L90 72" stroke="#9BE222" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M54 20 L63 28 L80 8" stroke="#9BE222" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h3>You're up to date</h3>
+      <p>
+        Everything from the last 30 days has been read. New alerts arrive when an idea goes to a
+        vote, when Barcelona decides, and when a locker room opens.
+      </p>
+      <button class="pill-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+        Choose what you're alerted about
+      </button>
+    </div>
+  </div>
+
+  <!-- ---------- 7 · no linked members ---------- -->
+  <div class="spec">
+    <p class="spec__label">No linked members</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M56 72 L78 40 L100 72 Z" fill="#1C2129" opacity=".5"/>
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M14 72 L34 46 L54 72 Z" fill="rgba(155,226,34,.18)"/>
+        <path d="M14 72 L34 46 L54 72" stroke="#9BE222" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="34" cy="34" r="6.5" stroke="#9BE222" stroke-width="1.8"/>
+        <path d="M78 72 L98 44 L118 72 Z" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+        <circle cx="98" cy="32" r="6.5" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="4 4"/>
+        <path d="M56 55h6M70 55h6" stroke="rgba(255,255,255,.20)" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <h3>No one linked yet</h3>
+      <p>
+        Linked members share a season ticket or a household, so their votes can be cast together.
+        Send a request and they confirm it from their own account.
+      </p>
+      <button class="pill-btn pill-btn--acid" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Link a member
+      </button>
+    </div>
+  </div>
+
+  <!-- ---------- 8 · no transactions ---------- -->
+  <div class="spec">
+    <p class="spec__label">No transactions · wallet</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M2 72 L26 40 L50 72 Z" fill="#1C2129" opacity=".7"/>
+        <path d="M84 72 L108 36 L132 72 Z" fill="#1C2129" opacity=".55"/>
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M42 34H90M42 48H90" stroke="rgba(255,255,255,.12)" stroke-width="1.6" stroke-dasharray="4 5" stroke-linecap="round"/>
+        <path d="M38 66 L66 60 L94 66" stroke="#9BE222" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="66" cy="60" r="2.6" fill="#9BE222"/>
+      </svg>
+      <h3>No transactions yet</h3>
+      <p>
+        Merits move when you post an idea, cast a vote or back a winning ballot. Nothing has been
+        credited or spent on this account.
+      </p>
+      <span class="wait">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        Starts with your first vote
+      </span>
+    </div>
+  </div>
+
+  <!-- ---------- 9 · no search results ---------- -->
+  <div class="spec">
+    <p class="spec__label">No search results</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M2 72 L24 42 L46 72 Z" fill="#1C2129"/>
+        <path d="M92 72 L114 40 L132 72 Z" fill="#1C2129" opacity=".7"/>
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="60" cy="38" r="25" fill="#080A0C"/>
+        <path d="M41 46H79" stroke="rgba(255,255,255,.14)" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="60" cy="38" r="25" stroke="#9BE222" stroke-width="1.8"/>
+        <path d="M78.5 57 L94 72.5" stroke="#9BE222" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+      <h3>Nothing matches “sevilla away”</h3>
+      <p>
+        No idea, member or room at Barcelona uses that word. Search covers idea titles, member names
+        and room names — it doesn't read comments.
+      </p>
+      <button class="pill-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        Clear search
+      </button>
+    </div>
+    <p class="spec__note">
+      The lens knocks a hole in the panel fill with <code>#080A0C</code> rather than a clip path, so
+      the range behind stays visible around it and bare ground shows through the middle. This is the
+      one illustration that assumes the panel fill.
+    </p>
+  </div>
+
+  <!-- ---------- 10 · no club selected ---------- -->
+  <div class="spec">
+    <p class="spec__label">No club selected</p>
+    <div class="empty">
+      <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+        <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M12 44H36V58L24 72L12 58Z" fill="#1C2129"/>
+        <path d="M96 44H120V58L108 72L96 58Z" fill="#1C2129" opacity=".7"/>
+        <path d="M50 28H82V52L66 72L50 52Z" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+        <path d="M57 50 L66 36 L75 50" stroke="#9BE222" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      <h3>Pick a club to continue</h3>
+      <p>
+        SportsHeist works one club at a time — ideas, votes and standings all belong to the club
+        you're in. You can switch whenever you like.
+      </p>
+      <button class="pill-btn pill-btn--acid" type="button">Choose your club</button>
+    </div>
+  </div>
+
+  <!-- ==================================================================
+       LOADING
+       ================================================================== -->
+  <h2 class="label">Loading</h2>
+  <p class="note">
+    Two markers only. A <b>ring</b> where a control or a line is waiting, <b>three peaks</b> where a
+    whole panel or a whole screen is waiting, and <b>skeletons</b> where the shape of the answer is
+    already known. Both markers are SVG-timed, so there is no keyframed animation to leak past
+    <code>prefers-reduced-motion</code>.
+  </p>
+
+  <!-- ---------- skeleton card ---------- -->
+  <div class="spec">
+    <p class="spec__label">Skeleton · idea card</p>
+    <div class="skel-card" role="status" aria-label="Loading idea">
+      <div class="skel-card__author">
+        <div class="skel-stack">
+          <div class="bone bone--circ" style="width:22px;height:22px"></div>
+          <div class="bone bone--circ" style="width:22px;height:22px"></div>
+          <div class="bone bone--circ" style="width:22px;height:22px"></div>
+        </div>
+        <div class="bone skel-line" style="width:112px"></div>
+      </div>
+      <div class="bone skel-title" style="width:88%"></div>
+      <div class="bone skel-title" style="width:54%"></div>
+      <div class="bone skel-line" style="width:100%;margin-top:12px"></div>
+      <div class="bone skel-line" style="width:92%;margin-top:7px"></div>
+      <div class="skel-card__meta">
+        <div class="bone skel-line" style="width:96px"></div>
+        <div class="bone skel-line" style="width:64px;height:9px"></div>
+      </div>
+      <div class="skel-gauge">
+        <div class="skel-gauge__txt">
+          <div class="bone skel-line" style="width:78%;height:12px"></div>
+          <div class="bone skel-line" style="width:46%;height:10px;margin-top:7px"></div>
+        </div>
+        <div class="bone bone--circ" style="width:64px;height:64px"></div>
+      </div>
+    </div>
+    <p class="spec__note">
+      Bone positions are the idea card's own: three 22&nbsp;px stacked avatars, a 17&nbsp;px title
+      over two lines, body at 13&nbsp;px, the meta row, and the sunken gauge panel with its
+      64&nbsp;px ring. Nothing shifts when the content arrives.
+    </p>
+  </div>
+
+  <!-- ---------- skeleton rows ---------- -->
+  <div class="spec">
+    <p class="spec__label">Skeleton · ranked rows</p>
+    <ol class="skel-board" role="status" aria-label="Loading standings" style="list-style:none;margin:0 var(--gutter);padding:0">
+      <li class="skel-row">
+        <div class="bone" style="width:14px;height:12px"></div>
+        <div class="bone bone--circ" style="width:34px;height:34px"></div>
+        <div class="skel-row__id">
+          <div class="bone skel-line" style="width:58%;height:12px"></div>
+          <div class="bone skel-line" style="width:36%;height:9px;margin-top:6px"></div>
+        </div>
+        <div class="bone" style="width:44px;height:13px"></div>
+      </li>
+      <li class="skel-row">
+        <div class="bone" style="width:14px;height:12px"></div>
+        <div class="bone bone--circ" style="width:34px;height:34px"></div>
+        <div class="skel-row__id">
+          <div class="bone skel-line" style="width:44%;height:12px"></div>
+          <div class="bone skel-line" style="width:30%;height:9px;margin-top:6px"></div>
+        </div>
+        <div class="bone" style="width:44px;height:13px"></div>
+      </li>
+      <li class="skel-row">
+        <div class="bone" style="width:14px;height:12px"></div>
+        <div class="bone bone--circ" style="width:34px;height:34px"></div>
+        <div class="skel-row__id">
+          <div class="bone skel-line" style="width:66%;height:12px"></div>
+          <div class="bone skel-line" style="width:34%;height:9px;margin-top:6px"></div>
+        </div>
+        <div class="bone" style="width:44px;height:13px"></div>
+      </li>
+      <li class="skel-row">
+        <div class="bone" style="width:14px;height:12px"></div>
+        <div class="bone bone--circ" style="width:34px;height:34px"></div>
+        <div class="skel-row__id">
+          <div class="bone skel-line" style="width:50%;height:12px"></div>
+          <div class="bone skel-line" style="width:28%;height:9px;margin-top:6px"></div>
+        </div>
+        <div class="bone" style="width:44px;height:13px"></div>
+      </li>
+    </ol>
+    <p class="spec__note">
+      Rank slot, 34&nbsp;px avatar, name over club, score — the merits row exactly, at
+      11&nbsp;px&nbsp;/&nbsp;12&nbsp;px padding with the same <code>rgba(255,255,255,.045)</code>
+      hairline between rows. Bones are <b>white at 5.5%</b> with a <b>white at 6%</b> sweep, so the
+      same bone works on the card, the section and the sunken panel. The live build's
+      grey-300-on-grey-100 shimmer is a light-theme skeleton.
+    </p>
+  </div>
+
+  <!-- ---------- the spinner ---------- -->
+  <div class="spec">
+    <p class="spec__label">Spinner · the ring</p>
+    <div class="rings">
+      <span class="ring">
+        <svg class="anim" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4" opacity=".18"/>
+          <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+      </span>
+      <span class="ring">
+        <svg class="anim" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".18"/>
+          <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+      </span>
+      <span class="ring">
+        <svg class="anim" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3.2" opacity=".18"/>
+          <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+      </span>
+      <p><b>28 · 20 · 16.</b> A 90° accent arc on a white-18% track, one turn every 0.9&nbsp;s,
+        round cap. Stroke thickens as the ring shrinks so the arc keeps its weight.</p>
+    </div>
+    <p class="spec__note">
+      Replaces <b>WLoading</b>, whose <code>color ?? Colors.blue</code> default paints a Material
+      <code>#2196F3</code> dot-ring in every waiting state in the app — a hue that appears nowhere
+      else in the brand. On an accent fill the ring inherits <code>#0B0E06</code>, not white.
+    </p>
+  </div>
+
+  <!-- ---------- panel loader ---------- -->
+  <div class="spec">
+    <p class="spec__label">Panel · three peaks</p>
+    <div class="loadbay" role="status">
+      <svg class="peaks anim" viewBox="0 0 62 26" width="80" height="34" aria-hidden="true">
+        <path d="M2 24 L11 6 L20 24 Z" fill="currentColor" opacity=".22">
+          <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin="0s" repeatCount="indefinite"/>
+        </path>
+        <path d="M22 24 L31 3 L40 24 Z" fill="currentColor" opacity=".22">
+          <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".16s" repeatCount="indefinite"/>
+        </path>
+        <path d="M42 24 L51 8 L60 24 Z" fill="currentColor" opacity=".22">
+          <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".32s" repeatCount="indefinite"/>
+        </path>
+      </svg>
+      <h3>Counting the ballot</h3>
+      <p>1,284 Barcelona members voted. This takes a few seconds the first time.</p>
+    </div>
+    <p class="spec__note">
+      Used where the shape of the answer isn't known, so a skeleton would lie. Where it is known,
+      use a skeleton — it's faster to read and it doesn't move the layout.
+    </p>
+  </div>
+
+  <!-- ---------- in-button ---------- -->
+  <div class="spec">
+    <p class="spec__label">In-button · width preserved, control disabled</p>
+    <div class="btnpair">
+      <button class="btn btn--acid" type="button" data-busy>
+        <span class="btn__label">Cast vote</span>
+        <span class="btn__spin" aria-hidden="true">
+          <svg class="anim" viewBox="0 0 24 24" width="20" height="20">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".3"/>
+            <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+            </path>
+          </svg>
+        </span>
+      </button>
+      <button class="btn btn--ghost" type="button" aria-busy="true">
+        <span class="btn__label">Publishing idea</span>
+        <span class="btn__spin" aria-hidden="true">
+          <svg class="anim" viewBox="0 0 24 24" width="20" height="20">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".22"/>
+            <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+            </path>
+          </svg>
+        </span>
+      </button>
+    </div>
+    <div class="pillpair">
+      <button class="pill-btn pill-btn--acid" type="button" data-busy>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="pill-btn__label">Link a member</span>
+        <span class="pill-btn__spin" aria-hidden="true">
+          <svg class="anim" viewBox="0 0 24 24" width="17" height="17">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" opacity=".3"/>
+            <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+            </path>
+          </svg>
+        </span>
+      </button>
+    </div>
+    <p class="spec__note">
+      Press <b>Cast vote</b> or <b>Link a member</b>. The label is hidden with
+      <code>visibility</code>, so it keeps its box and the control cannot change width or jump the
+      row. The spinner takes the label's ink — <code>#0B0E06</code> on the accent fill, white on the
+      ghost. <code>aria-busy="true"</code> goes on the button and pointer events stop, so it can't
+      be submitted twice. The ghost button is parked in that state for comparison.
+    </p>
+  </div>
+
+  <!-- ---------- first load ---------- -->
+  <div class="spec">
+    <p class="spec__label">First load · full screen</p>
+    <div class="spec">
+      <div class="boot" role="status">
+        <svg class="peaks anim boot__mark" viewBox="0 0 62 26" width="104" height="44" aria-hidden="true">
+          <path d="M2 24 L11 6 L20 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin="0s" repeatCount="indefinite"/>
+          </path>
+          <path d="M22 24 L31 3 L40 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".16s" repeatCount="indefinite"/>
+          </path>
+          <path d="M42 24 L51 8 L60 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".32s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+        <p class="boot__word">SportsHeist</p>
+        <p class="boot__cap">Opening Barcelona</p>
+        <p class="boot__foot">If this hasn't finished in a few seconds we'll tell you what went
+          wrong instead of leaving you here.</p>
+      </div>
+    </div>
+    <div class="pillpair">
+      <button class="pill-btn" type="button" id="boot-open">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/></svg>
+        Show it full screen
+      </button>
+    </div>
+    <p class="spec__note">
+      The canvas, the peaks, the wordmark at 34&nbsp;px&nbsp;/&nbsp;800 and one tracked caption
+      naming the club being opened. No progress bar: we can't honestly estimate it, and a fake one
+      that stalls at 90% is worse than a mark that keeps moving. The footer commits to an error
+      state rather than an indefinite wait.
+    </p>
+  </div>
+
+  <!-- ==================================================================
+       ERROR STATES
+       ================================================================== -->
+  <h2 class="label">Error states</h2>
+  <p class="note">
+    Same panel as the empty states, with the icon tile instead of an illustration — an error is a
+    thing that happened, not a space that's unfilled. Each one says <b>what happened</b>, <b>why</b>,
+    and <b>the one thing to do next</b>. No apologies, no blame, no raw server strings, and no
+    <code>OOPS!</code>. Errors that interrupt a task in progress use the dialog shell instead; these
+    are for when the error owns the region.
+  </p>
+
+  <!-- ---------- no connection ---------- -->
+  <div class="spec">
+    <p class="spec__label">No connection</p>
+    <div class="state" role="alert">
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 8.5a13 13 0 0 1 6-3.1M20 8.5a13 13 0 0 0-3.4-2.3"/>
+          <path d="M7.2 12.4a8.6 8.6 0 0 1 3-1.7M16.8 12.4a8.6 8.6 0 0 0-2-1.4"/>
+          <path d="M10.2 16.1a4 4 0 0 1 3.6 0M12 19.6h.01"/>
+          <path d="M3.5 3.5 20.5 20.5"/>
+        </svg>
+      </span>
+      <h3>You're offline</h3>
+      <p>
+        Nothing has reached the server since <b>16:42</b>. Everything already loaded stays readable —
+        posting and voting need a connection.
+      </p>
+      <button class="pill-btn" type="button" data-busy>
+        <span class="pill-btn__label">Try again</span>
+        <span class="pill-btn__spin" aria-hidden="true">
+          <svg class="anim" viewBox="0 0 24 24" width="17" height="17">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" opacity=".22"/>
+            <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+            </path>
+          </svg>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ---------- request failed ---------- -->
+  <div class="spec">
+    <p class="spec__label">Request failed · with retry</p>
+    <div class="state" role="alert">
+      <span class="tile tile--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 11.5A8 8 0 1 0 17.6 17"/><path d="M20 6.5v5h-5"/><path d="M12 8.6v4M12 15.9h.01"/>
+        </svg>
+      </span>
+      <h3>Your vote didn't send</h3>
+      <p>
+        The server took too long to answer — usually a brief drop rather than anything wrong with the
+        ballot. <b>Your vote is still saved on this device</b>, so nothing is lost.
+      </p>
+      <button class="pill-btn pill-btn--acid" type="button" data-busy>
+        <span class="pill-btn__label">Send it again</span>
+        <span class="pill-btn__spin" aria-hidden="true">
+          <svg class="anim" viewBox="0 0 24 24" width="17" height="17">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" opacity=".3"/>
+            <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+            </path>
+          </svg>
+        </span>
+      </button>
+    </div>
+    <p class="spec__note">
+      Retry is the primary action and it uses the in-button spinner, so the member can see the
+      second attempt happening without the panel redrawing.
+    </p>
+  </div>
+
+  <!-- ---------- not found ---------- -->
+  <div class="spec">
+    <p class="spec__label">Not found</p>
+    <div class="state" role="alert">
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 3.5h8a2 2 0 0 1 2 2v13a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 18.5v-13a2 2 0 0 1 2-2Z"/>
+          <path d="M9.8 12.4l4.4 4.4M14.2 12.4l-4.4 4.4"/><path d="M9.5 8.4h5"/>
+        </svg>
+      </span>
+      <h3>This idea is no longer here</h3>
+      <p>
+        It was either withdrawn by the member who posted it, or removed after the vote closed. The
+        rest of the war room is unaffected.
+      </p>
+      <button class="pill-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        Back to the war room
+      </button>
+    </div>
+  </div>
+
+  <!-- ---------- no permission ---------- -->
+  <div class="spec">
+    <p class="spec__label">No permission</p>
+    <div class="state" role="alert">
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/>
+          <path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.6 0v2.7"/><path d="M12 14.4v2.2"/>
+        </svg>
+      </span>
+      <h3>Voting is for verified members</h3>
+      <p>
+        Your Barcelona membership hasn't been checked yet, so this ballot is read-only for now.
+        Verification takes about a day once your membership number is on file.
+      </p>
+      <button class="pill-btn pill-btn--acid" type="button">Add your membership number</button>
+      <button class="link-btn" type="button">
+        Why this is needed
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <p class="spec__note">
+      Replaces the <code>OOPS!</code> modal, which shows the raw HTTP&nbsp;403 body —
+      <code>You do not have permission to access this resource.</code> — with no explanation and no
+      route out. A 403 is almost always a missing step, so the copy names the step and the action
+      completes it. The tile stays <b>neutral</b>: nothing has failed and nobody has done anything
+      wrong, so red would be a lie.
+    </p>
+  </div>
+
+  <!-- ---------- session expired ---------- -->
+  <div class="spec">
+    <p class="spec__label">Session expired</p>
+    <div class="state" role="alert">
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.4 2.2"/>
+        </svg>
+      </span>
+      <h3>You've been signed out</h3>
+      <p>
+        Sessions end after 30 days, or when you sign in on another device. Everything you posted and
+        every vote you cast is saved to your account.
+      </p>
+      <button class="pill-btn pill-btn--acid" type="button">Sign back in</button>
+    </div>
+  </div>
+
+  <!-- ---------- last resort ---------- -->
+  <div class="spec">
+    <p class="spec__label">Something went wrong · last resort</p>
+    <div class="state" role="alert">
+      <span class="tile tile--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/>
+        </svg>
+      </span>
+      <h3>This screen didn't load</h3>
+      <p>
+        Something failed on our side and we don't yet know what. It's been logged as
+        <b>8F2-4471</b> — quote that reference if you get in touch.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Contact us</button>
+        <button class="btn btn--acid" type="button" data-busy>
+          <span class="btn__label">Reload</span>
+          <span class="btn__spin" aria-hidden="true">
+            <svg class="anim" viewBox="0 0 24 24" width="20" height="20">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".3"/>
+              <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+              </path>
+            </svg>
+          </span>
+        </button>
+      </div>
+    </div>
+    <p class="spec__note">
+      The only state that admits it doesn't know the cause. It earns that by giving the member a
+      reference number, which turns an unhelpful message into a support ticket. This is the
+      <em>last</em> resort — any error we can name gets one of the five above.
+    </p>
+  </div>
+
+  <!-- ==================================================================
+       BANNERS
+       ================================================================== -->
+  <h2 class="label">Offline and stale data</h2>
+  <p class="note">
+    A banner is for when the screen still works but something about it is qualified. In-flow, so
+    <code>--r-panel</code> and the sunken fill — never the card radius, and never red: neither of
+    these is a failure.
+  </p>
+
+  <div class="spec">
+    <p class="spec__label">Offline</p>
+    <div class="banner banner--offline" role="status">
+      <span class="banner__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 8.5a13 13 0 0 1 6-3.1M20 8.5a13 13 0 0 0-3.4-2.3"/>
+          <path d="M10.2 16.1a4 4 0 0 1 3.6 0M12 19.6h.01"/><path d="M3.5 3.5 20.5 20.5"/>
+        </svg>
+      </span>
+      <span class="banner__txt">
+        <b>You're offline</b>
+        Showing the war room as it stood at 16:42. Your vote will send itself when you're back.
+      </span>
+    </div>
+    <p class="spec__note">
+      No action, because tapping something won't restore a connection — so the banner commits to
+      sending the queued vote instead. It docks above the tab bar, where it's shown live at the
+      bottom of this screen.
+    </p>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Stale data</p>
+    <div class="banner" role="status">
+      <span class="banner__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 11.5A8 8 0 1 0 17.6 17"/><path d="M20 6.5v5h-5"/>
+        </svg>
+      </span>
+      <span class="banner__txt">
+        <b>Standings are 12 minutes old</b>
+        Live updates stopped while the app was in the background.
+      </span>
+      <button class="banner__link" type="button">Refresh</button>
+    </div>
+    <p class="spec__note">
+      Stale data gets a figure, not the word "recently" — <b>12 minutes</b> lets the member decide
+      whether it matters. Refresh is the only action, and it swaps to the 16&nbsp;px ring in place.
+    </p>
+  </div>
+
+</main>
+
+<!-- ================= DOCK =================
+     `tabbar` on the wrapper is the review-shell hook: the review page
+     rewrites `.tabbar` to position:absolute so anything pinned to the
+     screen stays inside the device frame. -->
+<div class="dock tabbar">
+  <div class="banner banner--offline" role="status">
+    <span class="banner__icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 8.5a13 13 0 0 1 6-3.1M20 8.5a13 13 0 0 0-3.4-2.3"/>
+        <path d="M10.2 16.1a4 4 0 0 1 3.6 0M12 19.6h.01"/><path d="M3.5 3.5 20.5 20.5"/>
+      </svg>
+    </span>
+    <span class="banner__txt">
+      <b>You're offline</b>
+      Showing the war room as it stood at 16:42.
+    </span>
+  </div>
+
+  <nav class="tabbar__inner" aria-label="Primary">
+    <button class="tab" type="button" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/>
+        <path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/>
+      </svg><span class="tab__label">War Room</span>
+    </button>
+    <button class="tab" type="button" aria-label="Merits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/>
+      </svg><span class="tab__label">Merits</span>
+    </button>
+    <button class="tab" type="button" aria-label="Backchat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>
+      </svg><span class="tab__label">Backchat</span>
+    </button>
+    <button class="tab" type="button" aria-label="Alerts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16"/>
+      </svg><span class="tab__label">Alerts</span>
+    </button>
+    <button class="tab" type="button" aria-label="Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>
+      </svg><span class="tab__label">Profile</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ================= LIVE FIRST-LOAD LAYER ================= -->
+<div class="bootlayer tabbar" id="bootlayer">
+  <div class="boot" role="status">
+    <button class="boot__exit" type="button" id="boot-close" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+    </button>
+    <svg class="peaks anim boot__mark" viewBox="0 0 62 26" width="120" height="50" aria-hidden="true">
+      <path d="M2 24 L11 6 L20 24 Z" fill="currentColor" opacity=".22">
+        <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin="0s" repeatCount="indefinite"/>
+      </path>
+      <path d="M22 24 L31 3 L40 24 Z" fill="currentColor" opacity=".22">
+        <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".16s" repeatCount="indefinite"/>
+      </path>
+      <path d="M42 24 L51 8 L60 24 Z" fill="currentColor" opacity=".22">
+        <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".32s" repeatCount="indefinite"/>
+      </path>
+    </svg>
+    <p class="boot__word">SportsHeist</p>
+    <p class="boot__cap">Opening Barcelona</p>
+    <p class="boot__foot">If this hasn't finished in a few seconds we'll tell you what went wrong
+      instead of leaving you here.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* prefers-reduced-motion: the CSS block kills transitions and the
+     skeleton sweep; SMIL has to be stopped on the document timeline. */
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce){
+    Array.prototype.forEach.call(document.querySelectorAll('svg.anim'), function(s){
+      if (s.pauseAnimations) s.pauseAnimations();
+    });
+  }
+
+  /* in-button loading — press to see the label swap for the spinner */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-busy]'), function(b){
+    b.addEventListener('click', function(){
+      if (b.getAttribute('aria-busy') === 'true') return;
+      b.setAttribute('aria-busy','true');
+      window.setTimeout(function(){ b.removeAttribute('aria-busy'); }, 2400);
+    });
+  });
+
+  /* full-screen first load */
+  var layer = document.getElementById('bootlayer');
+  var open  = document.getElementById('boot-open');
+  var close = document.getElementById('boot-close');
+  if (open && layer){
+    open.addEventListener('click', function(){ layer.classList.add('is-open'); });
+  }
+  if (close && layer){
+    close.addEventListener('click', function(){ layer.classList.remove('is-open'); });
+  }
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && layer) layer.classList.remove('is-open');
+  });
+
+  /* tab bar */
+  var bar = document.querySelector('.tabbar__inner');
+  if (bar){
+    bar.addEventListener('click', function(e){
+      var b = e.target.closest('.tab'); if(!b) return;
+      bar.querySelectorAll('.tab').forEach(function(x){
+        if (x === b){ x.setAttribute('aria-current','page'); x.removeAttribute('aria-label'); }
+        else { x.removeAttribute('aria-current'); }
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>

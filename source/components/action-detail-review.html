@@ -1,0 +1,1962 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Action detail · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; /* bordered section container */ --surface: #1C2129; /* cards, controls, tab bar */ --sunken: #13171E; /* inner panels, dark pills */ --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); /* semantic red — the only other hue in the system */ --red: #E2564A; --red-wash: rgba(226,86,74,.12); --red-line: rgba(226,86,74,.28); /* neutral wash — where a state must NOT read as red or acid */ --neutral-wash: rgba(255,255,255,.06); /* skeleton — white alphas, so one bone works on every surface */ --bone: rgba(255,255,255,.055); --sheen: rgba(255,255,255,.06); /* ---- the hold treatment — canonical, settled in veto.html and copied through results-actions.html verbatim. Every value is either the accent #9BE222 or the canvas at an alpha: no third hue enters the palette, because held is a different KIND of mark, not a different colour. Reserved for genuinely paused states. Never loading, never pending. */ --hold-ring: rgba(155,226,34,.30); /* ring on a held object */ --hold-under: rgba(155,226,34,.05); /* wash beneath the bars */ --hold-bars: repeating-linear-gradient(135deg, rgba(155,226,34,.11) 0 5px, rgba(155,226,34,0) 5px 11px); /* acid bars, dark plane */ --struck: repeating-linear-gradient(135deg, rgba(3,4,1,.62) 0 4px, rgba(3,4,1,0) 4px 9px); /* dark bars, acid plate */ /* hero */ --hero-a: #0D3617; --hero-b: #17481C; /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* photography extracted from the Figma exports */ --av-c7:url(data:image/jpeg;base64,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); --av-fp:url(data:image/jpeg;base64,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); --av-tb:url(data:image/jpeg;base64,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); --av-tt:url(data:image/jpeg;base64,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); --av-dm:url(data:image/jpeg;base64,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);}
+@keyframes shim{to{transform:translateX(100%)}}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 128px}
+.mk .label{margin:24px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .head{display:flex;align-items:center;gap:8px;margin:24px var(--gutter) 10px}
+.mk .head h2{flex:1;margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .caption{margin:30px var(--gutter) 10px; font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);}
+.mk .caption b{color:var(--muted);font-weight:700}
+.mk .eyebrow{margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .tabular{font-variant-numeric:tabular-nums}
+.mk .pill-btn{position:relative; display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 15px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:12.5px;font-weight:600;cursor:pointer; transition:background .18s var(--ease);}
+.mk .pill-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .pill-btn:hover{background:#222833}
+.mk .pill-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .pill-btn--acid:hover{background:#A8EC33}
+.mk .pill-btn svg{width:15px;height:15px;flex:0 0 auto}
+.mk .link-btn{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 6px; border:0;background:transparent;color:var(--acid); font:inherit;font-size:12.5px;font-weight:600;cursor:pointer; transition:opacity .18s var(--ease);}
+.mk .link-btn:hover{opacity:.78}
+.mk .link-btn svg{width:13px;height:13px}
+.mk .icon-btn{position:relative; display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease);}
+.mk .icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn svg{width:17px;height:17px}
+.mk .pill-btn:focus-visible,.mk .link-btn:focus-visible,.mk .icon-btn:focus-visible,.mk .actbar__go:focus-visible,.mk .readmore:focus-visible,.mk .sig:focus-visible,.mk .cm__of:focus-visible,.mk .chain__link:focus-visible{outline:2px solid var(--acid);outline-offset:3px;}
+.mk .status-pill{display:inline-flex;align-items:center;gap:7px; height:32px;padding:0 14px;border-radius:var(--r-pill); background:var(--acid-wash); font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--acid);white-space:nowrap;}
+.mk .status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mk .avatar{border-radius:50%;flex:0 0 auto; background-color:#20262F;background-size:cover;background-position:center 22%;}
+.mk .section{margin:0 var(--gutter);padding:12px; border:1px solid var(--line);border-radius:var(--r-card); background:var(--section);}
+.mk .section__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.mk .section__bar .spacer{flex:1}
+.mk .panel{border-radius:var(--r-panel);background:var(--surface)}
+.mk .note{margin:14px var(--gutter) 0;padding:14px; border:1px solid var(--line);border-radius:var(--r-card); background:var(--section);}
+.mk .note dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:9px 12px}
+.mk .note dt{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);white-space:nowrap;padding-top:2px;}
+.mk .note dd{margin:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .note dd b{color:var(--text);font-weight:600}
+.mk .note dd code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11.5px;color:var(--text);overflow-wrap:anywhere;}
+.mk .hero{position:relative;overflow:hidden; margin:0 var(--gutter); border-radius:var(--r-card); background:linear-gradient(112deg,var(--hero-a) 0%,var(--hero-b) 58%,#0C3416 100%); height:138px; display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between; padding:14px 18px 16px;}
+.mk .hero__field{position:absolute;inset:0;pointer-events:none}
+.mk .hero__range{position:absolute;right:0;bottom:0;width:54%;height:38%;pointer-events:none;z-index:1}
+.mk .hero__back{position:relative;z-index:3; display:inline-flex;align-items:center;justify-content:center; width:36px;height:36px;border:0;border-radius:50%; background:rgba(255,255,255,.12);color:#fff;cursor:pointer; transition:background .18s var(--ease);}
+.mk .hero__back::after{content:"";position:absolute;inset:-4px;border-radius:inherit}
+.mk .hero__back:hover{background:rgba(255,255,255,.2)}
+.mk .hero__back:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.mk .hero__back svg{width:18px;height:18px}
+.mk .hero__id{position:relative;z-index:3;max-width:64%}
+.mk .hero__id .eyebrow{margin:0 0 6px;color:rgba(255,255,255,.6)}
+.mk .hero__title{position:relative;z-index:3;margin:0; font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1; text-transform:uppercase;}
+.mk .verdict{display:flex;align-items:center;gap:11px; min-height:56px;padding:11px 13px; border-radius:var(--r-panel);}
+.mk .verdict__badge{width:28px;height:28px;flex:0 0 auto;border-radius:50%; display:inline-flex;align-items:center;justify-content:center;}
+.mk .verdict__badge svg{width:16px;height:16px;display:block}
+.mk .verdict__body{min-width:0}
+.mk .verdict__word{display:block;font-size:13.5px;font-weight:700;letter-spacing:.07em; line-height:1.1;text-transform:uppercase;}
+.mk .verdict__sub{display:block;margin-top:3px;font-size:11.5px;line-height:1.25; color:var(--muted);font-variant-numeric:tabular-nums;}
+.mk .verdict--pos{background:var(--acid-wash);box-shadow:inset 0 0 0 1px rgba(155,226,34,.22)}
+.mk .verdict--pos .verdict__badge{background:var(--acid);color:var(--acid-ink)}
+.mk .verdict--pos .verdict__word{color:var(--acid)}
+.mk .verdict--neg{background:var(--red-wash);box-shadow:inset 0 0 0 1px rgba(226,86,74,.24)}
+.mk .verdict--neg .verdict__badge{background:var(--red);color:var(--acid-ink)}
+.mk .verdict--neg .verdict__word{color:var(--red)}
+.mk .verdict--held{background-color:var(--sunken);background-image:var(--hold-bars); box-shadow:inset 0 0 0 1px var(--hold-ring);}
+.mk .verdict--held .verdict__badge{background:rgba(155,226,34,.13);color:var(--acid)}
+.mk .verdict--held .verdict__word{color:var(--acid)}
+.mk .verdict--held .verdict__sub time{color:var(--text);font-weight:700}
+.mk .verdict--inert{background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .verdict--inert .verdict__badge{background:var(--surface);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .verdict--inert .verdict__word{color:var(--text)}
+.mk .verdict--lg{min-height:70px;padding:14px 16px;gap:13px}
+.mk .verdict--lg .verdict__badge{width:34px;height:34px}
+.mk .verdict--lg .verdict__badge svg{width:19px;height:19px}
+.mk .verdict--lg .verdict__word{font-size:16px;letter-spacing:.05em}
+.mk .verdict--lg .verdict__sub{margin-top:4px;font-size:12.5px}
+.mk .verdict--top{margin:12px var(--gutter) 0}
+.mk .subj{margin:10px var(--gutter) 0;padding:16px; border-radius:var(--r-card);background:var(--surface); box-shadow:inset 0 1px 0 rgba(255,255,255,.06);}
+.mk .subj__top{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.mk .typechip{flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px; border-radius:var(--r-pill);background:var(--sunken);color:var(--muted); font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase; white-space:nowrap;}
+.mk .subj__ref{margin-left:auto;font-size:10.5px;letter-spacing:.04em;color:var(--dim); font-variant-numeric:tabular-nums;}
+.mk .subj__title{margin:0;font-size:20px;font-weight:700;line-height:1.2;letter-spacing:-.02em}
+.mk .by{display:flex;align-items:center;gap:9px;margin-top:13px}
+.mk .by .avatar{width:30px;height:30px}
+.mk .by__id{min-width:0}
+.mk .by__id b{display:block;font-size:13px;font-weight:600}
+.mk .by__id span{display:block;margin-top:2px;font-size:11.5px;color:var(--muted); font-variant-numeric:tabular-nums;}
+.mk .detail{margin:14px 0 0;padding-top:14px;border-top:1px solid var(--line-soft);}
+.mk .detail p{margin:0;font-size:13px;line-height:1.5;color:var(--muted);}
+.mk .detail p + p{margin-top:9px}
+.mk .detail--clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical; overflow:hidden;}
+.mk .readmore{display:inline-flex;align-items:center;gap:6px;height:34px;margin-top:4px; padding:0 6px 0 0;border:0;background:transparent;color:var(--acid); font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;}
+.mk .readmore svg{width:13px;height:13px;transition:transform .2s var(--ease)}
+.mk .readmore[aria-expanded="true"] svg{transform:rotate(180deg)}
+.mk .nodetail{display:flex;align-items:flex-start;gap:8px; padding:11px 12px;border-radius:10px;background:var(--sunken);}
+.mk .nodetail svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px;color:var(--dim)}
+.mk .nodetail p{margin:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .instr{margin:0 var(--gutter);padding:14px;border-radius:var(--r-card);background:var(--surface)}
+.mk .instr__word{display:flex;align-items:center;gap:9px;margin:0 0 10px; font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--acid);}
+.mk .instr__word svg{width:20px;height:20px;flex:0 0 auto}
+.mk .instr__line{margin:0;font-size:13.5px;font-weight:500;line-height:1.45}
+.mk .instr__line b{font-weight:700}
+.mk .who{display:flex;align-items:center;gap:11px; margin-top:14px;padding-top:14px;border-top:1px solid var(--line-soft);}
+.mk .plate{display:inline-flex;align-items:center;justify-content:center; width:40px;height:40px;flex:0 0 auto; border-radius:11.2px;padding:5px; background:rgba(255,255,255,.94); box-shadow:inset 0 0 0 1px rgba(0,0,0,.13); color:var(--acid-ink); font-size:12px;font-weight:800;letter-spacing:-.03em;}
+.mk .who__id{flex:1;min-width:0}
+.mk .who__id b{display:block;font-size:13px;font-weight:600}
+.mk .who__id span{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+.mk .propose{flex:0 0 auto;display:inline-flex;align-items:center;height:19px;padding:0 7px; border-radius:5px;background:transparent; box-shadow:inset 0 0 0 1px var(--line); font-size:8.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase; color:var(--muted);white-space:nowrap;}
+.mk .clocks{display:flex;gap:10px;margin-top:12px}
+.mk .clock{flex:1;min-width:0;padding:12px 13px 11px;border-radius:var(--r-panel); background:var(--sunken);border:1px solid transparent;}
+.mk .clock--held{background-color:var(--sunken);background-image:var(--hold-bars); border-color:var(--hold-ring);}
+.mk .clock__top{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.mk .clock__top svg{width:13px;height:13px;flex:0 0 auto;color:var(--dim)}
+.mk .clock--held .clock__top svg{color:var(--acid)}
+.mk .clock__top span{font-size:9.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase; color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .clock--held .clock__top span{color:var(--acid)}
+.mk .clock time,.mk .clock strong{display:block;font-size:22px;font-weight:700;letter-spacing:-.03em; line-height:1;color:var(--text);font-variant-numeric:tabular-nums;}
+.mk .clock small{display:block;margin-top:5px;font-size:11px;color:var(--muted)}
+.mk .track{list-style:none;margin:0;padding:2px 0 0}
+.mk .track li{position:relative;display:flex;gap:12px;padding:0 0 16px}
+.mk .track li:last-child{padding-bottom:2px}
+.mk .track li::before{content:"";position:absolute;left:10px;top:22px;bottom:0; width:1px;background:var(--line);}
+.mk .track li:last-child::before{display:none}
+.mk .track li.is-open::before{background:none; background-image:repeating-linear-gradient(to bottom, rgba(155,226,34,.45) 0 4px, rgba(155,226,34,0) 4px 9px);}
+.mk .tmark{position:relative;z-index:1; display:inline-flex;align-items:center;justify-content:center; width:21px;height:21px;flex:0 0 auto;border-radius:50%; background:var(--acid);color:var(--acid-ink);}
+.mk .tmark svg{width:12px;height:12px}
+.mk .tmark--open{background:transparent;color:var(--acid); border:1.6px dashed var(--acid);}
+.mk .tmark--open svg{width:11px;height:11px}
+.mk .tbody{flex:1;min-width:0;padding-top:1px}
+.mk .tbody b{display:block;font-size:13.5px;font-weight:600;letter-spacing:-.005em}
+.mk .tbody span{display:block;margin-top:3px;font-size:11.5px;color:var(--muted); font-variant-numeric:tabular-nums;}
+.mk .tbody em{display:block;margin-top:6px;font-style:normal; font-size:12px;line-height:1.45;color:var(--muted);}
+.mk .tbody .field{display:inline-block;margin-top:7px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:10.5px;letter-spacing:0;color:var(--dim);}
+.mk .track li.is-open .tbody b{color:var(--acid)}
+.mk .chain{list-style:none;margin:0;padding:0;counter-reset:c}
+.mk .chain > li{position:relative;padding:13px 14px;border-top:1px solid var(--line-soft);}
+.mk .chain > li:first-child{border-top:0}
+.mk .chain > li[aria-current="step"]{background:var(--acid-wash);border-radius:10px}
+.mk .chain__st{display:flex;align-items:center;gap:8px; font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);}
+.mk .chain > li[aria-current="step"] .chain__st{color:var(--acid)}
+.mk .chain__st svg{width:13px;height:13px;flex:0 0 auto}
+.mk .chain__what{margin:7px 0 0;font-size:13.5px;font-weight:600;line-height:1.3;letter-spacing:-.005em}
+.mk .chain__when{margin:5px 0 0;font-size:11.5px;color:var(--muted); font-variant-numeric:tabular-nums;}
+.mk .chain__link{display:inline-flex;align-items:center;gap:5px;height:34px;margin:3px 0 -6px; padding:0 6px 0 0;border:0;background:transparent;color:var(--acid); font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;}
+.mk .chain__link svg{width:13px;height:13px}
+.mk .count{display:flex;align-items:flex-end;gap:12px;margin:11px 0 10px}
+.mk .count__fig{display:flex;align-items:baseline;gap:6px;flex:1;min-width:0}
+.mk .count__fig b{font-size:32px;font-weight:800;letter-spacing:-.04em;line-height:.9; font-variant-numeric:tabular-nums;}
+.mk .count__fig span{font-size:12px;font-weight:600;color:var(--muted)}
+.mk .count__need{flex:0 0 auto;padding:5px 10px;border-radius:var(--r-pill); background:var(--sunken); font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase; color:var(--muted);font-variant-numeric:tabular-nums;}
+.mk .bar{position:relative;height:12px;border-radius:var(--r-pill); background:rgba(255,255,255,.08);overflow:hidden}
+.mk .bar__fill{position:absolute;inset:0 auto 0 0;border-radius:var(--r-pill);background:var(--acid)}
+.mk .bar--held .bar__fill::after{content:"";position:absolute;inset:0;background-image:var(--struck)}
+.mk .bar__mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text);border-radius:1px}
+.mk .bar-legend{display:flex;justify-content:space-between;margin-top:7px;font-size:10.5px; font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted); font-variant-numeric:tabular-nums}
+.mk .because{display:flex;align-items:flex-start;gap:9px; margin:12px 0 0;padding:12px 13px;border-radius:var(--r-panel); background:var(--sunken);}
+.mk .because svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px;color:var(--acid)}
+.mk .because p{margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .because p b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.mk .reason{margin:0 var(--gutter);padding:14px;border-radius:var(--r-card);background:var(--surface)}
+.mk .reason__q{display:flex;align-items:center;gap:8px;margin:0 0 9px; font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--muted);}
+.mk .reason__q svg{width:14px;height:14px;flex:0 0 auto;color:var(--red)}
+.mk .reason blockquote{margin:0;padding-left:12px;box-shadow:inset 2px 0 0 var(--red-line); font-size:13.5px;line-height:1.5;}
+.mk .reason cite{display:block;margin-top:9px;font-style:normal;font-size:11.5px;color:var(--muted); font-variant-numeric:tabular-nums;}
+.mk .reason--held blockquote{box-shadow:inset 2px 0 0 var(--hold-ring)}
+.mk .reason--held .reason__q svg{color:var(--acid)}
+.mk .money{margin-top:13px;padding-top:13px;border-top:1px solid var(--line-soft); font-size:12px;line-height:1.5;color:var(--muted);font-variant-numeric:tabular-nums;}
+.mk .money svg{width:14px;height:14px;margin-right:7px;vertical-align:-2.5px;color:var(--dim);}
+.mk .money b{color:var(--text);font-weight:600;white-space:nowrap}
+.mk .steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.mk .steps li{display:flex;gap:12px;padding:13px 0;border-top:1px solid var(--line-soft)}
+.mk .steps li:first-child{border-top:0;padding-top:0}
+.mk .steps li:last-child{padding-bottom:0}
+.mk .steps li::before{counter-increment:s;content:counter(s); display:flex;align-items:center;justify-content:center; width:23px;height:23px;flex:0 0 auto;border-radius:50%; background:var(--acid-wash);color:var(--acid); font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;}
+.mk .steps b{display:block;margin-bottom:4px;font-size:13.5px;font-weight:600}
+.mk .steps p{margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .thead{display:flex;align-items:baseline;gap:8px;margin:24px var(--gutter) 10px}
+.mk .thead h2{flex:1;margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .thead__n{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk .thread{list-style:none;margin:0 var(--gutter);padding:0 14px; border-radius:var(--r-panel);background:var(--surface);}
+.mk .thread > li{position:relative}
+.mk .cm{display:flex;gap:11px;padding:13px 0;border-top:1px solid var(--line-soft)}
+.mk .thread > li:first-child > .cm{border-top:0}
+.mk .cm__av{width:34px;height:34px}
+.mk .cm__main{flex:1;min-width:0}
+.mk .cm__by{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.mk .cm__name{font-size:13.5px;font-weight:600;letter-spacing:-.005em; white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .cm__when{flex:0 0 auto;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.mk .cm__when::before{content:"·";margin-right:5px;color:var(--dim)}
+.mk .cm__text{margin:0;font-size:13px;line-height:1.46;color:var(--text)}
+.mk .cm__of{position:relative; flex:0 0 auto;margin-left:auto;margin-right:-6px; display:inline-flex;align-items:center;justify-content:center; width:28px;height:28px;border:0;border-radius:50%; background:transparent;color:var(--dim);cursor:pointer; transition:background .16s var(--ease),color .16s var(--ease);}
+.mk .cm__of::after{content:"";position:absolute;inset:-8px;border-radius:inherit}
+.mk .cm__of:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.mk .cm__of svg{width:16px;height:16px}
+.mk .badge{flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; height:16px;padding:0 5px;border-radius:4px; background:rgba(255,255,255,.10);box-shadow:inset 0 0 0 1px var(--line); font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase; color:rgba(255,255,255,.82);}
+.mk .crest-av{flex:0 0 auto;display:flex;align-items:center;justify-content:center; width:34px;height:34px;border-radius:8px; background:#20262F;box-shadow:inset 0 0 0 1px var(--line); font-size:10.5px;font-weight:800;letter-spacing:.02em;color:rgba(255,255,255,.85);}
+.mk .cm--club{margin:0 -14px;padding:13px 14px;background:var(--sunken)}
+.mk .cm__acts{display:flex;align-items:center;gap:4px;margin:9px -10px -5px;flex-wrap:wrap}
+.mk .sig{position:relative; display:inline-flex;align-items:center;gap:5px; height:34px;padding:0 10px; border:0;border-radius:var(--r-pill); background:transparent;color:var(--muted); box-shadow:inset 0 0 0 1px transparent; font:inherit;font-size:11.5px;font-weight:600; cursor:pointer; transition:color .16s var(--ease),box-shadow .16s var(--ease);}
+.mk .sig::after{content:"";position:absolute;left:0;right:0;top:-5px;bottom:-5px}
+.mk .sig svg{width:14px;height:14px;flex:0 0 auto}
+.mk .sig b{font-weight:700;font-variant-numeric:tabular-nums}
+.mk .sig:hover{color:var(--text)}
+.mk .sig[aria-pressed="true"]{color:var(--acid);font-weight:700;box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+.mk .morerow{border-top:1px solid var(--line-soft)}
+.mk .more{display:inline-flex;align-items:center;gap:7px; height:44px;padding:0 8px 0 0; border:0;background:transparent;color:var(--muted); font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;}
+.mk .more svg{width:14px;height:14px}
+.mk .more:hover{color:var(--text)}
+.mk .more b{font-variant-numeric:tabular-nums;font-weight:700}
+.mk .tile{display:inline-flex;align-items:center;justify-content:center; width:52px;height:52px;border-radius:14px;flex:0 0 auto;}
+.mk .tile svg{width:25px;height:25px}
+.mk .tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.mk .tile--neutral{background:var(--neutral-wash);color:var(--text)}
+.mk .empty,.mk .state{margin:0 var(--gutter);padding:24px 20px 22px; border:1px solid var(--line);border-radius:var(--r-card);background:var(--section); display:flex;flex-direction:column;align-items:center;text-align:center;}
+.mk .empty h3,.mk .state h3{margin:14px 0 0;font-size:17px;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+.mk .empty p,.mk .state p{margin:7px auto 0;max-width:31ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .empty p b,.mk .state p b{color:var(--text);font-weight:600}
+.mk .empty .pill-btn,.mk .state .pill-btn{margin-top:16px}
+.mk .ill{display:block;width:132px;height:88px;margin:0 auto}
+.mk .wait{display:inline-flex;align-items:center;gap:7px;margin-top:16px; padding:8px 13px;border-radius:var(--r-pill);background:var(--sunken); font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);}
+.mk .wait svg{width:13px;height:13px;flex:0 0 auto}
+.mk .bone{position:relative;overflow:hidden;background:var(--bone);border-radius:5px;flex:0 0 auto}
+.mk .bone--pill{border-radius:var(--r-pill)}
+.mk .bone--circ{border-radius:50%}
+.mk .bone::after{content:"";position:absolute;inset:0; background:linear-gradient(100deg,transparent 18%,var(--sheen) 50%,transparent 82%); transform:translateX(-100%);animation:shim 1.5s linear infinite;}
+.mk .skel{margin:0 var(--gutter);display:flex;flex-direction:column;gap:10px}
+.mk .skel__verdict{height:70px;border-radius:var(--r-panel)}
+.mk .skel__card{padding:16px;border-radius:var(--r-card);background:var(--surface)}
+.mk .skel__row{display:flex;align-items:center;gap:9px;margin-bottom:13px}
+.mk .skel__ln{height:11px}
+.mk .actbar{position:fixed;left:0;right:0;bottom:0;z-index:5; max-width:420px;margin:0 auto; padding:12px var(--gutter) calc(14px + env(safe-area-inset-bottom,0px)); background:linear-gradient(to top,var(--bg) 62%,rgba(3,4,1,0)); pointer-events:none;}
+.mk .actbar__go{pointer-events:auto; display:flex;align-items:center;justify-content:center;gap:9px; width:100%;height:52px; border:0;border-radius:var(--r-pill); background:var(--acid);color:var(--acid-ink); font:inherit;font-size:15px;font-weight:700;letter-spacing:-.005em; cursor:pointer;transition:background .18s var(--ease),transform .12s var(--ease); box-shadow:0 10px 30px rgba(0,0,0,.55);}
+.mk .actbar__go svg{width:18px;height:18px;flex:0 0 auto}
+.mk .actbar__go:hover{background:#A8EC33}
+.mk .actbar__go:active{transform:translateY(1px)}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+  .mk .bone::after{animation:none}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Action detail</h1>
+    <p class="dek">The screen behind an Action card — where a member checks whether the club actually did
+the thing everyone voted for. It carries the verdict, what was decided, what the club committed to,
+the dates, and the chain back to the vote that carried it.</p>
+    <div class="meta">
+      <span><b>Component</b> action-detail</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><span class="side__item" aria-current="page">Action detail<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">Where the promise is kept, or isn&#x27;t</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="stagecol">
+      <div class="stage">
+        <div class="device" id="device">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk">
+<div class="mk__scroll"><main class="screen">
+
+  <!-- ================================================================
+       HERO
+       ================================================================ -->
+  <header class="hero">
+    <svg class="hero__field" viewBox="0 0 343 132" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 132 L52 46 L104 132 Z"    fill="#fff" opacity=".030"/>
+      <path d="M92 132 L146 30 L200 132 Z"  fill="#fff" opacity=".024"/>
+      <path d="M196 0 L252 0 L196 84 Z"     fill="#fff" opacity=".026"/>
+    </svg>
+    <svg class="hero__range" viewBox="0 0 226 69" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 69 L40 28 L80 69 Z"     fill="#9BE222"/>
+      <path d="M88 69 L140 6 L192 69 Z"   fill="#9BE222"/>
+      <path d="M184 69 L226 32 L226 69 Z" fill="#9BE222"/>
+    </svg>
+
+    <button class="hero__back" type="button" aria-label="Back to Actions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+
+    <div class="hero__id">
+      <p class="eyebrow">War Room · Actions</p>
+      <h1 class="hero__title">Action</h1>
+    </div>
+  </header>
+
+  <!-- ================================================================
+       1 · THE VERDICT
+       ================================================================ -->
+  <div class="verdict verdict--pos verdict--lg verdict--top">
+    <span class="verdict__badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 13l4.5 4.5L19 7"/>
+      </svg>
+    </span>
+    <span class="verdict__body">
+      <span class="verdict__word">Approved</span>
+      <span class="verdict__sub">1,079 of 1,284 members · 84% support · 70% needed</span>
+    </span>
+  </div>
+
+  <!-- ================================================================
+       2 · THE SUBJECT — what was decided
+       ================================================================ -->
+  <article class="subj">
+    <div class="subj__top">
+      <span class="typechip">On-field decision</span>
+      <span class="subj__ref">#4182</span>
+    </div>
+
+    <h2 class="subj__title">Start Lamine Yamal against Girona</h2>
+
+    <div class="by">
+      <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+      <span class="by__id">
+        <b>capitan_7</b>
+        <span>Raised 4 Jul, 20:45 · Barcelona</span>
+      </span>
+    </div>
+
+    <div class="detail">
+      <div id="d-detail" class="detail--clamp">
+        <p>Name Yamal in the starting eleven for Girona rather than holding him on the bench for
+          the last twenty minutes. He has started two of the last nine league games and come on
+          after the 70th minute in six of them.</p>
+        <p>Girona sit deep and defend narrow. Every goal we have scored against them in three
+          seasons has come from a wide one-v-one, which is the single thing he does better than
+          anyone else in the squad. Starting him is not a reward, it is the plan that beats the
+          way they set up.</p>
+        <p>If the load is the concern, take him off on 65 minutes. That is still forty-five more
+          minutes of him against a tiring back four than we got last time.</p>
+      </div>
+      <button class="readmore" type="button" aria-expanded="false" aria-controls="d-detail">
+        <span>Read more</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+  </article>
+
+  <!-- ================================================================
+       3 · THE INSTRUCTION — what the club committed to
+       ================================================================ -->
+  <h2 class="label">What the club committed to</h2>
+
+  <div class="instr">
+    <p class="eyebrow">The instruction</p>
+    <p class="instr__word">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 15.5V4M8 7.5 12 3.5l4 4"/><path d="M5.5 13v6.5h13V13"/>
+      </svg>
+      Publish it!
+    </p>
+    <p class="instr__line">The club names Yamal in the starting eleven and
+      <b>posts the team sheet before kick-off</b>.</p>
+
+    <div class="who">
+      <span class="plate" role="img" aria-label="FC Barcelona crest">BAR</span>
+      <span class="who__id">
+        <b>FC Barcelona · club media</b>
+        <span>Accountable for carrying this out</span>
+      </span>
+      <span class="propose">Proposed</span>
+    </div>
+
+    <div class="clocks">
+      <div class="clock">
+        <div class="clock__top">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>
+          </svg>
+          <span>Committed</span>
+        </div>
+        <strong>Fri 18:00</strong>
+        <small>2 h 40 m from now</small>
+      </div>
+      <div class="clock">
+        <div class="clock__top">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 13l4 4 10-10"/>
+          </svg>
+          <span>Recorded</span>
+        </div>
+        <strong>12 Jul</strong>
+        <small>20:45 · from updated_at</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       4 · FOLLOW-THROUGH — the timeline, and the step nothing can prove
+       ================================================================ -->
+  <div class="head">
+    <h2>Follow-through</h2>
+  </div>
+
+  <section class="section" aria-label="Follow-through">
+    <div class="section__bar">
+      <span class="status-pill">5 of 6 recorded</span>
+      <span class="spacer"></span>
+      <button class="icon-btn" type="button" aria-label="Alert me about this action">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16M10 20.5h4"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="panel" style="padding:14px">
+      <ol class="track">
+        <li>
+          <span class="tmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+          <span class="tbody">
+            <b>Idea posted</b>
+            <span>4 Jul, 20:45</span>
+          </span>
+        </li>
+        <li>
+          <span class="tmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+          <span class="tbody">
+            <b>Became a proposal</b>
+            <span>7 Jul, 20:45 · 72 h idea window</span>
+          </span>
+        </li>
+        <li>
+          <span class="tmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+          <span class="tbody">
+            <b>Voting opened</b>
+            <span>7 Jul, 20:45</span>
+          </span>
+        </li>
+        <li>
+          <span class="tmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+          <span class="tbody">
+            <b>Voting closed</b>
+            <span>12 Jul, 20:45 · 120 h open · 1,079 votes</span>
+          </span>
+        </li>
+        <li class="is-open">
+          <span class="tmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg></span>
+          <span class="tbody">
+            <b>Verdict recorded</b>
+            <span>12 Jul, 20:45 · passed to the club</span>
+          </span>
+        </li>
+        <li class="is-open">
+          <span class="tmark tmark--open">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 8v4M12 16h.01"/></svg>
+          </span>
+          <span class="tbody">
+            <b>Carried out</b>
+            <span>Not confirmed</span>
+            <em>Nobody at the club has recorded whether this happened. Until they can, the
+              Actions list can tell you what was decided but not what was done.</em>
+            <span class="field">needs: confirmed_at · confirmed_by</span>
+          </span>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       5 · PROVENANCE — this happened because we voted for it
+       ================================================================ -->
+  <div class="head">
+    <h2>How it got here</h2>
+  </div>
+
+  <section class="section" aria-label="Provenance">
+    <div class="panel" style="padding:2px 0">
+      <ol class="chain">
+
+        <li>
+          <p class="chain__st">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3.5a5.5 5.5 0 0 0-3 10.1V17h6v-3.4a5.5 5.5 0 0 0-3-10.1Z"/><path d="M10 20h4"/>
+            </svg>
+            Idea
+          </p>
+          <p class="chain__what">Start Lamine Yamal against Girona</p>
+          <p class="chain__when">Posted 4 Jul, 20:45 by capitan_7 · cleared the idea stage 7 Jul, 20:45</p>
+          <button class="chain__link" type="button">
+            Open the idea
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          </button>
+        </li>
+
+        <li>
+          <p class="chain__st">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 21h14M6 17V9M12 17V5M18 17v-6"/>
+            </svg>
+            Vote
+          </p>
+
+          <div class="count">
+            <span class="count__fig"><b>1,079</b><span>of 1,284 members</span></span>
+            <span class="count__need">70% needed</span>
+          </div>
+          <div class="bar" role="img" aria-label="84% support against a 70% threshold">
+            <span class="bar__fill" style="width:84%"></span>
+            <span class="bar__mark" style="left:70%"></span>
+          </div>
+          <p class="bar-legend"><span>84% voted for it</span><span>899 to pass</span></p>
+          <p class="chain__when">Closed 12 Jul, 20:45 · open 120 h</p>
+        </li>
+
+        <li>
+          <p class="chain__st">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4.5 6.5h15M4.5 12h15M4.5 17.5h9"/>
+            </svg>
+            Result
+          </p>
+          <p class="chain__what">Approved — the threshold was cleared by 14 points</p>
+          <p class="chain__when">Settled 12 Jul, 20:45</p>
+          <button class="chain__link" type="button">
+            See the count
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          </button>
+        </li>
+
+        <li aria-current="step">
+          <p class="chain__st">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3.5 20 7v5.5c0 4.4-3.2 7.6-8 8.7-4.8-1.1-8-4.3-8-8.7V7l8-3.5Z"/><path d="m9 12 2.2 2.2L15.5 10"/>
+            </svg>
+            Action · you are here
+          </p>
+          <p class="chain__what">Publish it! — the club names him and posts the team sheet</p>
+          <p class="chain__when">Passed to the club 12 Jul, 20:45</p>
+        </li>
+
+      </ol>
+    </div>
+
+    <div class="because">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9V15h7v-1.1A6 6 0 0 0 12 3Z"/>
+      </svg>
+      <p>This is happening because <b>1,079</b> of the club's <b>1,284</b> members voted for it,
+        and <b>70%</b> was the bar. Nobody at the club chose this on your behalf.</p>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       6 · DISCUSSION — comments.html's thread, reused
+       ================================================================ -->
+  <div class="thead">
+    <h2>Discussion</h2>
+    <span class="thead__n">14 comments</span>
+  </div>
+
+  <ol class="thread">
+    <li>
+      <article class="cm cm--club">
+        <span class="crest-av" role="img" aria-label="FC Barcelona crest">BAR</span>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">FC Barcelona</span>
+            <span class="badge">Club</span>
+            <span class="cm__when">2 h</span>
+            <button class="cm__of" type="button" aria-label="More options for FC Barcelona's comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/>
+              </svg>
+            </button>
+          </div>
+          <p class="cm__text">Received and passed to the head coach in writing. Selection is his
+            call under the coaching contract — an approved proposal is advisory, and the team
+            sheet is published to the league an hour before kick-off.</p>
+          <div class="cm__acts">
+            <button class="sig" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              Agree <b>212</b>
+            </button>
+            <button class="sig" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Disagree <b>46</b>
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+
+    <li>
+      <article class="cm">
+        <div class="avatar cm__av" style="background-image:var(--av-fp)" role="img" aria-label="fan_pulse"></div>
+        <div class="cm__main">
+          <div class="cm__by">
+            <span class="cm__name">fan_pulse</span>
+            <span class="cm__when">51 m</span>
+            <button class="cm__of" type="button" aria-label="More options for fan_pulse's comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/>
+              </svg>
+            </button>
+          </div>
+          <p class="cm__text">"Advisory" is doing a lot of work in that sentence. 1,079 of us voted.
+            Post the sheet at six and we will all know within a minute whether the vote counted for
+            anything.</p>
+          <div class="cm__acts">
+            <button class="sig" type="button" aria-pressed="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6.5 9.5 17l-5-5"/></svg>
+              Agree <b>168</b>
+            </button>
+            <button class="sig" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Disagree <b>12</b>
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+
+    <li class="morerow">
+      <button class="more" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        Show all <b>14</b> comments
+      </button>
+    </li>
+  </ol>
+
+  <p class="caption">What is real and what is proposed</p>
+
+  <div class="note">
+    <dl>
+      <dt>Real</dt>
+      <dd><b>The verdict, the subject, the reason, every date and the vote count.</b>
+          All of it is already on the record <code>MProposal</code> returns from
+          <code>GET /proposals/{uuid}/</code> — including <code>parent_id</code>, the link back
+          to the originating idea, which nothing in the live build reads.</dd>
+      <dt>Missing</dt>
+      <dd><b>Follow-through does not exist in the data.</b> No owner, no due date, no
+          completion flag, no evidence, and no endpoint to record any of them. The one step
+          this screen cannot fill is the one the screen is for, so it is drawn as an
+          <b>unresolved dashed mark</b> rather than faked as a progress bar.</dd>
+      <dt>Proposed</dt>
+      <dd>Three fields, marked <b>Proposed</b> wherever they appear:
+          <code>owner</code>, <code>committed_by</code> and <code>confirmed_at</code>.
+          Add those three and the loop closes.</dd>
+    </dl>
+  </div>
+
+  <!-- ================================================================
+       STATES — every verdict that can reach this screen
+       ================================================================ -->
+  <p class="caption">States · <b>five of the seven verdicts reach this screen</b></p>
+
+  <div class="note">
+    <dl>
+      <dt>Reaches</dt>
+      <dd><b>Approved · Ruled out · Vetoed · Veto hold · Cancelled.</b> An action exists because
+          a proposal passed, so the verdict here is either the pass or something that struck it
+          out afterwards.</dd>
+      <dt>Cannot</dt>
+      <dd><b>Rejected</b> ends at the Result — a proposal members voted down never becomes an
+          action. <b>Lapsed</b> ends at the Idea stage, before there is a proposal at all.
+          Neither is drawn here; a link to either should land on the Result detail instead.</dd>
+      <dt>Live build</dt>
+      <dd>Ships two: <code>rule_outed</code> in red, everything else in green. And
+          <code>func.dart::findStatusAction</code> matches <code>case "rule_outed&nbsp;"</code>
+          <b>with a trailing space</b>, so an approved action currently renders to members as
+          <b>Ruled out, in red</b>.</dd>
+    </dl>
+  </div>
+
+  <!-- ---------- Ruled out ---------- -->
+  <p class="caption">Ruled out · <b>status <code>rule_outed</code></b></p>
+
+  <div class="verdict verdict--neg verdict--lg verdict--top">
+    <span class="verdict__badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8"/><path d="M8 12h8"/>
+      </svg>
+    </span>
+    <span class="verdict__body">
+      <span class="verdict__word">Ruled out</span>
+      <span class="verdict__sub">Passed the vote · not executable · no action follows</span>
+    </span>
+  </div>
+
+  <article class="subj">
+    <div class="subj__top">
+      <span class="typechip">Management decision</span>
+      <span class="subj__ref">#4108</span>
+    </div>
+    <h2 class="subj__title">Recall the four Girona loanees in January</h2>
+    <div class="by">
+      <span class="avatar" style="background-image:var(--av-fp)" role="img" aria-label="fan_pulse"></span>
+      <span class="by__id">
+        <b>fan_pulse</b>
+        <span>Raised 28 Jun, 11:10 · 68% support of 1,284 members</span>
+      </span>
+    </div>
+  </article>
+
+  <div class="reason" style="margin-top:10px">
+    <p class="reason__q">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5"/><path d="M8.6 8.6l6.8 6.8"/>
+      </svg>
+      Reason for being ruled out
+    </p>
+    <blockquote>League registration rules block a mid-loan recall before 1 January, and three of
+      the four agreements carry a no-recall clause to the end of the season. There is no version
+      of this we can carry out this window.</blockquote>
+    <cite>FC Barcelona · 9 Jul, 12:30 · from <code style="font-size:11px">reason</code></cite>
+    <p class="money">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3.5 20 7v5.5c0 4.4-3.2 7.6-8 8.7-4.8-1.1-8-4.3-8-8.7V7l8-3.5Z"/>
+      </svg>
+      Deposit already returned · <b>25 Credits</b>, refunded when the idea became a proposal
+    </p>
+  </div>
+
+  <div class="empty" style="margin-top:10px">
+    <span class="wait">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5"/><path d="M8 12h8"/>
+      </svg>
+      Nothing to follow up
+    </span>
+    <h3>There is no follow-through on this one</h3>
+    <p>The vote stands on the record and the reason is written down. Nothing is owed and nothing
+      is outstanding.</p>
+  </div>
+
+  <!-- ---------- Vetoed ---------- -->
+  <p class="caption">Vetoed · <b>status <code>vetoed</code></b></p>
+
+  <div class="verdict verdict--neg verdict--lg verdict--top">
+    <span class="verdict__badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8"/><path d="M6.6 17.4 17.4 6.6"/>
+      </svg>
+    </span>
+    <span class="verdict__body">
+      <span class="verdict__word">Vetoed</span>
+      <span class="verdict__sub">Struck out by club management · appeal closed 11 Jul, 18:22</span>
+    </span>
+  </div>
+
+  <article class="subj">
+    <div class="subj__top">
+      <span class="typechip">Off-field decision</span>
+      <span class="subj__ref">#4090</span>
+    </div>
+    <h2 class="subj__title">Sell naming rights to the north stand</h2>
+    <div class="by">
+      <span class="avatar" style="background-image:var(--av-tb)" role="img" aria-label="transfer_brig"></span>
+      <span class="by__id">
+        <b>transfer_brig</b>
+        <span>Raised 24 Jun, 08:30 · 76% support of 1,284 members</span>
+      </span>
+    </div>
+  </article>
+
+  <div class="reason" style="margin-top:10px">
+    <p class="reason__q">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/>
+      </svg>
+      Reason for the veto
+    </p>
+    <blockquote>The north stand naming rights are contracted to a single sponsor until June 2029.
+      Reopening them would put the club in breach, so the board has struck this out rather than
+      leave it standing as something we might do.</blockquote>
+    <cite>FC Barcelona board · 11 Jul, 09:40 · from <code style="font-size:11px">veto.reason</code></cite>
+    <p class="money">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3.5 20 7v5.5c0 4.4-3.2 7.6-8 8.7-4.8-1.1-8-4.3-8-8.7V7l8-3.5Z"/>
+      </svg>
+      Deposit already returned · <b>25 Credits</b>. A veto costs the member nothing
+    </p>
+  </div>
+
+  <!-- ---------- Veto hold — the canonical hatch ---------- -->
+  <p class="caption">Veto hold · <b>status <code>veto</code> · the canonical hatch</b></p>
+
+  <div class="verdict verdict--held verdict--lg verdict--top">
+    <span class="verdict__badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/>
+      </svg>
+    </span>
+    <span class="verdict__body">
+      <span class="verdict__word">Veto hold</span>
+      <span class="verdict__sub">Paused · <time datetime="PT22M" data-countdown="1320">00:22:00</time> left to appeal</span>
+    </span>
+  </div>
+
+  <article class="subj">
+    <div class="subj__top">
+      <span class="typechip">Off-field decision</span>
+      <span class="subj__ref">#4171</span>
+    </div>
+    <h2 class="subj__title">Publish the wage bill every quarter</h2>
+    <div class="by">
+      <span class="avatar" style="background-image:var(--av-tt)" role="img" aria-label="taythaytu"></span>
+      <span class="by__id">
+        <b>taythaytu</b>
+        <span>Raised 2 Jul, 19:05 · 81% support of 1,284 members</span>
+      </span>
+    </div>
+  </article>
+
+  <div class="instr" style="margin-top:10px">
+    <p class="eyebrow">Held — nothing is decided yet</p>
+    <div class="clocks" style="margin-top:0">
+      <div class="clock clock--held">
+        <div class="clock__top">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/>
+          </svg>
+          <span>Appeal ends</span>
+        </div>
+        <time datetime="PT22M" data-countdown="1320">22:00</time>
+        <small>Members may vote to reject the veto</small>
+      </div>
+      <div class="clock">
+        <div class="clock__top">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 21h14M6 17V9M12 17V5M18 17v-6"/>
+          </svg>
+          <span>Rejecting</span>
+        </div>
+        <strong>318</strong>
+        <small>of 642 needed · 50% of members</small>
+      </div>
+    </div>
+
+    <div class="bar bar--held" role="img" aria-label="318 of 642 votes to reject the veto" style="margin-top:12px">
+      <span class="bar__fill" style="width:49.5%"></span>
+      <span class="bar__mark" style="left:100%"></span>
+    </div>
+    <p class="bar-legend"><span>318 rejecting</span><span>642 to overturn</span></p>
+
+    <div class="who">
+      <span class="plate" role="img" aria-label="FC Barcelona crest">BAR</span>
+      <span class="who__id">
+        <b>FC Barcelona board</b>
+        <span>Holding it · commercial confidentiality</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="reason reason--held" style="margin-top:10px">
+    <p class="reason__q">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/>
+      </svg>
+      Why it is held
+    </p>
+    <blockquote>Player contracts carry confidentiality terms we cannot break by publishing a
+      quarterly breakdown. The board will put an aggregate figure in the annual accounts instead.</blockquote>
+    <cite>FC Barcelona board · 13 Jul, 09:18</cite>
+  </div>
+
+  <section class="section" aria-label="What you can do" style="margin-top:10px">
+    <div class="section__bar">
+      <span class="status-pill">2 things you can do</span>
+      <span class="spacer"></span>
+    </div>
+    <div class="panel" style="padding:14px">
+      <ol class="steps">
+        <li>
+          <div>
+            <b>Vote to reject the veto</b>
+            <p>Half the membership — 642 votes — overturns it and the action resumes. The bottom
+              bar carries this instead of the comment button while the hold is live.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <b>Do nothing</b>
+            <p>If the clock runs out with fewer than 642, the veto stands and this becomes
+              <b>Vetoed</b>. Your deposit is unaffected either way.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ---------- Cancelled ---------- -->
+  <p class="caption">Cancelled · <b>status <code>cancelled</code></b></p>
+
+  <div class="verdict verdict--inert verdict--lg verdict--top">
+    <span class="verdict__badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4.5 10.5h9a5 5 0 0 1 0 10H8.5"/><path d="M8 6.5 4.5 10.5 8 14.5"/>
+      </svg>
+    </span>
+    <span class="verdict__body">
+      <span class="verdict__word">Cancelled</span>
+      <span class="verdict__sub">The fixture was withdrawn · nothing to carry out</span>
+    </span>
+  </div>
+
+  <article class="subj">
+    <div class="subj__top">
+      <span class="typechip">On-field decision</span>
+      <span class="subj__ref">#4066</span>
+    </div>
+    <h2 class="subj__title">Move the Girona kick-off to Sunday 16:15</h2>
+    <div class="by">
+      <span class="avatar" style="background-image:var(--av-dm)" role="img" aria-label="dons_mode"></span>
+      <span class="by__id">
+        <b>dons_mode</b>
+        <span>Raised 20 Jun, 14:00 · 72% support of 1,284 members</span>
+      </span>
+    </div>
+    <div class="detail">
+      <div class="nodetail">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 3.5h8l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20V3.5Z"/><path d="M13.5 3.6V8h4.4"/>
+        </svg>
+        <p>No detail was written for this one. The member posted a title only —
+          the field is empty rather than missing.</p>
+      </div>
+    </div>
+  </article>
+
+  <div class="reason" style="margin-top:10px">
+    <p class="reason__q">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--muted)">
+        <circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>
+      </svg>
+      Why it was cancelled
+    </p>
+    <blockquote style="box-shadow:inset 2px 0 0 var(--line)">The Girona fixture was withdrawn from
+      the calendar after the cup replay was scheduled, so there is no kick-off left to move.</blockquote>
+    <cite>FC Barcelona · 7 Jul, 21:00</cite>
+    <p class="money">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3.5 20 7v5.5c0 4.4-3.2 7.6-8 8.7-4.8-1.1-8-4.3-8-8.7V7l8-3.5Z"/>
+      </svg>
+      Deposit already returned · <b>25 Credits</b>
+    </p>
+  </div>
+
+  <!-- ================================================================
+       EMPTY · ERROR · LOADING  (states.html patterns)
+       ================================================================ -->
+  <p class="caption">Empty · no discussion yet</p>
+
+  <div class="empty">
+    <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+      <path d="M2 72 L28 38 L54 72 Z" fill="#1C2129"/>
+      <path d="M80 72 L106 34 L132 72 Z" fill="#1C2129" opacity=".65"/>
+      <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M34 72 L60 30 L86 72 Z" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+      <circle cx="60" cy="23" r="3.4" fill="#9BE222"/>
+    </svg>
+    <h3>Nobody has said anything yet</h3>
+    <p>The vote is settled and the club has the instruction. If it goes quiet here, that is the
+      first thing worth asking about.</p>
+    <button class="pill-btn pill-btn--acid" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20.5 12a8.5 8.5 0 0 1-12.3 7.6L4 20.5l1-4A8.5 8.5 0 1 1 20.5 12Z"/>
+      </svg>
+      Write the first comment
+    </button>
+  </div>
+
+  <p class="caption">Error · the action did not load</p>
+
+  <div class="state" role="alert">
+    <span class="tile tile--red">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 11.5A8 8 0 1 0 17.6 17"/><path d="M20 6.5v5h-5"/><path d="M12 8.6v4M12 15.9h.01"/>
+      </svg>
+    </span>
+    <h3>This action didn't load</h3>
+    <p>The server didn't answer in time. <b>Nothing about the verdict has changed</b> — this is
+      the app failing to fetch it, not the club changing its mind.</p>
+    <button class="pill-btn pill-btn--acid" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 11.5A8 8 0 1 0 17.6 17"/><path d="M20 6.5v5h-5"/>
+      </svg>
+      Try again
+    </button>
+    <button class="link-btn" type="button">
+      Back to Actions
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+
+  <p class="caption">Error · this action is gone</p>
+
+  <div class="state" role="alert">
+    <span class="tile tile--neutral">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M16.2 16.2 21 21"/><path d="M8.5 11h5"/>
+      </svg>
+    </span>
+    <h3>We can't find this action</h3>
+    <p>It may have been withdrawn by the member who raised it, or it belongs to a club you have
+      since left.</p>
+    <button class="pill-btn" type="button">Back to Actions</button>
+  </div>
+
+  <p class="caption">Loading · replaces the grey-on-dark shimmer</p>
+
+  <div class="skel" aria-hidden="true">
+    <div class="bone skel__verdict"></div>
+    <div class="skel__card">
+      <div class="skel__row">
+        <div class="bone bone--pill" style="width:104px;height:22px"></div>
+      </div>
+      <div class="bone skel__ln" style="height:16px;width:82%;margin-bottom:9px"></div>
+      <div class="bone skel__ln" style="height:16px;width:54%;margin-bottom:16px"></div>
+      <div class="skel__row" style="margin-bottom:0">
+        <div class="bone bone--circ" style="width:30px;height:30px"></div>
+        <div style="flex:1">
+          <div class="bone skel__ln" style="width:38%;margin-bottom:6px"></div>
+          <div class="bone skel__ln" style="width:60%;height:9px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="skel__card">
+      <div class="bone skel__ln" style="width:44%;margin-bottom:12px"></div>
+      <div class="bone skel__ln" style="width:100%;margin-bottom:8px"></div>
+      <div class="bone skel__ln" style="width:92%;margin-bottom:8px"></div>
+      <div class="bone skel__ln" style="width:66%"></div>
+    </div>
+  </div>
+
+</main></div>
+
+<!-- ================================================================
+     BOTTOM-PINNED ACTION BAR — outside <main>
+     ================================================================ -->
+<div class="actbar">
+  <button class="actbar__go" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M20.5 12a8.5 8.5 0 0 1-12.3 7.6L4 20.5l1-4A8.5 8.5 0 1 1 20.5 12Z"/>
+    </svg>
+    Add a comment
+  </button>
+</div>
+</div>
+          </div>
+        </div>
+        <div class="stage__controls">
+          <div class="seg" role="group" aria-label="Device width">
+            <button type="button" data-w="375" aria-pressed="true">375</button>
+            <button type="button" data-w="414" aria-pressed="false">414</button>
+            <button type="button" data-w="430" aria-pressed="false">430</button>
+          </div>
+        </div>
+        <p class="stage__hint">Live and interactive — scroll the screen, tap the controls, switch width.</p>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Where the promise is kept, or isn't</h2>
+
+  <p>SportsHeist's whole pitch is that members decide and the club follows through. Every other
+  screen in the library builds up to that: an idea gathers likes, becomes a proposal, gets voted on,
+  gets a result. This is the screen after the result — the one where a member finds out whether any
+  of it mattered. It has had no design until now. The Actions <em>card</em> was rebuilt in
+  <code>results-actions.html</code>; the detail behind it, a 505-line file on its own route
+  (<code>CRoute.actionDetail</code>, referenced five times), was missed.</p>
+
+  <p>The screen reads top to bottom as one argument. <b>The verdict</b> — what the club decided, in
+  the settled seven-word vocabulary. <b>The subject</b> — what was actually proposed, at full length.
+  <b>The instruction</b> — what the club committed to doing about it, and who is accountable.
+  <b>Follow-through</b> — six dated steps, five of which the data can prove. <b>How it got here</b> —
+  the idea, the vote with its real counts, the result, and one plain sentence: <em>this is happening
+  because 1,079 of the club's 1,284 members voted for it</em>. Then the discussion, because an action
+  going quiet is the thing members will want to talk about.</p>
+
+  <p><b>The one thing this screen cannot do is the thing it exists for.</b> There is no field
+  anywhere in the app for whether an action was carried out — no owner, no due date, no completion
+  flag, no evidence, and no endpoint to record any of it. So the last step of the timeline is drawn
+  as an unresolved dashed mark reading <em>Carried out · Not confirmed</em>, rather than faked as a
+  progress bar. Three fields close the loop and they are named in the Decisions section. Until they
+  exist, the accountability loop is open by construction, not by accident.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. Field names in
+        <code>code</code> are the real JSON keys <code>MProposal.fromJson</code> parses.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Hero</td><td>Banner</td><td class="t-note"><code>138px</code>, <code>--r-card</code>,
+          gradient <code>#0D3617</code>→<code>#17481C</code> at <code>112deg</code>, white triangles at
+          <code>2.4–3%</code>, three acid peaks bottom-right at <code>54% × 38%</code>. The knockout
+          athlete prop is <b>omitted</b> — <code>merit-detail.html</code> established that pushed
+          routes drop it, and it saves <code>113KB</code> of inline base64.</td></tr>
+        <tr><td>Hero</td><td>Back disc</td><td class="t-note"><code>36px</code> circle,
+          <code>rgba(255,255,255,.12)</code>, white <code>1.9</code>-stroke chevron, with an
+          <code>::after</code> expansion to a <code>44px</code> target.</td></tr>
+        <tr><td>Hero</td><td>Eyebrow + title</td><td class="t-note"><code>WAR ROOM · ACTIONS</code> at
+          <code>10.5/700/.14em</code> on <code>rgba(255,255,255,.6)</code>, then
+          <code>ACTION</code> at <code>34/800/-.025em</code> uppercase.</td></tr>
+        <tr><td>Verdict</td><td>Verdict bar, detail scale</td><td class="t-note">The parent's component
+          at its <code>--lg</code> size: <code>70px</code> min-height, <code>14/16px</code> padding,
+          <code>34px</code> badge, word at <code>16/700/.05em</code>. Tone <code>--pos</code>:
+          <code>--acid-wash</code> fill, <code>rgba(155,226,34,.22)</code> inset ring, acid word,
+          acid badge with <code>--acid-ink</code> tick. Sub-line carries the count.</td></tr>
+        <tr><td>Subject</td><td>Type chip + reference</td><td class="t-note">From <code>type</code>.
+          <code>22px</code> pill, <code>--sunken</code>, <code>10/700/.12em</code>. Reference
+          <code>#4182</code> is <code>id</code>, right-aligned in <code>--dim</code>.</td></tr>
+        <tr><td>Subject</td><td>Title</td><td class="t-note">From <code>title</code>.
+          <code>20/700/-.02em</code>, <code>1.2</code> line-height — a notch above the card's
+          <code>17px</code>, because on the detail the title is the headline.</td></tr>
+        <tr><td>Subject</td><td>Byline</td><td class="t-note"><code>30px</code> avatar from
+          <code>author_avatar</code>, name from <code>author_name</code>, date from
+          <code>posted_at</code>. <b>One author, not two</b> — the parent card showed a two-avatar
+          stack and the model has no field for a second author.</td></tr>
+        <tr><td>Subject</td><td>Detail + Read more</td><td class="t-note">From
+          <code>description</code>. Real <code>-webkit-line-clamp:4</code> with a
+          <code>Read more / Read less</code> toggle, matching
+          <code>action_detail.dart</code>'s <code>maxLines: flag ? 4 : 10</code>. The live build uses
+          <code>softWrap:false</code> with a single-line ellipsis, which truncates mid-sentence.</td></tr>
+        <tr><td>Instruction</td><td>The instruction word</td><td class="t-note">From
+          <code>status</code>: <code>let_push_it</code> renders <code>Publish it!</code>,
+          <code>let_do_it</code> renders <code>Let's do it!</code>. <code>19/800/-.02em</code> in
+          <code>--acid</code> with a <code>20px</code> glyph. This is the <em>instruction</em>, kept
+          out of the verdict bar, which carries the <em>verdict</em>.</td></tr>
+        <tr><td>Instruction</td><td>Owner row</td><td class="t-note">Canonical club crest plate at
+          <code>40px</code> — <code>rgba(255,255,255,.94)</code>, radius <code>11.2px</code>
+          (<code>40×.28</code>), padding <code>5px</code> (<code>40×.125</code>), club code at
+          <code>12/800/-.03em</code> in <code>--acid-ink</code>. Carries a hairline
+          <code>Proposed</code> tag: there is no owner field.</td></tr>
+        <tr><td>Instruction</td><td>Two clocks</td><td class="t-note"><code>veto.html</code>'s
+          <code>.clock</code>. Left: <b>Committed by</b> <code>Fri 18:00</code> — proposed. Right:
+          <b>Verdict recorded</b> <code>12 Jul 20:45</code> — real, from <code>updated_at</code>.
+          Neither takes the hold hatch; a deadline is not a hold.</td></tr>
+        <tr><td>Follow&#8209;through</td><td>Section container</td><td class="t-note">
+          <code>--section</code> fill, <code>1px --line</code>, <code>--r-card</code>,
+          <code>12px</code> padding, holding a status pill reading <code>5 of 6 recorded</code> and a
+          <code>38px</code> alert icon button.</td></tr>
+        <tr><td>Follow&#8209;through</td><td>Timeline, 5 proven steps</td><td class="t-note">
+          <code>21px</code> acid disc with an <code>--acid-ink</code> tick, joined by a
+          <code>1px --line</code> connector. Each step is one timestamp:
+          <code>posted_at</code> · <code>idea_end_at</code> + <code>idea_duration</code> ·
+          vote open · <code>voting_end_at</code> + <code>vote_duration</code> ·
+          <code>updated_at</code>.</td></tr>
+        <tr><td>Follow&#8209;through</td><td>The 6th step — unrecorded</td><td class="t-note">
+          <code>Carried out · Not confirmed</code>. A <code>1.6px</code> <b>dashed</b>
+          <code>#9BE222</code> ring on a transparent ground, above a dashed accent connector. This is
+          <code>states.html</code>'s "should exist and does not yet" rule, <b>not</b> the hold hatch —
+          an unrecorded outcome is not a paused one. Carries the needed field names in mono
+          <code>10.5px --dim</code>.</td></tr>
+        <tr><td>Provenance</td><td>Chain, 4 rows</td><td class="t-note">Idea → Vote → Result → Action.
+          Stage labels at <code>10/700/.14em</code> with a <code>13px</code> glyph. The current row
+          takes <code>--acid-wash</code> and an accent label and is marked
+          <code>aria-current="step"</code>.</td></tr>
+        <tr><td>Provenance</td><td>The count</td><td class="t-note"><code>veto.html</code>'s readout:
+          <code>1,079</code> at <code>32/800/-.04em</code> tabular, a <code>70% needed</code> pill,
+          and a <code>12px</code> bar with the acid fill at <code>84%</code> and a <code>2px</code>
+          white threshold mark at <code>70%</code>. Both figures are real —
+          <code>voted</code> and <code>total_member_participants</code>.</td></tr>
+        <tr><td>Provenance</td><td>The accountability sentence</td><td class="t-note">
+          <code>--sunken</code> panel, <code>12.5/1.5</code> in <code>--muted</code> with white
+          tabular figures: <em>"This is happening because 1,079 of the club's 1,284 members voted for
+          it, and 70% was the bar. Nobody at the club chose this on your behalf."</em> This is the
+          screen's thesis in one line.</td></tr>
+        <tr><td>Discussion</td><td>Thread</td><td class="t-note"><code>comments.html</code>'s
+          <code>.thread</code> / <code>.cm</code> / <code>.sig</code>, reused unchanged: club row on
+          <code>--sunken</code> with the monochrome crest tile and a <code>CLUB</code> badge, member
+          rows on <code>--surface</code>, agreement as <b>accent ink with a hairline ring, never a
+          fill</b>, counts as raw integers. Endpoint
+          <code>/proposals/{uuid}/comments/</code> is keyed by proposal, so an action-stage proposal
+          has a thread — the live Action detail simply never renders it.</td></tr>
+        <tr><td>Chrome</td><td>Bottom action bar</td><td class="t-note"><b>Outside
+          <code>&lt;main&gt;</code></b>. <code>52px</code> acid button, <code>--acid-ink</code> label,
+          over a <code>--bg</code> gradient with a <code>0 10px 30px</code> lift. Carries the one real
+          write action at this stage: <code>POST /proposals/{uuid}/post-comment/</code>. On a Veto hold
+          it carries the appeal instead, which is also real
+          (<code>POST .../reject-veto/</code>). <code>.screen</code> padding is
+          <code>12px 0 128px</code> to clear it.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <p>Five of the parent's seven verdicts can reach this screen. An action exists because a proposal
+  <em>passed</em>, so the verdict here is either that pass or something that struck it out afterwards.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Approved</td><td class="t-note"><code>--pos</code> bar with the tick badge, the full
+          instruction panel, owner, both clocks, and the six-step timeline. The only state with
+          follow-through to show.</td></tr>
+        <tr><td>Ruled out</td><td class="t-note"><code>--neg</code> bar,
+          <code>circle + minus</code> badge, sub-line <code>Passed the vote · not executable</code>.
+          Adds the written reason from <code>reason</code> in a blockquote with a <code>2px</code>
+          <code>rgba(226,86,74,.28)</code> rule. The instruction panel is replaced by an empty-state
+          panel: <code>There is no follow-through on this one</code>. This is the only extra branch
+          the live build implements (<code>buildReasonRuleOuted</code>).</td></tr>
+        <tr><td>Vetoed</td><td class="t-note"><code>--neg</code> bar, <code>circle + slash</code>
+          badge, appeal-closed timestamp. Reason comes from <code>veto.reason</code> and is attributed
+          to the board, not the club generally.</td></tr>
+        <tr><td>Veto hold</td><td class="t-note"><b>The canonical hatch.</b> Static
+          <code>135°</code> bars, <code>rgba(155,226,34,.11)</code> at <code>5px</code> on /
+          <code>6px</code> off over <code>--sunken</code>, <code>rgba(155,226,34,.30)</code> ring,
+          <code>⊘</code> badge — copied from <code>veto.html</code> through the parent, byte for byte.
+          The appeal clock keeps <b>full-contrast white digits</b>, because held is loud and finished
+          is quiet. The reject-the-veto bar takes the same hatch inverted to
+          <code>rgba(3,4,1,.62)</code> over its acid fill. Adds two numbered steps and swaps the
+          bottom bar for the appeal.</td></tr>
+        <tr><td>Cancelled</td><td class="t-note"><code>--inert</code> — no hue at all.
+          <code>--sunken</code> fill, <code>--line</code> ring, white word, refund glyph. Finished and
+          quiet, never the hatch.</td></tr>
+        <tr><td>Rejected · Lapsed</td><td class="t-note"><b>Cannot reach this screen and are not
+          drawn.</b> A rejected proposal ends at the Result; a lapsed idea ends before there is a
+          proposal at all. Any link to either should land on the Result detail.</td></tr>
+        <tr><td>No detail written</td><td class="t-note"><code>description</code> is nullable, and the
+          live build renders <code>state.proposal!.description.toString()</code> — so a member is
+          currently shown the literal string <code>null</code>. Replaced by a <code>--sunken</code>
+          strip with a document glyph: <em>No detail was written for this one.</em></td></tr>
+        <tr><td>Empty · no discussion</td><td class="t-note"><code>states.html</code>'s
+          <code>.empty</code> panel with a <code>132 × 88</code> peak illustration — solid
+          <code>#1C2129</code> peaks for context, one dashed accent peak for the thing that isn't
+          there — and a real action: <code>Write the first comment</code>.</td></tr>
+        <tr><td>Error · didn't load</td><td class="t-note"><code>.state</code> panel with the
+          <code>52px</code> red tile, <code>role="alert"</code>, and a retry. Says what happened, that
+          <b>the verdict has not changed</b>, and one thing to do. Replaces
+          <code>UDialog().showInternal()</code>, which is the <code>OOPS!</code> modal.</td></tr>
+        <tr><td>Error · not found</td><td class="t-note">Same panel, neutral tile — a missing action is
+          a condition, not a fault. Withdrawn by its author, or a club the member has left.</td></tr>
+        <tr><td>Loading</td><td class="t-note"><code>--bone</code> skeleton at
+          <code>rgba(255,255,255,.055)</code> with one <code>1.5s</code> sheen, in the exact geometry
+          of the verdict bar and the two cards it replaces. Replaces the live
+          <code>grey-300 / grey-100</code> shimmer, which is a light-theme skeleton running on a dark
+          screen.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused, unchanged</h3>
+      <ul>
+        <li><b>Verdict bar</b> — <code>results-actions.html</code>, at its <code>--lg</code> detail
+          scale. Same four tones, same two hues, same seven words.</li>
+        <li><b>The hold hatch</b> — <code>veto.html</code> via the parent. Same
+          <code>5px</code>&nbsp;/&nbsp;<code>6px</code> rhythm, same
+          <code>rgba(155,226,34,.30)</code> ring, same <code>⊘</code>, still static.</li>
+        <li><b>Comment thread</b> — <code>comments.html</code>'s <code>.thread</code>,
+          <code>.cm</code>, <code>.sig</code>, club row, crest tile and <code>CLUB</code> badge.</li>
+        <li><b>Empty, error and skeleton panels</b> — <code>states.html</code>'s <code>.empty</code>,
+          <code>.state</code>, <code>.tile</code>, <code>.ill</code>, <code>.bone</code>.</li>
+        <li><b>Clocks, count readout, threshold bar, numbered steps, attribution row</b> —
+          <code>veto.html</code>.</li>
+        <li><b>Club crest plate</b> — the canonical <code>40px</code> fallback form from
+          <code>club-selection.html</code>.</li>
+        <li><b>Hero, section container, status pill, icon button, card shell, type chip</b> —
+          <code>merits.html</code> / <code>merit-detail.html</code> / <code>idea-card.html</code>.</li>
+        <li><b>Content</b> — the same action the parent's first Actions card shows, so the card and
+          its detail are the same object.</li>
+      </ul>
+    </div>
+
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The follow-through timeline</b> — six steps, five built from timestamps already on the
+          record. New composition, no new tokens.</li>
+        <li><b>The unrecorded mark</b> — a <code>1.6px</code> dashed <code>#9BE222</code> ring and a
+          dashed accent connector, for the one step no field can prove. Drawn under
+          <code>states.html</code>'s existing dashed-outline rule, deliberately not the hatch.</li>
+        <li><b>The <code>Proposed</code> tag</b> — a hairline <code>19px</code> chip, no hue, marking
+          on-screen every value that has no field behind it.</li>
+        <li><b>The provenance chain</b> — Idea → Vote → Result → Action, with the real counts and the
+          threshold marked. Nothing in the live build reads <code>parent_id</code>, so no chain
+          exists today.</li>
+        <li><b>The accountability sentence</b> — one plain line naming the number of members who
+          caused this. New copy.</li>
+        <li><b>Three proposed fields</b> — <code>owner</code>, <code>committed_by</code>,
+          <code>confirmed_at</code>. Everything on this screen tagged <code>Proposed</code> maps to
+          one of them.</li>
+        <li><b>Bottom action bar</b> — the live Action detail has no bottom chrome at all.</li>
+        <li><b>Discussion on an action</b> — the endpoint supports it; the live screen omits it.</li>
+        <li><b>Real 4-line clamp, and the null-description empty</b> — both are bug fixes as much as
+          design.</li>
+        <li><b><code>.screen</code> bottom padding at <code>128px</code></b> — a departure from the
+          contract's <code>110px</code>, to clear the pinned bar. <code>states.html</code> took the
+          same liberty at <code>176px</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li>
+      <h3>Can the club record that an action was carried out?</h3>
+      <p>This is the only question on the page that matters. Nothing in the app can express
+      follow-through: <code>MProposal</code> has no owner, no due date, no completion flag, no
+      evidence and no confirmation timestamp, and there is no endpoint to set any of them. The only
+      <code>valueProgress</code> in the repository sits on three dead mock classes
+      (<code>MAction</code>, <code>Result</code>, <code>Voting</code>) that have no
+      <code>fromJson</code> and are never fetched, hard-defaulted to <span class="flag">0.5</span>.
+      <code>task_id</code> is a scheduler handle, not a piece of work. So the product can currently
+      tell a member <em>what was decided</em> and never <em>what was done</em> — the accountability
+      loop it is sold on cannot be closed.</p>
+      <p>We have <b>not</b> invented a tracker. We have designed the honest minimum: a timeline of
+      the five steps the timestamps prove, and a sixth drawn as an unresolved dashed mark reading
+      <span class="flag">Carried out · Not confirmed</span>. Three fields close it —
+      <code>owner</code>, <code>committed_by</code> and <code>confirmed_at</code> — plus one write
+      endpoint for the club. Confirm those and we will draw the confirmed state; refuse them and the
+      dashed mark is the permanent truth of the screen, which is worth knowing before build.</p>
+    </li>
+    <li>
+      <h3>Who is accountable for an action — and can a member see it?</h3>
+      <p>We have shown <span class="flag">FC Barcelona · club media</span> against the crest plate.
+      There is no field for it. The <em>member</em> who raised the idea is on the record
+      (<code>author_name</code>, <code>author_avatar</code>) and appears in the byline, but the member
+      is not the person who carries it out — the club is. If accountability is going to be per
+      department, per named officer, or simply "the club", we need to know which, because it changes
+      whether <code>owner</code> is a string, an enum or a user reference.</p>
+    </li>
+    <li>
+      <h3><code>status</code> carries a verdict at one stage and an instruction at another. Split it?</h3>
+      <p>At the result stage <code>status</code> holds <code>approved</code> /
+      <code>rejected</code> / <code>vetoed</code> / <code>rule_outed</code>. At the action stage it
+      holds <code>let_push_it</code> (<em>Publish it!</em>) or <code>let_do_it</code> (<em>Let's do
+      it!</em>) — those are instructions, not verdicts. One field cannot be both, which means an
+      action's verdict is <b>not stored anywhere</b>: this screen has to infer <em>Approved</em> from
+      the fact that a proposal reached <code>stage: action</code> at all. We have drawn it that way —
+      verdict in the bar, instruction in its own panel — but the clean fix is a second field. And
+      nobody has told us the difference between <em>Publish it!</em> and <em>Let's do it!</em>; we
+      assumed <span class="flag">Publish it!</span> here because the parent's card did.</p>
+    </li>
+    <li>
+      <h3>There is no "against" count. Is 84% support really derivable?</h3>
+      <p>The record carries exactly two figures: <code>voted</code> and
+      <code>total_member_participants</code>. There is no field for votes against and no field for
+      abstentions, so <code>84%</code> can only mean <em>votes for, over the whole membership</em> —
+      it cannot mean <em>share of votes cast</em>. We have written it as
+      <span class="flag">1,079 of 1,284 members</span> so the denominator is explicit rather than
+      implied. If a member can vote against and that is counted, the field is missing; if the
+      threshold is a share of turnout rather than of membership, every percentage in the library is
+      wrong.</p>
+    </li>
+    <li>
+      <h3>Is the threshold 70%, and does it move by type?</h3>
+      <p>We show <span class="flag">70%</span>, marked on the bar rather than merely stated.
+      <code>Thresholds</code> in the club config carries four separate values — positions, on-field,
+      off-field and management decisions — plus a fifth for rejecting a veto. If they differ, the
+      figure and the mark both have to read from config per <code>type</code>, and inherited from
+      the parent: the same question is open on <code>results-actions.html</code>'s chart.</p>
+    </li>
+    <li>
+      <h3><code>parent_id</code> is an integer, but routing needs a <code>uuid</code>.</h3>
+      <p>The chain back to the originating idea is the point of the Provenance block, and
+      <code>parent_id</code> is already on every record — nothing in the live build reads it. But
+      navigation is by <code>uuid</code> (<code>GET /proposals/{uuid}/</code>), and
+      <code>parent_id</code> is an <code>int</code>, so <b>Open the idea cannot currently be wired</b>
+      without either a <code>parent_uuid</code> or an id-based lookup. Related: the counts on a record
+      are current-stage only, so the idea's <em>like</em> count is not retrievable from the action
+      payload. We have shown dates and authorship on the idea row rather than fabricate a like count.</p>
+    </li>
+    <li>
+      <h3>Does a ruled-out or vetoed action cost the member anything?</h3>
+      <p>We have followed the parent and the live string table: the deposit is forfeited <em>only</em>
+      when an idea lapses, and <code>proposalPage.free when proposal vetoed</code> says outright
+      "This will be free when the Proposal is Vetoed, Cancelled or Ruled Out". Every state that can
+      reach this screen therefore reads <span class="flag">Deposit already returned · 25 Credits</span>.
+      <b>But the taxonomy tooltip contradicts it:</b>
+      <code>CLString.listExplainTitleIDea[0]</code> tells members on-field decisions "may be Vetoed or
+      Ruled Out, <em>and deposit forfeited</em>, when it is not executable". One of those two strings
+      is wrong and members are reading both. The <code>25</code> itself remains invented — no pricing
+      exists in the repo.</p>
+    </li>
+    <li>
+      <h3>Two build bugs decide whether any of this is visible.</h3>
+      <p>Inherited from the parent and worth repeating because they land hardest here.
+      <code>func.dart::findStatusAction</code> matches <code>case "rule_outed&nbsp;"</code>
+      <b>with a trailing space</b> while the enum emits it without one, so every status that is not
+      <code>let_do_it</code> or <code>let_push_it</code> falls through to the default and renders as
+      <b>Ruled out, in the danger colour</b> — an approved action is currently shown to members as
+      rejected. <code>findTypeAction</code> has the same trailing space on
+      <code>case "on_field_decisions&nbsp;"</code>. Separately, <code>is_danger</code> is declared on
+      <code>MProposal</code> and in its constructor but <b>never parsed in
+      <code>fromJson</code></b>, so it is always null — if it was meant to flag anything on this
+      screen, it does not.</p>
+    </li>
+    <li>
+      <h3>Should the discussion live on the Action detail at all?</h3>
+      <p>We have put it there. The comments endpoint is keyed by proposal rather than by stage, so
+      the data already supports it, and an action going quiet is exactly what members will want to
+      argue about. The live screen shows no comments. If the thread should stay on the voting detail
+      only, say so — the section lifts out cleanly and the bottom bar loses its purpose with it.</p>
+    </li>
+    <li>
+      <h3>Two open library-wide decisions apply here.</h3>
+      <p><b>Control height.</b> The pinned bar's button is <span class="flag">52px</span>, following
+      <code>forms.html</code>; <code>auth.html</code> measured <code>64px</code> off the Figma
+      button component. <b>Tap targets.</b> Every <code>38px</code> and <code>28px</code> control on
+      this screen carries the contract's <code>::after</code> hit-area expansion to
+      <code>44px</code>, which is the pattern we recommend adopting library-wide rather than
+      inflating the sampled visual sizes.</p>
+    </li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  /* ---- READ MORE / READ LESS — the live build's 4-line clamp ---- */
+  document.querySelectorAll('.readmore').forEach(function(btn){
+    var id = btn.getAttribute('aria-controls');
+    var box = id && document.getElementById(id);
+    if (!box) return;
+    btn.addEventListener('click', function(){
+      var open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!open));
+      box.classList.toggle('detail--clamp', open);
+      btn.querySelector('span').textContent = open ? 'Read more' : 'Read less';
+    });
+  });
+
+  /* ---- agree / disagree — ink, never a fill (comments.html) ---- */
+  document.querySelectorAll('.cm__acts').forEach(function(row){
+    row.addEventListener('click', function(e){
+      var b = e.target.closest('.sig'); if (!b) return;
+      var on = b.getAttribute('aria-pressed') === 'true';
+      if (!on) {
+        row.querySelectorAll('.sig').forEach(function(x){ x.setAttribute('aria-pressed','false'); });
+      }
+      b.setAttribute('aria-pressed', String(!on));
+      var n = b.querySelector('b');
+      if (n) { n.textContent = String((parseInt(n.textContent.replace(/\D/g,''),10)||0) + (on ? -1 : 1)); }
+    });
+  });
+
+  /* ---- the appeal clock — the one countdown on this screen.
+     It is the hold that is running, not a deadline, and it keeps
+     full-contrast digits because held is loud, finished is quiet. ---- */
+  function pad(n){ return String(n).padStart(2,'0'); }
+  var clocks = Array.prototype.slice.call(document.querySelectorAll('[data-countdown]'))
+    .map(function(el){
+      return { el: el, left: parseInt(el.dataset.countdown,10) || 0,
+               hrs: (el.textContent.split(':').length > 2) };
+    });
+
+  if (clocks.some(function(c){ return c.left > 0; })) {
+    setInterval(function(){
+      clocks.forEach(function(c){
+        if (c.left <= 0) return;
+        c.left -= 1;
+        var h = Math.floor(c.left/3600), m = Math.floor((c.left%3600)/60), s = c.left%60;
+        c.el.textContent = c.hrs ? (pad(h)+':'+pad(m)+':'+pad(s)) : (pad(m + h*60)+':'+pad(s));
+        c.el.setAttribute('datetime','PT'+h+'H'+m+'M'+s+'S');
+      });
+    }, 1000);
+  }
+})();
+</script>

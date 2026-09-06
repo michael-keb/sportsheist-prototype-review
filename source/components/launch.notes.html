@@ -1,0 +1,223 @@
+<p class="dek">The five frames that run in front of the log-in screens: the splash a member sees on
+cold launch, what they see when that launch fails, the choice between logging in and signing up,
+what pressing <b>Sign Up</b> actually does in the shipped app today, and the screen that asks for
+notification permission before iOS does.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The first four seconds of the app</h2>
+
+  <p><b>Read frames 3 and 4 as a pair.</b> Frame 3 is our proposal: <b>Log In</b> or
+  <b>Sign Up</b>, both continuing inside the app. Frame 4 is <b>the current shipped behaviour</b>
+  &mdash; the confirmation the live build raises the moment that sign-up control is pressed, telling
+  you to go to the club's website, and then handing you to the phone's browser. There is no
+  registration screen in the shipped app at all: one exists in the code but the only link to it is
+  commented out. The Onboarding component's four-step sign-up, and the <b>Sign Up</b> button on
+  frame 3, are proposals for a journey that today ends in a browser. Frame 4 is in the library so
+  that cannot be misread.</p>
+
+  <p>Everything here happens before anyone has typed anything. The splash holds the screen while
+  the stored sign-in token is checked; the entry fork sends a member to log in or a newcomer to
+  sign up; the priming screen explains notifications before the phone's own permission alert
+  appears. These frames hand straight over to the <b>Log in</b> component, so they take its
+  geometry unchanged &mdash; the same <code>20px</code> gutter, the same <code>64px</code> button,
+  the same <b>Log in / Sign up</b> wording.</p>
+
+  <p>In the current app three of these four screens either don't exist or don't work. The splash
+  is the most brand-heavy screen in the product &mdash; a full-bleed violet-to-gold gradient with
+  the logo centred &mdash; but it renders <b>no loading indicator at all</b>, so a slow sign-in
+  check is indistinguishable from a frozen app. There is <b>no failure screen</b>: if the check
+  fails the app silently drops the member into the signed-out flow, which looks exactly like being
+  logged out. And the notification request fires on the first screen inside the app, with no
+  explanation, at the same moment as a green success bar and an empty club page.</p>
+
+  <p>The rebuilt splash is made from this brand's own parts rather than a new picture: the
+  near-black canvas, the two soft green glows already measured on Get Started, the faint angular
+  triangles from the hero banners, the shipped logo, and the three acid peaks that the design
+  system already uses as its loading mark. The peaks are deliberately doing two jobs at once
+  &mdash; they are the brand shape <em>and</em> the thing that tells you the app is still working.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Frame 1 &middot; Splash</td><td>Canvas</td><td class="t-note">Full bleed <code>#030401</code> with two <code>#276425</code> glow discs at <code>16%</code>, top-left and bottom-right &mdash; the same two discs measured on the Get Started frame, so the splash and the screen it hands to sit on one ground.</td></tr>
+        <tr><td>Frame 1</td><td>Triangle field</td><td class="t-note">Four triangles at <code>2.2&ndash;3.0%</code> white, the hero-banner pattern scaled from a <code>343&times;132</code> banner to the whole <code>393&times;852</code> frame. Depth without a photograph.</td></tr>
+        <tr><td>Frame 1</td><td>Logo lockup</td><td class="t-note">The shipped <code>app_icon.svg</code> in <code>#9BE222</code> above <code>app_name.svg</code> in white, stacked, <code>56px</code> mark over a <code>196px</code> wordmark with a <code>22px</code> gap. Its optical centre sits at <code>38%</code> of frame height &mdash; the one measurement carried over from the old splash. Both are vectors, not type.</td></tr>
+        <tr><td>Frame 1</td><td>Loading mark</td><td class="t-note">Three acid peaks at <code>116&times;49</code>, each cycling <code>22% &rarr; 100%</code> opacity on a <code>160ms</code> stagger over <code>1.15s</code>. The design system's screen-level loading mark, replacing the Material blue <code>#2196F3</code> ring the app currently uses everywhere.</td></tr>
+        <tr><td>Frame 1</td><td>Status caption</td><td class="t-note"><code>Checking your session</code>, <code>11px/700</code> with <code>.14em</code> tracking, uppercase, in <code>#99A0AE</code>. It does not name the club &mdash; which club to open is exactly the thing not yet known.</td></tr>
+        <tr><td>Frame 1</td><td>Commitment line</td><td class="t-note"><code>11.5px</code> in <code>#5B606B</code> at the bottom: the app promises to stop after 15 seconds and say what went wrong. No progress bar &mdash; a sign-in round trip cannot be honestly estimated, and a fake bar stalled at 90% is worse than a mark that keeps moving.</td></tr>
+        <tr><td>Frame 2 &middot; Failure</td><td>Quiet lockup</td><td class="t-note">The horizontal lockup at <code>143.5px</code>, <code>62%</code> opacity, at the top &mdash; so the member can see <em>which</em> app has stopped. The only thing carried across from frame 1.</td></tr>
+        <tr><td>Frame 2</td><td>Icon tile</td><td class="t-note"><code>52px</code>, <code>R14</code>. Offline uses the neutral tile (white at <code>6%</code>): being offline is a condition, not a fault. A server failure uses the red tile, <code>#E2564A</code> on <code>rgba(226,86,74,.12)</code> with a <code>28%</code> inner ring &mdash; and always with an icon and words, never colour alone.</td></tr>
+        <tr><td>Frame 2</td><td>Headline &amp; body</td><td class="t-note"><code>22px/700</code> headline over <code>13.5px</code> body at a <code>33ch</code> measure. Three things, in order: what happened, why, and the one thing to do next. No apology, no error code in the body, no raw server text.</td></tr>
+        <tr><td>Frame 2</td><td>Reassurance panel</td><td class="t-note"><code>#080A0C</code> panel, <code>1px</code> hairline, <code>R12</code>. Carries the last-synced time and what still works offline. The sentence <b>&ldquo;You're still signed in&rdquo;</b> is the most important line on the frame.</td></tr>
+        <tr><td>Frame 2</td><td>Reference pill</td><td class="t-note">Server-failure state only: <code>Logged as 8F2-4471</code> on <code>#13171E</code>, tracked caps, tabular figures. It turns an unhelpful message into a support ticket.</td></tr>
+        <tr><td>Frame 2</td><td>Actions</td><td class="t-note"><code>Try Again</code> on the acid pill and one alternative below it, both <code>64px</code>. Try Again swaps its label for the accent ring in place, so the second attempt is visible without the screen redrawing and the button cannot be pressed twice.</td></tr>
+        <tr><td>Frame 3 &middot; Entry fork</td><td>Statement</td><td class="t-note"><code>Everything runs off one account</code>, <code>24px/700</code> centred, over two lines of <code>15px</code> support copy. A statement, not a question &mdash; see Decisions.</td></tr>
+        <tr><td>Frame 3</td><td>Two destinations</td><td class="t-note"><code>Log In</code> on the acid pill with a trailing arrow; <code>Sign Up</code> on the <code>#1C2129</code> pill with the <code>46px</code> acid disc inset <code>9px</code>. Both <code>64px</code>, both Title Case. Each carries a <code>12.5px</code> line naming where it goes.</td></tr>
+        <tr><td>Frame 3</td><td>Guest note</td><td class="t-note">The panel that fixes the contradiction: <b>you don't have to be a club member</b>. Member-versus-guest is chosen on the next screen, in Onboarding, not here.</td></tr>
+        <tr><td>Frame 4 &middot; Leave-app confirm</td><td>What this frame is</td><td class="t-note"><b>The current shipped behaviour, rebranded &mdash; not a proposal.</b> Pressing the sign-up control on the entry fork raises this confirmation in the live app today. The screen behind it is frame 3 at <code>90%</code> under the Dialogs kit's <code>rgba(3,4,1,.72)</code> scrim and <code>10px</code> blur: it is context for where the dialog is raised from, not a second screen. A <code>Shipped today</code> pill sits top-left &mdash; review chrome, it would not ship.</td></tr>
+        <tr><td>Frame 4</td><td>Dialog shell</td><td class="t-note">The Dialogs kit's shell, unchanged: <code>R16</code> <code>#1C2129</code> card, <code>340px</code> maximum width inside a <code>20px</code> inset, <code>20px</code> padding, a <code>30px</code> close disc, a <code>44px</code> neutral icon tile, title at <code>18/600</code>, body at <code>13/1.5</code>, and a <code>46px</code> action row split by a <code>10px</code> gap. Nothing about it was drawn for this frame.</td></tr>
+        <tr><td>Frame 4</td><td>Copy</td><td class="t-note">Verbatim from the source, including the misspelling: <code>LEAVING THE APP</code> and <code>To sign up, you will need to go to the club's website. Do you want to proeed?</code> The buttons are <code>NO</code> and <code>YES</code>, which are the dialog presenter's own defaults rather than anything chosen for this screen &mdash; see Decisions.</td></tr>
+        <tr><td>Frame 4</td><td>Icon</td><td class="t-note">The neutral tile, not the red one. Leaving the app for a website is a condition, not a fault, and the same rule the failure frame follows applies here.</td></tr>
+        <tr><td>Frame 5 &middot; Priming</td><td>Title &amp; reason</td><td class="t-note"><code>TURN ON ALERTS</code> at <code>34px/800</code>, <code>-.025em</code>, uppercase &mdash; caps live only on this one display size, never on a button. Underneath, the reason in one sentence: votes close on a deadline.</td></tr>
+        <tr><td>Frame 5</td><td>What we'd send</td><td class="t-note">Four rows with acid ticks and a fifth with a dash: <em>no marketing, no match scores, nothing else</em>. Rows are <code>13.5px</code> with a <code>rgba(255,255,255,.045)</code> hairline between them.</td></tr>
+        <tr><td>Frame 5</td><td>Hand-off warning</td><td class="t-note">The reason this screen exists: iOS allows exactly one permission alert per install, so declining is permanent until the member goes to Settings. Said plainly, before the question is asked.</td></tr>
+        <tr><td>Frame 5</td><td>Actions</td><td class="t-note"><code>Turn On Alerts</code> at <code>64px</code> on the accent &mdash; the tap that opens the system alert &mdash; with <code>Not now</code> as the underlined accent text link beneath it. One height, one casing, one link style.</td></tr>
+        <tr><td>Beneath frame 5</td><td>The iOS alert</td><td class="t-note">Not a component of ours. Drawn at Apple's real geometry &mdash; <code>270pt</code> wide, <code>R14</code>, title <code>17/600</code>, message <code>13/400</code>, <code>44pt</code> buttons split by hairlines &mdash; and rendered greyscale on purpose. iOS paints the two labels in system blue <code>#007AFF</code>, which we cannot change and which exists nowhere else in this brand.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Splash &middot; checking</td><td class="t-note">Default. Lockup, animating peaks, <code>Checking your session</code>, and the 15-second promise at the foot. Recorded as having no indicator at all in the current app.</td></tr>
+        <tr><td>Splash &middot; slow</td><td class="t-note">From about <code>4s</code>. The promise line is replaced by a panel naming the wait: <code>Still checking your session</code> / your connection looks slow. Neutral fill, never red, and <b>no button</b> &mdash; the app is still working, so asking the member to act would be a lie. Undocumented in the current app.</td></tr>
+        <tr><td>Splash &middot; timed out</td><td class="t-note">At <code>15s</code> the splash becomes frame 2. That is the whole point of the promise on frame 1.</td></tr>
+        <tr><td>Failure &middot; offline</td><td class="t-note">The device has no connection. Neutral tile, last-synced time, <code>Try Again</code> plus <code>Open What's Saved</code>. Nothing red and nothing that suggests the member has been signed out.</td></tr>
+        <tr><td>Failure &middot; server</td><td class="t-note">The device is online and we are not. Red tile, a reference number, <code>Try Again</code> plus <code>Contact Us</code>. The only state that admits we don't yet know the cause &mdash; it earns that by handing over a reference.</td></tr>
+        <tr><td>Failure &middot; retrying</td><td class="t-note">Press <code>Try Again</code>. The accent fill drops to <code>55%</code>, the label becomes <code>Trying&hellip;</code> with the accent ring, and the control stops accepting taps. The button keeps its exact width, so nothing on the frame moves.</td></tr>
+        <tr><td>Entry fork</td><td class="t-note">One state. There is nothing to load and nothing to validate on this screen.</td></tr>
+        <tr><td>Leave-app confirm &middot; shipped</td><td class="t-note">One state, and that is the finding. <code>NO</code> closes the dialog; <code>YES</code> opens the phone's browser at <code>&lt;URL&gt;/en/auth/signup</code> and then closes the dialog. There is no loading state, no failure state, and no return path &mdash; if the browser cannot be opened the failure is printed to the debug console and the dialog closes anyway, so the member sees a dismissed dialog and nothing else. Whether the person then completes registration on the website is invisible to the app.</td></tr>
+        <tr><td>Priming &middot; default</td><td class="t-note">Our screen, before the system alert. This is a screen the current app does not have.</td></tr>
+        <tr><td>Priming &middot; declined</td><td class="t-note">What a member sees after saying no to iOS &mdash; also missing from the current app, which records no follow-up either way. Neutral tile, <code>Alerts are off</code>, the honest explanation that we can't ask again, and a deep link to Settings. Not red, and not phrased as a mistake.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">With the phone's <em>Reduce Motion</em> setting on, the peaks and the retry ring stop dead rather than fading &mdash; the mark stays on screen at full contrast, it just doesn't move.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused, not redrawn</h3>
+      <ul>
+        <li><b>The logo</b> &mdash; the shipped <code>app_icon.svg</code> and <code>app_name.svg</code> vector artwork, the same paths the Log in component uses. No monogram was approximated and the wordmark is not set as type.</li>
+        <li><b>Button, gutter and wording</b> &mdash; <code>64px</code> track, <code>R32</code>, <code>46px</code> acid disc inset <code>9px</code>, <code>20px</code> gutter, <code>Log in / Sign up</code>. All measured off the Get Started Figma page by the Log in component; these frames simply obey it.</li>
+        <li><b>The glow discs</b> &mdash; <code>#276425</code> at <code>16%</code>, from the Get Started frame.</li>
+        <li><b>The triangle field</b> &mdash; the hero banner's <code>2.4&ndash;3%</code> white triangles, scaled up.</li>
+        <li><b>The three peaks</b> &mdash; the loading mark from the States kit, unchanged in geometry and timing.</li>
+        <li><b>Error panel and icon tile</b> &mdash; the States kit's <code>52px</code> tile, neutral and red variants, and its three-part copy structure.</li>
+        <li><b>Tick rows</b> &mdash; the benefit row from Onboarding's pathway screen.</li>
+        <li><b>The dialog shell</b> &mdash; the Dialogs kit's shell taken whole for frame 4: card, close disc, icon tile, title, body and the <code>46px</code> two-button action row, at its own values. It is only re-scoped in the stylesheet, because this file already uses <code>.btn</code> for the <code>64px</code> full-width action and the two definitions cannot both be global.</li>
+        <li><b>Frame 4's copy and behaviour</b> &mdash; both strings, both button labels and the destination are read straight off the running code. Nothing on that frame is a design decision except the palette and the shell it is poured into.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>A loading indicator on the splash at all.</b> The current screen has none, so a slow sign-in check shows a dead screen. This is the single most consequential change in the file.</li>
+        <li><b>A cold-start failure screen.</b> Undefined today &mdash; <code>splash.dart</code> routes to the introduction flow after a one-second delay on <em>both</em> a real failure and a genuine sign-out, so a dropped connection is presented as being logged out. Both new states insist the member is still signed in.</li>
+        <li><b>A 15-second commitment, and the slow-connection panel that precedes it.</b> A promise on screen that the wait will end in an answer.</li>
+        <li><b>The entry fork rewritten.</b> The question is gone; one statement and two labelled destinations replace <code>ARE YOU A MEMBER?</code> / <code>YES, CONTINUE</code> / <code>SIGN UP</code>.</li>
+        <li><b>The guest note.</b> The current copy says membership is required and the next screen offers a guest path. This says the true thing once, here.</li>
+        <li><b>The whole notification priming screen,</b> plus the declined follow-up. Today the system alert fires unannounced on the first screen inside the app, alongside a success bar and an empty club page &mdash; three overlays in one frame.</li>
+        <li><b>Nothing on frame 4.</b> It is the one frame in this file that proposes nothing &mdash; it records what ships. It is listed here only so it is clear it belongs in neither column: it is not reused from a Figma frame, and it is not something we are asking to build.</li>
+        <li><b>The greyscale iOS alert specimen,</b> so it is clear exactly how much of that moment we control: the app's display name and the moment it fires. Nothing else.</li>
+        <li><b>Status caption in <code>#99A0AE</code>, not <code>#5B606B</code>.</b> The States kit set the splash caption in the tertiary grey, which measures <code>2.56:1</code> and is reserved for decoration. The one line telling a member what the app is doing is not decoration, so it moves up to the <code>5:1</code> secondary grey.</li>
+        <li><b>Stacked lockup on the splash, horizontal everywhere else.</b> A vertical lockup for the one screen with no other content; the horizontal lockup on the three that have some.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Is the entry fork a screen we still want?</h3>
+      <p>Get Started already has one button, and this screen exists only to ask which of two doors
+      to open. Get Started could carry <b>Sign Up</b> as its main button with <span class="flag">Already have an account? Log in</span>
+      underneath, and this screen would disappear &mdash; one less tap for every single person who
+      opens the app. We have built the fork because Get Started is reproduced from the Figma file
+      and we did not want to redraw it without asking, but <b>our recommendation is to delete this
+      screen</b> and fold it into Get Started.</p></li>
+
+    <li><h3>Does signing up happen inside the app, or on the club's website?</h3>
+      <p><b>Frame 4 is the current answer, and frame 3 is the one we are proposing.</b> The shipped
+      app opens an external web page for sign-up &mdash; the <code>LEAVING THE APP</code>
+      confirmation on frame 4, then the phone's browser at <code>/en/auth/signup</code>. The
+      Onboarding component, meanwhile, builds a four-step registration flow inside the app, and a
+      registration screen does exist in the code &mdash; but the only link to it is commented out,
+      so nothing can reach it. These cannot both be true. We have assumed
+      <span class="flag">sign-up is in-app</span>, because that is what Onboarding shows and because
+      handing a brand-new user to a browser is where most of them are lost. If it stays on the web,
+      frame 3's <code>Sign Up</code> button needs an outbound arrow, the copy needs to say where it
+      goes, and Onboarding's four frames come out of the library.</p></li>
+
+    <li><h3>Frame 4's copy has three faults. Do we fix them, or is the whole screen going?</h3>
+      <p>Reproduced exactly as it ships, so they are visible rather than described. The word
+      <code>proeed</code> is misspelled in the source. The buttons say <code>NO</code> and
+      <code>YES</code> &mdash; answers to a question the dialog does not ask, and they come from the
+      dialog presenter's defaults rather than from this screen, so no one chose them. And the dialog
+      never names where <code>YES</code> goes. If sign-up moves in-app this screen disappears and
+      none of it matters; if it stays, the copy needs rewriting and the buttons need to say
+      <span class="flag">Cancel</span> and <span class="flag">Open the website</span>.</p></li>
+
+    <li><h3>Frame 4's dialog is English-only in every language. Intended?</h3>
+      <p>Both strings are hardcoded in the page's own source rather than looked up from the
+      translation file, so they will not translate. The matching translation keys
+      (<code>exit_title</code>, <code>exit_content</code>) exist and are correct &mdash; they are
+      simply never used. It is a small code fix, not a design change, but it is worth catching
+      before the app is offered in a second language.</p></li>
+
+    <li><h3>Is one clear statement the right replacement for the question?</h3>
+      <p><code>ARE YOU A MEMBER?</code> asks about <em>club</em> membership but decides something
+      else entirely &mdash; whether you already have a SportsHeist account &mdash; and its two
+      answers, <code>YES, CONTINUE</code> and <code>SIGN UP</code>, answer neither reading of it.
+      We replaced it with <span class="flag">Everything runs off one account</span> plus
+      <code>Log In</code> and <code>Sign Up</code>, each labelled with where it goes. Confirm the
+      wording; the structure &mdash; statement, two destinations, no question &mdash; we would
+      hold to regardless.</p></li>
+
+    <li><h3>How long before the splash gives up, and is 15 seconds right?</h3>
+      <p>The frames promise an answer within <span class="flag">15 seconds</span>, with the
+      slow-connection panel appearing at <span class="flag">4 seconds</span>. Both numbers are
+      ours, chosen to be long enough to survive a bad train tunnel and short enough that nobody
+      force-quits. They need to match whatever timeout the sign-in request actually uses, or the
+      promise on screen becomes a lie.</p></li>
+
+    <li><h3>Is there anything saved to open when we're offline?</h3>
+      <p>The offline failure screen offers <span class="flag">Open What's Saved</span> and quotes a
+      last-synced time, which assumes the app keeps a readable copy of the member's club. If it
+      doesn't, that button and the last-synced line both come off and the screen has only
+      <code>Try Again</code> &mdash; a materially worse experience, and a good argument for
+      building the cache.</p></li>
+
+    <li><h3>Are these the four notifications we actually send?</h3>
+      <p>The priming screen lists <span class="flag">a vote opening, 24 hours before it closes, the
+      result, and replies to your own idea</span>, and promises nothing else. That promise is only
+      worth making if it is true, so the list needs checking against what the server really sends
+      &mdash; and the &ldquo;nothing else&rdquo; line has to be honoured, not quietly broken by a
+      later marketing push.</p></li>
+
+    <li><h3>What is the product called?</h3>
+      <p>Four spellings are in the shipped app: <code>SPORTSHEIST</code> in the logo,
+      <code>Sports Heist</code> in body copy, and <code>Sports Heist(stg)</code> on the OS
+      notification alert &mdash; a staging build suffix, with no space, shown to real users. We
+      have used <span class="flag">SportsHeist</span> as one word throughout. The alert name comes
+      from <code>CFBundleDisplayName</code> in the iOS build settings and the Android manifest
+      label; it is a build fix rather than a design change, but it must be made before release.</p></li>
+
+    <li><h3>Two library-wide questions these frames inherit rather than settle</h3>
+      <p>Button height is <span class="flag">64px</span> here, matching the Log in screens and the
+      Figma button component. Several other kits standardised on <code>52px</code>. And the verb
+      pair is <span class="flag">Log in / Sign up</span>, where an earlier screen used
+      <em>Sign in / Sign up</em> &mdash; two near-identical words on the same screen. Both need
+      settling once, for the whole library; whatever is chosen, these frames and the Log in frames
+      have to agree.</p></li>
+  </ol>
+</section>

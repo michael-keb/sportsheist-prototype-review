@@ -1,0 +1,176 @@
+<p class="dek">Not a phone screen. This is the desktop web shell — a fixed left navigation rail beside the War Room,
+with the phone's horizontal card rails re-laid as multi-column grids. It renders here in a full-width
+stage rather than a device frame, because that is the shape it is designed for; the phone build takes
+over below <code>900px</code>.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One product, two ways of navigating</h2>
+  <p>On the phone, the five destinations live in a floating pill at the bottom of the screen: only the
+  destination you are on shows its name, the other four are outline glyphs. That works because a thumb
+  is at the bottom of the device and there is no room for five labels. On desktop the same five
+  destinations move to a left rail where every label is visible all the time, because there is width to
+  spare and a mouse has no reach problem.</p>
+  <p>The two are the same navigation, not two designs. Same five destinations in the same order, the
+  same five glyphs at the same <code>1.7</code> stroke weight, and the same rule for the selected one:
+  it becomes an acid-green pill with dark ink and it is the only row that carries both a glyph and a
+  word. On the phone that pill hugs the icon and label; in the rail it spans the full row and picks up a
+  trailing chevron. Nothing else about the app changes — the hero, the section headers, the cards and
+  every control inside them are the components already built for mobile, at their measured sizes.</p>
+  <p>The page shows three states stacked so they can be read together: the rail expanded, the rail
+  collapsed to icons, and a proposal opened in a right-hand detail panel. Resizing the browser window
+  drives the real behaviour as well — the rail collapses on its own at <code>1180px</code> and hands
+  over to the bottom pill at <code>900px</code>.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, left to right</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Rail</td><td>Container</td><td class="t-note"><code>230px</code> wide, fill <code>#1C2129</code>, right hairline <code>1px rgba(255,255,255,.075)</code>. Sticks to the top of the viewport at <code>100vh</code>, so it never scrolls with the content.</td></tr>
+        <tr><td>Rail</td><td>Monogram</td><td class="t-note"><code>34px</code> square, <code>10px</code> radius, filled <code>#9BE222</code>, holding the three-peak range silhouette from the hero in <code>#0B0E06</code> — the same paths, scaled. Acid-ink on acid is <code>12.31:1</code>, the only ink allowed on an accent fill.</td></tr>
+        <tr><td>Rail</td><td>Wordmark</td><td class="t-note"><code>SPORTSHEIST</code> in the system stack, <code>13.5px / 800 / .05em</code>, uppercase, white on <code>#1C2129</code> = <code>14.5:1</code>.</td></tr>
+        <tr><td>Rail</td><td>Nav row</td><td class="t-note"><code>44px</code> tall, radius <code>999px</code>, <code>0 12px</code> padding, <code>12px</code> gap between glyph and label. Glyph <code>20px</code> at <code>1.7</code> stroke. Label <code>13.5px / 600</code> white. Rows sit <code>2px</code> apart.</td></tr>
+        <tr><td>Rail</td><td>Active row</td><td class="t-note">Acid pill spanning the whole row: <code>#9BE222</code> fill, <code>#0B0E06</code> glyph, label and trailing chevron. Hover <code>#A8EC33</code>. Carries <code>aria-current="page"</code>.</td></tr>
+        <tr><td>Rail</td><td>Footer</td><td class="t-note">Pinned to the bottom above a <code>1px</code> <code>rgba(255,255,255,.075)</code> divider: a <em>Collapse</em> control and a <em>Log out</em> row, both in <code>#99A0AE</code> (<code>5.0:1</code>), going white on hover.</td></tr>
+        <tr><td>Content</td><td>Column</td><td class="t-note"><code>26px</code> side padding, centred, capped at <code>1240px</code>. The cap is what stops cards inflating on a wide monitor.</td></tr>
+        <tr><td>Hero</td><td>Banner</td><td class="t-note">Same construction as mobile: <code>138px</code> tall, radius <code>16px</code>, gradient <code>#0D3617</code> → <code>#17481C</code> → <code>#0C3416</code> at <code>112deg</code>. Height is unchanged from the phone; only the width grows.</td></tr>
+        <tr><td>Hero</td><td>Field triangles</td><td class="t-note">The same three shapes at the same <code>3.0% / 2.4% / 2.6%</code> white opacities, repeated on a <code>400px</code> period so the motif fills a wide banner instead of being stretched flat.</td></tr>
+        <tr><td>Hero</td><td>Acid peaks</td><td class="t-note">Held at their measured pixel size, <code>185 × 52px</code>, bottom-right — not the mobile <code>54% × 38%</code>, which would have made them <code>670px</code> wide at full width.</td></tr>
+        <tr><td>Hero</td><td>Knockout prop</td><td class="t-note"><code>124px</code> tall, bottom-anchored, <code>26px</code> from the right, in front of the peaks. Declared once as a CSS custom property and reused by all three heroes.</td></tr>
+        <tr><td>Hero</td><td>Title</td><td class="t-note"><code>WAR ROOM</code>, <code>34px / 800 / -.025em</code>, uppercase, left, no strapline.</td></tr>
+        <tr><td>Section</td><td>Header</td><td class="t-note">Unchanged mobile pattern: label <code>18px / 600 / -.015em</code>, then the acid <code>+</code> button (<code>34px</code> circle, <code>#9BE222</code>), the filter button (<code>34px</code>, <code>#1C2129</code>), and the <em>View all ↗</em> pill (<code>34px</code>, radius <code>999px</code>).</td></tr>
+        <tr><td>Section</td><td>Divider</td><td class="t-note">The lens-flare hairline from the War Room: <code>1px</code> gradient fading to nothing at both ends, over a soft acid bloom at <code>16%</code>.</td></tr>
+        <tr><td>Grid</td><td>Columns</td><td class="t-note"><code>16px</code> gap. A fixed count per step rather than auto-fill, so the count is predictable — but the step is chosen from the width of the content region, not the window. See States.</td></tr>
+        <tr><td>Card</td><td>Shell</td><td class="t-note">The mobile card, untouched: <code>#1C2129</code>, radius <code>16px</code>, <code>16px</code> padding, <code>inset 0 1px 0</code> hairline. Only the width source changes — the grid column instead of the fixed <code>268px</code> flex basis. Delivered widths run <code>272–302px</code>.</td></tr>
+        <tr><td>Card</td><td>Interior</td><td class="t-note">Byline and <code>22px</code> avatars, <code>17px / 600</code> title on a 2-line clamp, <code>13px</code> body in <code>#99A0AE</code>, countdown and tag row, sunken <code>#13171E</code> panel with the <code>64px</code> likes gauge or the approve meter, then the <code>52px</code> acid CTA. Every value as shipped.</td></tr>
+        <tr><td>Detail</td><td>Panel</td><td class="t-note"><code>380px</code> wide, fill <code>#080A0C</code>, left hairline <code>1px rgba(255,255,255,.075)</code>, sticky at <code>100vh</code>. Head, scrolling body, and a footer that stays put.</td></tr>
+        <tr><td>Detail</td><td>Head</td><td class="t-note">Tracked micro-label <code>Proposal · Management</code> at <code>10.5px / 700 / .14em</code> in <code>#5B606B</code>, plus two <code>34px</code> icon buttons: open as a full page, and close.</td></tr>
+        <tr><td>Detail</td><td>Body</td><td class="t-note">Byline, title at <code>24px / 700 / -.025em</code> (the size already used by the Veto screen), body at <code>13.5px</code> in <code>#99A0AE</code>, the countdown, a <code>Voting open</code> status pill, the approve meter with its <code>70%</code> threshold tick, and the standing by option.</td></tr>
+        <tr><td>Detail</td><td>Standing by option</td><td class="t-note">The ballot row from the voting card, read-only: <code>25px</code> rank slot, name at <code>13.5px / 600</code>, percentage at <code>13px / 700</code>. The leader carries the acid slot, the <code>rgba(155,226,34,.12)</code> wash and a <code>3px</code> acid inset bar. <em>Reject all options</em> keeps its <code>#E2564A</code> cross.</td></tr>
+        <tr><td>Detail</td><td>Footer</td><td class="t-note"><code>46px</code> button pair on a <code>1px</code> hairline: <em>Not now</em> on <code>#1C2129</code>, <em>Vote here</em> on <code>#9BE222</code> with <code>#0B0E06</code> ink.</td></tr>
+        <tr><td>Below 900px</td><td>Tab bar</td><td class="t-note">The mobile floating pill, verbatim: <code>58px</code>, radius <code>999px</code>, <code>#1C2129</code>, five tabs, active one an acid pill with icon <strong>and</strong> label. Hidden while the rail is present so the two never compete.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies, and at what width</h2>
+  <p>Two rules run independently, because they answer different questions. <strong>How many columns</strong>
+  is a question about the space the cards actually have, so it is measured against the content region.
+  <strong>Which navigation is on screen</strong> is a question about the window, so it is measured against
+  the viewport. Keeping them apart is what lets the detail panel open, or the rail collapse, without the
+  cards distorting.</p>
+  <div class="tablewrap">
+    <table>
+      <caption>Column count — measured against the content region, not the window.</caption>
+      <thead><tr><th scope="col">Content region</th><th scope="col">Content cap</th><th scope="col">Columns</th><th scope="col">Card width</th><th scope="col">Equivalent viewport, window maximised</th></tr></thead>
+      <tbody>
+        <tr><td><code>≥ 1270px</code></td><td><code>1240px</code></td><td><code>4</code></td><td><code>285px</code></td><td class="t-note"><code>≥ 1500px</code></td></tr>
+        <tr><td><code>900–1269px</code></td><td><code>960px</code></td><td><code>3</code></td><td><code>272–292px</code></td><td class="t-note"><code>972–1499px</code></td></tr>
+        <tr><td><code>600–899px</code></td><td><code>660px</code></td><td><code>2</code></td><td><code>272–302px</code></td><td class="t-note"><code>600–971px</code></td></tr>
+        <tr><td><code>&lt; 600px</code></td><td><code>420px</code></td><td><code>1</code></td><td>Full measure — <code>388px</code> at <code>430px</code></td><td class="t-note"><code>&lt; 600px</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <caption>Navigation — measured against the viewport.</caption>
+      <thead><tr><th scope="col">Viewport</th><th scope="col">Primary navigation</th></tr></thead>
+      <tbody>
+        <tr><td><code>≥ 1180px</code></td><td class="t-note">Left rail, expanded to <code>230px</code>, every label visible.</td></tr>
+        <tr><td><code>900–1179px</code></td><td class="t-note">Left rail <strong>collapses</strong> to <code>72px</code> — icons only, names on hover and to a screen reader.</td></tr>
+        <tr><td><code>&lt; 900px</code></td><td class="t-note">Rail is removed and the floating bottom tab pill takes over. One primary navigation is on screen at a time, never both.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The card lands between <code>272px</code> and <code>302px</code> everywhere it appears in a grid, against
+  the mobile card's fixed <code>268px</code>. That is the whole point of the content cap: a wider monitor buys
+  another column, never a fatter card.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Nav row · inactive</td><td class="t-note">Transparent, white glyph and white label. Hover fills <code>#13171E</code>.</td></tr>
+        <tr><td>Nav row · active</td><td class="t-note">Acid pill across the row, <code>#0B0E06</code> ink, trailing chevron, <code>aria-current="page"</code>. Three cues — fill, ink inversion and the chevron — so it never rests on colour alone.</td></tr>
+        <tr><td>Nav row · collapsed</td><td class="t-note">Label and chevron drop out; the row becomes a <code>44px</code> square with a <code>12px</code> radius, centred. Active is still the acid fill with dark glyph. The name moves to <code>aria-label</code> and <code>title</code>, so it is still announced and still appears on hover.</td></tr>
+        <tr><td>Rail · pinned</td><td class="t-note"><em>Collapse</em> in the rail footer overrides the breakpoint in either direction, so a member on a wide screen can keep the rail narrow. The chevrons mirror and the label flips to <em>Expand</em>.</td></tr>
+        <tr><td>Card · normal</td><td class="t-note">As mobile. Within a grid row every card shares one height, and the countdown, gauge and CTA sit on the bottom edge so they line up across the row. Nothing inside the card resizes — only the free space moves.</td></tr>
+        <tr><td>Card · open in the panel</td><td class="t-note"><code>1.5px</code> inset acid ring plus an <code>Open</code> pill on <code>rgba(155,226,34,.12)</code> in the byline row, and <code>aria-expanded="true"</code> on its <em>Details</em> link.</td></tr>
+        <tr><td>Detail panel · open</td><td class="t-note">Grid becomes <code>230px</code> rail + list + <code>380px</code> panel. The panel takes <code>380px</code> out of the content region, so the column rule drops the list a step on its own and the cards keep their geometry instead of squeezing.</td></tr>
+        <tr><td>Detail panel · closed</td><td class="t-note">Panel is removed, the region widens back and the list steps up to its normal column count, and the acid ring and <code>Open</code> pill are cleared.</td></tr>
+        <tr><td>Detail panel · below 1180px</td><td class="t-note">There is no longer room for side-by-side, so the panel becomes the whole content region — the desktop equivalent of the phone drilling in. The rail stays.</td></tr>
+        <tr><td>Like ⇄ Liked</td><td class="t-note">Unchanged from the idea card: acid fill with an outline thumb, going to <code>#13171E</code> with a solid acid thumb and the word <em>Liked</em>.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note"><code>prefers-reduced-motion: reduce</code> removes every transition, including the gauge and meter draw.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <p>
+    Unlike most of this library, a desktop layout <em>was</em> designed: the export set carries desktop
+    frames, and they are where the left-rail navigation, the wide hero and the strapline that never
+    appears on mobile all come from. So the shape of this screen is a reproduction. What is new is
+    everything the static frames could not specify — the rail's exact geometry and its collapsed state,
+    how many columns a grid takes at a given width, and what happens when the window is resized.
+  </p>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>The desktop layout itself</b> — left rail, wide hero and multi-column content are the designed desktop frames, reproduced rather than reinterpreted</li>
+        <li><b>Token block</b> — copied verbatim from <code>merits.html</code>. No colour, radius or type value was added.</li>
+        <li><b>Hero banner</b> — construction, <code>138px</code> height, gradient, triangle opacities, acid peaks and knockout prop from <code>war-room.html</code>.</li>
+        <li><b>Section header</b> — label, acid <code>+</code>, filter, <em>View all ↗</em>, and the lens-flare divider, from <code>war-room.html</code>.</li>
+        <li><b>Idea card</b> — byline, clamped title, body, countdown, tag, sunken panel, <code>64px</code> likes gauge and <code>52px</code> CTA, from <code>idea-card.html</code>.</li>
+        <li><b>Voting card</b> — approve meter, threshold tick, legend and votes-cast line, from <code>war-room.html</code>.</li>
+        <li><b>Ballot rows</b> — the ranked option row with its <code>25px</code> slot, from <code>voting-card.html</code>.</li>
+        <li><b>Card foot and quiet link</b> — the <code>card__foot</code> + <em>Details ↗</em> row already used by the Results card, reused as the panel-open affordance.</li>
+        <li><b>Five nav glyphs</b> — the tab-bar icons from <code>merits.html</code>, at the same <code>1.7</code> stroke.</li>
+        <li><b>Log-out glyph</b> — the door-and-arrow icon from <code>profile.html</code>.</li>
+        <li><b>Tab bar</b> — the whole floating pill from <code>merits.html</code>, for widths under <code>900px</code>.</li>
+        <li><b>Photography</b> — the eight portraits and the knockout athlete from the Figma exports.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Rail geometry</b> — <code>230px</code> on <code>#1C2129</code>. The left rail is in the designed desktop frames, but its exact width, row height and internal spacing are not specified there, so these values are our proposal.</li>
+        <li><b>Monogram</b> — the hero's three-peak range motif in <code>#0B0E06</code> on a <code>34px</code> acid square. Reuses shipped geometry rather than drawing a new mark.</li>
+        <li><b>Wordmark</b> — <code>SPORTSHEIST</code> set in the system stack at <code>13.5px / 800 / .05em</code>. There is no drawn logotype in the exports.</li>
+        <li><b>Collapsed rail</b> — <code>72px</code>, icons only, plus the <code>44px</code> square active tile.</li>
+        <li><b>Collapse control</b> — lets a member pin the rail open or closed regardless of window width.</li>
+        <li><b>Card grids</b> — the mobile carousels re-laid as fixed-count grids with a <code>16px</code> gap, and equal-height rows with the numbers block bottom-aligned.</li>
+        <li><b>Content cap</b> — <code>1240px</code>, stepping down to <code>960 / 660 / 420px</code>, so a wide monitor adds columns rather than inflating cards.</li>
+        <li><b>Container-driven columns</b> — the grid reads the width of its own content region rather than the window, so the shell behaves correctly with the panel open, with the rail collapsed, and when it is embedded in a page narrower than the browser. A viewport fallback covers browsers without container queries.</li>
+        <li><b>Detail panel</b> — <code>380px</code> on <code>#080A0C</code>, with the sticky <em>Not now</em> / <em>Vote here</em> footer and the read-only <em>Standing by option</em> list.</li>
+        <li><b>Card "Open" flag</b> — the acid ring and the <code>Open</code> pill that mark which card the panel belongs to.</li>
+        <li><b>Section header count</b> — the <code>4 open</code> / <code>4 live</code> figure beside the label. Desktop shows the whole set at once, so the count earns its place; it does not exist on mobile.</li>
+        <li><b>Hero at width</b> — the repeated field triangles and the fixed-pixel acid peaks, so the banner reads correctly at <code>1240px</code> instead of being stretched.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Can we see the desktop frame from Figma?</h3><p>The brief describes it, but no desktop SVG sits alongside the mobile exports in <code>components/_assets</code>, so we could not measure it. Everything structural here is our reading of the description: rail width <span class="flag">230px</span>, collapsed width <span class="flag">72px</span>, nav row height <span class="flag">44px</span>. If the frame exists we will re-measure against it.</p></li>
+    <li><h3>Is there a real monogram and logotype?</h3><p>We built the mark from the hero's own acid peaks and set the wordmark in the system font, because the exports contain no logo asset and hand-drawing one would have been worse. If a brand mark exists, it drops straight into the <code>34px</code> slot.</p></li>
+    <li><h3>Should the hero grow taller on desktop?</h3><p>We held it at the measured <span class="flag">138px</span>, so the desktop banner is the phone banner made wider. At <code>1240px</code> that is a shallow band. Going to <code>180–200px</code> would look more deliberate on a monitor, but it would be a new value and it would put desktop and mobile out of step. Our recommendation is to keep <code>138px</code> until you tell us otherwise.</p></li>
+    <li><h3>Is <code>900px</code> the right handover point?</h3><p>Below it we drop the rail and show the phone's bottom pill. That means a small laptop window or a landscape tablet gets phone navigation. The alternative is keeping the <span class="flag">72px</span> icon rail all the way down and never showing the pill on the web. We chose the handover because it keeps one navigation visible at a time.</p></li>
+    <li><h3>Should <em>Log out</em> be red here?</h3><p>The mobile Profile screen treats it as destructive. In the rail we kept it <span class="flag">#99A0AE</span> going white on hover, because a permanent red row in the chrome reads as an error state, and <code>#E2564A</code> on <code>#1C2129</code> is only <code>4.36:1</code> — large-text AA. The confirm sheet still carries the red.</p></li>
+    <li><h3>Does "open as a full page" exist?</h3><p>The panel head offers it beside the close button, on the assumption that a proposal has its own URL worth sharing. If proposals are panel-only, we remove that button.</p></li>
+    <li><h3>Results and Actions</h3><p>We built Ideas and Voting as grids, as briefed. Results and Actions use the same section header, the same divider and the same grid; only the card interior differs, and those interiors are already built in <code>results-actions.html</code>. Confirm they should land on the same War Room page rather than behind <em>View all</em>.</p></li>
+  </ol>
+</section>

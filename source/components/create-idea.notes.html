@@ -1,0 +1,407 @@
+<p class="dek">The flow a member uses to post an idea into the War Room: write it, check it against the
+club's rules and set its clocks, then lock a deposit to publish it. Five frames — compose, compliance
+and timing, the deposit dialog, the posted state, and the failure.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The one flow that costs the member something</h2>
+  <p>
+    Posting an idea is not free. The member locks a deposit that is returned in full if the idea reaches
+    Proposal and forfeited if it lapses, and once it posts it cannot be edited, paused or deleted. That
+    makes this the most consequential flow in the product, and it is why so much of the design work here
+    is about legibility of consequence rather than layout.
+  </p>
+  <p>
+    Four frames correspond to designed screens and are rebuilt in the dark palette. The success state is
+    new: nothing in the capture set records what a member sees after a successful post, which is the one
+    screen every member will see most often.
+  </p>
+  <p>
+    Three conventions were set in this file and are worth reading as decisions rather than styling. One
+    currency name is used everywhere — <code>Credits</code>, the wallet's noun, at one figure,
+    <code>25</code>, which is also the wallet's. Machine-written and member-written content are never styled alike,
+    and an on-screen key states the rule. And the consequence sentence is the most legible thing on the
+    screen — white 15.5/700 on <code>#1C2129</code> at about <code>16.2:1</code>, where the old build set
+    the same sentence in amber on maroon at about <code>2.6:1</code> in the smallest type in the region.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <p>The flow is five separate screens, each on its own phone above: <b>01 compose</b>,
+    <b>02 compliance and timing</b>, <b>03 deposit</b>, <b>04 posted</b> and <b>05 error</b>. Every one
+    carries its own app bar, back or close control and step count, so it stands alone.</p>
+  <div class="tablewrap">
+    <table>
+      <caption>Grouped by screen and region. Order matches the reading order within each screen. Values
+        as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Screens</td><td>Five, one per device</td>
+          <td class="t-note">Compose, compliance and timing, the deposit dialog, posted and error are
+            five screens, not five sections of one page: the review page gives each its own phone and
+            numbers it. The two dialog screens are held at a full <code>812&nbsp;px</code> because a
+            dialog occupies a whole screen — the form behind it is dimmed, not scrolled past.</td>
+        </tr>
+        <tr>
+          <td>Chrome</td><td>App bar</td>
+          <td class="t-note"><code>56&nbsp;px</code>, 1&nbsp;px <code>--line-soft</code> bottom edge. A
+            bare <code>38&nbsp;px</code> back circle whose label states the cost
+            (<code>Back, discards this draft</code>), the title <code>Create idea</code> at 15/800
+            tracking <code>.08em</code> uppercase, and the step count at 10.5/700 in
+            <code>#5B606B</code>.</td>
+        </tr>
+        <tr>
+          <td>Chrome</td><td>Step meter</td>
+          <td class="t-note">Three <code>3&nbsp;px</code> segments, <code>5&nbsp;px</code> apart, on
+            <code>#1C2129</code>; completed segments fill accent. Redundant with the step count by
+            design.</td>
+        </tr>
+        <tr>
+          <td>01 Compose</td><td>Title field</td>
+          <td class="t-note">Tracked <code>TITLE</code> eyebrow with a live counter at 11/600 in
+            <code>#5B606B</code> tabular (<code>19/60</code>), over a <code>50&nbsp;px</code> minimum
+            control: <code>R12</code>, fill <code>#1C2129</code>, 1&nbsp;px <code>--line</code>, value at
+            15&nbsp;px. Focus ring is an accent border plus a 1&nbsp;px accent glow.</td>
+        </tr>
+        <tr>
+          <td>01 Compose</td><td>Category picker</td>
+          <td class="t-note">Three radio rows at <code>52&nbsp;px</code> minimum,
+            <code>11px 14px</code>, <code>R12</code> on <code>#1C2129</code> with a 1&nbsp;px border.
+            Each carries a <code>22&nbsp;px</code> tick disc (inset 1.5&nbsp;px ring at white 22%), a
+            name at 14.5/600 and a note at 11.5&nbsp;px in <code>#99A0AE</code>. Checked fills the disc
+            accent, reveals the tick, washes the row and brings the border to
+            <code>rgba(155,226,34,.42)</code>. Options are <code>On-field decision</code>,
+            <code>Position</code> and <code>Rule change</code>.</td>
+        </tr>
+        <tr>
+          <td>01 Compose</td><td>Assistant container</td>
+          <td class="t-note">Section container — <code>#080A0C</code>, 1&nbsp;px <code>--line</code>,
+            <code>R16</code>, <code>12&nbsp;px</code> padding — carrying an <code>Assistant</code> status
+            pill and a <code>38&nbsp;px</code> help circle above its content.</td>
+        </tr>
+        <tr>
+          <td>01 Compose</td><td>Provenance key</td>
+          <td class="t-note">Two <code>16&nbsp;px</code> swatches at <code>R5</code> with labels at
+            11/600 in <code>#99A0AE</code>: <code>Dashed = written by AI</code> on
+            <code>#13171E</code> with a dashed white-28% border, <code>Solid = written by you</code> on
+            <code>#1C2129</code> with a solid <code>--line</code>. The rule is stated, not implied.</td>
+        </tr>
+        <tr>
+          <td>01 Compose</td><td>Assistant turns</td>
+          <td class="t-note">AI turns are full width on <code>#13171E</code> with a dashed white-28%
+            border at <code>R12</code>, headed by an <code>AI</code> badge —
+            <code>20&nbsp;px</code>, <code>R6</code>, accent wash, 9.5/800 tracking <code>.12em</code>
+            — and the word <code>SUGGESTED</code>. Member turns are right-aligned at <code>86%</code>
+            width on <code>#1C2129</code> with a solid border, headed by <code>YOU WROTE</code> and the
+            member's own <code>18&nbsp;px</code> portrait. Body copy 13/1.42.</td>
+        </tr>
+        <tr>
+          <td>01 Compose</td><td>Quick replies</td>
+          <td class="t-note"><code>44&nbsp;px</code> minimum pills with a dashed white-28% border and no
+            fill, at 12.5/600 — dashed because the wording they insert came from the assistant.</td>
+        </tr>
+        <tr>
+          <td>01 Compose</td><td>Thinking indicator</td>
+          <td class="t-note">Three <code>5&nbsp;px</code> accent dots blipping on a
+            <code>1.1&nbsp;s</code> cycle at <code>.16&nbsp;s</code> stagger beside
+            <code>Assistant is writing a draft</code> at 12.5&nbsp;px, in a live region.</td>
+        </tr>
+        <tr>
+          <td>01 Compose</td><td>Composer</td>
+          <td class="t-note">Above a 1&nbsp;px <code>--line-soft</code> rule: a
+            <code>44&nbsp;px</code> bare dictate circle, a borderless <code>44&nbsp;px</code> input at
+            14&nbsp;px, and a <code>44&nbsp;px</code> accent send circle.</td>
+        </tr>
+        <tr>
+          <td>01 Compose</td><td>Draft</td>
+          <td class="t-note"><code>R12</code> card on <code>#1C2129</code>, <code>14&nbsp;px</code>
+            padding. Headed <code>IDEA BODY</code> with a badge reading
+            <code>1 of 2 from AI</code>. Body at 14.5/1.45, with assistant wording carrying a
+            <code>1.5&nbsp;px</code> dotted underline at <code>rgba(155,226,34,.55)</code> — provenance
+            at sentence level. Footer holds the counter (<code>142/250</code>) and a
+            <code>Rewrite with AI</code> pill.</td>
+        </tr>
+        <tr>
+          <td>01 Compose</td><td>AI estimate</td>
+          <td class="t-note"><code>R12</code> block on <code>#13171E</code> with the dashed AI border.
+            Label <code>Chance of reaching Proposal</code>, an <code>AI estimate</code> badge, the figure
+            at 26/800 tabular beside its basis, a <code>6&nbsp;px</code> accent meter on white 10%, and a
+            footnote at 11&nbsp;px in <code>#5B606B</code> naming the sample —
+            <code>214 On-field decision ideas in this club over the last 12 months</code> — and stating
+            it has no bearing on whether the idea may post.</td>
+        </tr>
+        <tr>
+          <td>02 Timing</td><td>Eligibility</td>
+          <td class="t-note">Section container with a <code>Compliant</code> status pill and a re-run
+            circle. Four rows inside an <code>R12</code> list on <code>#1C2129</code>: three accent
+            ticks over 13&nbsp;px headings with 11.5&nbsp;px explanations in <code>#99A0AE</code>, then a
+            muted info row stating that passing the check does not mean the club will approve the
+            idea.</td>
+        </tr>
+        <tr>
+          <td>02 Timing</td><td>Window controls</td>
+          <td class="t-note">Three <code>50&nbsp;px</code> controls in a section container: the likes
+            stage (<code>6 minutes</code>, sub-line <code>Needs 120 likes to become a Proposal</code>),
+            the voting stage (<code>3 minutes</code>, sub-line <code>Passes at 80% yes</code>), and the
+            post time — <code>Now — 2 Jun 2026, 10:53</code> with the zone spelled out beneath as
+            <code>Central European Summer Time (UTC+2)</code>.</td>
+        </tr>
+        <tr>
+          <td>02 Timing</td><td>Timeline</td>
+          <td class="t-note"><code>R12</code> panel on <code>#1C2129</code>. A <code>4&nbsp;px</code>
+            track on white 10% with an accent fill to <code>66%</code>, two accent pins and a hollow end
+            pin ringed white 35%, over three legs at 10.5/700 tracked with times beneath at 12.5/700
+            tabular: <code>Posts 10:53</code>, <code>Voting opens 10:59</code>,
+            <code>Result 11:02</code>.</td>
+        </tr>
+        <tr>
+          <td>02 Timing</td><td>Consequence callout</td>
+          <td class="t-note"><code>R12</code> block on <code>#1C2129</code> with a
+            <code>3&nbsp;px</code> inset <code>#E2564A</code> rail and a <code>22&nbsp;px</code> red
+            warning glyph. The heading — <code>Once it posts, this cannot be undone.</code> — is white
+            15.5/700, the largest type in the region, at about <code>16.2:1</code>. Red carries the rail
+            and the glyph only, at <code>4.4:1</code> on this fill, which is icon and large-object use.</td>
+        </tr>
+        <tr>
+          <td>02 Timing</td><td>Consent</td>
+          <td class="t-note"><code>56&nbsp;px</code> minimum row, <code>R12</code> on
+            <code>#1C2129</code>, with a <code>24&nbsp;px</code> <code>R7</code> box (inset 1.6&nbsp;px
+            ring at white 30%) that fills accent and reveals a tick when checked. Copy at 13.5/1.45,
+            naming the amount and the forfeit condition. It gates the primary action.</td>
+        </tr>
+        <tr>
+          <td>Buttons</td><td>Convention</td>
+          <td class="t-note">One rule everywhere: secondary left, primary right, both at
+            <code>52&nbsp;px</code> minimum, fully rounded, 15/600. Primary is the accent fill with
+            <code>#0B0E06</code> ink and is always the brightest thing in the row; secondary is
+            <code>#1C2129</code> with a 1&nbsp;px <code>--line</code> inset. Disabled takes the secondary
+            fill with <code>#5B606B</code> text. Focus is a 2&nbsp;px accent outline at
+            <code>3&nbsp;px</code>. Labels name the action they commit — <code>Post idea</code>,
+            <code>Try again</code> — never <code>AGREE</code>, <code>OK</code> or
+            <code>CONFIRM</code>.</td>
+        </tr>
+        <tr>
+          <td>Dialogs</td><td>Shell</td>
+          <td class="t-note">One shell and one backdrop for both dialogs: scrim
+            <code>rgba(3,4,1,.74)</code> with <code>blur(3px)</code> over the screen at
+            <code>opacity:.9</code>, holding a <code>R16</code> card on <code>#1C2129</code> with a
+            1&nbsp;px <code>--line</code>, <code>20&nbsp;px</code> padding and shadow
+            <code>0 24px 60px rgba(0,0,0,.65)</code>. Heading 19/700 at <code>-.02em</code>, body 13.5 in
+            <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>03 Deposit</td><td>Amount</td>
+          <td class="t-note"><code>R12</code> block on <code>#13171E</code> carrying
+            <code>25</code> at 38/800 tabular beside <code>Credits</code> at 11/700 tracked in
+            <code>#99A0AE</code>. The figure always precedes the unit.</td>
+        </tr>
+        <tr>
+          <td>03 Deposit</td><td>Balance rows</td>
+          <td class="t-note">Two <code>R12</code> lists on <code>#13171E</code>. First: balance now
+            <code>340</code>, locked by this idea <code>25</code>, left to spend <code>315</code>, values
+            at 13.5/600 tabular. Second: an accent tick row stating the deposit is returned in full at
+            <code>10:59</code> if the idea becomes a Proposal — and that nothing which happens to the
+            Proposal afterwards can take it — and a red down-arrow row stating it is forfeited if it
+            lapses by <code>10:59</code>. Both times are the end of the <em>Ideas</em> stage, not the end
+            of voting: the deposit resolves the moment the idea either becomes a Proposal or lapses. The
+            file previously quoted <code>11:02</code>, the result time, on both rows.</td>
+        </tr>
+        <tr>
+          <td>03 Deposit</td><td>Hard line</td>
+          <td class="t-note"><code>R12</code> block on <code>#13171E</code> with the
+            <code>3&nbsp;px</code> red rail and a 19&nbsp;px red glyph, carrying
+            <code>Posting cannot be undone.</code> in white 14.5/700. The same sentence as the form, in
+            the same treatment, because it is the same commitment.</td>
+        </tr>
+        <tr>
+          <td>04 Posted</td><td>Success</td>
+          <td class="t-note">A <code>58&nbsp;px</code> accent-wash disc with a 28&nbsp;px accent tick,
+            <code>Idea posted</code> at 26/800 uppercase, and the two closing times in the body copy.</td>
+        </tr>
+        <tr>
+          <td>04 Posted</td><td>Card preview</td>
+          <td class="t-note">The idea card the form just made, at <code>R16</code> on
+            <code>#1C2129</code> with a 1&nbsp;px top inset highlight: byline
+            <code>by you · dylan_n</code>, title at 17/600, body at 13&nbsp;px, a ticking
+            <code>00:06:00</code> countdown, the <code>Decision</code> tag, and the likes gauge at
+            <code>0%</code> reading <code>0 of 120 so far</code>. Beneath it a sunken note:
+            <code>You can't like your own idea. Share it in Backchat instead.</code></td>
+        </tr>
+        <tr>
+          <td>04 Posted</td><td>Deposit receipt</td>
+          <td class="t-note">Two rows confirming <code>25 Credits locked</code> against
+            <code>315 left</code> and that they are returned or forfeited at <code>10:59</code>, the end
+            of the Ideas stage, then a reference block on
+            <code>#13171E</code> carrying <code>IDEA-4821 · 2 Jun 2026, 10:53</code> in a monospace stack
+            with a copy control.</td>
+        </tr>
+        <tr>
+          <td>05 Error</td><td>Failure dialog</td>
+          <td class="t-note">Same shell as an <code>alertdialog</code>: a <code>46&nbsp;px</code> sunken
+            disc with a red glyph and a <code>rgba(226,86,74,.45)</code> ring, a dismiss control,
+            <code>We couldn't post your idea</code> at 19/700, then the cause in bold, then
+            <code>Nothing was deposited.</code> Two forward rows offer a real next step, and a reference
+            block carries <code>Error 403 · IDEA-4821 · 10:54</code>. Actions are
+            <code>Back to draft</code> and <code>Try again</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <p>The rows that name a whole screen — <b>deposit confirmation</b>, <b>posted</b> and <b>failed</b> —
+    are the separate screens 03, 04 and 05 above. The rest vary inside compose (01) and compliance and
+    timing (02).</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Category unselected / selected</td><td class="t-note">Empty ring and plain row; or accent-filled disc with a tick, accent-wash row and accent border. Single choice within the group.</td></tr>
+        <tr><td>Field focused</td><td class="t-note">Border to <code>rgba(155,226,34,.55)</code> plus a 1&nbsp;px accent glow. Buttons take a 2&nbsp;px accent outline at <code>3&nbsp;px</code> offset instead.</td></tr>
+        <tr><td>AI turn vs member turn</td><td class="t-note">Dashed border on <code>#13171E</code>, full width, <code>AI</code> badge; versus solid border on <code>#1C2129</code>, right-aligned at 86%, member portrait. Two axes differ, not one.</td></tr>
+        <tr><td>Assistant working</td><td class="t-note">Blipping accent dots and a spoken status line. Suppressed under <code>prefers-reduced-motion</code>, where the sentence alone carries it.</td></tr>
+        <tr><td>AI wording kept in the draft</td><td class="t-note">Dotted accent underline on the sentence, and the badge counts it — <code>1 of 2 from AI</code>. Editing it out removes the marking.</td></tr>
+        <tr><td>Consent unchecked</td><td class="t-note">Empty box; <code>Post idea</code> takes the disabled treatment — secondary fill, <code>#5B606B</code> label, <code>not-allowed</code> cursor.</td></tr>
+        <tr><td>Consent checked</td><td class="t-note">Accent box with a tick; the primary action enables. Toggling back disables it again.</td></tr>
+        <tr><td>Deposit confirmation</td><td class="t-note">Dialog over the dimmed form. Both the form footer and the dialog primary read <code>Post idea</code>, because they commit the same act. The two outcome rows state the whole money rule: returned in full at <code>10:59</code> on reaching Proposal, forfeited at <code>10:59</code> on lapse, and nothing after that.</td></tr>
+        <tr><td>Posted</td><td class="t-note">Success disc, the live card with a running clock and a gauge at zero, and a copyable reference. Actions are <code>New idea</code> and <code>View in War Room</code>.</td></tr>
+        <tr><td>Failed</td><td class="t-note">Same dialog shell as an alert dialog. States the cause in plain language, states that nothing was deposited, and offers two routes forward plus a copyable error reference.</td></tr>
+        <tr><td>Own idea</td><td class="t-note">The member cannot like their own idea; the card says so rather than showing a dead control.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions and animations off. Every state above remains distinguishable without movement.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Four of the five frames</b> — compose, compliance and timing, the deposit dialog and the failure dialog are designed screens, rebuilt here in the dark palette</li>
+        <li><b>The flow</b> — three steps, a deposit confirmation, and a modal failure</li>
+        <li><b>Tokens</b> — surfaces, hairlines, accent, semantic red, radii and the type scale, copied verbatim</li>
+        <li><b>Section container</b> — <code>#080A0C</code>, 1&nbsp;px <code>--line</code>, <code>R16</code>, <code>12&nbsp;px</code> padding, holding a pill and a circular control</li>
+        <li><b>Status pill, icon button, eyebrow</b> — geometry and type unchanged</li>
+        <li><b>Idea card</b> — the posted preview reuses the shell, gauge, countdown and tag from the built idea card</li>
+        <li><b>Row list</b> — <code>--line-soft</code> top borders with none on the first</li>
+        <li><b>Photography</b> — the member portrait comes from the export set</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The posted frame</b> — no success screen exists anywhere in the capture set, and it is the screen a member will see most</li>
+        <li><b>One currency name</b> — <code>Credits</code>, always with a figure in front of it; <code>deposit</code> survives only as a verb and as a state of Credits. Adopted from <code>wallet.html</code> rather than competed with</li>
+        <li><b>AI provenance as a design system</b> — dashed-on-sunken for machine, solid-on-surface for member, an <code>AI</code> badge, a sentence-level dotted underline in the draft, an on-screen key stating the rule, and a count of how much of the draft is the assistant's</li>
+        <li><b>The AI estimate block</b> — labelled as a model output, with its sample size and an explicit statement that it does not gate posting</li>
+        <li><b>Consequence callout</b> — white 15.5/700 on <code>#1C2129</code> at about <code>16.2:1</code>, replacing amber on maroon at about <code>2.6:1</code> in the smallest type in the region</li>
+        <li><b>Consent as a gate</b> — a <code>56&nbsp;px</code> checkbox row naming the amount, which enables the primary action</li>
+        <li><b>Button convention</b> — secondary left, primary right, every control ≥ 48&nbsp;px, affirmatives that name their action, and the same words for the same commitment in the form and the dialog</li>
+        <li><b>One dialog shell, one backdrop</b> — the live build ships three modals with two backdrop treatments and three card widths</li>
+        <li><b>Timeline</b> — the three clocks drawn as one track, so posting, voting and result are legible as a sequence</li>
+        <li><b>Explicit date and zone</b> — <code>Now — 2 Jun 2026, 10:53</code> with the zone named; the live build renders <code>06/02/2026 10:53</code> with neither the order nor the zone stated</li>
+        <li><b>The failure screen rewritten</b> — the current <code>OOPS!</code> modal pipes a raw HTTP 403 (<code>You do not have permission to access this resource.</code>) into a card with no cause, no next step and no dismiss control</li>
+        <li><b>Copyable references</b> — an idea reference on success, an error reference on failure</li>
+        <li><b>Focus states</b> — visible keyboard focus on every control; nothing in the frames shows one</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>What is the currency called?</h3>
+      <p>One concept currently has five names. The Merits tab calls it <code>Merits</code>, the API calls
+      it <code>Reputation Points</code>, and this flow's own strings use <code>Credits</code>,
+      <code>Participation Credits</code>, <code>Participation Deposit</code> and a legacy
+      <code>BOND</code> — with one string shipping the literal
+      <code>[x] PARTICIPATION CREDITS</code>, the placeholder never substituted. This file now uses
+      <span class="flag">Credits</span> throughout as the unit, always with a figure in front of it,
+      with <em>deposit</em> in lower case for what happens to them rather than a second noun. That is
+      <code>wallet.html</code>'s resolution; this file originally proposed
+      <code>Participation Credits</code> and has been brought onto the wallet's version, because the
+      wallet is the screen where the noun has to carry a balance. <code>BOND</code> is retired. Pick one
+      name and we will use it everywhere, including the Merits tab.</p>
+    </li>
+    <li>
+      <h3>What is the third category actually called?</h3>
+      <p>The category enum has three values and only two have display names. The third is
+      <code>rule_outed</code> — with a trailing space in the source literal — and no label for it exists
+      anywhere in the build. We have guessed <span class="flag">Rule change</span> from the identifier.
+      That is a guess on a control that determines what rules an idea is judged against, so it needs a
+      real name.</p>
+    </li>
+    <li>
+      <h3>Settled: forfeited on lapse, and on lapse only.</h3>
+      <p>The whole flow is built around it: returned in full at <code>10:59</code> if the idea reaches
+      Proposal, forfeited if it lapses. Every warning on the screen says so and the consent checkbox makes
+      the member agree to it in words. That reading is now the one the whole set uses. The wallet used to
+      promise the deposit always comes back and the Results screen used to show <code>Ruled out</code>
+      taking it; both have been brought onto this file's rule, because the live string table backs it —
+      <code>ideaPage.agreement</code> refunds <em>only</em> when the Idea becomes a Proposal,
+      <code>notification.idea_lapsed</code> forfeits on lapse, and
+      <code>proposalPage.free when proposal vetoed</code> confirms a Proposal that is Vetoed, Cancelled or
+      Ruled Out costs the member nothing more.</p>
+      <p>Two things we changed here rather than left standing. The three deposit lines quoted
+      <code>11:02</code>, which is the <em>result</em> time; the deposit actually resolves at
+      <code>10:59</code>, when the Ideas stage ends and the idea either becomes a Proposal or lapses. And
+      the confirmation now says outright that nothing which happens to the Proposal afterwards can take
+      the deposit back. <b>What we still need:</b> confirmation that forfeiture is total rather than
+      partial, and that it is never reversed on appeal.</p>
+    </li>
+    <li>
+      <h3>Is 25 the deposit for every idea, and where does 25 come from?</h3>
+      <p><b>It comes from us.</b> No pricing of any kind exists in the repo — not in the string table,
+      not in config, not in the API models — so the figure is invented and needs a product decision
+      before build. This flow originally showed <code>50</code> while the wallet showed
+      <code>25.0</code>, which meant a client reading both screens saw two prices for one action. We
+      settled on <span class="flag">25</span> because the wallet's ledger arithmetic already derives
+      from it — <code>300.0</code> on deposit across <code>12</code> live ideas is <code>25.0</code>
+      each, and its running-balance column reconciles at 25 — so 25 was the only figure with anything
+      behind it. The wallet writes it <code>25.0</code> under its own always-one-decimal rule; this
+      flow writes <code>25</code> in whole Credits. Same number, two formats, and if you would rather
+      one format won everywhere, say which.</p>
+      <p>The amount is <span class="flag">25</span> everywhere in this flow, against a balance of
+      <code>340</code>. Nothing indicates whether the deposit varies by category, by club, by the length of
+      the voting window a member chooses, or with a member's standing. If it varies, the amount has to be
+      derived and shown before the member sets the clocks, not after.</p>
+    </li>
+    <li>
+      <h3>How much of an idea may the assistant write?</h3>
+      <p>The build assumes the answer is "all of it, as long as the member can see which parts", so
+      provenance travels with the idea at sentence level and the draft counts how much came from the
+      model. What it does not answer is whether that provenance is visible to <em>other</em> members when
+      the idea appears in the War Room. If a fully machine-written idea should be labelled publicly, that
+      is a change to the idea card, not to this flow.</p>
+    </li>
+    <li>
+      <h3>Should the AI estimate be shown at all?</h3>
+      <p>The block reports a <code>75%</code> chance of reaching Proposal from
+      <code>214</code> comparable ideas, and says in its own footnote that it is an estimate and does not
+      affect whether the idea may post. It is still a number that will discourage people from posting. It
+      is built to be removable in one block if you would rather it were not there.</p>
+    </li>
+    <li>
+      <h3>Are the timing windows really minutes?</h3>
+      <p>The controls read <code>6 minutes</code> for collecting likes and <code>3 minutes</code> for the
+      vote, needing <code>120 likes</code> and passing at <code>80% yes</code>. Nine minutes from post to
+      result, with a 120-like bar, is a very short fuse for a club decision — and the War Room cards show
+      countdowns of hours. Confirm the ranges a member may choose from, because the timeline drawing
+      depends on them.</p>
+    </li>
+  </ol>
+</section>

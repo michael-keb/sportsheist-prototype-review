@@ -1,0 +1,214 @@
+<p class="dek">The screen where a member actually casts the vote the whole product exists for. It is the
+detail behind the Voting card: the proposal in full, the clock, the threshold, the ranked ballot, the
+count once it is running, and every way the count can end — approved, rejected, held under a veto, or
+cancelled by the club.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One screen, ten states, one ballot idiom</h2>
+
+  <p>This is a rebuild of the largest page in the app — <code>lib/pages/voting/vote_count.dart</code>,
+    <code>1,493</code> lines — which has never been redesigned. It is where a proposal is read,
+    argued over and decided, so it carries more state than any other screen: before the vote,
+    mid-ballot, after the vote with the count locked, after the vote with the count running, on veto
+    hold, approved, rejected, cancelled, empty and failed.</p>
+
+  <p>Nothing about the ballot is new here. The threshold bar, the ranked option rows and the rank
+    plate are the ones already signed off on the <b>Voting card</b>, shown at full scale instead of
+    squeezed into a <code>268 px</code> rail card. The verdict bar and the count chart come from
+    <b>Results &amp; actions</b>. The discussion thread and the pinned composer come from
+    <b>Comments</b>. The hatch, the hold banner and the struck bar fill come from <b>Veto</b>. There
+    is exactly one way to express a ballot in this library and this screen uses it.</p>
+
+  <p>Three things in the live build are fixed rather than reproduced. The build's ranked ballot ships
+    an instruction banner telling members that clicking numbers the choices, and then renders
+    <b>no rank affordance at all</b> — no number, no badge, no handle, nothing to indicate the row is
+    even tappable. Here every row carries a visible numbered slot, filled or empty, and the numbers
+    appear in it. The build's post-vote receipt prints one uppercased word (<code>PEP</code>) in a
+    centred lockup, <code>60 pt</code> above a tally that renders the same name in title case, with
+    no link between them and every rank stripped out; here the member's ballot is restated in full,
+    in order, with its plates intact. And the build's chart-gate panel reads
+    <code>Current: 1 votes</code> — the plural noun against the quantity one, with no pluralisation
+    anywhere in the string table. That is now a pip row and a sentence.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Reading order on the Before-voting frame. Values as built. Regions marked
+        <em>state</em> appear only on the frames that need them.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Header</td><td>Top bar</td><td class="t-note">Back disc, screen or proposal name, share disc. <code>38 px</code> circles on <code>--surface</code>, white <code>1.9</code>-stroke glyphs, each with the contract's invisible <code>::after{inset:-3px}</code> expansion to a <code>44 px</code> hit area. The title is <code>15/600</code> <code>--muted</code>, truncating — it is context, not the headline.</td></tr>
+        <tr><td>Head</td><td>Stage eyebrow + type tag</td><td class="t-note">One row: tracked micro-label <code>10.5/700/.14em</code> <code>--dim</code> on the left, the proposal type as a <code>24 px</code> <code>--sunken</code> pill on the right. Type values are the real ones from <code>CFunc.getTypePost</code> — <code>POSITION</code>, <code>ON-FIELD DECISION</code>, <code>OFF-FIELD DECISION</code>, <code>MANAGEMENT DECISION</code>, <code>REJECT VETO</code>.</td></tr>
+        <tr><td>Head</td><td>Title</td><td class="t-note"><code>24/700/-.025em</code>, sentence case, wrapping to two lines. Not the <code>34 px</code> screen title — this is a pushed detail, so the proposal is the headline and <code>VOTING</code> is demoted to the bar.</td></tr>
+        <tr><td>Head</td><td>Byline</td><td class="t-note"><code>22 px</code> avatar stack (overlapping <code>-9 px</code>, <code>1.5 px</code> canvas ring) + <code>12.5px</code> <code>--muted</code> line with the author in <code>600</code> white.</td></tr>
+        <tr><td>Head</td><td>Clock pair</td><td class="t-note">Two <code>--sunken</code> <code>R12</code> tiles from <code>veto.html</code>: the countdown and the votes-cast figure, both <code>24/700/-.03em</code> <code>tabular-nums</code>. Tracked cap label above, plain-English line below. The countdown is live from <code>votingRemainDuration</code>.</td></tr>
+        <tr><td>Details</td><td>Body + disclosure</td><td class="t-note"><code>13.5/1.55</code> <code>--muted</code>, clamped to <b>4 lines</b> — the build's own clamp (<code>maxLines: flag ? 4 : 10</code>). <code>Read more</code> / <code>Read less</code> in accent <code>12.5/700</code> with a rotating chevron; both strings exist in <code>en.json</code>.</td></tr>
+        <tr><td>Count</td><td>Section container</td><td class="t-note"><code>--section</code> fill, <code>1 px --line</code>, <code>R16</code>, <code>12 px</code> padding, holding a status pill and a <code>34 px</code> info disc above its panels.</td></tr>
+        <tr><td>Count</td><td>Threshold panel</td><td class="t-note">The Voting card's panel at detail scale. Lede + verdict pill; the standing at <code>34/800/-.04em</code>; the requirement as a <code>--surface</code> pill in accent; bar track <code>10 px</code> (rail card: <code>8</code>) on <code>#2E3F1F</code> with an accent fill, a <code>16 px</code> knob riding the leading edge and a <b>white <code>2 px</code> threshold tick</b> that now runs the full bar height instead of dropping below it. Tracked legend under the bar.</td></tr>
+        <tr><td>Count</td><td>Which-number line</td><td class="t-note">New. A hairline-separated <code>11.5px</code> note stating that the big figure is the leading option <em>after redistribution</em>, that the rows below are <em>first preferences</em>, and that the club sets the percentage per type. Without it the two figures look like a contradiction.</td></tr>
+        <tr><td>Ballot</td><td>Head row</td><td class="t-note">Instruction on the left, live <code>n of m ranked</code> counter on the right as a tracked <code>--dim</code> micro-label.</td></tr>
+        <tr><td>Ballot</td><td>Option row</td><td class="t-note"><code>54 px</code>, full-bleed inside the panel with <code>14 px</code> internal padding, divided by <code>1 px --line-soft</code>. Rank slot <code>28 px</code> circle (rail card: <code>25</code>), <code>1.5 px</code> ring at <code>rgba(255,255,255,.18)</code>; when ranked it fills <code>--acid</code> with an <code>--acid-ink</code> numeral. Name <code>14.5/600</code>, share <code>14/700</code> <code>tabular-nums</code>. Ranked rows take <code>--acid-wash</code> plus a <code>3 px</code> inset accent bar.</td></tr>
+        <tr><td>Ballot</td><td>Reject-all row</td><td class="t-note">Same shell, name in <code>--muted</code>, leading <code>14 px</code> <code>#E2564A</code> cross glyph. The club-added option, marked by a glyph and a tone, not by a different shape or hue.</td></tr>
+        <tr><td>Ballot</td><td>Action pair</td><td class="t-note"><code>Cancel</code> (ghost, <code>1 px</code> white hairline, <code>39%</code>) + <code>Vote</code> (accent fill, <code>--acid-ink</code>), both <code>52 px</code> — <code>forms.html</code>'s height. <code>Vote</code> is disabled until every row is ranked. Below it the cost line: <code>1</code> Credit, free if the proposal is vetoed, cancelled or ruled out (verbatim from <code>en.json</code>).</td></tr>
+        <tr><td><em>state</em></td><td>Chart gate</td><td class="t-note"><code>--sunken</code> <code>R12</code> panel in the chart's slot: a <code>34 px</code> accent chart glyph, <code>17/600</code> headline, a five-pip progress row (<code>26 × 5 px</code>, accent when filled) and a count line. Replaces the build's pure-black panel with a near-white keyline — the only white-bordered surface in the whole capture set.</td></tr>
+        <tr><td><em>state</em></td><td>Count chart</td><td class="t-note"><code>--surface</code> <code>R12</code> panel, SVG on a <code>300 × 170</code> viewBox. Y is <b>support share</b>, <code>0–100</code>, gridlines every <code>20</code> — the live build's <code>CNum.valueYVote</code> interval. X is <b>time remaining</b>, counting down left to right, five labels, matching <code>CFunc.findChartElement</code>'s quartering of the stage. An <code>rgba(155,226,34,.07)</code> band covers everything at or above the threshold with a dashed <code>1.2 px</code> accent line at its foot; the leading series is <code>2.4 px</code> accent with a <code>3.6 px</code> tip, the runner-up <code>1.8 px</code> white at <code>.34</code>. A dashed vertical marker records when this member voted.</td></tr>
+        <tr><td><em>state</em></td><td>Your ballot</td><td class="t-note">New. The member's ranking in order, each row a rank plate + name + what became of that preference. A live preference keeps the filled accent plate; an eliminated one takes the contract's <b>dashed</b> plate at <code>--muted</code>. Header carries the cast time and a <code>Locked</code> badge.</td></tr>
+        <tr><td><em>state</em></td><td>Tally rows</td><td class="t-note"><code>Results &amp; actions</code>' rows: opacity-graded white swatch, name, value. Values are <code>--muted</code> (<code>~5:1</code>) or accent for the leader. The build's own tally rows measured <code>~2.4:1</code>; nothing here goes below <code>--muted</code>.</td></tr>
+        <tr><td><em>state</em></td><td>Verdict bar</td><td class="t-note"><code>Results &amp; actions</code>' component at <code>--lg</code> scale, <code>70 px</code>: <code>34 px</code> badge, word in <code>16/700/.05em</code> caps, sub-line naming the outcome, the share, the vote count and the requirement. Filled accent plate = approved, <code>#E2564A</code> = rejected, inert <code>--sunken</code> = cancelled.</td></tr>
+        <tr><td><em>state</em></td><td>Hold banner</td><td class="t-note"><code>veto.html</code>'s <code>.holdbar</code>, verbatim: <code>--sunken</code> under static accent bars at <code>135°</code> (<code>5 px</code> on, <code>6 px</code> off, <code>rgba(155,226,34,.11)</code>), a <code>rgba(155,226,34,.30)</code> ring and a <code>⊘</code> disc.</td></tr>
+        <tr><td>Pinned</td><td>Composer</td><td class="t-note"><code>comments.html</code>'s composer, unchanged: <code>44 px</code> minimum growing one <code>23 px</code> line at a time to a <code>112 px</code> cap, <code>16 px</code> value text so iOS does not zoom on focus, accent border + <code>3 px --acid-wash</code> focus ring, counter from <code>80</code> characters remaining, <code>44 px</code> accent send disc. Placeholder is <code>Leave a comment</code>, the live string. Lives <b>outside <code>&lt;main&gt;</code></b> per the contract.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Each row is its own frame, so each gets its own phone in the review above.</caption>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Before voting</td><td class="t-note">The proposal in full. Threshold panel live, ballot untouched — every slot empty, counter <code>0 of 6 ranked</code>, <code>Vote</code> disabled. The standings are visible before the member votes, as in the build.</td></tr>
+        <tr><td>Casting the ballot</td><td class="t-note">Ranks filled in tap order. Ranked rows take the accent wash and the <code>3 px</code> inset bar, the slot fills accent with an <code>--acid-ink</code> numeral, the counter tracks live, <code>Vote</code> enables at <code>6 of 6</code>. Tapping a ranked row clears it and the later ranks close up. <code>Start again</code> empties the ballot.</td></tr>
+        <tr><td>Voted · chart locked</td><td class="t-note">The gate panel stands in the chart's slot at <code>3 of 5 votes</code>. The receipt and the tally are already live — only the chart waits.</td></tr>
+        <tr><td>Voted · count open</td><td class="t-note">Chart, receipt and full tally. The ballot rows are gone entirely; there is no control to change a cast vote. The discussion sits below the count.</td></tr>
+        <tr><td>Veto hold</td><td class="t-note">The canonical hatch on the banner, the status pill, the frozen threshold panel and the clock. Two clocks: the paused one keeps <b>full-contrast white digits</b> — greying it would read as disabled, and held is loud while finished is quiet — and the appeal window runs. The bar's accent fill is struck through with dark <code>135°</code> bars (<code>--struck</code>); the chart series turns <code>--muted</code> and <b>dashed</b>, the contract's mark for a figure that has stopped moving, and simply ends where counting stopped.</td></tr>
+        <tr><td>Settled · approved</td><td class="t-note">Accent verdict bar, the member's ballot annotated with what happened to each preference, the final-round tally, and an accent CTA handing off to the Result.</td></tr>
+        <tr><td>Settled · rejected</td><td class="t-note"><code>#E2564A</code> verdict bar with a cross glyph and the word <code>Rejected</code> — never colour alone. The threshold panel switches to its <code>--off</code> tones and the verdict pill states the gap in points rather than repeating the percentage. The hand-off CTA drops to <code>--surface</code>: nothing was approved, so nothing is being celebrated.</td></tr>
+        <tr><td>Cancelled by the club</td><td class="t-note">The <code>buildCancelSection</code> branch. Inert verdict bar — no hue at all, because cancelled is finished, not held — plus a reason panel and the refund. No count is shown because none was taken.</td></tr>
+        <tr><td>Nothing cast yet</td><td class="t-note">Gate at <code>0 of 5</code>, all shares rendered as <code>—</code> rather than <code>0%</code>, ballot ready, and <code>No comments yet</code> as a quiet <code>--sunken</code> line rather than a bordered panel.</td></tr>
+        <tr><td>Couldn't load</td><td class="t-note"><code>VotingStatus.fails</code>. The build fans three requests out in one <code>Future.wait</code> and treats any non-200 as a whole-page failure, so the copy says so honestly, reassures the member their vote is unaffected, and offers one <code>Try again</code>. Error code and timestamp are shown for support.</td></tr>
+        <tr><td>Loading</td><td class="t-note">Not drawn. The build ships a bespoke <code>180</code>-line grey shimmer here (<code>buildShimmerEffect</code>). It should be replaced by the library's shared skeleton — see the questions.</td></tr>
+        <tr><td>Stage ends while open</td><td class="t-note">Not drawn. At <code>Duration.zero</code> the build calls <code>onDoneNavigatorAction</code> and replaces the route with the Result detail with no warning. Flagged below.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused, unchanged in kind</h3>
+      <ul>
+        <li><b>Threshold bar</b> — track, accent fill, marker knob and threshold tick from <code>voting-card.html</code>, scaled from <code>8</code> to <code>10 px</code></li>
+        <li><b>Ranked option row and rank plate</b> — <code>voting-card.html</code>, scaled from <code>25</code> to <code>28 px</code>, with the same accent wash and <code>3 px</code> inset bar for a ranked row</li>
+        <li><b>Verdict bar</b> — <code>results-actions.html</code>, four tones and two hues, at its <code>--lg</code> detail scale</li>
+        <li><b>Count chart panel</b> — <code>results-actions.html</code>'s SVG chart, its axis classes, its threshold dash and its intersection-triggered draw-in</li>
+        <li><b>Tally rows</b> — <code>results-actions.html</code>'s swatch / name / value row</li>
+        <li><b>Thread, agree-disagree pills and composer</b> — <code>comments.html</code>, including the rule that agreement is <em>ink, never a fill</em></li>
+        <li><b>The hold treatment</b> — <code>veto.html</code>'s <code>--hold-bars</code>, <code>--hold-ring</code> and <code>--struck</code>, copied token for token</li>
+        <li><b>Clock tiles</b> — <code>veto.html</code>, including the rule that a held clock keeps white digits</li>
+        <li><b>Buttons and controls at <code>52 px</code></b> — <code>forms.html</code></li>
+        <li><b>Hit-area expansion</b> — the contract's <code>::after{inset:-3px}</code> on every <code>38 px</code> and <code>34 px</code> disc</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>A visible rank affordance</b> — every row carries a numbered slot. The build describes clicking to number the choices and renders nothing at all</li>
+        <li><b>The member's own ballot, restated in order</b> — replacing a single uppercased word floating <code>60 pt</code> above an unlinked tally. Eliminated preferences take the contract's dashed plate</li>
+        <li><b>The which-number line</b> — one sentence separating the redistributed leading share from the first-preference rows. Two percentages that mean different things previously sat together unlabelled</li>
+        <li><b>Turnout as its own figure</b> — a clock tile reading <code>1,079 of 1,412 eligible · 76% turnout</code>, so the chart is free to plot support</li>
+        <li><b>The gate as a pip row</b> — <code>3 of 5 votes cast</code> with five pips, replacing <code>Chart will appear after 5 votes</code> / <code>Current: 1 votes</code>, a ghosted watermark and a white keyline. Pluralisation fixed</li>
+        <li><b>A frozen chart</b> — the series turns dashed and stops at the freeze instead of the panel simply vanishing</li>
+        <li><b>An error state</b> — the build has none; a failed fetch shows an internal-error dialog over an empty screen</li>
+        <li><b>An honest empty state</b> — em-dashes rather than <code>0%</code> where no vote has been cast, so nothing looks like a measured zero</li>
+        <li><b>The action pair clears the composer</b> — in the build the pinned composer overlays the <code>Cancel</code> / <code>Vote</code> buttons and only <code>~10 pt</code> of them is reachable</li>
+        <li><b>Cost and refund copy on the ballot</b> — the build hides the price behind a confirmation dialog after the member commits</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>What is the real quorum before the chart opens?</h3>
+      <p><code>Chart will appear after 5 votes</code> and <code>Current: 1 votes</code> appear in the
+        screenshots and <b>nowhere else</b> — zero matches across <code>lib/</code> and
+        <code>en.json</code>, and <code>ConfigClub</code> has no minimum-vote field. In the supplied
+        code there is no gate at all: <code>ChartCommon</code> renders as soon as
+        <code>getListChart</code> returns, and that function has an explicit branch for an empty vote
+        history. We have reproduced the gate at <span class="flag">5 votes, hard-coded</span>. It
+        should become a club-config threshold beside the five existing vote targets, and we need to
+        know whether it counts <em>votes</em> or <em>distinct voters</em>.</p></li>
+
+    <li><h3>Should the chart plot support or turnout?</h3>
+      <p>The live chart is handed <code>y = voted / count_member_participants</code> — that is
+        <b>turnout</b> — and then draws a green <code>APPROVE</code> band at the <b>approval</b>
+        threshold. Those are two different quantities on one plate: a proposal with 100% turnout and
+        20% support would draw a line deep inside the approve band. We have plotted
+        <span class="flag">support share</span> against the band, because that is what the band
+        means, and moved turnout to its own figure above the chart. Confirm, because it changes the
+        API the chart reads.</p></li>
+
+    <li><h3>Is the headline percentage the redistributed share or first preferences?</h3>
+      <p>The Voting card shows <code>74%</code> against a <code>70%</code> threshold while its ballot
+        rows read <code>34 / 28 / 22 / 16</code>. Both can be true — one is the leading option after
+        eliminations, the other is first preferences — but nothing says so. We have assumed
+        <span class="flag">the bar measures the leading option after redistribution</span> and added
+        a line saying it. If the bar is meant to measure first preferences, the verdict pill is
+        wrong on both screens.</p></li>
+
+    <li><h3>Is the ballot ranked or binary?</h3>
+      <p>The supplied code implements a <b>binary Support / Reject</b> vote:
+        <code>voteProposal(status: true|false)</code>, one boolean, and a chart with
+        <code>APPROVE</code> / <code>REJECT</code> bands. The screenshots implement
+        <b>ranked-choice with instant runoff</b> and a <code>Reject all options</code> row. They
+        cannot both be right. We have built <span class="flag">ranked choice</span>, because that is
+        the newer build and it is what the Results screen's round-by-round chart already assumes —
+        but the vote endpoint in this checkout cannot carry a ranking.</p></li>
+
+    <li><h3>Can a member vote without ranking every option?</h3>
+      <p>The build's instruction says to rank until all are numbered, so <code>Vote</code> stays
+        disabled until the ballot is <span class="flag">complete</span>. If a partial ranking is
+        valid, the button should enable on the first rank and we need to know what happens to the
+        blank rows in the final round.</p></li>
+
+    <li><h3>Which option set is canonical?</h3>
+      <p>The library now ships two for the same proposal: <code>voting-card.html</code> lists three
+        real managers by name plus <code>Reject all options</code>, and
+        <code>results-actions.html</code> lists six role-based routes. We have used
+        <span class="flag">the role-based set</span> here so the detail, the result and the round
+        chart agree, and because naming real individuals on a live appointment ballot is a legal
+        question, not a design one. The rail card needs bringing onto whichever set wins.</p></li>
+
+    <li><h3>Should the screen redirect itself when the clock hits zero?</h3>
+      <p>The build calls <code>onDoneNavigatorAction</code> at <code>Duration.zero</code> and
+        <code>pushReplacementNamed</code>s straight to the Result — so a member mid-sentence in the
+        composer loses the screen without warning. We have not drawn that. Our recommendation is
+        <span class="flag">an in-place transition to the settled state with the count frozen and a
+        <code>See the result</code> CTA</span>, never an automatic route change.</p></li>
+
+    <li><h3>The composer appears on frames it should not</h3>
+      <p>Bottom-pinned chrome has to live outside <code>&lt;main&gt;</code> per the contract, and the
+        review page replays it into every frame — so the composer also shows on
+        <b>Couldn't load</b> and, arguably, on <b>Cancelled</b>. In the real build it should be
+        <span class="flag">hidden when the proposal failed to load and disabled once the proposal is
+        cancelled or vetoed</span>. Confirm the second one: a veto hold is exactly when members most
+        want to argue.</p></li>
+
+    <li><h3>Is the shimmer worth <code>180</code> lines?</h3>
+      <p><code>vote_count.dart</code> spends roughly <code>180</code> of its <code>1,493</code> lines
+        hand-building a grey placeholder for this one screen. We have not drawn a loading state
+        because <span class="flag">the library's shared skeleton should serve it</span>. Confirm we
+        can retire the bespoke one.</p></li>
+
+    <li><h3>Two library-wide items this screen inherits</h3>
+      <p>Control height is still open: <code>52 px</code> here, from <code>forms.html</code>, against
+        <code>auth.html</code>'s better-sourced <code>64 px</code>. And the
+        <code>34 px</code>/<code>38 px</code> discs keep their measured size with the invisible
+        <code>44 px</code> hit-area expansion rather than growing — <span class="flag">the
+        <code>::after</code> pattern</span>, applied consistently. Both need settling once, for the
+        whole library, not per screen.</p></li>
+  </ol>
+</section>

@@ -1,0 +1,405 @@
+<p class="dek">The screens a person sees before they are signed in: the Get Started welcome, Log in, the
+password-reset dead-end that ships today, and the password recovery we propose to replace it with.
+Nobody has an account yet, so there is no tab bar and no way out except forwards.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One frame reproduced, two rebuilt around it</h2>
+  <p>
+    Get Started is the only pre-auth screen that has already been designed in the new brand, so it is
+    reproduced here rather than reinterpreted — the black canvas, the acid angular field, the
+    photography standing in front of it, the monogram-and-wordmark lockup, the greeting and the dark
+    pill with its leading acid arrow are all off the export. Sign in and Reset password are new work,
+    built to sit beside it in the same language.
+  </p>
+  <p>
+    Both new frames are assembled entirely from the Forms kit — the same field, the same 52&nbsp;px
+    control, the same validation row, the same action footer — so nothing here is a one-off. That
+    matters because the pre-auth flow is where the current app is least consistent, and four specific
+    inconsistencies are fixed on these three screens rather than merely noted.
+  </p>
+  <p>
+    The two new frames also carry their own states inline: an invalid-credentials form, a submitting
+    form and a code-sent confirmation, each captioned. A spec sheet at the foot of the page records
+    what was standardised and what it replaced; it is documentation for this review, not a screen.
+  </p>
+  <p>
+    <b>One frame here is not a proposal at all.</b> <code>Password reset &middot; shipped today</code>
+    is the screen that is in the live build right now, and it is included so the review does not
+    imply a journey completes in the app when it does not. Tapping <code>Forgot password?</code>
+    on Log in opens a screen with three things on it &mdash; a title, one sentence, and a link that
+    hands you to the desktop website and drops you back at Log in. There is no email field, no code,
+    no confirmation, and no way to finish inside the app. The frame after it,
+    <code>Reset password</code>, is what we propose instead. They are the same journey twice, and
+    the pair is the point.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Get Started</td><td>Art region</td>
+          <td class="t-note">Full-bleed, ignores the gutter. <code>480&nbsp;px</code> of art over about
+            <code>240&nbsp;px</code> of lockup and action, which puts the photography in the upper two
+            thirds of a 375&nbsp;×&nbsp;812 frame. Ground is <code>#030401</code> under a
+            <code>rgba(155,226,34,.10)</code> radial bloom.</td>
+        </tr>
+        <tr>
+          <td>Get Started</td><td>Acid angular field</td>
+          <td class="t-note">Three peaks in <code>#9BE222</code> at <code>.38</code>,
+            <code>.56</code> and full opacity — the same silhouette as the hero range, scaled to fill
+            the frame. Depth is opacity and overlap, not a second hue. Every apex sits at or below
+            <code>y&nbsp;206</code> of the <code>480</code> field, so the range breaks at the figure's
+            shoulders and the head rises out of it into black. Three white triangles at
+            <code>2.4–3.0%</code> texture the black air above.</td>
+        </tr>
+        <tr>
+          <td>Get Started</td><td>Photography</td>
+          <td class="t-note"><code>440&nbsp;×&nbsp;224&nbsp;px</code> — the asset's native
+            <code>472&nbsp;×&nbsp;240</code> ratio, unstretched — centred and sitting
+            <em>in front of</em> the peaks per the hero rule. The supplied cut is feathered rather
+            than masked: alpha across the body runs roughly <code>100–230</code>, not
+            <code>255</code>, and a faint full-width haze surrounds it. Three compositing devices fix
+            that, none of which touches colour. An SVG <code>feComponentTransfer</code> applies a
+            <code>gamma 0.6</code> curve to the <em>alpha channel only</em>, giving the figure body.
+            A vertical mask on the wrapper fades the lower half out from <code>46%</code>, where the
+            cut is thinnest. A horizontal mask on the image tapers <code>6%</code> each side, which
+            kills the vertical seam at the asset's own bounds. The two masks are nested rather than
+            stacked so they intersect on every engine, without relying on
+            <code>mask-composite</code>.</td>
+        </tr>
+        <tr>
+          <td>Get Started</td><td>Vignette</td>
+          <td class="t-note">Two black radials between the peaks and the figure — a tight one at
+            <code>26% × 21%</code> behind the head and a wider one at <code>50% × 34%</code> on the
+            ground the figure stands on. They hold the figure grey without dulling the accent in the
+            negative space around it.</td>
+        </tr>
+        <tr>
+          <td>Get Started</td><td>Dissolve</td>
+          <td class="t-note">The bottom <code>36%</code> of the art fades to <code>#030401</code> in
+            four stops, so the composition ends in the canvas rather than at an edge, and the lockup
+            below it sits on pure black.</td>
+        </tr>
+        <tr>
+          <td>Get Started</td><td>Brand lockup</td>
+          <td class="t-note"><code>32&nbsp;px</code> acid monogram — two peaks of the same range
+            motif, seams drawn in <code>#030401</code> so the overlap stays legible at that size —
+            then the wordmark at 20/800, uppercase, tracked <code>+.055em</code>, white. Both are
+            placeholders for the real vector; see the decisions below.</td>
+        </tr>
+        <tr>
+          <td>Get Started</td><td>Greeting + line</td>
+          <td class="t-note"><code>Welcome to SportsHeist</code> at the 34/800/<code>-.025em</code>
+            display size but in sentence case, because it is a greeting rather than a screen name. The
+            positioning line beneath at 13/400 in <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Get Started</td><td>CTA pill</td>
+          <td class="t-note"><code>52&nbsp;px</code> pill on <code>#13171E</code> with a 1&nbsp;px
+            <code>rgba(255,255,255,.075)</code> hairline, label at 15/600 optically centred over the
+            <em>whole</em> pill rather than over the space left beside the circle. A
+            <code>40&nbsp;px</code> acid circle sits inside a <code>6&nbsp;px</code> inset carrying a
+            2.2-stroke arrow in <code>#0B0E06</code> — so the pill does not have to grow to hold it.
+            White on accent is <code>1.58:1</code> and never appears.</td>
+        </tr>
+        <tr>
+          <td>Sign in</td><td>Top bar + title</td>
+          <td class="t-note"><code>38&nbsp;px</code> circular back button on <code>#1C2129</code>, then
+            <code>Sign in</code> at 34/800 uppercase. Caps live on the display title only. Sub-line at
+            13/400 in <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Sign in</td><td>Fields</td>
+          <td class="t-note">Label outside and above the box at 12.5/600 white; control
+            <code>52&nbsp;px</code> at <code>R12</code> on <code>#1C2129</code> with a 1&nbsp;px
+            hairline. Input text is <code>16&nbsp;px</code> — below that iOS zooms the page on focus.
+            Password letter-spacing <code>.16em</code>. Focus is an accent border plus a
+            <code>3&nbsp;px</code> <code>rgba(155,226,34,.12)</code> ring.</td>
+        </tr>
+        <tr>
+          <td>Sign in</td><td>Show-password toggle</td>
+          <td class="t-note"><code>32&nbsp;px</code> transparent circle inside the control, muted
+            1.8-stroke eye, turning accent and swapping to a struck-through eye when pressed. Carries a
+            real <code>aria-pressed</code> and relabels itself between <code>Show password</code> and
+            <code>Hide password</code>.</td>
+        </tr>
+        <tr>
+          <td>Sign in</td><td>Action footer</td>
+          <td class="t-note">Bordered <code>#080A0C</code> container at <code>R16</code> with
+            <code>16&nbsp;px</code> padding, holding the accent primary at <code>52&nbsp;px</code> and
+            the <code>Forgot password?</code> link centred beneath. Actions are pills; inputs are
+            panels. No third radius.</td>
+        </tr>
+        <tr>
+          <td>Sign in</td><td>Footer prompt</td>
+          <td class="t-note"><code>Don't have an account?</code> at 13.5 in <code>#99A0AE</code> with
+            <code>Sign up</code> beside it in the one link style, centred. It sits in flow rather than
+            pinned to the safe area, so it cannot be stranded below a screenful of empty canvas the
+            way the live one is.</td>
+        </tr>
+        <tr>
+          <td>Sign in</td><td>Form-level alert</td>
+          <td class="t-note"><code>R12</code> panel on <code>rgba(226,86,74,.12)</code> with a
+            <code>rgba(226,86,74,.42)</code> hairline and an 18&nbsp;px warning triangle in
+            <code>#E2564A</code>. Heading at 13.5/600 <em>white</em>, body at 12.5 muted — because
+            <code>#E2564A</code> on <code>#1C2129</code> measures <code>4.36:1</code>, which passes AA
+            large only, so the red carries the hairline and the glyph and never the words.</td>
+        </tr>
+        <tr>
+          <td>Password reset &middot; shipped</td><td>What is on it</td>
+          <td class="t-note"><b>The current behaviour, rebranded &mdash; not a proposal.</b> Three
+            elements and nothing else: a back control, the title, and a block of copy with a link
+            under it. The live screen is a white <code>Scaffold</code> with the title set
+            <code>22/400</code> in Bebas; here it takes this library's display title,
+            <code>34/800/-.025em</code> uppercase, so it reads as a sibling of
+            <code>Log in</code>. A <code>Shipped today</code> pill sits beside the back control
+            &mdash; that pill is review chrome and would not ship.</td>
+        </tr>
+        <tr>
+          <td>Password reset &middot; shipped</td><td>Copy</td>
+          <td class="t-note">Verbatim from the shipped strings, line break included:
+            <code>Password Reset</code>, then <code>Please go to Sport Heist website to / reset your
+            password</code>, then <code>Go to Website</code>. Note the product name is
+            <code>Sport Heist</code> here, two words &mdash; a fourth spelling on top of the three
+            already recorded. Body at <code>15/400</code> in <code>#99A0AE</code>, centred.</td>
+        </tr>
+        <tr>
+          <td>Password reset &middot; shipped</td><td>The drop, and the void</td>
+          <td class="t-note">The copy block starts <code>170&nbsp;px</code> below the title &mdash;
+            the live screen's <code>height &times; 0.2</code> on an <code>852&nbsp;pt</code> frame
+            &mdash; and there is nothing at all beneath it. Roughly <code>500&nbsp;px</code> of empty
+            canvas is reproduced rather than tidied up, because the emptiness is the screen. Anything
+            we added here would be a proposal wearing a rebrand's clothes.</td>
+        </tr>
+        <tr>
+          <td>Password reset &middot; shipped</td><td>Go to Website link</td>
+          <td class="t-note">The one place the frame departs from the source: an outbound glyph is
+            added after the words, so the link admits it leaves the app. The live link is plain
+            underlined text at <code>17/700</code> in the old violet <code>#542BE2</code>; here it
+            is this library's single link style &mdash; accent, <code>13.5/600</code>, underlined
+            <code>1&nbsp;px</code> at a <code>3&nbsp;px</code> offset, with a <code>44&nbsp;px</code>
+            hit area. Tapping it opens
+            <code>&lt;URL&gt;/en/auth/forgot-password</code> in the phone browser and then routes
+            back to Log in <em>whether or not the browser opened</em>.</td>
+        </tr>
+        <tr>
+          <td>Reset password</td><td>Email field</td>
+          <td class="t-note">Leading 19&nbsp;px envelope glyph in <code>#99A0AE</code> that goes white
+            on focus, <code>type=email</code> with <code>inputmode</code> and
+            <code>autocomplete</code> set, and a help line at 12/400 stating the code's 10-minute
+            life.</td>
+        </tr>
+        <tr>
+          <td>Reset password</td><td>Busy action</td>
+          <td class="t-note">The accent fill is <em>held</em>, not greyed — the request is in flight,
+            not unavailable — with a 17&nbsp;px ring spinning at <code>.68s</code> in
+            <code>#0B0E06</code> and the label changed to <code>Sending…</code>, so the state survives
+            a monochrome render. <code>aria-busy</code> and <code>aria-disabled</code> are set and
+            pointer events are off. The email control stays <code>readonly</code> and white rather
+            than disabled and <code>#5B606B</code>, because a greyed-out value reads as unset. A
+            <code>role="status"</code> line below it explains the wait.</td>
+        </tr>
+        <tr>
+          <td>Reset password</td><td>Sent confirmation</td>
+          <td class="t-note">Bordered <code>#080A0C</code> card, <code>56&nbsp;px</code> accent-wash
+            circle holding a 26&nbsp;px mail-with-tick glyph, <code>Check your email</code> at 18/600,
+            the destination address in white with <code>overflow-wrap:anywhere</code>, and a
+            hairline-topped note naming the sending address so a member knows what to look for in
+            spam. The screen title stays <code>Reset password</code>: the state changes the panel, not
+            the identity of the screen.</td>
+        </tr>
+        <tr>
+          <td>All frames</td><td>Text link</td>
+          <td class="t-note">One style only: accent, 13.5/600, sentence case, underlined 1&nbsp;px at a
+            3&nbsp;px offset. <code>#9BE222</code> on <code>#1C2129</code> is <code>9.6:1</code>, and
+            the weight and underline mean the link is never signalled by colour alone.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Password reset &middot; shipped</td><td class="t-note"><b>One state, and that is the
+          finding.</b> The live screen has no loading, no error, no success and no empty variant,
+          because it never calls anything. If the browser cannot be opened the failure is printed to
+          the debug console and the member is returned to Log in with no message at all. Nothing on
+          the screen changes, ever.</td></tr>
+        <tr><td>Rest</td><td class="t-note">Hairline border, muted placeholder in <code>#5B606B</code>, muted leading glyph.</td></tr>
+        <tr><td>Hover</td><td class="t-note">Border lifts to <code>rgba(255,255,255,.14)</code>. Nothing moves.</td></tr>
+        <tr><td>Focus</td><td class="t-note">Accent border plus a 3&nbsp;px accent-wash ring; the leading glyph goes white; a 1.5&nbsp;px accent caret is drawn on the static specimens.</td></tr>
+        <tr><td>Invalid credentials</td><td class="t-note">Form-level alert above the fields and the error ring on <em>both</em> controls, because the server does not say which value was wrong. The field message states that outright: <code>One of these two is wrong. We can't say which.</code> The primary stays enabled — the next action is to retry.</td></tr>
+        <tr><td>Submitting</td><td class="t-note">Accent fill held, spinner, label <code>Sending…</code>, <code>aria-busy</code> set, the control readonly and the secondary link inert in <code>#5B606B</code>.</td></tr>
+        <tr><td>Disabled</td><td class="t-note">Fill drops to <code>#13171E</code>, border to <code>rgba(255,255,255,.045)</code>, all text to <code>#5B606B</code>, trailing buttons inert.</td></tr>
+        <tr><td>Code sent</td><td class="t-note">The form is replaced by the confirmation card, announced through <code>role="status"</code>; the actions become <code>Enter code</code>, <code>Send it again</code> and <code>Back to sign in</code>.</td></tr>
+        <tr><td>Password shown</td><td class="t-note">Toggle turns accent, glyph becomes a struck eye, input switches to plain text, accessible name flips to <code>Hide password</code>.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">Transitions <em>and</em> the spinner animation are both suppressed; the busy label still names the state.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <p>
+    The split here is unusually clean. <b>Get Started (AU-02) is a reproduction</b> — that frame exists
+    in the new brand and is rebuilt from it. <b>Sign in (AU-05) and password recovery (AU-06 + AU-07)
+    are new</b>: the screens exist in the shipped violet app, and their strings and behaviour are
+    honoured, but nothing about how they look here comes from a designed frame.
+  </p>
+  <p>
+    There is a third category, and it applies to exactly one frame.
+    <b><code>Password reset &middot; shipped today</code> is neither a reproduction of a designed
+    frame nor a proposal &mdash; it is a record of current behaviour.</b> Its copy, its layout
+    proportions and its single link are taken from the running code, and the only thing changed is
+    the palette. It is in the library so the <code>Reset password</code> frame beside it cannot be
+    mistaken for something that already works. Read the two together: the shipped one is what a
+    member gets today, the proposed one is what we are asking to build.
+  </p>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Get Started, whole frame</b> — art region, acid angular field, prop-in-front layering, dissolve, lockup position, greeting, positioning line, CTA pill with leading acid arrow</li>
+        <li><b>Photography</b> — <code>hero-prop-athlete</code>, the knockout athlete from the same exports, alpha-lifted but not recoloured or recropped</li>
+        <li><b>The peak silhouette</b> — the hero range from the War Room and Backchat exports, scaled up to become the field</li>
+        <li><b>Display title</b> — 34/800/<code>-.025em</code> uppercase, sampled</li>
+        <li><b>Field, control, validation, action footer</b> — taken wholesale from the Forms kit rather than drawn again</li>
+        <li><b>Icon button</b> — the 38&nbsp;px circle used across the exports</li>
+        <li><b>Section container</b> — the <code>#080A0C</code> panel with its 1&nbsp;px hairline, used for both the actions and the confirmation</li>
+        <li><b>Token block</b> — copied verbatim from <code>merits.html</code>; no colour outside it appears anywhere on the three frames</li>
+        <li><b>Sign-in and recovery copy</b> — the shipped strings, including <code>Incorrect Login Credentials</code> from <code>en.json</code>, rewritten to sentence case</li>
+        <li><b>The whole shipped password-reset frame</b> — its three strings, its <code>0.2 &times; height</code> drop and its emptiness are taken from the running screen, not designed. Only the palette and the link style are ours</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Sign in, whole frame</b> — no design exists for it in the new brand</li>
+        <li><b>Reset password, whole frame</b> — likewise</li>
+        <li><b>Monogram</b> — drawn here from the peak motif. There is no monogram vector in the exports; the live app ships the lockup as a raster (<code>titleApp.png</code>), so this is a stand-in for the real mark</li>
+        <li><b>Wordmark set in the system stack</b> — the Figma wordmark is a raster, and this library carries no webfonts</li>
+        <li><b>Invalid-credentials design</b> — the string exists; nothing renders it today</li>
+        <li><b>Submitting state</b> — the live build shows a <code>#2196F3</code> dot-ring here, the only blue in the product; replaced by a held accent fill and a named label</li>
+        <li><b>Code-sent confirmation</b> — including the sender address note</li>
+        <li><b>One verb pair</b> — <code>Sign in</code> / <code>Sign up</code>, replacing <code>LOGIN</code> in the title, <code>SIGN IN</code> on the button and <code>SIGN UP</code> in the footer</li>
+        <li><b>One casing rule</b> — caps on the 34&nbsp;px display title only; every action label Title Case, against the live mix of <code>GET STARTED</code>, <code>PROCEED</code> and <code>Continue</code></li>
+        <li><b>One height</b> — <code>52&nbsp;px</code> for every action and control, against the six the live flow renders (<code>62 / 68 / 72 / 86 / 90 / 96 pt</code>)</li>
+        <li><b>One link style</b> — AU-05 currently ships two on one screen: white underlined sentence case, and violet ALL-CAPS bold</li>
+        <li><b>One step removed</b> — AU-06's method select offered a single pre-selected radio before the email entry it always advanced to; the radio and the step are gone</li>
+        <li><b>Footer prompt in flow</b> — the live one is pinned below roughly 600&nbsp;pt of empty canvas</li>
+        <li><b>Sub-lines</b> on both new frames, and the sender address in the confirmation</li>
+        <li><b>Compositing on the photography</b> — the alpha curve, the two nested masks and the vignette that stop the accent field reading through the figure</li>
+        <li><b>Show-password toggle</b> — with the state carried in <code>aria-pressed</code> and the accessible name</li>
+        <li><b>Outbound glyph on <code>Go to Website</code></b> — the shipped link gives no sign it leaves the app; this is the single addition to that frame</li>
+        <li><b><code>Shipped today</code> pill</b> — review chrome so the shipped frame cannot be read as a proposal. It would not ship</li>
+        <li><b>Spec sheet</b> — review documentation, not a screen</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Does password reset move into the app, or stay on the website?</h3>
+      <p>This is the biggest question on the page, and the two frames put it side by side. Today the
+      app cannot reset a password: the screen says <code>Please go to Sport Heist website to reset
+      your password</code>, opens the browser, and returns you to Log in. A full in-app reset
+      <em>is</em> routed in the code &mdash; request, six-digit code, new password &mdash; but
+      nothing navigates into it, so none of it runs. We have designed the in-app version because
+      handing someone who has just failed to log in over to a browser is where accounts are
+      abandoned, but <span class="flag">we have assumed the reset comes in-app</span> and that is a
+      build decision, not a design one. If it stays on the web, the shipped frame is the answer and
+      the <code>Reset password</code> frame comes out of the library &mdash; but the copy still needs
+      rewriting, because it names no destination and gives no reason.</p>
+    </li>
+    <li>
+      <h3>Which spelling of the product name is correct?</h3>
+      <p>The shipped reset screen says <code>Sport Heist</code>, two words with no <em>s</em> on
+      <em>Sport</em>. Elsewhere the same app says <code>SPORTSHEIST</code> in the logo,
+      <code>Sports Heist</code> in body copy and <code>Sports Heist(stg)</code> on the iOS
+      notification alert. That is four spellings in one product. The library uses
+      <span class="flag">SportsHeist</span>, one word, everywhere except on the frame that records
+      current behaviour, where the shipped string is quoted as-is.</p>
+    </li>
+    <li>
+      <h3>Sign in, or Log in?</h3>
+      <p>The live flow uses three verbs for two concepts, so one pair has to win. We picked
+      <span class="flag">Sign in / Sign up</span> because two of the three shipped strings already use
+      it and <code>Log in / Log up</code> is not a pair. It is a five-minute change now and a
+      find-and-replace across every string later, so it is worth confirming before build.</p>
+    </li>
+    <li>
+      <h3>Can we have the real logo as a vector?</h3>
+      <p>The monogram is <span class="flag">drawn from the peak motif</span> and the wordmark is
+      <span class="flag">set in the system stack</span>, because the live app ships the lockup as a
+      raster and this library has no webfonts. Both are placeholders. Everything else on the frame is
+      sampled, so this is the one element that will visibly change when the real asset lands.</p>
+    </li>
+    <li>
+      <h3>Can we tell a member which credential was wrong?</h3>
+      <p>The API returns one undifferentiated failure, so both fields take the error ring and the
+      message admits it. That is honest but it is a poor experience, and it is the difference between
+      one error design and two. If the server can distinguish an unknown account from a bad password,
+      we would rather it did — with the usual caveat that saying <em>no such account</em> out loud
+      leaks who is registered.</p>
+    </li>
+    <li>
+      <h3>Is the recovery code six digits, and does it last ten minutes?</h3>
+      <p>The screen states both, because a recovery screen that does not say what is coming or how long
+      it lives is a support ticket. Both values are <span class="flag">assumed</span>, as is the
+      <span class="flag">no-reply@sportsheist.com</span> sender. If the real mechanism is a magic link
+      rather than a code, this frame and the one after it change shape.</p>
+    </li>
+    <li>
+      <h3>How should a resend be rate-limited?</h3>
+      <p><code>Send it again</code> is a plain link with <span class="flag">no cooldown</span>, because
+      no rule exists in the code. Most products disable it for 30–60&nbsp;seconds and count down. Give
+      us the window and the link will show it.</p>
+    </li>
+    <li>
+      <h3>Is the identifier label <code>Email or Username</code> or <code>Username or Email</code>?</h3>
+      <p>The screenshot says one and the repository string says the other. We used
+      <span class="flag">Email or Username</span>, from the capture. One of the two should be retired
+      before either is translated.</p>
+    </li>
+    <li>
+      <h3>Does registration exist as a designed flow?</h3>
+      <p><code>Sign up</code> is offered from Sign in and, in effect, from the Get Started pill, but
+      there is no designed registration in the file — and the club-selection and onboarding screens
+      imply a multi-step one. Whether Get Started leads to registration or to sign-in changes what
+      that pill should say.</p>
+    </li>
+    <li>
+      <h3>No SSO, biometrics or "remember me" — confirmed?</h3>
+      <p>The live screen has none of the three, so neither does this one. Face ID in particular changes
+      the whole action stack, and it is far cheaper to design in now than to retrofit after build.</p>
+    </li>
+    <li>
+      <h3>Should the Get Started prop be re-cut?</h3>
+      <p>The supplied cutout is feathered rather than cleanly masked, so its alpha is lifted in the
+      browser and its edges masked to stop the acid field reading through the figure. It works, and it
+      is the right fix for an asset we cannot re-cut, but a properly masked PNG would be cleaner,
+      sharper and cheaper than an SVG filter plus two masks on a <code>440&nbsp;px</code> image.</p>
+    </li>
+  </ol>
+</section>

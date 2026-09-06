@@ -1,0 +1,2206 @@
+<!DOCTYPE html>
+<html lang="en" data-component="ideas-list">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Ideas list</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — IDEAS LIST
+   The destination of the `View all ↗` pill on the War Room's
+   Ideas rail. The rail peeks three cards; this screen is the
+   whole Ideas stage for the club, segmented, chipped and sorted.
+
+   Sourced from:
+     lib/pages/ideas/ideas_screen.dart              (900 lines)
+     lib/pages/ideas/show_filter.dart               (the sheet)
+     lib/pages/ideas/drop_down/title.dart
+     lib/cubit/proposal/idea.dart                   (IdeaC / IdeaS)
+     lib/constants/src/list_string.dart             (CLString)
+     lib/service/src/proposal.dart                  (getListIdea)
+     lib/constants/src/idea_permission.dart         (CIdeaPost)
+     lib/pages/access/app_bar/back_ground_fragment_home.dart
+
+   Nothing here is invented where the code had an answer:
+     · the idea card is idea-card.html's card, unchanged, run at
+       full column width instead of the rail's 268 px cell
+     · the sheet shell, option row and search control are
+       sheets.html / forms.html, unchanged
+     · the skeleton bone is states.html's bone, unchanged
+     · the segmented control is CLString.listFilterPri —
+       ["DECISIONS", "POSITIONS"] — in enum order
+     · the chips are CLString.listFilterSupIDea — ["", "ALL",
+       "MY IDEAS"] — with index 0 dropped exactly as the code
+       drops it (index 0 is the sheet trigger, not a chip)
+     · the sort sheet is CLString.listSortProposal — MOST RECENT,
+       MOST URGENT, MOST POPULAR — three options, single-select,
+       applying on tap and scrolling the list to the top
+     · there is NO pagination and NO infinite scroll: getListIdea
+       sends `limit: 50` with no offset and no cursor, reads
+       result.data["results"] once and never touches `next`.
+       So the trailing line is an end-of-list line and a cap
+       notice, not a loader.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;
+  --surface:       #1C2129;
+  --sunken:        #13171E;
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+  --acid-line:     rgba(155,226,34,.30);   /* derived, as sheets.html */
+
+  /* semantic red — the only other hue */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.14);
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* skeleton — states.html values, unchanged */
+  --bone:          rgba(255,255,255,.055);
+  --sheen:         rgba(255,255,255,.06);
+
+  /* idea-card.html's own two extras, needed by the gauge ring */
+  --ring-track:    #3D424B;
+  --hairline:      rgba(255,255,255,.06);
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  /* the sheet shell — sheets.html values, unchanged */
+  --r-sheet:       18px;
+  --sheet-max:     560px;
+  --sheet-vh:      88vh;
+  --grab-w:        40px;
+  --grab-h:        4px;
+  --h-field:       52px;
+  --h-row:         48px;
+  --scrim:         rgba(3,4,1,.72);
+  --scrim-blur:    10px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* portraits — the four faces idea-card.html already gives these
+     authors, so an idea reads as the same idea on the rail and here */
+  --av-c7:url(data:image/jpeg;base64,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);
+  --av-fp:url(data:image/jpeg;base64,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);
+  --av-sm:url(data:image/jpeg;base64,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);
+  --av-tt:url(data:image/jpeg;base64,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);
+}
+
+/* the one loop in the file — a shimmer cannot be a transition */
+@keyframes shim{to{transform:translateX(100%)}}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+/* every author display below would otherwise beat the UA rule for the
+   hidden attribute, and hidden is how rows, sheets and counts leave */
+[hidden]{display:none!important}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+/* bottom breathing room. It has to live on an element INSIDE the frame: the
+   builder does not emit <main class="screen"> or the .frame wrapper itself, so
+   padding declared on either is dropped. */
+.frame__pad{height:96px}
+
+/* ============================================================
+   PAGE FURNITURE
+   ============================================================ */
+/* 34 px of top clearance: on a device the app bar sits under the status bar,
+   and in the review shell the phone's 26 px island is inset 8 px from the top.
+   `.screen`'s padding cannot do this job — in multi-frame mode the builder emits
+   each frame's contents and drops the <main class="screen"> wrapper, so any
+   padding declared on it is lost. */
+.bar{display:flex;align-items:center;gap:11px;margin:34px var(--gutter) 14px}
+.bar__eyebrow{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);
+}
+.bar .spacer{flex:1}
+.title{
+  margin:0 var(--gutter) 10px;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.lede{margin:0 var(--gutter) 16px;font-size:13px;line-height:1.5;color:var(--muted)}
+.lede b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   CONTROLS
+   38 px discs keep the sampled size and take the create-idea.html
+   ::after expansion to a 44 px hit area. Everything that carries a
+   label is built at 44 px outright.
+   ============================================================ */
+.icon-btn{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.icon-btn--acid:hover{background:#A8EC33}
+
+.pill-btn{
+  display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 18px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.pill-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.pill-btn--acid:hover{background:#A8EC33}
+.pill-btn svg{width:15px;height:15px;flex:0 0 auto}
+
+.btn{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em;
+  cursor:pointer;white-space:nowrap;transition:background .18s var(--ease);
+}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--wide{width:100%}
+.btn__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
+  background:rgba(11,14,6,.16);font-size:12px;font-variant-numeric:tabular-nums;
+}
+.btn:focus-visible,.pill-btn:focus-visible,.icon-btn:focus-visible{
+  outline:2px solid var(--acid);outline-offset:2px;
+}
+
+/* ============================================================
+   MODE — Decisions / Positions
+   CLString.listFilterPri, sent as `type=decisions|position`.
+   Two modes, not two tabs of one list: the request changes.
+   The shipped control is a 3 px-radius grey track with a
+   question-mark disc in each half wired to a tooltip carrying
+   lorem ipsum. The tooltip is dropped until there is copy.
+   ============================================================ */
+.modes{
+  display:flex;gap:4px;margin:0 var(--gutter) 10px;padding:4px;
+  border-radius:var(--r-pill);background:var(--surface);
+}
+.mode{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  height:40px;border:0;border-radius:var(--r-pill);
+  background:transparent;color:var(--muted);
+  font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.mode:hover{color:var(--text)}
+.mode[aria-selected="true"]{background:var(--acid);color:var(--acid-ink)}
+.mode__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:19px;padding:0 6px;border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--dim);
+  font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.mode[aria-selected="true"] .mode__n{background:rgba(11,14,6,.16);color:var(--acid-ink)}
+.mode:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   TOOLBAR — search trigger, sort trigger, filter trigger
+   ============================================================ */
+.seek{
+  display:flex;align-items:center;gap:10px;width:calc(100% - 2 * var(--gutter));
+  margin:0 var(--gutter) 8px;height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--dim);
+  font:inherit;font-size:14px;text-align:left;cursor:pointer;
+  transition:border-color .16s var(--ease);
+}
+.seek:hover{border-color:rgba(255,255,255,.14)}
+.seek svg{width:19px;height:19px;flex:0 0 auto;color:var(--muted)}
+.seek span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seek:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.tools{display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 10px}
+/* the sort trigger carries a value and the filter trigger carries one word, so
+   they do not split the row evenly — 1.35 : 1 is what fits `Sort · Most recent`
+   at 375 px without an ellipsis */
+.tools .tool:first-child{flex:1.35 1 0}
+.tool{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 13px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--surface);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:border-color .16s var(--ease),background .18s var(--ease);
+}
+.tool:hover{border-color:rgba(255,255,255,.14)}
+.tool svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted)}
+.tool__t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.tool__t em{font-style:normal;color:var(--muted);font-weight:500}
+.tool__n{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
+  background:var(--acid-wash);color:var(--acid);
+  font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.tool.is-on{border-color:var(--acid-line)}
+.tool.is-on > svg{color:var(--acid)}
+.tool:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   CATEGORY CHIPS — CLString.listFilterSupIDea, in order,
+   index 0 dropped because index 0 is the sheet trigger
+   ============================================================ */
+.scope{
+  display:flex;gap:7px;margin:0 0 12px;padding:0 var(--gutter) 2px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.scope::-webkit-scrollbar{height:0}
+.scope__b{
+  flex:0 0 auto;height:36px;padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--muted);
+  font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  cursor:pointer;white-space:nowrap;
+  transition:background .16s var(--ease),color .16s var(--ease),border-color .16s var(--ease);
+}
+.scope__b:hover{color:var(--text);border-color:rgba(255,255,255,.14)}
+.scope__b[aria-pressed="true"]{
+  background:var(--acid-wash);border-color:var(--acid-line);color:var(--acid);
+}
+.scope__b:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   TALLY
+   ============================================================ */
+.tally{
+  display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 10px;
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--dim);
+}
+.tally b{color:var(--text);font-variant-numeric:tabular-nums}
+.tally .spacer{flex:1}
+.tally__x{
+  border:0;background:transparent;padding:4px 2px;margin:0;
+  color:var(--acid);font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;cursor:pointer;
+}
+.tally__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   THE IDEA CARD — idea-card.html's card, unchanged.
+   The only edit is width: the full list is not a 268 px rail
+   cell, so the card runs the full column. Padding, radius,
+   type scale, gauge ring, timer and CTA are as sampled.
+   ============================================================ */
+.list{display:flex;flex-direction:column;gap:12px;margin:0 var(--gutter)}
+
+.sh-idea-card{
+  width:100%;
+  padding:16px;
+  border-radius:var(--r-card);
+  background:var(--surface);
+  display:flex;flex-direction:column;
+  box-shadow:inset 0 1px 0 var(--hairline);
+  text-align:left;
+}
+
+/* -- author row -- */
+.sh-idea-card__author{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.sh-avatars{display:flex;flex:0 0 auto}
+.sh-avatars > .sh-avatar + .sh-avatar{margin-left:-9px}
+.sh-avatar{
+  width:22px;height:22px;border-radius:50%;flex:0 0 auto;
+  border:1.5px solid var(--surface);
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+.sh-idea-card__byline{
+  min-width:0;flex:1;
+  font-size:12.5px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* -- title + body -- */
+.sh-idea-card__title{
+  margin:0 0 8px;
+  font-size:17px;font-weight:600;line-height:1.2;letter-spacing:-.015em;color:var(--text);
+}
+.sh-idea-card__body{margin:0 0 7px;font-size:13px;line-height:1.35;color:var(--muted)}
+.sh-idea-card__body:last-of-type{margin-bottom:0}
+
+/* -- meta row -- */
+.sh-idea-card__meta{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin:14px 0 10px;
+}
+.sh-timer{display:inline-flex;align-items:center;gap:6px;color:var(--text)}
+.sh-timer svg{width:14px;height:14px;flex:0 0 auto;color:currentColor}
+.sh-timer time,.sh-timer span{
+  font-size:13.5px;font-weight:600;letter-spacing:.01em;font-variant-numeric:tabular-nums;
+}
+/* isDanger — the code flips a red plate under the clock once the
+   remaining time drops under findCardState(). Red is paired with a
+   word, never carried by colour alone. */
+.sh-timer--hot{color:var(--red)}
+.sh-timer--hot::after{
+  content:"FINAL";margin-left:2px;
+  font-size:9.5px;font-weight:700;letter-spacing:.13em;
+}
+/* a held clock keeps full-contrast white digits — veto.html */
+.sh-timer--held{color:var(--text)}
+.sh-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;
+}
+.sh-tag::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;flex:0 0 auto}
+
+/* -- gauge panel -- */
+.sh-gauge{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;border-radius:var(--r-panel);background:var(--sunken);
+}
+.sh-gauge__label{font-size:13.5px;font-weight:600;line-height:1.25;color:var(--text)}
+.sh-gauge__ring{position:relative;width:64px;height:64px;flex:0 0 auto}
+.sh-gauge__ring svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+.sh-gauge__track{fill:none;stroke:var(--ring-track);stroke-width:7}
+.sh-gauge__fill{
+  fill:none;stroke:var(--acid);stroke-width:7;stroke-linecap:round;
+  stroke-dasharray:var(--c);stroke-dashoffset:var(--c);
+  transition:stroke-dashoffset 1.1s var(--ease);
+}
+.sh-idea-card.is-drawn .sh-gauge__fill{stroke-dashoffset:calc(var(--c) * (1 - var(--pct)))}
+.sh-gauge__value{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:14.5px;font-weight:600;letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;pointer-events:none;
+}
+
+/* ---- the held state — CONTRACT's canonical hatch, settled in veto.html.
+   Static bars at 135°, 5 on / 6 off, over --sunken, acid ring, ⊘ glyph.
+   The ring gauge uses pathLength="100" with an enumerated dash list. ---- */
+.sh-gauge--held{
+  background-color:var(--sunken);
+  background-image:repeating-linear-gradient(135deg,
+    rgba(155,226,34,.11) 0 5px, transparent 5px 11px);
+  box-shadow:inset 0 0 0 1px var(--acid-line);
+}
+.sh-gauge--held .sh-gauge__fill{
+  stroke:var(--acid);stroke-dasharray:none;stroke-dashoffset:0;
+  transition:none;
+}
+.sh-gauge__hold{
+  display:inline-flex;align-items:center;gap:6px;margin-top:5px;
+  font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--acid);
+}
+
+/* -- CTA — idea-card.html's Like pill, with ideas_screen.dart's labels -- */
+.sh-like{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;height:52px;margin-top:10px;
+  border:0;border-radius:var(--r-pill);
+  background:var(--acid);color:var(--acid-ink);
+  font:inherit;font-size:15px;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;
+  transition:background .18s var(--ease),transform .12s var(--ease);
+}
+.sh-like svg{width:19px;height:19px;flex:0 0 auto}
+.sh-like:hover{background:#A8EC33}
+.sh-like:active{transform:translateY(1px)}
+.sh-like:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.sh-like[aria-pressed="true"]{background:var(--sunken);color:var(--acid)}
+.sh-like[aria-pressed="true"]:hover{background:#1A1F27}
+.sh-like--ghost{
+  background:transparent;border:1px solid var(--acid);color:var(--acid);
+}
+.sh-like--ghost:hover{background:var(--acid-wash)}
+.sh-like__icon--outline{display:block}
+.sh-like__icon--solid{display:none}
+.sh-like[aria-pressed="true"] .sh-like__icon--outline{display:none}
+.sh-like[aria-pressed="true"] .sh-like__icon--solid{display:block}
+
+/* -- the scheduled card — ideas_screen.dart's `status == pending`
+   branch: a clock glyph beside the title, a SCHEDULED plate, the
+   local post time and EDIT. No gauge, no clock, no CTA. -- */
+.sh-idea-card--soon .sh-idea-card__title{display:flex;align-items:flex-start;gap:8px}
+.sh-idea-card--soon .sh-idea-card__title svg{
+  width:18px;height:18px;flex:0 0 auto;margin-top:1px;color:var(--muted);
+}
+.plate{
+  display:inline-flex;align-items:center;height:26px;padding:0 10px;margin-top:12px;
+  border-radius:var(--r-pill);background:var(--sunken);color:var(--muted);
+  font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+}
+.sched{
+  display:flex;align-items:baseline;gap:10px;
+  margin-top:12px;padding-top:11px;border-top:1px solid var(--line-soft);
+}
+.sched__t{flex:1;min-width:0;font-size:12.5px;line-height:1.4;color:var(--muted)}
+.sched__t b{display:block;color:var(--acid);font-size:13.5px;font-variant-numeric:tabular-nums}
+.edit{
+  position:relative;flex:0 0 auto;
+  border:0;background:transparent;padding:4px 2px;
+  color:var(--acid);font:inherit;font-size:10.5px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;cursor:pointer;
+}
+.edit::after{content:"";position:absolute;inset:-9px -6px}
+.edit:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   END OF LIST — there is no pager and no loader.
+   ============================================================ */
+.end{
+  display:flex;align-items:center;gap:10px;margin:16px var(--gutter) 0;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.end::before,.end::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.cap{
+  display:flex;align-items:flex-start;gap:8px;margin:12px var(--gutter) 0;
+  padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--section);
+  font-size:11.5px;line-height:1.45;color:var(--muted);
+}
+.cap svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:var(--dim)}
+.cap b{color:var(--text);font-weight:600}
+
+/* ---------- skeleton — states.html bone, unchanged ---------- */
+.bone{position:relative;overflow:hidden;background:var(--bone);border-radius:5px;flex:0 0 auto}
+.bone--pill{border-radius:var(--r-pill)}
+.bone--circ{border-radius:50%}
+.bone::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 18%,var(--sheen) 50%,transparent 82%);
+  transform:translateX(-100%);animation:shim 1.5s linear infinite;
+}
+/* skeleton idea card — geometry taken from .sh-idea-card: surface fill,
+   R16, 16 px padding, 22 px portrait, 17 px title, gauge panel, CTA */
+.skel{padding:16px;border-radius:var(--r-card);background:var(--surface)}
+.skel__by{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.skel__meta{display:flex;align-items:center;justify-content:space-between;margin:14px 0 10px}
+.skel__gauge{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;border-radius:var(--r-panel);background:var(--sunken);
+}
+
+/* ============================================================
+   EMPTY STATES — states.html panel and illustration rules
+   ============================================================ */
+.empty{
+  margin:0 var(--gutter);padding:24px 20px 22px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.empty h3{margin:14px 0 0;font-size:17px;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+.empty p{margin:7px auto 0;max-width:31ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.empty p b{color:var(--text);font-weight:600}
+.empty .pill-btn{margin-top:16px}
+.ill{display:block;width:132px;height:88px;margin:0 auto}
+.wait{
+  display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+  padding:8px 13px;border-radius:var(--r-pill);background:var(--sunken);
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+}
+.wait svg{width:13px;height:13px;flex:0 0 auto}
+/* the filtered-to-nothing panel: quieter than a true empty state,
+   because the fix is one tap away */
+.nohit{
+  margin:0 var(--gutter);padding:22px 18px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+  text-align:center;
+}
+.nohit h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.nohit p{margin:6px auto 0;max-width:30ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.nohit .pill-btn{margin-top:14px}
+
+/* ============================================================
+   SHEET SHELL — sheets.html, unchanged except that panes stack:
+   the search results header opens sort and filter over the search
+   sheet, so a pane may sit on top of another pane.
+   ============================================================ */
+.sheet{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;
+  width:100%;max-height:min(var(--sheet-vh),var(--sheet-max));
+  border:1px solid var(--line);border-bottom:0;
+  border-radius:var(--r-sheet) var(--r-sheet) 0 0;
+  background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%);
+  box-shadow:0 -20px 50px rgba(0,0,0,.6);
+  overflow:hidden;
+}
+.sheet:focus{outline:none}
+.sheet:focus-visible{outline:2px solid var(--acid);outline-offset:-3px}
+.sheet__grab{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  height:26px;width:100%;padding:0;margin:0;border:0;background:transparent;
+  cursor:grab;touch-action:none;
+}
+.sheet__grab::before{
+  content:"";width:var(--grab-w);height:var(--grab-h);border-radius:var(--r-pill);
+  background:rgba(255,255,255,.18);transition:background .16s var(--ease);
+}
+.sheet__grab:hover::before{background:rgba(255,255,255,.30)}
+.sheet__grab:focus-visible{outline:2px solid var(--acid);outline-offset:-4px}
+.sheet.is-dragging{transition:none}
+.sheet.is-dragging .sheet__grab{cursor:grabbing}
+
+.sheet__head{
+  flex:0 0 auto;display:flex;align-items:center;gap:9px;
+  padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);
+}
+.sheet__title{
+  margin:0;flex:1;min-width:0;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text);
+}
+.sheet__n{
+  flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px;
+  border-radius:var(--r-pill);background:var(--acid-wash);color:var(--acid);
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;
+}
+.sheet__clear{
+  flex:0 0 auto;border:0;background:transparent;padding:4px 2px;margin:0;
+  color:var(--muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:color .16s var(--ease);
+}
+.sheet__clear:hover{color:var(--text)}
+.sheet__clear[disabled]{color:var(--dim);cursor:default}
+.sheet__x{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-4px;position:relative;
+  border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.sheet__x::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.sheet__x:hover{background:rgba(255,255,255,.11);color:var(--text)}
+.sheet__x svg{width:16px;height:16px}
+.sheet__x:focus-visible,.sheet__clear:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.sheet__body::-webkit-scrollbar{width:0;height:0}
+.sheet__body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:12px var(--gutter);scrollbar-width:none;
+}
+.sheet__grp{
+  margin:16px 0 8px;font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.sheet__body > .sheet__grp:first-child{margin-top:0}
+.sheet__foot{
+  flex:0 0 auto;padding:12px var(--gutter);
+  padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);background:var(--sunken);
+}
+.sheet__body--last{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+
+/* ---------- option row — sheets.html, unchanged ---------- */
+.opt{
+  display:flex;align-items:center;gap:12px;width:100%;
+  min-height:var(--h-row);padding:11px 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background-color:var(--sunken);background-image:none;
+  color:var(--text);font:inherit;font-size:13.5px;font-weight:500;
+  text-align:left;cursor:pointer;
+  transition:background-color .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);
+}
+.opt + .opt{margin-top:8px}
+.opt:hover{border-color:rgba(255,255,255,.14)}
+.opt__text{flex:1;min-width:0}
+.opt__text small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.opt[aria-checked="true"]{
+  background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash));
+  border-color:var(--acid-line);color:var(--acid);font-weight:600;
+}
+.opt[aria-checked="true"] .opt__text small{color:rgba(155,226,34,.72)}
+.opt:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.check,.radio{
+  position:relative;flex:0 0 auto;width:20px;height:20px;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);
+  transition:background .16s var(--ease),box-shadow .16s var(--ease);
+}
+.check{border-radius:6px}
+.radio{border-radius:50%}
+.check svg,.radio svg{
+  position:absolute;inset:0;width:20px;height:20px;opacity:0;
+  transition:opacity .14s var(--ease);
+}
+.check svg{color:var(--acid-ink)}
+.radio svg{color:var(--acid)}
+.opt[aria-checked="true"] .check{background:var(--acid);box-shadow:none}
+.opt[aria-checked="true"] .radio{box-shadow:inset 0 0 0 1.7px var(--acid);background:transparent}
+.opt[aria-checked="true"] .check svg,.opt[aria-checked="true"] .radio svg{opacity:1}
+
+/* ---------- the real search field — forms.html control ---------- */
+.ctl{
+  display:flex;align-items:center;gap:10px;
+  height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.ctl__icon{flex:0 0 auto;width:19px;height:19px;color:var(--muted)}
+.ctl__in{
+  flex:1;min-width:0;height:100%;border:0;background:transparent;color:inherit;
+  font:inherit;font-size:16px;padding:0;margin:0;outline:none;
+}
+.ctl__in::placeholder{color:var(--dim);opacity:1}
+.ctl__in::-webkit-search-cancel-button{display:none}
+.ctl:focus-within{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.ctl:focus-within .ctl__icon{color:var(--text)}
+.ctl__btn{
+  position:relative;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-6px;
+  border:0;border-radius:50%;background:transparent;color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.ctl__btn::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.ctl__btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.ctl__btn:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.ctl__btn svg{width:18px;height:18px}
+.ctl--stick{
+  position:sticky;top:0;z-index:2;margin:-12px calc(-1 * var(--gutter)) 12px;
+  padding:12px var(--gutter);height:auto;
+  border:0;border-bottom:1px solid var(--line-soft);border-radius:0;
+  background:#181D25;box-shadow:none;
+}
+.ctl--stick:focus-within{box-shadow:none;border-color:transparent;border-bottom-color:var(--acid-line)}
+.ctl--stick .ctl__box{
+  display:flex;align-items:center;gap:10px;width:100%;height:44px;padding:0 12px;
+  border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.ctl--stick:focus-within .ctl__box{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+
+/* ---------- search sheet internals ---------- */
+.res{display:flex;align-items:center;gap:8px;margin:0 0 12px}
+.res h4{
+  margin:0;flex:1;min-width:0;
+  font-size:15px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;
+}
+.res .icon-btn{width:34px;height:34px;background:var(--sunken)}
+.res .icon-btn svg{width:16px;height:16px}
+.recent{display:flex;flex-wrap:wrap;gap:7px}
+.recent__b{
+  display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 13px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:border-color .16s var(--ease),background .16s var(--ease);
+}
+.recent__b:hover{border-color:rgba(255,255,255,.14);background:#181D25}
+.recent__b svg{width:13px;height:13px;color:var(--dim);flex:0 0 auto}
+.recent__b:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.searchlist{display:flex;flex-direction:column;gap:12px}
+
+/* a docked sheet, sitting in the flow at the bottom of its own frame —
+   the same shell, no scrim, so the review page can show a sheet without
+   anyone having to tap for it */
+.dock{margin-top:20px}
+.dock .sheet{max-height:none}
+.dimmed{opacity:.34;filter:saturate(.55);pointer-events:none}
+/* Frames 02 and 03 draw the sheet at rest so it can be read without anyone
+   having to tap for it. The sheet that WORKS is the one in the layer, which
+   every Sort and Filter trigger opens. Nothing in the specimen is a control,
+   so nothing in it may wear a control's affordance — no pointer, no hover. */
+.dock,.dock *{cursor:default}
+.dock .opt:hover{border-color:var(--line)}
+.dock .opt[aria-checked="true"]:hover{border-color:var(--acid-line)}
+
+/* ============================================================
+   LIVE LAYER
+   The class `tabbar` on the layer is the review shell's hook, so a
+   screen-pinned overlay stays inside the device frame. The layer
+   lives OUTSIDE <main class="screen"> so it cannot scroll away,
+   and so it is replayed into every frame.
+   ============================================================ */
+.layer{position:fixed;inset:0;z-index:60;display:none}
+.layer.is-open{display:block}
+.scrim{
+  position:absolute;inset:0;background:var(--scrim);
+  -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+          backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+  opacity:0;transition:opacity .22s var(--ease);
+}
+.layer.is-in .scrim{opacity:1}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .scrim{background:rgba(3,4,1,.86)}
+}
+.layer .sheet{
+  position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:420px;
+  max-height:min(var(--sheet-vh),var(--sheet-max),calc(100% - 24px - env(safe-area-inset-top,0px)));
+  transform:translateY(101%);transition:transform .32s var(--ease);will-change:transform;
+}
+.layer .sheet.is-up{transform:translateY(0)}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
+  .bone::after{display:none}
+  .bone{background:rgba(255,255,255,.08)}
+}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+<!-- ============================================================
+     FRAME 1 — THE POPULATED LIST
+     ============================================================ -->
+<section class="frame" data-title="Ideas list">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+    <!-- the create entry point. It goes to the Idea gate (idea-gate.html),
+         and it is present only when CIdeaPost.canPost is true. -->
+    <button class="icon-btn icon-btn--acid" type="button" aria-label="Create idea">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <h1 class="title">Ideas</h1>
+  <p class="lede">
+    Every Idea open for Likes at Barcelona. An Idea needs <b>enough Likes before its clock runs
+    out</b> to become a Proposal. Pull down to refresh.
+  </p>
+
+  <!-- ===== DECISIONS / POSITIONS — CLString.listFilterPri ===== -->
+  <div class="modes" role="tablist" aria-label="Which kind of idea">
+    <button class="mode" type="button" role="tab" aria-selected="true"  data-mode="decisions">Decisions <span class="mode__n" data-n="decisions">6</span></button>
+    <button class="mode" type="button" role="tab" aria-selected="false" data-mode="position">Positions <span class="mode__n" data-n="position">3</span></button>
+  </div>
+
+  <!-- ===== SEARCH TRIGGER ===== -->
+  <button class="seek" type="button" data-open="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+    <span>Search ideas or authors</span>
+  </button>
+
+  <!-- ===== SORT + FILTER ===== -->
+  <div class="tools">
+    <button class="tool" type="button" data-open="sort" aria-label="Change sort order">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+      <span class="tool__t"><em>Sort ·</em> <span data-sortlabel>Most recent</span></span>
+    </button>
+    <button class="tool" type="button" data-open="filter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16l-6.3 7.4V19l-3.4-2.2v-3.9L4 5.5Z"/></svg>
+      <span class="tool__t">Filter</span>
+      <span class="tool__n" data-fcount hidden>0</span>
+    </button>
+  </div>
+
+  <!-- ===== CATEGORY CHIPS — CLString.listFilterSupIDea ===== -->
+  <div class="scope" aria-label="Narrow the list">
+    <button class="scope__b" type="button" aria-pressed="true"  data-scope="all">All</button>
+    <button class="scope__b" type="button" aria-pressed="false" data-scope="my_idea">My ideas</button>
+  </div>
+
+  <p class="tally" aria-live="polite">
+    <b data-shown>6</b>&nbsp;ideas <span data-sorttally>· most recent</span>
+    <span class="spacer"></span>
+    <button class="tally__x" type="button" data-reset hidden>Clear</button>
+  </p>
+
+  <!-- ===== THE LIST · DECISIONS ===== -->
+  <div class="list" data-list="decisions" role="list" aria-label="Decision ideas">
+
+    <!-- 1 · open for likes, not liked, 50% -->
+    <article class="sh-idea-card" role="listitem" data-pct="50"
+             data-title="first-team manager shortlist" data-by="taythaytu"
+             data-state="open" data-liked="0" data-hot="0" data-r="6" data-p="50">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-tt)" role="img" aria-label="taythaytu"></span>
+        </span>
+        <span class="sh-idea-card__byline">by taythaytu</span>
+      </div>
+      <h2 class="sh-idea-card__title">First-Team Manager</h2>
+      <p class="sh-idea-card__body">Members pick the next first-team manager from the club’s official shortlist.</p>
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT1H9M12S" data-countdown="4152">01:09:12</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+      <div class="sh-gauge">
+        <span class="sh-gauge__label">50% of<br>required likes</span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill" cx="32" cy="32" r="27" style="--c:169.6;--pct:.5"/>
+          </svg>
+          <span class="sh-gauge__value">50%</span>
+        </span>
+      </div>
+      <button class="sh-like" type="button" aria-pressed="false">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">Like</span>
+      </button>
+    </article>
+
+    <!-- 2 · liked, 75% -->
+    <article class="sh-idea-card" role="listitem" data-pct="75"
+             data-title="girona loan window academy graduates" data-by="capitan_7 scout_mode"
+             data-state="open" data-liked="1" data-hot="0" data-r="5" data-p="75">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+          <span class="sh-avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+        </span>
+        <span class="sh-idea-card__byline">by capitan_7 &amp; scout_mode</span>
+      </div>
+      <h2 class="sh-idea-card__title">Girona Loan Window</h2>
+      <p class="sh-idea-card__body">Lease four academy graduates to Girona for consistent first-team minutes.</p>
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT12M40S" data-countdown="760">00:12:40</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+      <div class="sh-gauge">
+        <span class="sh-gauge__label">75% of<br>required likes</span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill" cx="32" cy="32" r="27" style="--c:169.6;--pct:.75"/>
+          </svg>
+          <span class="sh-gauge__value">75%</span>
+        </span>
+      </div>
+      <button class="sh-like" type="button" aria-pressed="true">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">View likes</span>
+      </button>
+    </article>
+
+    <!-- 3 · isDanger — final minutes, 88% -->
+    <article class="sh-idea-card" role="listitem" data-pct="88"
+             data-title="sevilla away leg ticket ballot" data-by="scout_mode"
+             data-state="open" data-liked="0" data-hot="1" data-r="4" data-p="88">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+        </span>
+        <span class="sh-idea-card__byline">by scout_mode</span>
+      </div>
+      <h2 class="sh-idea-card__title">Ballot the Sevilla away allocation</h2>
+      <p class="sh-idea-card__body">Run the 2,400 away seats as a loyalty ballot rather than first-come.</p>
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer sh-timer--hot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT4M51S" data-countdown="291">00:04:51</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+      <div class="sh-gauge">
+        <span class="sh-gauge__label">88% of<br>required likes</span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill" cx="32" cy="32" r="27" style="--c:169.6;--pct:.88"/>
+          </svg>
+          <span class="sh-gauge__value">88%</span>
+        </span>
+      </div>
+      <button class="sh-like" type="button" aria-pressed="false">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">Like</span>
+      </button>
+    </article>
+
+    <!-- 4 · reject-veto ballot — TypeIdeaEnum.rejectVeto -->
+    <article class="sh-idea-card" role="listitem" data-pct="34"
+             data-title="reject the veto on rest pedri" data-by="fan_pulse"
+             data-state="reject" data-liked="0" data-hot="0" data-r="3" data-p="34">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-fp)" role="img" aria-label="fan_pulse"></span>
+        </span>
+        <span class="sh-idea-card__byline">by fan_pulse</span>
+      </div>
+      <h2 class="sh-idea-card__title">Reject the veto on “Rest Pedri”</h2>
+      <p class="sh-idea-card__body">The board vetoed the Pedri rotation Proposal. Enough Likes here overturns it.</p>
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT52M4S" data-countdown="3124">00:52:04</time>
+        </span>
+        <span class="sh-tag">Reject veto</span>
+      </div>
+      <div class="sh-gauge">
+        <span class="sh-gauge__label">34% of<br>required likes</span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill" cx="32" cy="32" r="27" style="--c:169.6;--pct:.34"/>
+          </svg>
+          <span class="sh-gauge__value">34%</span>
+        </span>
+      </div>
+      <button class="sh-like" type="button" aria-pressed="false">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">Like to reject veto</span>
+      </button>
+    </article>
+
+    <!-- 5 · veto hold — StatusIdeaEnum.veto. The hold hatch, static. -->
+    <article class="sh-idea-card" role="listitem" data-pct="61"
+             data-title="third kit away rotation" data-by="capitan_7"
+             data-state="held" data-liked="0" data-hot="0" data-r="2" data-p="61">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+        </span>
+        <span class="sh-idea-card__byline">by capitan_7</span>
+      </div>
+      <h2 class="sh-idea-card__title">Drop the third kit from the away rotation</h2>
+      <p class="sh-idea-card__body">Wear the home shirt at every away ground where the clash rules allow it.</p>
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer sh-timer--held">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M10.4 11.4v4.2M13.6 11.4v4.2M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT27M18S">00:27:18</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+      <div class="sh-gauge sh-gauge--held">
+        <span class="sh-gauge__label">61% of<br>required likes
+          <span class="sh-gauge__hold">⊘ Veto hold</span>
+        </span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill" cx="32" cy="32" r="27" pathLength="100"
+                    stroke-dasharray="4 3 4 3 4 3 4 3 4 3 4 3 4 3 4 3 4 3 61"/>
+          </svg>
+          <span class="sh-gauge__value">61%</span>
+        </span>
+      </div>
+      <button class="sh-like sh-like--ghost" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="sh-like__label">View details</span>
+      </button>
+    </article>
+
+    <!-- 6 · scheduled — StatusIdeaEnum.pending. No clock, no gauge, no CTA. -->
+    <article class="sh-idea-card sh-idea-card--soon" role="listitem"
+             data-title="matchday travel subsidy" data-by="you"
+             data-state="soon" data-liked="0" data-hot="0" data-mine="1" data-r="1" data-p="0">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-fp)" role="img" aria-label="You"></span>
+        </span>
+        <span class="sh-idea-card__byline">by you</span>
+      </div>
+      <h2 class="sh-idea-card__title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+        Matchday travel subsidy for away members
+      </h2>
+      <p class="sh-idea-card__body">Put 8% of the away allocation revenue into a coach-travel subsidy.</p>
+      <span class="plate">Scheduled</span>
+      <div class="sched">
+        <span class="sched__t">
+          Idea scheduled to post
+          <b>Today, 21:00</b>
+        </span>
+        <button class="edit" type="button">Edit</button>
+      </div>
+    </article>
+  </div>
+
+  <!-- ===== THE LIST · POSITIONS ===== -->
+  <div class="list" data-list="position" role="list" aria-label="Position ideas" hidden>
+
+    <article class="sh-idea-card" role="listitem" data-pct="32"
+             data-title="safe standing pilot north stand" data-by="fan_pulse"
+             data-state="open" data-liked="0" data-hot="0" data-r="3" data-p="32">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-fp)" role="img" aria-label="fan_pulse"></span>
+        </span>
+        <span class="sh-idea-card__byline">by fan_pulse</span>
+      </div>
+      <h2 class="sh-idea-card__title">Safe standing pilot</h2>
+      <p class="sh-idea-card__body">Trial licensed safe-standing rails in one north-stand block next season.</p>
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT33M12S" data-countdown="1992">00:33:12</time>
+        </span>
+        <span class="sh-tag">Position</span>
+      </div>
+      <div class="sh-gauge">
+        <span class="sh-gauge__label">32% of<br>required likes</span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill" cx="32" cy="32" r="27" style="--c:169.6;--pct:.32"/>
+          </svg>
+          <span class="sh-gauge__value">32%</span>
+        </span>
+      </div>
+      <button class="sh-like" type="button" aria-pressed="false">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">Like</span>
+      </button>
+    </article>
+
+    <article class="sh-idea-card" role="listitem" data-pct="67"
+             data-title="rest pedri against getafe" data-by="taythaytu"
+             data-state="open" data-liked="1" data-hot="0" data-r="2" data-p="67">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-tt)" role="img" aria-label="taythaytu"></span>
+        </span>
+        <span class="sh-idea-card__byline">by taythaytu</span>
+      </div>
+      <h2 class="sh-idea-card__title">Rest Pedri against Getafe</h2>
+      <p class="sh-idea-card__body">Start Fermín in midfield and keep Pedri for the Arsenal second leg.</p>
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT21M6S" data-countdown="1266">00:21:06</time>
+        </span>
+        <span class="sh-tag">Position</span>
+      </div>
+      <div class="sh-gauge">
+        <span class="sh-gauge__label">67% of<br>required likes</span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill" cx="32" cy="32" r="27" style="--c:169.6;--pct:.67"/>
+          </svg>
+          <span class="sh-gauge__value">67%</span>
+        </span>
+      </div>
+      <button class="sh-like" type="button" aria-pressed="true">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">View likes</span>
+      </button>
+    </article>
+
+    <article class="sh-idea-card" role="listitem" data-pct="19"
+             data-title="captain armband rotation" data-by="you"
+             data-state="open" data-liked="0" data-hot="1" data-mine="1" data-r="1" data-p="19">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-fp)" role="img" aria-label="You"></span>
+        </span>
+        <span class="sh-idea-card__byline">by you</span>
+      </div>
+      <h2 class="sh-idea-card__title">Rotate the armband to Cubarsí for the cup run</h2>
+      <p class="sh-idea-card__body">Hand the captaincy to Cubarsí for every cup tie between now and April.</p>
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer sh-timer--hot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT2M9S" data-countdown="129">00:02:09</time>
+        </span>
+        <span class="sh-tag">Position</span>
+      </div>
+      <div class="sh-gauge">
+        <span class="sh-gauge__label">19% of<br>required likes</span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill" cx="32" cy="32" r="27" style="--c:169.6;--pct:.19"/>
+          </svg>
+          <span class="sh-gauge__value">19%</span>
+        </span>
+      </div>
+      <button class="sh-like" type="button" aria-pressed="false">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">Like</span>
+      </button>
+    </article>
+  </div>
+
+  <!-- filtered to nothing — not the same thing as an empty stage -->
+  <div class="nohit" data-nohit hidden>
+    <h3>No idea matches that combination</h3>
+    <p>There are ideas here — <b>none of them match</b> the chip and the filters you have on.</p>
+    <button class="pill-btn" type="button" data-reset>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      Clear filters
+    </button>
+  </div>
+
+  <p class="end" data-end>That’s all 6 ideas</p>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The list is one request, capped at 50.</b> <code>getListIdea</code> sends
+    <code>limit: 50</code> with no offset and no cursor, and never reads the response’s
+    <code>next</code>. Above 50 open Ideas the rest are simply unreachable until a filter
+    narrows the set.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 2 — THE SORT SHEET  (lib/pages/ideas/show_filter.dart)
+     ============================================================ -->
+<section class="frame" data-title="Sort sheet">
+
+  <div class="dimmed" aria-hidden="true">
+    <div class="bar">
+      <span class="icon-btn"></span>
+      <span class="bar__eyebrow">War Room</span>
+      <span class="spacer"></span>
+      <span class="icon-btn icon-btn--acid"></span>
+    </div>
+    <h1 class="title">Ideas</h1>
+    <div class="modes">
+      <span class="mode" aria-selected="true">Decisions</span>
+      <span class="mode">Positions</span>
+    </div>
+    <p class="tally"><b>6</b>&nbsp;ideas · most recent</p>
+  </div>
+
+  <div class="dock">
+    <section class="sheet" aria-label="Sort ideas">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Sort ideas</h3>
+        <span class="sheet__x" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </span>
+      </div>
+      <div class="sheet__body sheet__body--last">
+        <div class="opt" role="radio" aria-checked="true">
+          <span class="opt__text">Most recent<small>Newest Idea first · <code>ordering=recent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+        <div class="opt" role="radio" aria-checked="false">
+          <span class="opt__text">Most urgent<small>Shortest clock left first · <code>ordering=urgent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+        <div class="opt" role="radio" aria-checked="false">
+          <span class="opt__text">Most popular<small>Most Likes first · <code>ordering=popular</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>These are the <b>only three options the shipped sheet contains</b> —
+    <code>CLString.listSortProposal</code>, mapped to
+    <code>listKeySortProposal = ["recent","urgent","popular"]</code>. The file is called
+    <code>show_filter.dart</code> and its trigger draws a filter glyph, but everything inside it
+    sorts. Tapping an option re-requests the list and animates the scroll back to the top.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 3 — THE FILTER SHEET
+     ============================================================ -->
+<section class="frame" data-title="Filter sheet">
+
+  <div class="dimmed" aria-hidden="true">
+    <div class="bar">
+      <span class="icon-btn"></span>
+      <span class="bar__eyebrow">War Room</span>
+      <span class="spacer"></span>
+      <span class="icon-btn icon-btn--acid"></span>
+    </div>
+    <h1 class="title">Ideas</h1>
+    <div class="modes">
+      <span class="mode" aria-selected="true">Decisions</span>
+      <span class="mode">Positions</span>
+    </div>
+    <p class="tally"><b>2</b>&nbsp;ideas · most recent</p>
+  </div>
+
+  <div class="dock">
+    <section class="sheet" aria-label="Filter ideas">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Filter · ideas</h3>
+        <span class="sheet__n">2 on</span>
+        <span class="sheet__clear">Clear all</span>
+        <span class="sheet__x" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </span>
+      </div>
+      <div class="sheet__body">
+        <p class="sheet__grp">Stage</p>
+        <div class="opt" role="checkbox" aria-checked="true">
+          <span class="opt__text">Open for Likes<small><code>status = active</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <div class="opt" role="checkbox" aria-checked="false">
+          <span class="opt__text">Scheduled to post<small><code>status = pending</code> · yours only</small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <div class="opt" role="checkbox" aria-checked="false">
+          <span class="opt__text">Veto hold<small><code>status = veto</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <div class="opt" role="checkbox" aria-checked="false">
+          <span class="opt__text">Reject-veto ballots<small><code>type = reject_veto</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <p class="sheet__grp">Me</p>
+        <div class="opt" role="checkbox" aria-checked="true">
+          <span class="opt__text">Ideas I’ve Liked<small><code>is_vote = true</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <div class="opt" role="checkbox" aria-checked="false">
+          <span class="opt__text">Not Liked yet<small>Still needs a decision from you</small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <p class="sheet__grp">Urgency</p>
+        <div class="opt" role="checkbox" aria-checked="false">
+          <span class="opt__text">Final minutes only<small><code>isDanger</code> · clock under the card-state threshold</small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+      </div>
+      <div class="sheet__foot">
+        <span class="btn btn--acid btn--wide">Apply <span class="btn__n">2</span></span>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>This sheet is new.</b> The shipped app has no filter sheet — its only sheet sorts.
+    Every option here is an existing <code>MProposal</code> field
+    (<code>status</code>, <code>type</code>, <code>isVote</code>, <code>isDanger</code>) applied
+    to the page already in memory, so it needs no new endpoint.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 4 — FIRST LOAD
+     ============================================================ -->
+<section class="frame" data-title="Loading">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+    <button class="icon-btn icon-btn--acid" type="button" aria-label="Create idea">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <h1 class="title">Ideas</h1>
+
+  <div class="modes" aria-hidden="true">
+    <span class="mode" aria-selected="true">Decisions</span>
+    <span class="mode">Positions</span>
+  </div>
+
+  <div class="tools" aria-hidden="true">
+    <span class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg><span class="tool__t"><em>Sort ·</em> Most recent</span></span>
+    <span class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16l-6.3 7.4V19l-3.4-2.2v-3.9L4 5.5Z"/></svg><span class="tool__t">Filter</span></span>
+  </div>
+
+  <div class="list" role="status" aria-label="Loading ideas">
+    <div class="skel">
+      <div class="skel__by">
+        <div class="bone bone--circ" style="width:22px;height:22px"></div>
+        <div class="bone bone--pill" style="width:104px;height:11px"></div>
+      </div>
+      <div class="bone" style="width:78%;height:16px"></div>
+      <div class="bone" style="width:94%;height:11px;margin-top:10px"></div>
+      <div class="skel__meta">
+        <div class="bone bone--pill" style="width:78px;height:13px"></div>
+        <div class="bone bone--pill" style="width:62px;height:10px"></div>
+      </div>
+      <div class="skel__gauge">
+        <div>
+          <div class="bone bone--pill" style="width:66px;height:11px"></div>
+          <div class="bone bone--pill" style="width:88px;height:11px;margin-top:7px"></div>
+        </div>
+        <div class="bone bone--circ" style="width:64px;height:64px"></div>
+      </div>
+      <div class="bone bone--pill" style="width:100%;height:52px;margin-top:10px"></div>
+    </div>
+    <div class="skel">
+      <div class="skel__by">
+        <div class="bone bone--circ" style="width:22px;height:22px"></div>
+        <div class="bone bone--pill" style="width:132px;height:11px"></div>
+      </div>
+      <div class="bone" style="width:62%;height:16px"></div>
+      <div class="bone" style="width:88%;height:11px;margin-top:10px"></div>
+      <div class="skel__meta">
+        <div class="bone bone--pill" style="width:78px;height:13px"></div>
+        <div class="bone bone--pill" style="width:62px;height:10px"></div>
+      </div>
+      <div class="skel__gauge">
+        <div>
+          <div class="bone bone--pill" style="width:66px;height:11px"></div>
+          <div class="bone bone--pill" style="width:88px;height:11px;margin-top:7px"></div>
+        </div>
+        <div class="bone bone--circ" style="width:64px;height:64px"></div>
+      </div>
+      <div class="bone bone--pill" style="width:100%;height:52px;margin-top:10px"></div>
+    </div>
+    <div class="skel">
+      <div class="skel__by">
+        <div class="bone bone--circ" style="width:22px;height:22px"></div>
+        <div class="bone bone--pill" style="width:96px;height:11px"></div>
+      </div>
+      <div class="bone" style="width:86%;height:16px"></div>
+      <div class="bone" style="width:72%;height:11px;margin-top:10px"></div>
+      <div class="skel__meta">
+        <div class="bone bone--pill" style="width:78px;height:13px"></div>
+        <div class="bone bone--pill" style="width:62px;height:10px"></div>
+      </div>
+      <div class="skel__gauge">
+        <div>
+          <div class="bone bone--pill" style="width:66px;height:11px"></div>
+          <div class="bone bone--pill" style="width:88px;height:11px;margin-top:7px"></div>
+        </div>
+        <div class="bone bone--circ" style="width:64px;height:64px"></div>
+      </div>
+      <div class="bone bone--pill" style="width:100%;height:52px;margin-top:10px"></div>
+    </div>
+    <div class="skel">
+      <div class="skel__by">
+        <div class="bone bone--circ" style="width:22px;height:22px"></div>
+        <div class="bone bone--pill" style="width:118px;height:11px"></div>
+      </div>
+      <div class="bone" style="width:70%;height:16px"></div>
+      <div class="bone" style="width:90%;height:11px;margin-top:10px"></div>
+      <div class="skel__meta">
+        <div class="bone bone--pill" style="width:78px;height:13px"></div>
+        <div class="bone bone--pill" style="width:62px;height:10px"></div>
+      </div>
+      <div class="skel__gauge">
+        <div>
+          <div class="bone bone--pill" style="width:66px;height:11px"></div>
+          <div class="bone bone--pill" style="width:88px;height:11px;margin-top:7px"></div>
+        </div>
+        <div class="bone bone--circ" style="width:64px;height:64px"></div>
+      </div>
+      <div class="bone bone--pill" style="width:100%;height:52px;margin-top:10px"></div>
+    </div>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>Four cards</b>, matching <code>childCount: 4</code> in
+    <code>buildShimmerEffect()</code>. The bone is <code>states.html</code>'s bone — white at
+    <code>5.5%</code> with one <code>1.5s</code> sheen. The shipped shimmer is
+    <code>Colors.grey.shade300 → shade100</code>: a light-theme skeleton on a dark screen. The same
+    four cards replace only the list when a chip or the sort changes
+    (<code>buildShimmerEffectFilter()</code>), so the header stays put.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 5 — NOTHING OPEN
+     ============================================================ -->
+<section class="frame" data-title="No open ideas">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+    <button class="icon-btn icon-btn--acid" type="button" aria-label="Create idea">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <h1 class="title">Ideas</h1>
+
+  <div class="modes" role="tablist" aria-label="Which kind of idea">
+    <button class="mode" type="button" role="tab" aria-selected="true"  data-emptymode="decisions">Decisions <span class="mode__n">0</span></button>
+    <button class="mode" type="button" role="tab" aria-selected="false" data-emptymode="position">Positions <span class="mode__n">0</span></button>
+  </div>
+
+  <div class="tools">
+    <button class="tool" type="button" data-open="sort" aria-label="Change sort order">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+      <span class="tool__t"><em>Sort ·</em> Most recent</span>
+    </button>
+    <button class="tool" type="button" data-open="filter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16l-6.3 7.4V19l-3.4-2.2v-3.9L4 5.5Z"/></svg>
+      <span class="tool__t">Filter</span>
+    </button>
+  </div>
+
+  <div class="empty">
+    <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+      <path d="M2 72 L28 40 L54 72 Z" fill="#1C2129"/>
+      <path d="M82 72 L108 36 L132 72 Z" fill="#1C2129" opacity=".7"/>
+      <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M56 70v-8a10 10 0 1 1 20 0v8" stroke="#9BE222" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M58 70h16M61 74h10" stroke="#9BE222" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M66 44v-6M52 48l-4-4M80 48l4-4" stroke="#9BE222" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="4 4"/>
+    </svg>
+    <h3 data-emptyt>No Decision ideas open</h3>
+    <p data-emptyp>
+      Nothing is collecting Likes at Barcelona right now, in <b>either category</b>. Any member
+      can start one.
+    </p>
+    <button class="pill-btn pill-btn--acid" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Start an idea
+    </button>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The shipped screen has no empty state at all.</b>
+    <code>ListView.builder</code> with <code>itemCount: 0</code> renders nothing, so the member
+    gets the header, the chips and then bare background. The <b>Start an idea</b> button is present
+    only when <code>CIdeaPost.canPost</code> is true; when the club has closed both categories the
+    panel keeps the illustration and the sentence and drops the button.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+</main>
+
+<!-- ============================================================
+     LIVE LAYER — outside <main class="screen">, so it is pinned
+     and replayed into every frame
+     ============================================================ -->
+<div class="layer tabbar" id="layer">
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ---------- search ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="s-t" data-pane="search" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="s-t" data-searchtitle>Find a Decision idea</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <div class="ctl ctl--stick">
+        <span class="ctl__box">
+          <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.6"/><path d="M16 16l4.2 4.2"/></svg>
+          <input class="ctl__in" id="q" type="search" placeholder="Ideas or authors"
+                 aria-label="Search ideas or authors" autocomplete="off" spellcheck="false">
+          <button class="ctl__btn" type="button" id="qx" aria-label="Clear search" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+          </button>
+        </span>
+      </div>
+
+      <div data-recent>
+        <p class="sheet__grp">Recent searches</p>
+        <div class="recent">
+          <button class="recent__b" type="button" data-term="manager">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            manager
+          </button>
+          <button class="recent__b" type="button" data-term="ballot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            ballot
+          </button>
+          <button class="recent__b" type="button" data-term="capitan_7">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            capitan_7
+          </button>
+          <button class="recent__b" type="button" data-term="veto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            veto
+          </button>
+        </div>
+        <p class="sheet__grp">How it works</p>
+        <p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)">
+          Search reads Idea titles and authors <b>in the set already loaded</b> — the current
+          Decisions-or-Positions request, capped at 50. It does not reach the server, and it does
+          not read Idea bodies or comments.
+        </p>
+        <button class="sheet__clear" type="button" id="qclear" style="margin-top:14px;padding-left:0">
+          Clear recent searches
+        </button>
+      </div>
+
+      <div data-results hidden>
+        <div class="res">
+          <h4 data-rescount>0 results found</h4>
+          <button class="icon-btn" type="button" data-open="filter" aria-label="Filter these results">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16l-6.3 7.4V19l-3.4-2.2v-3.9L4 5.5Z"/></svg>
+          </button>
+          <button class="icon-btn" type="button" data-open="sort" aria-label="Sort these results">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+          </button>
+        </div>
+        <div class="searchlist" id="reslist" role="list"></div>
+      </div>
+
+      <div class="empty" data-resnone hidden style="margin:8px 0 0">
+        <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+          <path d="M2 72 L24 42 L46 72 Z" fill="#1C2129"/>
+          <path d="M92 72 L114 40 L132 72 Z" fill="#1C2129" opacity=".7"/>
+          <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="60" cy="38" r="25" fill="#080A0C"/>
+          <path d="M41 46H79" stroke="rgba(255,255,255,.14)" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="60" cy="38" r="25" stroke="#9BE222" stroke-width="1.8"/>
+          <path d="M78.5 57 L94 72.5" stroke="#9BE222" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+        <h3 data-resterm>Nothing matches that</h3>
+        <p data-resscope>
+          No open Decision idea at Barcelona uses that word. Search reads titles and authors in the
+          loaded set — it does not read Idea bodies or comments.
+        </p>
+        <button class="pill-btn" type="button" id="qwipe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+          Clear search
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- sort — CLString.listSortProposal, verbatim ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="o-t" data-pane="sort" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="o-t">Sort ideas</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close sort">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last" role="radiogroup" aria-label="Sort order">
+      <button class="opt" type="button" role="radio" aria-checked="true" data-sort="recent">
+        <span class="opt__text">Most recent<small>Newest Idea first</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="radio" aria-checked="false" data-sort="urgent">
+        <span class="opt__text">Most urgent<small>Shortest clock left first</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="radio" aria-checked="false" data-sort="popular">
+        <span class="opt__text">Most popular<small>Most Likes first</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ---------- filter ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="l-t" data-pane="filter" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="l-t">Filter · ideas</h3>
+      <span class="sheet__n" data-count hidden>0 on</span>
+      <button class="sheet__clear" type="button" data-clear disabled>Clear all</button>
+      <button class="sheet__x" type="button" data-close aria-label="Close filter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <p class="sheet__grp">Stage</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="open">
+        <span class="opt__text">Open for Likes</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="soon">
+        <span class="opt__text">Scheduled to post</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="held">
+        <span class="opt__text">Veto hold</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="reject">
+        <span class="opt__text">Reject-veto ballots</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <p class="sheet__grp">Me</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="liked">
+        <span class="opt__text">Ideas I’ve Liked</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="unliked">
+        <span class="opt__text">Not Liked yet</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <p class="sheet__grp">Urgency</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="hot">
+        <span class="opt__text">Final minutes only</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+    </div>
+    <div class="sheet__foot">
+      <button class="btn btn--acid btn--wide" type="button" data-apply>
+        <span data-applylabel>Apply</span>
+      </button>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var reduce = window.matchMedia &&
+               window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ============================================================
+     ONE CONTROLLER PER ROOT — required, not tidiness.
+     The review page emits every frame into its own .mk container and
+     replays the live layer into each of them, so a bare
+     document.querySelector resolves frame 01 and leaves frames 02-05
+     holding dead copies of the same controls. The prototype mounts the
+     whole file in one iframe, where there is no .mk and `document` is
+     the only root. Both cases are covered by resolving roots first.
+     ============================================================ */
+  var roots = Array.prototype.slice.call(document.querySelectorAll('.mk'));
+  if (!roots.length) roots = [document];
+  roots.forEach(init);
+
+function init(root){
+
+  /* ============================================================
+     STATE
+     mode  — 'decisions' | 'position'   (CLString.listFilterPri)
+     scope — 'all' | 'my_idea'          (CLString.listFilterSupIDea)
+     sort  — CLString.listKeySortProposal, one for the screen
+     filt  — new; client-side over the loaded page
+     ============================================================ */
+  var SORTNAME = {recent:'Most recent', urgent:'Most urgent', popular:'Most popular'};
+  var st = {mode:'decisions', scope:'all', sort:'recent', filt:[]};
+
+  var $  = function(s,r){ return (r||root).querySelector(s); };
+  var $$ = function(s,r){ return Array.prototype.slice.call((r||root).querySelectorAll(s)); };
+
+  var lists  = {decisions:$('[data-list="decisions"]'), position:$('[data-list="position"]')};
+  var hasList = !!(lists.decisions && lists.position);
+  var nohit  = $('[data-nohit]');
+  var endL   = $('[data-end]');
+  var shown  = $('[data-shown]');
+  var tallyS = $('[data-sorttally]');
+  var resetB = $$('[data-reset]');
+  var fcount = $('[data-fcount]');
+  var ftool  = $('[data-open="filter"].tool');
+  var sortLb = $('[data-sortlabel]');
+
+  function cards(mode){ return $$('.sh-idea-card', lists[mode]); }
+  function stateOf(c){ return c.getAttribute('data-state'); }
+  function flg(c,n){ return c.getAttribute('data-' + n) === '1'; }
+
+  function matches(c){
+    if (st.scope === 'my_idea' && !flg(c,'mine')) return false;
+
+    var f = st.filt;
+    if (!f.length) return true;
+
+    /* within a group the ticks are OR, across groups they are AND */
+    var stg = [];
+    ['open','soon','held','reject'].forEach(function(k){ if (f.indexOf(k) > -1) stg.push(k); });
+    if (stg.length && stg.indexOf(stateOf(c)) < 0) return false;
+
+    var me = [];
+    if (f.indexOf('liked')   > -1) me.push(flg(c,'liked'));
+    if (f.indexOf('unliked') > -1) me.push(!flg(c,'liked'));
+    if (me.length && me.indexOf(true) < 0) return false;
+
+    if (f.indexOf('hot') > -1 && !flg(c,'hot')) return false;
+
+    return true;
+  }
+
+  /* MOST RECENT / MOST URGENT / MOST POPULAR.
+     `urgent` is the shortest clock left, so it reads the countdown. */
+  function order(a,b){
+    if (st.sort === 'popular'){
+      return parseFloat(b.getAttribute('data-p')) - parseFloat(a.getAttribute('data-p'));
+    }
+    if (st.sort === 'urgent'){
+      var at = $('[data-countdown]', a), bt = $('[data-countdown]', b);
+      var av = at ? parseInt(at.getAttribute('data-countdown'),10) : 1e9;
+      var bv = bt ? parseInt(bt.getAttribute('data-countdown'),10) : 1e9;
+      return av - bv;
+    }
+    return parseFloat(b.getAttribute('data-r')) - parseFloat(a.getAttribute('data-r'));
+  }
+
+  function render(){
+    var mode = st.mode, list = lists[mode], n = 0;
+
+    if (hasList){
+      lists.decisions.hidden = mode !== 'decisions';
+      lists.position.hidden  = mode !== 'position';
+
+      cards(mode).slice().sort(order).forEach(function(c){ list.appendChild(c); });
+
+      cards(mode).forEach(function(c){
+        var hit = matches(c);
+        c.hidden = !hit;
+        if (hit) n++;
+      });
+
+      if (shown)  shown.textContent = String(n);
+      list.hidden  = n === 0;
+      if (nohit) nohit.hidden = n > 0;
+      if (endL){
+        endL.hidden = n === 0;
+        endL.textContent = 'That’s all ' + n + (n === 1 ? ' idea' : ' ideas');
+      }
+      $$('[data-n]').forEach(function(el){
+        el.textContent = String(cards(el.getAttribute('data-n')).length);
+      });
+    }
+
+    if (tallyS) tallyS.textContent = '· ' + SORTNAME[st.sort].toLowerCase();
+    if (sortLb) sortLb.textContent = SORTNAME[st.sort];
+
+    var fn = st.filt.length;
+    if (fcount){ fcount.hidden = fn === 0; fcount.textContent = String(fn); }
+    if (ftool) ftool.classList.toggle('is-on', fn > 0);
+
+    var dirty = fn > 0 || st.scope !== 'all';
+    resetB.forEach(function(b){ if (b.classList.contains('tally__x')) b.hidden = !dirty; });
+
+    var stitle = $('[data-searchtitle]');
+    if (stitle){
+      stitle.textContent = mode === 'decisions' ? 'Find a Decision idea' : 'Find a Position idea';
+    }
+
+    $$('[data-pane="sort"] [data-sort]').forEach(function(o){
+      o.setAttribute('aria-checked', o.getAttribute('data-sort') === st.sort ? 'true' : 'false');
+    });
+    $$('[data-pane="filter"] [data-cb]').forEach(function(o){
+      o.setAttribute('aria-checked', st.filt.indexOf(o.getAttribute('data-cb')) > -1 ? 'true' : 'false');
+    });
+    syncFilterHead();
+  }
+
+  /* ---------- mode ---------- */
+  $$('.modes [data-mode]').forEach(function(b){
+    b.addEventListener('click', function(){
+      st.mode = b.getAttribute('data-mode');
+      $$('.modes [data-mode]').forEach(function(x){
+        x.setAttribute('aria-selected', x === b ? 'true' : 'false');
+      });
+      render();
+      if (searchOpen()) runSearch();
+    });
+  });
+
+  /* ---------- mode, on the empty frame ----------
+     No list to re-sort there, so the segment swaps the empty panel it
+     describes. Both categories are empty in this frame, which is what
+     the counts say. */
+  var EMPTY = {
+    decisions:'No Decision ideas open',
+    position :'No Position ideas open'
+  };
+  $$('.modes [data-emptymode]').forEach(function(b){
+    b.addEventListener('click', function(){
+      $$('.modes [data-emptymode]').forEach(function(x){
+        x.setAttribute('aria-selected', x === b ? 'true' : 'false');
+      });
+      var t = $('[data-emptyt]');
+      if (t) t.textContent = EMPTY[b.getAttribute('data-emptymode')];
+      var pane = $('[data-searchtitle]');
+      if (pane){
+        pane.textContent = b.getAttribute('data-emptymode') === 'decisions'
+          ? 'Find a Decision idea' : 'Find a Position idea';
+      }
+    });
+  });
+
+  /* ---------- chips ---------- */
+  function setScope(v){
+    st.scope = v;
+    $$('.scope__b').forEach(function(x){
+      x.setAttribute('aria-pressed', x.getAttribute('data-scope') === v ? 'true' : 'false');
+    });
+  }
+  $$('.scope__b').forEach(function(b){
+    b.addEventListener('click', function(){ setScope(b.getAttribute('data-scope')); render(); });
+  });
+
+  resetB.forEach(function(b){
+    b.addEventListener('click', function(){ st.filt = []; setScope('all'); render(); });
+  });
+
+  /* ---------- Like ⇄ View likes ---------- */
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+    var btn = e.target.closest('.sh-like');
+    if (!btn || btn.classList.contains('sh-like--ghost')) return;
+    if (!btn.hasAttribute('aria-pressed')) return;
+    var on = btn.getAttribute('aria-pressed') === 'true';
+    btn.setAttribute('aria-pressed', String(!on));
+    var lbl = $('.sh-like__label', btn);
+    var reject = (btn.closest('.sh-idea-card') || {}).getAttribute
+      ? btn.closest('.sh-idea-card').getAttribute('data-state') === 'reject' : false;
+    if (lbl) lbl.textContent = on ? (reject ? 'Like to reject veto' : 'Like') : 'View likes';
+    var card = btn.closest('.sh-idea-card');
+    if (card) card.setAttribute('data-liked', on ? '0' : '1');
+    render();
+    if (searchOpen()) runSearch();
+  });
+
+  /* ---------- sort sheet: single-select, applies on tap ---------- */
+  $$('[data-pane="sort"] [data-sort]').forEach(function(o){
+    o.addEventListener('click', function(){
+      st.sort = o.getAttribute('data-sort');
+      render();
+      close();
+      if (searchOpen()) runSearch();
+    });
+  });
+
+  /* ---------- filter sheet: multi-select, Apply commits ---------- */
+  var draft = [];
+  var fpane = $('[data-pane="filter"]');
+
+  function syncFilterHead(){
+    if (!fpane) return;
+    var on = draft.length;
+    var pill = $('[data-count]', fpane);
+    var cl   = $('[data-clear]', fpane);
+    var lb   = $('[data-applylabel]', fpane);
+    if (pill){ pill.hidden = on === 0; pill.textContent = on + ' on'; }
+    if (cl) cl.disabled = on === 0;
+    if (lb) lb.innerHTML = on === 0 ? 'Apply' : 'Apply <span class="btn__n">' + on + '</span>';
+  }
+  if (fpane){
+    $$('[data-cb]', fpane).forEach(function(o){
+      o.addEventListener('click', function(){
+        var k = o.getAttribute('data-cb'), i = draft.indexOf(k);
+        if (i > -1) draft.splice(i,1); else draft.push(k);
+        o.setAttribute('aria-checked', i > -1 ? 'false' : 'true');
+        syncFilterHead();
+      });
+    });
+    $('[data-clear]', fpane).addEventListener('click', function(){
+      draft = [];
+      $$('[data-cb]', fpane).forEach(function(o){ o.setAttribute('aria-checked','false'); });
+      syncFilterHead();
+    });
+    $('[data-apply]', fpane).addEventListener('click', function(){
+      st.filt = draft.slice();
+      render();
+      if (searchOpen()) runSearch();
+      close();
+    });
+  }
+
+  /* ============================================================
+     SEARCH — client-side over the loaded page. There is no
+     proposal search endpoint; getListIdea takes no query param.
+     ============================================================ */
+  var q       = $('#q');
+  var qx      = $('#qx');
+  var reslist = $('#reslist');
+  var recent  = $('[data-recent]');
+  var results = $('[data-results]');
+  var resnone = $('[data-resnone]');
+
+  function searchOpen(){ return stack.indexOf($('[data-pane="search"]')) > -1; }
+  function hay(c){
+    return ((c.getAttribute('data-title') || '') + ' ' +
+            (c.getAttribute('data-by') || '')).toLowerCase();
+  }
+
+  function runSearch(){
+    if (!q) return;
+    var v = q.value.trim().toLowerCase();
+    qx.hidden = !v;
+    if (!v){ recent.hidden = false; results.hidden = true; resnone.hidden = true; return; }
+    recent.hidden = true;
+
+    var hits = hasList
+      ? cards(st.mode).filter(function(c){ return matches(c) && hay(c).indexOf(v) > -1; })
+      : [];
+
+    reslist.innerHTML = '';
+    hits.forEach(function(c){
+      var copy = c.cloneNode(true);
+      copy.hidden = false;
+      copy.classList.add('is-drawn');
+      copy.setAttribute('role','listitem');
+      reslist.appendChild(copy);
+    });
+
+    var n = hits.length;
+    results.hidden = n === 0;
+    resnone.hidden = n > 0;
+    $('[data-rescount]').textContent = n + (n === 1 ? ' result found' : ' results found');
+    $('[data-resterm]').textContent  = 'Nothing matches “' + q.value.trim() + '”';
+    $('[data-resscope]').textContent =
+      'No open ' + (st.mode === 'decisions' ? 'Decision' : 'Position') +
+      ' idea at Barcelona uses that word. Search reads titles and authors in the loaded set — ' +
+      'it does not read Idea bodies or comments.';
+  }
+
+  if (q){
+    q.addEventListener('input', runSearch);
+    qx.addEventListener('click', function(){ q.value=''; runSearch(); q.focus(); });
+    $('#qwipe').addEventListener('click', function(){ q.value=''; runSearch(); q.focus(); });
+    $('#qclear').addEventListener('click', function(){
+      $('.recent', recent).innerHTML = '';
+      $('#qclear').disabled = true;
+    });
+    $$('[data-term]').forEach(function(b){
+      b.addEventListener('click', function(){ q.value = b.getAttribute('data-term'); runSearch(); q.focus(); });
+    });
+  }
+
+  /* ============================================================
+     THE LAYER — panes stack, so sort can open over search
+     ============================================================ */
+  var layer = $('.layer');
+  var scrim = layer && $('.scrim', layer);
+  var main  = $('main.screen');
+  var stack = [];
+  var openers = [];
+
+  function focusables(root){
+    return $$('button, [href], input, select, textarea, [tabindex]', root).filter(function(el){
+      return !el.hasAttribute('disabled') &&
+             el.getAttribute('tabindex') !== '-1' &&
+             el.offsetParent !== null;
+    });
+  }
+
+  /* the page behind the sheet only locks when this file is the whole page.
+     In the review grid a device is one card among many, so freezing the
+     document there would lock the reviewer out of the rest of the page. */
+  var ownsPage = (root === document);
+
+  function open(name, trigger){
+    if (!layer) return;
+    var p = layer.querySelector('[data-pane="' + name + '"]');
+    if (!p || stack.indexOf(p) > -1) return;
+    if (name === 'filter') draft = st.filt.slice();
+
+    openers.push(trigger || null);
+    stack.push(p);
+    p.hidden = false;
+    p.style.zIndex = String(2 + stack.length);
+    p.style.transform = '';
+    layer.classList.add('is-open');
+    if (main) main.setAttribute('aria-hidden','true');
+    if (ownsPage) document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function(){
+      layer.classList.add('is-in');
+      p.classList.add('is-up');
+    });
+    p.setAttribute('tabindex','-1');
+    p.focus();
+    var sel = p.querySelector('[aria-checked="true"]');
+    if (sel && sel.scrollIntoView) sel.scrollIntoView({block:'nearest'});
+    if (name === 'search'){ runSearch(); setTimeout(function(){ if (q) q.focus(); }, reduce ? 0 : 340); }
+    document.addEventListener('keydown', onKey, true);
+  }
+
+  function close(){
+    var p = stack.pop();
+    if (!p) return;
+    var back = openers.pop();
+    p.classList.remove('is-up');
+    if (!stack.length){
+      layer.classList.remove('is-in');
+      document.removeEventListener('keydown', onKey, true);
+      if (main) main.removeAttribute('aria-hidden');
+      if (ownsPage) document.body.style.overflow = '';
+    }
+    setTimeout(function(){
+      p.hidden = true;
+      p.style.transform = '';
+      if (!stack.length) layer.classList.remove('is-open');
+    }, reduce ? 0 : 300);
+    if (back && back.offsetParent !== null) back.focus();
+    else if (stack.length) stack[stack.length - 1].focus();
+  }
+
+  function onKey(e){
+    var p = stack[stack.length - 1];
+    if (!p) return;
+    /* another root may also have a sheet up — only the one holding focus
+       (or, if focus has gone nowhere, the one that was opened) responds */
+    var host = (root === document) ? document.body : root;
+    if (document.activeElement && document.activeElement !== document.body &&
+        !host.contains(document.activeElement)) return;
+    if (e.key === 'Escape'){ e.preventDefault(); close(); return; }
+    if (e.key !== 'Tab') return;
+    var f = focusables(p);
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    else if (!p.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+  }
+
+  root.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+    var o = e.target.closest('[data-open]');
+    if (o){ open(o.getAttribute('data-open'), o); return; }
+    if (e.target.closest('[data-close]')){ close(); return; }
+    if (e.target === scrim) close();
+  });
+
+  /* ---------- grabber drag ---------- */
+  var drag = null;
+  if (layer){
+  layer.addEventListener('pointerdown', function(e){
+    var g = e.target.closest ? e.target.closest('.sheet__grab') : null;
+    var p = stack[stack.length - 1];
+    if (!g || !p || !p.contains(g)) return;
+    drag = {y:e.clientY, t:Date.now(), dy:0, p:p};
+    p.classList.add('is-dragging');
+    if (g.setPointerCapture) g.setPointerCapture(e.pointerId);
+  });
+  layer.addEventListener('pointermove', function(e){
+    if (!drag) return;
+    drag.dy = Math.max(0, e.clientY - drag.y);
+    drag.p.style.transform = 'translateY(' + drag.dy + 'px)';
+    if (stack.length === 1) scrim.style.opacity = String(Math.max(0, 1 - drag.dy / 420));
+  });
+  function endDrag(){
+    if (!drag) return;
+    var d = drag.dy, ms = Math.max(1, Date.now() - drag.t), p = drag.p;
+    var fast = d / ms > 0.55;
+    drag = null;
+    p.classList.remove('is-dragging');
+    scrim.style.opacity = '';
+    if (d > 90 || (fast && d > 24)){ p.style.transform = 'translateY(101%)'; close(); }
+    else { p.style.transform = ''; }
+  }
+  layer.addEventListener('pointerup', endDrag);
+  layer.addEventListener('pointercancel', endDrag);
+
+  /* ---------- draw the gauges once the cards are on screen ---------- */
+  var all = $$('.sh-idea-card');
+  if ('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting){ en.target.classList.add('is-drawn'); io.unobserve(en.target); }
+      });
+    }, {threshold:0.2});
+    all.forEach(function(c){ io.observe(c); });
+  } else {
+    all.forEach(function(c){ c.classList.add('is-drawn'); });
+  }
+
+  /* ---------- countdowns ---------- */
+  function pad(n){ return String(n).padStart(2,'0'); }
+  var clocks = $$('[data-countdown]').map(function(el){
+    return {el:el, left:parseInt(el.getAttribute('data-countdown'),10) || 0};
+  });
+  if (clocks.some(function(c){ return c.left > 0; })){
+    setInterval(function(){
+      clocks.forEach(function(c){
+        if (c.left <= 0) return;
+        c.left -= 1;
+        var h = Math.floor(c.left / 3600),
+            m = Math.floor((c.left % 3600) / 60),
+            s = c.left % 60;
+        c.el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+        c.el.setAttribute('datetime','PT' + h + 'H' + m + 'M' + s + 'S');
+      });
+    }, 1000);
+  }
+
+  render();
+
+  /* closers restored: an agent died mid-edit and left init() and one
+     inner block unclosed, which broke the whole script. */
+}
+}
+})();
+</script>
+</body>
+</html>

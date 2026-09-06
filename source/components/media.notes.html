@@ -1,0 +1,186 @@
+<p class="dek">The full-screen photo viewer and the swipeable gallery — the surface members land on when they
+tap any photo in a locker room, a chat, an idea or a profile. Both surfaces exist in the shipped app
+and neither has ever been designed, specified or screenshotted.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Two screens nobody has seen yet</h2>
+
+  <p>Every photo in SportsHeist is tappable, and tapping one pushes a brand-new full-screen route.
+    There are two of them: one for a single photo, one for a set of photos you can swipe through.
+    Neither appears anywhere in the specification set, in the Figma file, or in the component
+    library — they were built once, early, and never reviewed. This is the first time they have been
+    drawn.</p>
+
+  <p>What ships today is a purple app bar sitting on a grey field, with a plain white text link
+    reading <em>Tải xuống</em> in the corner, an index counter tucked behind the notch, and no
+    loading state and no failure state at all. If a photo is slow, you get nothing; if it never
+    arrives, you get nothing forever. There is a caption editor hidden in there too, on a grey
+    button, in Vietnamese.</p>
+
+  <p>The nine screens here rebuild both surfaces on the same sheet, dialog and button shells the
+    rest of the library already uses, and add the four states the code is missing: loading, failed,
+    saving, and saved. Frame&nbsp;09 answers the one genuine design question the viewer raises —
+    what colour a photograph should sit on.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Stage</td><td>Viewer ground</td><td class="t-note"><code>#000000</code>, full bleed, one device tall. Nothing on this screen scrolls, so every piece of chrome is positioned against the stage rather than pinned to a scroller. See <b>Ground</b> below for why this is not <code>#030401</code>.</td></tr>
+        <tr><td>Stage</td><td>The photograph</td><td class="t-note">Full width, letterboxed vertically, centred. <code>4:5</code> for portrait and <code>3:2</code> for landscape, so the frame never crops and the letterbox is where the ground shows. Zoom is <code>transform: scale()</code> to a <code>2.4×</code> specimen against the code's <code>maxScale: 5.0</code>.</td></tr>
+        <tr><td>Top chrome</td><td>Scrim gradient</td><td class="t-note"><code>rgba(0,0,0,.80)</code> → transparent over <code>100%</code> of an <code>82 px</code> band, so the controls stay legible over a bright photo without a hard-edged bar. Top <code>34 px</code> is left clear for the status bar and the Dynamic Island.</td></tr>
+        <tr><td>Top chrome</td><td>Close</td><td class="t-note"><code>38 px</code> disc, <code>rgba(0,0,0,.46)</code> + <code>blur(8px)</code>, white <code>1.9</code>-stroke ✕, with the kit's invisible <code>::after</code> expansion to a <code>44 px</code> hit area. Every floating control also carries a <code>1 px rgba(255,255,255,.15)</code> inner rim: a translucent black disc is invisible on a black letterbox, and viewer chrome has to be findable over any photograph and over none.</td></tr>
+        <tr><td>Top chrome</td><td>Attribution</td><td class="t-note"><code>28 px</code> portrait, username <code>13/600</code>, timestamp <code>11</code> at <code>rgba(255,255,255,.66)</code>, both with a <code>0 1 3</code> black text shadow so they survive a pale photo.</td></tr>
+        <tr><td>Top chrome</td><td>Index counter</td><td class="t-note">A <code>28 px</code> pill, <code>rgba(0,0,0,.52)</code> + <code>blur(8px)</code>, current page in white <code>700</code> and the total in <code>rgba(255,255,255,.58)</code>, tabular. Centred in the control row — <em>below</em> the island, not behind it.</td></tr>
+        <tr><td>Top chrome</td><td>Save / share</td><td class="t-note"><code>38 px</code> disc, upload glyph at <code>1.8</code>. Opens the sheet rather than acting immediately, because one tap should not silently write to somebody's camera roll.</td></tr>
+        <tr><td>Bottom chrome</td><td>Page dots</td><td class="t-note"><code>6 px</code> discs at <code>rgba(255,255,255,.34)</code>; current is an <code>18 × 6</code> accent pill. Tappable. Use dots to ten photos; past ten this becomes a thumbnail rail — see <b>Decisions</b>.</td></tr>
+        <tr><td>Bottom chrome</td><td>Caption</td><td class="t-note">Username in <code>600</code>, caption <code>13/1.5</code> at <code>rgba(255,255,255,.92)</code> with a text shadow, over the bottom scrim. Absent entirely when there is no caption — no empty container.</td></tr>
+        <tr><td>Bottom chrome</td><td>Edit caption</td><td class="t-note"><code>34 px</code> pill, <code>1 px rgba(255,255,255,.16)</code> rim, <code>rgba(0,0,0,.46)</code> + blur. Only on photos you posted.</td></tr>
+        <tr><td>Bottom chrome</td><td>Gesture hint</td><td class="t-note"><code>30 px</code> pill: “Pinch to zoom · drag down to close”. Self-dismisses after the first pinch and never returns for that member.</td></tr>
+        <tr><td>Loading</td><td>Plate + ring</td><td class="t-note">The photo's exact footprint, square corners, so nothing moves when the image lands. Fill is <code>--sunken</code> <code>#13171E</code> rather than <code>states.html</code>'s <code>rgba(255,255,255,.055)</code> bone — that alpha is measured against <code>--surface</code> and disappears on a black ground — with the same <code>1.35 s</code> sheen sweep over it. A <code>28 px</code> accent ring and a tracked <code>LOADING PHOTO</code> label sit centred on the plate.</td></tr>
+        <tr><td>Failed</td><td>Tile + reason + reference</td><td class="t-note"><code>52 px</code> red tile on <code>rgba(226,86,74,.12)</code> with a <code>1 px</code> red ring, an <code>18/600</code> headline, the reason in <code>--muted</code>, and the file reference plus the HTTP code in a monospace chip so support can act on it.</td></tr>
+        <tr><td>Sheet</td><td>Save &amp; share</td><td class="t-note"><code>sheets.html</code>'s shell, unchanged: <code>18 px</code> top corners, <code>40 × 4</code> grabber, <code>#1C2129 → #13171E</code> fill, <code>0 −20 50</code> lift, <code>54 px</code> action rows on <code>--sunken</code>, one destructive row last in <code>#E2564A</code>, and a full-width ghost Cancel. Scrim is <code>rgba(0,0,0,.72)</code> + <code>blur(10px)</code> — the same alpha as the system scrim, black because it sits on a photo.</td></tr>
+        <tr><td>Dialog</td><td>Caption form</td><td class="t-note"><code>dialogs.html</code>'s shell: <code>R16</code> on <code>#1C2129</code>, <code>20 px</code> padding, <code>44 px</code> tile, <code>18/600</code> title, <code>13/1.5</code> body, <code>46 px</code> action pair. The affirmative repeats the verb — <b>Add a caption</b> → <b>Add caption</b>. Textarea is <code>forms.html</code>'s control at <code>16 px</code> with a <code>200</code>-character counter.</td></tr>
+        <tr><td>Toast</td><td>Saving / saved / refused</td><td class="t-note"><code>dialogs.html</code>'s inset toast, <code>52 px</code> minimum, <code>3 px</code> semantic leading mark, plus a new <code>3 px</code> determinate track and a byte read-out. Refused pairs red with a drawn ✕ <em>and</em> the word — never colour alone.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Single photo</td><td class="t-note">Attribution in the bar, no counter, no dots. Save/share on the right. Frame&nbsp;01.</td></tr>
+        <tr><td>Zoomed</td><td class="t-note">Attribution is replaced by a tabular zoom read-out and a <code>Fit</code> control, because at <code>2.4×</code> you need a way back and the name is no longer the useful thing. A <code>1 px</code> inner ring marks the pan boundary. Frame&nbsp;02.</td></tr>
+        <tr><td>Loading</td><td class="t-note">Bone at the plate's footprint, accent ring, tracked label. Chrome is reduced to Close only — there is nothing to save yet. Frame&nbsp;03.</td></tr>
+        <tr><td>Failed to load</td><td class="t-note">Red tile, plain-language reason, file reference and HTTP code, <b>Try again</b> as the accent primary and <b>Close</b> as the ghost. The primary is accent, not red: the button is the way out, not the danger. Frame&nbsp;04.</td></tr>
+        <tr><td>Gallery</td><td class="t-note">Counter pill, page dots, caption, edit-caption pill. Attribution moves into the caption line so the bar has room for the counter. Frame&nbsp;05.</td></tr>
+        <tr><td>No caption</td><td class="t-note">The caption block is removed, not emptied. The dots move down to fill the space and the <b>Add a caption</b> pill takes the caption's place.</td></tr>
+        <tr><td>Saving</td><td class="t-note">The save disc goes <code>aria-busy</code> and holds a <code>20 px</code> ring in place of its glyph; the toast carries the byte count, the percentage and a determinate track, plus <b>Stop</b>. Frame&nbsp;07.</td></tr>
+        <tr><td>Saved</td><td class="t-note">Accent toast, <code>1 photo · Recents</code>, <b>Open</b>. Auto-dismisses at four seconds; <b>Open</b> keeps it up while focused.</td></tr>
+        <tr><td>Save refused</td><td class="t-note">Red toast naming the actual cause — no Photos permission — with <b>Settings</b>, not <b>Try again</b>. Retrying a permission failure never works.</td></tr>
+        <tr><td>Not your photo</td><td class="t-note">The <b>Edit caption</b> row and pill are absent. <b>Report this photo</b> is present. On your own photo the reverse.</td></tr>
+        <tr><td>Ground comparison</td><td class="t-note">Frame&nbsp;09 is a specimen, not a screen state: the same photograph letterboxed on <code>#000000</code>, on <code>#030401</code> and on the <code>#2C2C2C</code> that ships today, each band labelled with its measured contrast against black.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">No slide, no fade, no sheen; the SMIL rings are paused with <code>svg.pauseAnimations()</code> rather than left spinning invisibly.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused, unchanged</h3>
+      <ul>
+        <li><b>Sheet shell</b> — <code>sheets.html</code>: <code>18 px</code> top radius, <code>40 × 4</code> grabber, tracked-caps title, <code>54 px</code> action rows, full-width ghost Cancel, drag-to-dismiss past <code>90 px</code></li>
+        <li><b>Dialog shell</b> — <code>dialogs.html</code>: <code>R16</code>, <code>20 px</code> padding, <code>44 px</code> icon tile, <code>46 px</code> action pair, verb repeated on the affirmative</li>
+        <li><b>Toast</b> — <code>dialogs.html</code>: inset, <code>R16</code>, <code>3 px</code> semantic leading mark</li>
+        <li><b>Skeleton</b> — <code>states.html</code>: <code>rgba(255,255,255,.055)</code> bone, one <code>1.35 s</code> sheen</li>
+        <li><b>Ring spinner</b> — <code>states.html</code>: 90° accent arc on a white-18% track, <code>0.9 s</code>, stroke thickening as the ring shrinks</li>
+        <li><b>Textarea</b> — <code>forms.html</code>: <code>R12</code> on <code>--sunken</code>, accent focus ring, <code>16 px</code> input</li>
+        <li><b>Tap-target expansion</b> — <code>create-idea.html</code>'s <code>::after</code> pattern, keeping the sampled <code>38 px</code> disc while meeting <code>44 px</code></li>
+        <li><b>Photography</b> — the portrait set from <code>_assets/avatars.css</code>, on the same username-to-face mapping as the rest of the library</li>
+        <li><b>Index counter as a concept</b> — <code>image_widget.dart:225</code>, <code>'${index}/${length}'</code></li>
+        <li><b>Pinch to zoom</b> — <code>InteractiveViewer(maxScale: 5.0)</code>, and drag-down-to-dismiss, both already in the code</li>
+        <li><b>Caption editing</b> — <code>UDialog().showForm</code> at <code>image_widget.dart:255</code>, a real feature nobody has documented</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Pure-black viewer ground</b> — declared as <code>--photo: #000000</code> and scoped to the viewer only. It is the one place in the system that is not <code>--bg</code>. See <b>Ground</b>, frame&nbsp;09</li>
+        <li><b>A loading state</b> — the code has none; the viewer pushes with the network request un-started</li>
+        <li><b>A failed-to-load state</b> — the code has none. Today a dead URL is a permanently empty screen</li>
+        <li><b>Save-and-share sheet</b> — replaces the bare white text link <code>Tải xuống</code>, which has no hit target of its own and no confirmation</li>
+        <li><b>Determinate save progress</b> — the code shows an indefinite snackbar with no byte count and no way to stop</li>
+        <li><b>A save-refused state</b> — the code checks <code>check['isSuccess']</code> and, if it is false, shows nothing at all</li>
+        <li><b>Page dots</b> — the <code>PageController</code> position made visible, and tappable</li>
+        <li><b>A close control</b> — the shipped leading control is a <code>105 × 40</code> row reading <code>‹ Quay lại</code>. Untranslated, and “back” is the wrong verb: a viewer is dismissed</li>
+        <li><b>Attribution in the bar</b> — the shipped app bar title is the empty string</li>
+        <li><b>English throughout</b> — <code>Tải xuống</code>, <code>Chú thích</code>, <code>Thêm chú thích cho ảnh</code>, <code>Đang tải ảnh về...</code> and <code>Tải ảnh về thư viện thành công</code> are all shipped Vietnamese strings in this one file</li>
+        <li><b>Report a photo</b> — no moderation path exists on any photo surface today</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li>
+      <h3>Is pure black right for a photo viewer, given the canvas is #030401?</h3>
+      <p><b>Our ruling: yes, and it is the only exception in the system.</b> Three reasons.
+        <em>One</em>, <code>#030401</code> is a colour with a green cast — <code>G</code> is higher
+        than <code>R</code> and <code>B</code> — so under a photograph it tints the letterbox and
+        draws a faint frame the photograph did not ask for. <em>Two</em>, black is absence: on OLED
+        the bars switch off, so a dark photo has no edge at all, which is exactly what iOS Photos and
+        every other viewer does. <em>Three</em>, the cost is nothing measurable — black against
+        <code>#030401</code> is <code>1.02:1</code>, invisible, so the cut from app canvas to viewer
+        ground cannot be seen even when you look for it. Frame&nbsp;09 puts the same photograph on all
+        three candidates so the difference can be judged rather than argued.</p>
+      <p>The premise needs one correction, though: <b>the live viewer is not on black.</b>
+        <code>backgroundColor: CColor.black</code> resolves to that <code>MaterialColor</code>'s
+        primary value, <code>0xFF2C2C2C</code>. The shipped ground is a mid grey measuring
+        <code>1.50:1</code> against black — clearly visible, and it flattens every dark photograph
+        in the app. Whichever way this decision goes, <span class="flag">#2C2C2C</span> is wrong and
+        has to change.</p>
+    </li>
+    <li>
+      <h3>Should saving a photo be one tap or two?</h3>
+      <p>Today it is one: <code>Tải xuống</code> writes straight to the camera roll. We put a sheet
+        in the way, because the same control now carries Share, Copy link, Edit caption and Report,
+        and because a single mistap writing to somebody's photo library is not recoverable from
+        inside the app. If you would rather keep one-tap save, we would add a
+        <span class="flag">Save</span> disc beside the sheet disc rather than remove the sheet.</p>
+    </li>
+    <li>
+      <h3>Dots or a thumbnail rail past ten photos?</h3>
+      <p>Dots stop working somewhere around ten — they either shrink below a usable target or run off
+        the screen. We have assumed <span class="flag">dots to ten, a scrolling thumbnail rail
+        beyond</span>. The counter pill stays in both cases, so the number is never lost. We need to
+        know the real maximum: <code>WUpload</code>'s <code>maxCount</code> is per-field and
+        nothing caps a locker-room gallery.</p>
+    </li>
+    <li>
+      <h3>Who can edit a caption, and can it be removed?</h3>
+      <p><code>onChangedDescription</code> is passed only from the upload field, so in practice
+        captions are editable while you are composing and frozen afterwards — but nothing in the
+        code says so. We have built it as <span class="flag">the poster can edit their own caption at
+        any time, and emptying the field removes it</span>. If captions should freeze once the room
+        opens, the pill needs to disappear at that moment rather than fail on submit.</p>
+    </li>
+    <li>
+      <h3>We need one real photograph.</h3>
+      <p><code>_assets</code> contains no full-size imagery. The only photography in the kit is the
+        sixteen portraits in <code>avatars.css</code> at <code>112 × 112</code>, so every plate on
+        this page is one of those upscaled and is visibly soft. The geometry is right; the render is
+        not. One <span class="flag">1080-wide match-day photograph</span> — ideally one portrait and
+        one landscape — would let us show these frames properly. We have not drawn a substitute,
+        because a fake photograph is worse than a soft real one.</p>
+    </li>
+    <li>
+      <h3>Is a report path in scope?</h3>
+      <p>There is no moderation route on any photo surface in the app. We have put
+        <span class="flag">Report this photo</span> in the sheet because a member-photo surface
+        without one is a liability, but it needs somewhere to go. If there is no moderation queue
+        yet, say so and we will pull the row rather than ship a dead end.</p>
+    </li>
+  </ol>
+</section>

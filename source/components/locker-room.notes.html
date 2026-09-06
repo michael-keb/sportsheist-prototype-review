@@ -1,0 +1,440 @@
+<p class="dek">The inside of a Locker Room — the live audio space a member enters from Backchat. Three
+frames: the room in session, the screen you see before you commit to joining it, and the roster of
+everyone in the room. None of the three has a counterpart in the code we hold.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The room the brand has never owned</h2>
+  <p>
+    Backchat's home — Fan Stadium plus the two Locker Room lists — is a designed frame. The inside of
+    a room is not. In the app source we hold there is no room page at all, and no real-time audio
+    dependency: <code>pubspec.yaml</code> declares fifty packages across lines
+    <code>31–81</code> and not one of them is an audio or video transport. The only realtime
+    packages are <code>socket_io_client</code> and <code>web_socket_channel</code>, which carry
+    events, not voice — and the one socket file in the app listens for exactly two of them, both
+    about idea votes. So nothing in this checkout can open a microphone, let alone run a room.
+  </p>
+  <p>
+    <strong>That does not mean nobody built it.</strong> The attendees screen is capture-backed: a
+    real device screenshot exists. Our reading of the evidence is that <b>this is a rebrand of a
+    screen that exists in a build newer than the source we were given</b>, not a proposal we
+    invented. Three things point that way. First, the captures and the code disagree about the
+    <em>whole</em> of Backchat, not just the rooms — the room list renders near-white cards on a
+    white scaffold in the code and black cards on a deep aubergine canvas in the shots, and that
+    list's Dart file is one we do hold, so no third-party room SDK can explain it. Second, the
+    captured screens are drawn in the app's own constants: the lilac <code>#AA95F0</code>, the gold
+    title <code>#FFC721</code> and the Bebas Neue face are all declared in this repository even
+    though the screens that use them are not. Third, the same pattern shows up elsewhere — the War
+    Room captures show a <code>5 votes</code> quorum, and no such figure exists anywhere in the app
+    source or its English strings. A checkout that lags the screenshots explains all of it; a
+    third-party SDK explains none of it.
+  </p>
+  <p>
+    The practical consequence is the same either way: we have no code to rebrand against, so every
+    measurement here is taken from the capture and the design kit, and the client should be told
+    that plainly. What the app <em>does</em> already have is the roster's data — the room record
+    returned by <code>GET /back-chat-rooms/{uuid}/</code> carries a host list with names and
+    avatars, an invited-member list, and both <code>total_speakers</code> and
+    <code>total_members</code>. The screen has a source. It just has no screen.
+  </p>
+  <p>
+    The design decision that drives the first two frames is the stage. Instead of the grain-textured
+    locker illustration and the blue-violet room glow, the speaker grid sits on the brand's own
+    field — the same <code>112deg</code> green gradient as every hero — so the room reads as part of
+    SportsHeist the moment it opens. The attendees frame then reuses that same speaker tile on the
+    kit's section container, so a person looks the same on both sides of one tap. In the capture
+    they do not: the two people on the roster render in a different family, case and weight from the
+    room they are standing in.
+  </p>
+  <p>
+    They are three screens, so they get three devices above — nothing stacks in one scroll. Each
+    screen carries its own bottom chrome rather than sharing a single pinned bar, since one pinned
+    bar cannot belong to three screens at once.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. Screen 1 is the live room, screen 2 is before you join, screen 3 is the attendee roster.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Screen</td><td>Phone shell</td>
+          <td class="t-note">Each screen is <code>812&nbsp;px</code> minimum height with
+            <code>104&nbsp;px</code> reserved at the bottom for its own dock, and stands alone on its
+            own device — it borrows no header, no rule and no context from its neighbour.</td>
+        </tr>
+        <tr>
+          <td>Room bar</td><td>Controls</td>
+          <td class="t-note">A <code>38&nbsp;px</code> circle on <code>#1C2129</code> at the left —
+            a chevron-down to minimise in the live room, a cross to back out in pre-join — then the
+            live pill, then in the live room a second <code>38&nbsp;px</code> circle opening the full
+            room roster.</td>
+        </tr>
+        <tr>
+          <td>Room bar</td><td>Live pill</td>
+          <td class="t-note"><code>32&nbsp;px</code>, fully rounded, fill
+            <code>rgba(155,226,34,.12)</code>, accent label <code>Live</code> at 11/700 tracking
+            <code>.11em</code> uppercase, <code>6&nbsp;px</code> leading dot. The dot pulses on a
+            <code>2.4&nbsp;s</code> ring expanding to <code>6&nbsp;px</code> and fading — the only
+            animation in the room chrome.</td>
+        </tr>
+        <tr>
+          <td>Room bar</td><td>Room title</td>
+          <td class="t-note"><code>Post-Match Breakdown</code> at 34/800, uppercase, tracking
+            <code>-.025em</code>, line-height 1.02, clamped to two lines. The shipped title bar has no
+            wrap or truncation rule at all.</td>
+        </tr>
+        <tr>
+          <td>Room bar</td><td>Byline</td>
+          <td class="t-note"><code>Hosted by taythaytu</code> at 12.5&nbsp;px in <code>#99A0AE</code>
+            with the name in white 600, then a <code>3&nbsp;px</code> dot separator, then a
+            14&nbsp;px roster glyph and <code>214 listening</code>. Pre-join swaps the count for
+            <code>started 24 min ago</code> and adds an eyebrow above the title reading
+            <code>Locker room · Barcelona</code>.</td>
+        </tr>
+        <tr>
+          <td>Pitch</td><td>Stage</td>
+          <td class="t-note"><code>R16</code> block at <code>16&nbsp;px</code> side margins, padding
+            <code>14px 14px 16px</code> — <code>46&nbsp;px</code> at the foot of the live frame, a
+            reserved lane the reactions rise through so one never lands on a face — on the brand
+            field gradient: <code>112deg</code>,
+            <code>#0D3617</code> → <code>#17481C</code> at 58% → <code>#0C3416</code>. Faint white
+            triangles at <code>2.8%</code>, <code>2.2%</code> and <code>2.6%</code> opacity, matched to
+            each frame's height. No acid peaks and no prop: those belong to a titled hero.</td>
+        </tr>
+        <tr>
+          <td>Pitch</td><td>Speaker grid</td>
+          <td class="t-note">Three columns, <code>14&nbsp;px</code> row gap and <code>10&nbsp;px</code>
+            column gap. Six tiles in the live frame; pre-join previews three under an
+            <code>All 220</code> pill, because a room can hold more speakers than fit a preview.</td>
+        </tr>
+        <tr>
+          <td>Speaker tile</td><td>Portrait</td>
+          <td class="t-note"><code>72&nbsp;px</code> circle, cover-cropped at
+            <code>center 22%</code>, ringed 2&nbsp;px in <code>rgba(3,4,1,.35)</code> so it separates
+            from the field. A speaking tile gains a second ring: 2&nbsp;px dark plus
+            <code>4.5&nbsp;px</code> of <code>#9BE222</code>.</td>
+        </tr>
+        <tr>
+          <td>Speaker tile</td><td>State badge</td>
+          <td class="t-note"><code>26&nbsp;px</code> circle at the portrait's bottom-right, fill
+            <code>#13171E</code>, ringed 1.5&nbsp;px in <code>rgba(3,4,1,.55)</code>, holding a
+            14&nbsp;px glyph. Speaking flips it to an accent fill with <code>#0B0E06</code> ink and a
+            four-bar level meter whose bars animate on a <code>1.1&nbsp;s</code> cycle at
+            <code>.14&nbsp;s</code> stagger. Mic-on shows a plain microphone; muted shows the same
+            microphone struck through.</td>
+        </tr>
+        <tr>
+          <td>Speaker tile</td><td>Role tag</td>
+          <td class="t-note"><code>19&nbsp;px</code> pill on the portrait's bottom-left corner — the
+            opposite corner from the state badge, so the two can never collide —
+            9.5/800, tracking <code>.08em</code>, uppercase, ringed 2&nbsp;px in the field.
+            <code>Host</code> is accent on <code>#0B0E06</code>; <code>You</code> is white on
+            <code>rgba(255,255,255,.16)</code> — a role marker, not a status.</td>
+        </tr>
+        <tr>
+          <td>Speaker tile</td><td>Name and state</td>
+          <td class="t-note">Name at 12.5/600 truncating, going to 700 when speaking. Below it the
+            state word at 10.5/700, tracking <code>.14em</code>, uppercase, in
+            <code>rgba(255,255,255,.62)</code> — <code>Speaking</code>, <code>Mic on</code>,
+            <code>Muted</code> — turning accent when speaking.</td>
+        </tr>
+        <tr>
+          <td>Pitch</td><td>Floating reactions</td>
+          <td class="t-note">Three discs stacked bottom-right, <code>34</code>, <code>28</code> and
+            <code>24&nbsp;px</code>, on <code>rgba(3,4,1,.64)</code> with a 1&nbsp;px inset hairline at
+            white 14%.
+            They rise <code>34&nbsp;px</code> and fade over <code>5.2&nbsp;s</code> at
+            <code>1.5&nbsp;s</code> stagger. The largest carries a <code>19&nbsp;px</code> accent count
+            chip reading <code>12</code>.</td>
+        </tr>
+        <tr>
+          <td>Listeners</td><td>Section header</td>
+          <td class="t-note"><code>Listening</code> at 18/600, then a <code>34&nbsp;px</code> pill
+            reading <code>All 220</code> with a 13&nbsp;px up-right arrow, figures tabular.</td>
+        </tr>
+        <tr>
+          <td>Listeners</td><td>Face stack</td>
+          <td class="t-note">Section container — <code>#080A0C</code>, 1&nbsp;px hairline at white
+            7.5%, <code>R16</code>, <code>12&nbsp;px</code> padding — holding
+            <code>36&nbsp;px</code> portraits overlapped by <code>10&nbsp;px</code> and ringed
+            2&nbsp;px in the container fill, then a <code>+207</code> pill on <code>#13171E</code> at
+            12/700 in <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Listeners</td><td>Monogram fallback</td>
+          <td class="t-note">Where no portrait exists the disc fills with <code>#13171E</code> and
+            carries a white 700 initial at 14&nbsp;px with a 1&nbsp;px inset hairline. Fixed values,
+            <code>18.8:1</code> — see the decisions.</td>
+        </tr>
+        <tr>
+          <td>Listeners</td><td>Note</td>
+          <td class="t-note"><code>12&nbsp;px</code> above, <code>11&nbsp;px</code> below a 1&nbsp;px
+            <code>--line-soft</code> rule, 12&nbsp;px copy in <code>#99A0AE</code> with a 17&nbsp;px
+            glyph. Live frame states the rule — <code>Raise a hand and taythaytu can bring you
+            up.</code> Pre-join names who is in there instead.</td>
+        </tr>
+        <tr>
+          <td>Live room</td><td>Reaction tray</td>
+          <td class="t-note">Shown open, <code>84&nbsp;px</code> above the frame's bottom edge:
+            <code>R16</code> bar on <code>#1C2129</code>, <code>10px/8px</code> padding, shadow
+            <code>0 12px 32px rgba(0,0,0,.55)</code>. Six reactions — Clap, Fire, Goal, Love, Wow, Boo
+            — each a <code>42&nbsp;px</code> sunken disc with a 21&nbsp;px glyph over a 9.5/700
+            tracked label. Selected or hovered turns the disc accent and the label accent.</td>
+        </tr>
+        <tr>
+          <td>Live room</td><td>Control dock</td>
+          <td class="t-note">Same construction as the tab bar it replaces: <code>58&nbsp;px</code>,
+            <code>10&nbsp;px</code> inner padding, fully rounded, <code>#1C2129</code>, shadow
+            <code>0 10px 30px rgba(0,0,0,.6)</code>, <code>14&nbsp;px</code> above the safe area. Three
+            <code>38&nbsp;px</code> controls at the left — mute, raise hand, react — then a spacer,
+            then Leave.</td>
+        </tr>
+        <tr>
+          <td>Live room</td><td>Control states</td>
+          <td class="t-note">A toggle that is on becomes an accent pill showing icon <em>and</em>
+            label, exactly like the active tab. A control whose panel is open takes the translucent
+            accent wash instead — not a second hue.</td>
+        </tr>
+        <tr>
+          <td>Live room</td><td>Leave</td>
+          <td class="t-note"><code>38&nbsp;px</code> pill on <code>#13171E</code>, white 13/600, with
+            an 18&nbsp;px exit glyph. Deliberately not the semantic red: leaving destroys nothing and
+            you can walk straight back in.</td>
+        </tr>
+        <tr>
+          <td>Pre-join</td><td>Stat line</td>
+          <td class="t-note">Three facts at 12&nbsp;px in <code>#99A0AE</code> with 15&nbsp;px glyphs
+            and figures in white 600 — <code>6 speaking</code>, <code>214 listening</code>,
+            <code>Open room</code>.</td>
+        </tr>
+        <tr>
+          <td>Pre-join</td><td>Permission card</td>
+          <td class="t-note"><code>R16</code> card on <code>#1C2129</code>, <code>14&nbsp;px</code>
+            padding, with a <code>38&nbsp;px</code> sunken disc holding an accent muted-microphone
+            glyph. Heading <code>You'll join muted</code> at 15/600, body 13&nbsp;px in
+            <code>#99A0AE</code> stating that the OS microphone prompt only appears when the host
+            invites you up.</td>
+        </tr>
+        <tr>
+          <td>Pre-join</td><td>Join action</td>
+          <td class="t-note">Full-width <code>52&nbsp;px</code> accent pill, <code>#0B0E06</code>
+            label at 15/700, 19&nbsp;px enter glyph, pinned to the bottom of its own frame with a
+            12&nbsp;px note beneath in <code>#99A0AE</code>:
+            <code>Listening only · you can leave whenever you like</code>.</td>
+        </tr>
+        <tr>
+          <td>Attendees</td><td>Header</td>
+          <td class="t-note">The room bar again, unchanged: a <code>38&nbsp;px</code> circle holding
+            a back arrow at 1.9 stroke, the live pill at the right, then the eyebrow
+            <code>Locker room · Barcelona</code>, the title <code>Attendees</code> at 34/800
+            uppercase, and a byline carrying the room name in white 600 and
+            <code>220 here now</code>. The capture instead uses a third arrow shape — a long-tailed
+            lilac glyph ~<code>78 × 45&nbsp;pt</code> at a <code>48&nbsp;pt</code> gutter — which is
+            neither of the two arrows already in the app. One shape, one gutter here.</td>
+        </tr>
+        <tr>
+          <td>Attendees</td><td>Role heading</td>
+          <td class="t-note"><code>Hosts</code> and <code>Audience</code> at 18/600 on the gutter —
+            the kit's section label — each with a count to its right: a <code>26&nbsp;px</code>
+            pill on <code>#13171E</code>, 12/700 in <code>#99A0AE</code>, figures tabular. The
+            capture carries no count under either heading, even though the button that opens the
+            screen announces 220 people.</td>
+        </tr>
+        <tr>
+          <td>Attendees</td><td>Hosts grid</td>
+          <td class="t-note">Section container — <code>#080A0C</code>, 1&nbsp;px hairline at white
+            7.5%, <code>R16</code>, <code>12&nbsp;px</code> padding — holding the room's own speaker
+            tile at three columns, <code>14&nbsp;px</code> row gap and <code>10&nbsp;px</code>
+            column gap. Same <code>72&nbsp;px</code> portrait, same <code>26&nbsp;px</code> state
+            badge, same <code>Host</code> and <code>You</code> tags, same name and state word as
+            screen 1, and the same six people in the same states.</td>
+        </tr>
+        <tr>
+          <td>Attendees</td><td>Audience grid</td>
+          <td class="t-note">The same tile one step down: four columns, <code>16px/8px</code> gaps,
+            portrait <code>56&nbsp;px</code>, name 11.5/500. No state badge and no state word,
+            because an audience member has no mic to be in a state. Monogram fallbacks sit in the
+            grid at <code>21&nbsp;px</code>.</td>
+        </tr>
+        <tr>
+          <td>Attendees</td><td>List note</td>
+          <td class="t-note">The listener note construction — 12&nbsp;px copy in
+            <code>#99A0AE</code> with a 17&nbsp;px glyph above a 1&nbsp;px
+            <code>--line-soft</code> rule — reading <code>The audience keeps loading as you
+            scroll.</code> The roster is a scrolling list, not a page of twelve.</td>
+        </tr>
+        <tr>
+          <td>Attendees</td><td>No bottom chrome</td>
+          <td class="t-note">Nothing is pinned to the foot of this screen, as in the capture. A
+            214-strong roster scrolls well past one screen, so a dock would scroll away with it
+            rather than stay put, and the room's own controls are one tap behind the back arrow.
+            The frame keeps <code>104&nbsp;px</code> of bottom padding as a spacer.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Speaking</td><td class="t-note">Four signals at once — a <code>4.5&nbsp;px</code> accent ring, an accent badge with an animating level meter, the name at 700, and the word <code>Speaking</code> in accent. Never hue alone.</td></tr>
+        <tr><td>Mic on, not talking</td><td class="t-note">Dark badge, plain microphone, name at 600, state reads <code>Mic on</code>. No ring.</td></tr>
+        <tr><td>Muted</td><td class="t-note">Dark badge, struck microphone, state reads <code>Muted</code>.</td></tr>
+        <tr><td>Host</td><td class="t-note">Accent <code>Host</code> tag on the portrait edge. The host can be speaking or not; the tag is independent of state.</td></tr>
+        <tr><td>You</td><td class="t-note">A white-wash <code>You</code> tag in the same slot. Present whether you are up on the stage or muted in it.</td></tr>
+        <tr><td>Portrait missing</td><td class="t-note">Sunken disc with a white monogram. Fixed tokens, so no API value can degrade it.</td></tr>
+        <tr><td>Mute toggled</td><td class="t-note">The dock control flips between an outline icon only and an accent pill reading <code>Muted</code>.</td></tr>
+        <tr><td>Hand raised</td><td class="t-note">Same treatment on the hand control — accent pill reading <code>Hand up</code>.</td></tr>
+        <tr><td>Reaction tray open</td><td class="t-note">The React control takes the accent wash and the tray appears above the dock. Tapping React again hides it.</td></tr>
+        <tr><td>Reaction chosen</td><td class="t-note">One reaction at a time carries the accent disc and accent label; choosing another releases the previous one.</td></tr>
+        <tr><td>Long room title</td><td class="t-note">Clamps at two lines at 34/800 rather than overflowing the bar.</td></tr>
+        <tr><td>Roster — host</td><td class="t-note">Carries the mic-state badge, so a host reads as speaking, mic-on or muted on the roster exactly as on the stage. In the capture the roster shows only muted; no other host state was captured.</td></tr>
+        <tr><td>Roster — audience</td><td class="t-note">No badge and no state word. The two roles are told apart by the heading they sit under <em>and</em> by whether the tile carries a badge — never by position alone.</td></tr>
+        <tr><td>Empty audience</td><td class="t-note">The heading stays, the count reads <code>0</code> and the note carries the copy. No empty-state string exists in the product for this; ours is new.</td></tr>
+        <tr><td>Long handle</td><td class="t-note">Truncates with an ellipsis at four columns. The tile width is fixed so the grid never reflows around one long name.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note"><code>prefers-reduced-motion</code> disables transitions <em>and</em> animations — the pulsing live dot, the level meters and the rising reactions all stop. The states remain readable because none of them depends on movement.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Tokens</b> — surfaces, hairlines, accent, hero gradient, radii and the type scale, copied verbatim from the sampled set</li>
+        <li><b>Hero field</b> — the <code>112deg</code> gradient and faint white triangles, reused as the room stage</li>
+        <li><b>Status pill</b> — the <code>LIVE NOW</code> geometry and type, relabelled <code>Live</code></li>
+        <li><b>Section container</b> — the bordered wrapper that holds the listener stack</li>
+        <li><b>Icon button</b> — <code>38&nbsp;px</code> circle on <code>#1C2129</code> with a 1.9-stroke white glyph</li>
+        <li><b>Bottom bar construction</b> — the control dock is the tab bar's pill, height, padding and shadow, with different contents</li>
+        <li><b>Screen title and avatar rules</b> — 34/800 uppercase, portraits cover-cropped at <code>center 22%</code></li>
+        <li><b>Photography</b> — the full set of sixteen distinct portraits from the export set, no face used twice</li>
+        <li><b>Attendees, from the capture</b> — the screen exists as a device screenshot: a pushed roster split into <code>HOSTS</code> and <code>AUDIENCE</code>, avatar-with-name tiles, a mic-state badge on hosts only, a back arrow as the sole exit. Structure, split and content are the capture's; the styling is ours.</li>
+        <li><b>Roster data</b> — the room record already returns a host list with names and avatars, an invited-member list, <code>total_speakers</code> and <code>total_members</code></li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The whole screen</b> — no Locker Room interior exists in this brand; both frames are new</li>
+        <li><b>The pitch as a stage</b> — replaces the grain-textured locker illustration and the blue-violet room glow, which is the only blue-shifted colour in the product</li>
+        <li><b>Speaker tile</b> — portrait, ring, state badge, level meter, role tag, name and state word as one component</li>
+        <li><b>Four-signal speaking state</b> — ring, badge, weight and word, so the state survives colour-blindness and a still screenshot</li>
+        <li><b>Control dock</b> — mute, hand, react and Leave, with on-state borrowed from the active tab and open-state from the accent wash</li>
+        <li><b>Leave as a neutral pill</b> — deliberately not the semantic red</li>
+        <li><b>Reaction tray</b> — six named reactions drawn as inline SVG, replacing emoji</li>
+        <li><b>Floating reaction discs</b> — the ambient feedback layer over the stage, with a count chip</li>
+        <li><b>Monogram avatar fallback</b> — token fill and white letter, replacing an API-supplied colour behind white text measured at <code>2.3:1</code> and unfixable on the client while the fill is data</li>
+        <li><b>Pre-join frame</b> — stat line, listener preview, permission card and Join action; the shipped flow drops you straight into the room</li>
+        <li><b>Two-line title clamp</b> — the shipped title bar has no wrap or truncation rule</li>
+        <li><b>One tile for a person, everywhere</b> — the roster uses the room's speaker tile rather than a second avatar treatment. In the capture the same two people render in a different family, case and weight one tap apart</li>
+        <li><b>Counts on the roster</b> — <code>6</code> hosts and <code>214</code> in the audience. The capture has no count on either heading and none in the header</li>
+        <li><b>A shell for the roster</b> — the capture puts attendees straight onto bare canvas with two thirds of the screen empty; here each role sits in the kit's section container</li>
+        <li><b>Denser audience tile</b> — <code>56&nbsp;px</code> four-up, because a roster of 214 at the capture's <code>145&nbsp;pt</code> is roughly seventy screens of scrolling</li>
+        <li><b>List note</b> — states that the audience keeps loading; the capture has no loading, empty or overflow treatment for this screen at all</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Can we have the build these screenshots came from?</h3>
+      <p>This is the first question and it blocks the others. The source we were given cannot render
+      any of these three screens, and it disagrees with the screenshots about the whole of Backchat —
+      including the room list, whose code we do hold. The most likely explanation is simply that
+      <span class="flag">our checkout is older than the captures</span>: someone has built the
+      attendees screen, and we are measuring a photograph of it rather than its code. If a newer
+      branch exists, three things change at once — we would be rebranding real screens instead of
+      reconstructing them, we could check our states against real ones, and the "no audio stack"
+      finding below would need re-testing against that branch rather than this one.</p>
+    </li>
+    <li>
+      <h3>Build the attendees screen, or retire the spec?</h3>
+      <p>Our recommendation is <span class="flag">build it</span>, and it is now built. The reasoning
+      is that it is the cheapest screen in the whole set and the only one whose data already exists:
+      the room record returns the host list, the invited-member list and both counts today, so the
+      roster is a view over data the API already sends. It also cost almost nothing to draw — it
+      introduces one new element, a count pill, and otherwise reuses the room's speaker tile and the
+      kit's section container. Retiring it would have left the people button in the live room leading
+      nowhere and left the one capture-backed spec in the set with no answer. The caveat is honest and
+      should be said out loud in the review: <strong>this screen cannot ship before the room it
+      belongs to exists</strong>, and the room needs an audio stack that this codebase does not have.
+      It is a design answer waiting on a runtime, not a runtime gap.</p>
+    </li>
+    <li>
+      <h3>Does the audience roster need search and an order?</h3>
+      <p>The capture has neither, and neither is built here. At 214 people that is a real problem: the
+      product's own search placeholder already reads <em>"Search for rooms, hosts or attendees…"</em>,
+      so the vocabulary exists even though the control does not. We also do not know what order the
+      list is in — arrival, alphabetical, or whatever the API returns. We have assumed
+      <span class="flag">API order, no search</span> because that is what the capture shows. Tell us
+      if either should change; a search field is a small addition, an order is a backend decision.</p>
+    </li>
+    <li>
+      <h3>Can a host act on someone from this list?</h3>
+      <p>The capture has no tap target on an attendee at all — no long-press, no mute, no remove, no
+      profile. We have matched it: <span class="flag">the roster is read-only</span>. That is
+      defensible for a member and hard to defend for a host, who has no other place to moderate a
+      room. If hosts need to invite up, mute or remove from here, the tile needs an affordance and
+      this screen needs a permission model, and both should be designed now rather than bolted on.</p>
+    </li>
+    <li>
+      <h3>Can we ship one colour for "live"?</h3>
+      <p>Across Backchat and the rooms the live state is currently drawn five different ways — amber
+      with a dot, a violet pill with a pink dot, a dark-violet pill with a white dot, framework red,
+      and one genuinely live room with no marker at all. This build uses
+      <span class="flag">one accent pill</span>, everywhere, and gives the room's own pill a slow
+      pulse so live-ness reads without a second hue.</p>
+    </li>
+    <li>
+      <h3>Who is allowed to speak, and how do they get there?</h3>
+      <p>The build assumes any listener can raise a hand and the host decides who comes up, and it says
+      so on screen. It also assumes you are <span class="flag">always muted on entry</span> and that
+      the OS microphone prompt is deferred until the host actually invites you. If moderation works
+      differently — co-hosts, pre-approved speakers, an open floor — the stage and the dock both
+      change.</p>
+    </li>
+    <li>
+      <h3>Is the six-reaction set right, and is it fixed?</h3>
+      <p>Clap, Fire, Goal, Love, Wow, Boo are drawn as inline SVG because the contract forbids emoji,
+      and six is what fits the tray at 375 wide. <code>Boo</code> is the one worth a decision — it is
+      the only negative reaction and it is aimed at people in the room. Confirm the set, and confirm
+      whether it is per-club configurable, because a variable set cannot use a fixed-width tray.</p>
+    </li>
+    <li>
+      <h3>What is the ceiling on the speaker grid?</h3>
+      <p>Three columns holds six speakers comfortably and nine at a push. The pre-join stat line
+      already claims <code>6 speaking</code>. If a room can promote twenty people the stage needs a
+      scroll or a second tier, and we should design that now rather than discover it in a busy match
+      room.</p>
+    </li>
+    <li>
+      <h3>Do avatar colours come from the API?</h3>
+      <p>The shipped app fills the fallback avatar disc with a per-user colour supplied by the API and
+      sets the monogram in white, which measures <code>2.3:1</code> and cannot be fixed on the client
+      while the fill is data. Here the fill is <span class="flag">a token</span> and the letter is
+      white — <code>18.8:1</code>, and no server value can change it. That means dropping per-user
+      avatar colour entirely, which is a product decision, not a styling one.</p>
+    </li>
+  </ol>
+</section>

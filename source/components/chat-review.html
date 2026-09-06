@@ -1,0 +1,1651 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Text chat · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; /* bordered section container */ --surface: #1C2129; /* cards, controls, tab bar */ --sunken: #13171E; /* inner panels, dark pills */ --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); /* hero */ --hero-a: #0D3617; --hero-b: #17481C; /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* --- carried in, nothing invented --------------------------- --red / --red-wash / --red-line the contract's single semantic red, and the two washes dialogs.html derives from it --neutral-wash dialogs.html — used where a state must read as neither red nor accent --h-cmp 44px. comments.html's composer minimum and its send-button diameter, and the platform tap minimum. Reused here unchanged. --r-bub 14px. The bubble radius. The shipped bubble is R≈36 (a full pill at one line); 14 is the only radius in this file that is not --r-card, --r-panel or --r-pill, and it exists because a pill-shaped bubble reads as a control. --tail 4px. The one corner that does not get --r-bub, which is how a bubble points at its author. */ --red: #E2564A; --red-wash: rgba(226,86,74,.12); --red-line: rgba(226,86,74,.28); --neutral-wash: rgba(255,255,255,.06); --h-cmp: 44px; --r-bub: 14px; --tail: 4px; /* portraits from _assets/avatars.css — locker-room.html mapping: 01 taythaytu (host) · 04 capitan_7 · 07 scout_mode · 10 fan_pulse 11 camp_nou_kid · 13 dons_mode · 16 dylan_n (you) · 17 tiki_taka_ana */ --av-01:url(data:image/jpeg;base64,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); --av-04:url(data:image/jpeg;base64,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); --av-07:url(data:image/jpeg;base64,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); --av-10:url(data:image/jpeg;base64,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); --av-13:url(data:image/jpeg;base64,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); --av-16:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAGwAAAgMBAQEAAAAAAAAAAAAABQYDBAcBAgD/xAA6EAACAQMCBAMHAgQFBQEAAAABAgMABBEFIQYSMUETIlEUMmFxgZHBsdEHFaHwI0JSYuElM0NjcoL/xAAaAQACAwEBAAAAAAAAAAAAAAADBAABBQIG/8QAKhEAAgIBBAIBAgYDAAAAAAAAAQIAAxEEEiExE0EiUWEFFDJCcYGhweH/2gAMAwEAAhEDEQA/AJdLZIbLCgRAklV7gfGl/im+jEeFHmbKjzdu+MUUuJkt7VFJdUK7LjbAxtSnKkmr6rHbIffYAr1JFHzhQsTCZsLmNml27W3A4jVfPOerDrn/AIoxommCG1wFA74+NSNZqzWtgpysCAsR9h+fvRyKFIFXAA5RsBXDH1GAPc8JCI8gADeuGMlgMZ+NdaYdD1rxJfW9lC011PHDGP8ANIwUVJJNJFyw5x0pN1V3Lyxk+XHnYn0PT69KKXP8QOHkDRm9Mg/9UbN+KBX3FOgXUDeFc+Y5yJIypO+fl2FQGQiLeo3DRK5kUtLL5o49zy5O+SewAA+tFNKd5uF5lDBpLeQSnJx13x99qFXxV3aYZbxFLA4BC5/vFWeGJRFqUtjPllmQoSSD5vn33qDuQ9Rr1eOOfSGEeGZ0Dl8gbdRj7UhXEfjTMVHmbckdF/2/Sn8RzfyM2w2fl5TsCSR/fWlVbaM3DIZULN03zgZ/XrQLCQOI9o61ss+R4E7ounJPOGkU+FGOZz6VY1i7nv8AxTDE5tYBjK7Z7b1dvjHpdgtqpHPICW261WsOaaylhjGGI5uvUd6E9nhG0d+49RpRrmOoP6V4X/ZlPVtReHfxlMuCfJnmb+mFG529Bmr/AAdpsVjZy63fKByL5SPT4UvWNpNruswwR5jjkdiTykeUd/xTvqKia4h0m3IEcIDSKBsCOg2H97U4D7mGR6kmgXbyXD3FyxDzvzBTtyj9ulNC3SOp3BJpagsniwFUcxPXbb96JxQSFQfNgfGrwO5MwfxVxANBsFMIV7qfIiDbgerH5Vn1tY6jxDeNNdTyTHO7Oc/YdqKcWTjUeJmt1GUtEEOf93U/rj6UY0C3SCDCD60pdZt4Ec09O889SC34TtIYuVk5mI3JGapapwbE6c9mhVyd07U8xRpyKSc5r2YlKnFJB3BzmaJqrIxiZRJouraVzcieLBzAlOb0OfpUVhM0eoxyoSVR+b3d8ZrR7yBRG2etJV1YY1rwI08tyQ2FA6jb8imqb2Y7Wieo0you5ZoshiuIfHt8EvEXQDHXHX4d96XdL0tJ7p5n3jRyAxOQ+D+lGbjNppvgcufIIjg+8DgYGfUULsna2s7ljty7BQO+Ph9KOTlxAgFdK5HZwB/cBa7O0+oycr+RSEUZ9P1qtDdyW2BGWUHffv6VHLJ40xYDO+TgDBxXVieVhyHrgZrPsJd8z1ekRNPR4/Q4jXw3pv8AJtJbUbqLFzImAuw5QTsoo7o+kB0M86KZJCHbPUn1NULHUINYveZSI7aBvKr+83xPpTdGY/DXlz67VqMfU8WJXWx82MY2617mNraontEiRh2CLzHGT6fap1ONyenYUH4gthfG3TBblJZMHBD9iD2NDsYquYamsWOFMzESwDiO6FxKsfiXUmZGYEL5j1NMkt7aaXZ+Lb3NvdMcckccuGfJwMZG/wC1VYrf/rlw00QSQjLLjuetfXujww3FvechiVZcPIh5eUEHDfekndWYZmgiMq4WEYNdvoFWS70K5SEn342DDHyo1Z3drqVql1bMyo2dnGD6UEk0zVYsGLUXMfUmVg6kfPA+9D4Ld4tM1LUvEniEjlkMUjLzqo3OPiRmqJT0J2A4PMOajLAh5PGTm/0lhmgdsUPFVqWQtypIQFG+QuRQ2WHTbm1W61WO+nndQWlz5VyNgAKpWsi2WoReFcmSBkfkc5JUFcdtx3/pRa0AYEGBusJQgiOF3NNeDEShUhzkLv1G/wB6hMEp0blVCWkOwAyM5qDh/Uh7RLb8oVHXpnIHwz647076SbS006Ngik4zmmAnyMCdQPGi46IP84mbtol5GOZbWUBhgeXFfezPbMFKsMdj61rVtdQ3iMV5GAO2DtVW6tdLu8xTwR59elcCgA5zHX/EzYNu3AiPw5YskYeQ4zuB/WnW2c+CFJzjcntWfaZqU0qxwAgdsg9PgfjT3pwLWqsNjjpTLEHqZJQgAmXzuM5znvVDUF/wvEBJaNuYAemN/wClWyGCDfOaQOONV1DTdbspIpHEIiJ8MMQr74YH6YoZUMMGdBimGEhtbyK+1qe5jcuje6xGMgYpiOpWlnbGS6CsjeUIRnn+GKRbKX2C58M52VdvQECi95aNqwtPCmCOquVJ3GduorPZfl9ppVuSv3ly6/lHIl5OIY4ub/sx8zog7EjOD26DFFZJ7S604Sw3EU0bL07EUIsdEivIVt7jU7d7hzypHNGYif8A5bb80J4h4PuNIiaeYXaW67sY5Qynfrjau9qmdFmH0MJW0E8EbwLp/tixZEbLIquF7Ag9QOmaXZ5H9ondolhIwuOXHLn1P0q7pesyLJbQwhjBGh8xUqQuN85qjcSG4d5WXPOTjrvj+zRaE+fMBe25QBO2s/PMrbAuO22PifSm2a5uW0qCK3AZmUAr1ztjr2pDUmCVZVY5PTBwd/0p54WvF1COHHMWjOPLvyn0PrTmMDiZ7ptYZ+sauGraWCxUTqA4wuCdj6UO1e6nGp8sZYevw+lNCxNgkjGAN8VWMen2kxmdUaUnPM25+lUIVR8uszL47STSdX9km6O2Ecgcr9/yK0XTDJ7Mm+5A60iWF0OKNCbzAXtichick4G35pj4X1o3MPgSgiVDh1Iwcj4VbD2IFXJGDGYtypgqfSkf+IdmZ4dOmC/+YxH/APWP2NOjy4GHzjFBtcNtcWBjlXnCOrR+bcODsa5PAJlj5MBEHimxktpI76IHwyAj4HQjpXNGvmuP8MSBXU5Un5b04NZx3to8Eq8yOuGFZxqlndaFqLIpIKNlG6cw9aQrO4bTNCwFDuHUc21tbJDFe2jywv6LzofmDQ6+1KwuXVLXxOXIzFztybdByk42ND7LjRUCpPDgf5jjIPrVDUtfW5dks15efYtjpRAp6xIdQMf8l3W9cjgga2gKtNLvK435R2UfqacraPTNZ0u2042/sdz4AEbgdfL3+dZI8ZNxyA7lsZNPaFrSK3KyEvb8uGJyWwNv0q2bxYx7htLT+ZVyex1B+qadPaXbWkgbxEPhoWOyjORj0GP1qLRNSl0nUEnDKsathtycnfBA7mmniq8stSgtL2MAzFSJB3GB0P1pNv8AmYeIxzuSwHr3O399KOtmH2fWCardULCMETYNO1qG6VXXzc4HbPard7psd2GZT4cnTptWe8PyFdPgdAegbGcDI7/uKcbHVHmnjhjj2AIOWJI+A36UXaYn51VsqcGZzp6z6BxMH5T7MXUONjkHYfTP4phXStSt+KfGtYFNvIMsS2Ap+XyoHBrEt/r1hJOkYCzp0X1YZrS/KH29egFRmH7YpUrbRv7ivxRxLcWNytnbKFlADO7gN1GQB+9VNF1J9Y9oS5l5rhcFV6Dl+A+f61R44GOIQwUDmhQ5z16j8UAhuJrS4S5t3KSocgigOC64jFbbGzNIiBjbp0qrq2n2WrRmG6jyrDZh1U+oNUtM4ssL5VjuStrcDqG2Rj8D2+Rou8aToHjdGHqGBpAoynmaaurjiZzqXBN7aOzWrC6jzty7Nj5VNo/Ccw5rjUIjGq+7G3Vj8fhTxI8VuuZrqGNR/qkAoXe8SaTboUjla5f0iG33NF32MMCBKVKcmLGo8Oxwj25ZDhpfcKjC98fLai9r4+rpI1pE0jqeZ4lX3R2279PSg2oanNqMgLKIo19yMHYf8008CxZsbybfzSqu3wGfzR/GWUBu5xXqzSx2DgwNNaXaP4bWsy43YlGBPfehuoFlhZiRzHBPM39O37bVpOqTvb6VdSLM4CQucZPoaykzLNKrXCllDZIU4z8KpKdrg54jB16PWVK8x04X0PU57CN4y8SNuvP0we9OUFpb6JbNLJIZXPXlXp8gKB6PxfbXVusUMZjKLjw/Tb57ivN/qD3KkCRlz0CnH60yOCfvBJUdQAcDA945mfQuYp45OhRw32Oa2QHmPMMb7isXOT9RWv6VcG50mzmAHnhQk/QVzM8RS/iBFi+s5yD54mUn5HP5pRp6/iDETYWc+PdlZemOq/8AFIgO9SSceMP1ANReGV2BYfJqmzXCRmpKkz2UQ0eG65W8WS5kjJLbcqqp++WquoC7AUSlweGbfrtfSj7xpQ2pJOnPWtA4MjMXDyv3lmdvmNh+Kz4kVqOiWvs/D9hHghhCGbB9d/zUlyrxXP4XDV2e8ihOvqQOlZjT9x5KqaPBErbyz7jocAE/kUgGpKlizuXtJ0ljO6n7/CtAt1t5rZLkyMEkUEebAx86zg9aZ+H5/FsDEfM0bYHmI2PT810CB3GtNXba/jRyuf8AM//Z); --av-17:url(data:image/jpeg;base64,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);}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk [hidden]{display:none!important}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 130px}
+.mk .title{margin:6px var(--gutter) 0; font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1; text-transform:uppercase;}
+.mk .title-sub{margin:9px var(--gutter) 0;font-size:13px;line-height:1.45;color:var(--muted)}
+.mk .label{margin:30px var(--gutter) 12px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .state-tag{margin:20px var(--gutter) 8px; font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .eyebrow{margin:0 0 6px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .explain{margin:9px var(--gutter) 0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .explain b{color:var(--text);font-weight:600}
+.mk .note{margin:16px var(--gutter) 0;padding:14px; border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);}
+.mk .note dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:9px 12px}
+.mk .note dt{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);white-space:nowrap;padding-top:2px;}
+.mk .note dd{margin:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .note dd b{color:var(--text);font-weight:600}
+.mk .avatar{border-radius:50%;flex:0 0 auto; background-color:#20262F;background-size:cover;background-position:center 22%;}
+.mk .roombar{padding:0 var(--gutter)}
+.mk .roombar__top{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.mk .roombar__top .spacer{flex:1}
+.mk .roombar__title{margin:0;font-size:28px;font-weight:800;letter-spacing:-.025em;line-height:1.04; text-transform:uppercase; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.mk .roombar__by{display:flex;align-items:center;gap:7px;margin:8px 0 0; font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.mk .roombar__by b{color:var(--text);font-weight:600}
+.mk .roombar__by svg{width:14px;height:14px;color:var(--muted)}
+.mk .dot-sep{width:3px;height:3px;border-radius:50%;background:var(--dim);flex:0 0 auto}
+.mk .status-pill{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 14px; border-radius:var(--r-pill);background:var(--acid-wash); font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--acid);white-space:nowrap;}
+.mk .status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mk .status-pill--beat::before{animation:beat 2.4s var(--ease) infinite}
+@keyframes beat{0%,72%,100%{opacity:1;transform:scale(1)}84%{opacity:.35;transform:scale(.7)}}
+.mk .icon-btn{position:relative; display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease);}
+.mk .icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .icon-btn svg{width:17px;height:17px}
+.mk .taxrow{display:flex;margin:14px var(--gutter) 0}
+.mk .tax{flex:1;display:flex;gap:4px;height:46px;padding:4px; border-radius:var(--r-pill);background:var(--sunken);}
+.mk .tax__btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px; height:38px;border:0;border-radius:var(--r-pill); background:transparent;color:var(--muted); font:inherit;font-size:13.5px;font-weight:600;letter-spacing:-.005em; cursor:pointer;transition:background .18s var(--ease),color .18s var(--ease);}
+.mk .tax__btn svg{width:16px;height:16px}
+.mk .tax__btn:hover{color:var(--text)}
+.mk .tax__btn[aria-selected="true"]{background:var(--acid);color:var(--acid-ink);font-weight:700}
+.mk .tax__btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .tax__n{font-variant-numeric:tabular-nums;font-weight:700}
+.mk .log{list-style:none;margin:14px var(--gutter) 0;padding:0}
+.mk .log--spec{margin-top:0}
+.mk .msg{display:flex;align-items:flex-end;gap:8px;margin-top:12px}
+.mk .log > li:first-child > .msg{margin-top:0}
+.mk .msg__av{width:28px;height:28px;margin-bottom:1px}
+.mk .msg__main{min-width:0;max-width:calc(100% - 36px)}
+.mk .msg__by{display:flex;align-items:center;gap:6px;margin:0 0 5px 2px}
+.mk .msg__name{font-size:12px;font-weight:600;letter-spacing:-.002em;color:var(--muted); white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .msg__when{flex:0 0 auto;font-size:11px;color:var(--dim);white-space:nowrap; font-variant-numeric:tabular-nums;}
+.mk .bub{position:relative; margin:0;padding:9px 12px 10px; border-radius:var(--r-bub) var(--r-bub) var(--r-bub) var(--tail); background:var(--surface); font-size:14px;line-height:1.42;color:var(--text); overflow-wrap:break-word;}
+.mk .bub + .bub{margin-top:3px}
+.mk .msg--cont .bub{border-bottom-left-radius:var(--r-bub)}
+.mk .msg--cont .bub:last-child{border-bottom-left-radius:var(--tail)}
+.mk .msg--cont{margin-top:3px;padding-left:36px}
+.mk .msg--cont .msg__main{max-width:calc(100% - 36px)}
+.mk .msg--you{justify-content:flex-end;padding-left:44px}
+.mk .msg--you .msg__by{justify-content:flex-end;margin-right:2px;margin-left:0}
+.mk .msg--you .msg__main{max-width:100%}
+.mk .msg--you .bub{background:var(--surface); box-shadow:inset 0 0 0 1px rgba(155,226,34,.30); border-radius:var(--r-bub) var(--r-bub) var(--tail) var(--r-bub);}
+.mk .msg--you.msg--cont .bub{border-bottom-right-radius:var(--r-bub)}
+.mk .msg--you.msg--cont .bub:last-child{border-bottom-right-radius:var(--tail)}
+.mk .msg--you .msg__name{color:var(--text);font-weight:600}
+.mk .msg--host .msg__name{color:var(--text);font-weight:700}
+.mk .msg--host .msg__av{box-shadow:0 0 0 1.5px rgba(153,160,174,.55)}
+.mk .msg--host .bub{box-shadow:inset 2px 0 0 rgba(255,255,255,.28)}
+.mk .crest-av{flex:0 0 auto;display:flex;align-items:center;justify-content:center; width:28px;height:28px;border-radius:8px;margin-bottom:1px; background:#20262F;box-shadow:inset 0 0 0 1px var(--line); font-size:9px;font-weight:800;letter-spacing:.02em;color:rgba(255,255,255,.85);}
+.mk .msg--club .msg__name{color:var(--text);font-weight:700}
+.mk .msg--club .bub{background:var(--sunken); box-shadow:inset 0 0 0 1px var(--line);}
+.mk .badge{flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; height:15px;padding:0 5px;border-radius:4px; background:rgba(255,255,255,.10);box-shadow:inset 0 0 0 1px var(--line); font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase; color:rgba(255,255,255,.82);}
+.mk .verif{flex:0 0 auto;width:13px;height:13px;color:var(--muted)}
+.mk .pin{display:inline-flex;align-items:center;gap:4px;margin:0 0 6px; font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);}
+.mk .pin svg{width:11px;height:11px}
+.mk .sys{margin:16px 4px 4px;padding:0 8px; font-size:11px;line-height:1.45;color:var(--dim);text-align:center;}
+.mk .sys svg{width:13px;height:13px;margin-right:6px; vertical-align:-2px;}
+.mk .sys b{color:var(--muted);font-weight:600}
+.mk .sys--gone{color:var(--muted)}
+.mk .sys--gone svg{color:var(--muted)}
+.mk .sys--gone b{color:var(--text)}
+.mk .unread{display:flex;align-items:center;gap:9px; margin:18px 0 6px;}
+.mk .unread::before,.mk .unread::after{content:"";flex:1;height:1px;background:rgba(155,226,34,.30)}
+.mk .unread span{display:inline-flex;align-items:center;gap:6px; height:24px;padding:0 11px;border-radius:var(--r-pill); background:var(--sunken);box-shadow:inset 0 0 0 1px rgba(155,226,34,.30); font-size:9.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase; color:var(--acid);font-variant-numeric:tabular-nums;}
+.mk .unread svg{width:11px;height:11px}
+.mk .stat{display:flex;align-items:center;justify-content:flex-end;gap:5px; margin:5px 2px 0; font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.mk .stat svg{width:12px;height:12px;flex:0 0 auto;color:var(--dim)}
+.mk .stat--fail{color:var(--muted)}
+.mk .stat--fail b{color:var(--text);font-weight:600}
+.mk .stat--fail svg{color:var(--red)}
+.mk .msg--pending .bub{opacity:.72}
+.mk .msg--fail .bub{box-shadow:inset 0 0 0 1px var(--red-line);}
+.mk .retry{display:flex;align-items:center;justify-content:flex-end;gap:2px;margin:2px -8px 0 0}
+.mk .linkbtn{position:relative; display:inline-flex;align-items:center;gap:5px; height:34px;padding:0 8px; border:0;border-radius:var(--r-pill);background:transparent; color:var(--acid);font:inherit;font-size:12px;font-weight:700;cursor:pointer; transition:background .16s var(--ease);}
+.mk .linkbtn::after{content:"";position:absolute;left:0;right:0;top:-5px;bottom:-5px}
+.mk .linkbtn svg{width:13px;height:13px}
+.mk .linkbtn:hover{background:rgba(255,255,255,.045)}
+.mk .linkbtn:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.mk .linkbtn--quiet{color:var(--muted)}
+.mk .msg__of{flex:0 0 auto;margin-bottom:1px; display:inline-flex;align-items:center;justify-content:center; width:28px;height:28px;border:0;border-radius:50%; background:transparent;color:var(--dim);cursor:pointer; transition:background .16s var(--ease),color .16s var(--ease);}
+.mk .msg__of:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.mk .msg__of:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.mk .msg__of svg{width:15px;height:15px}
+.mk .typing{display:flex;align-items:center;gap:8px;margin:12px 2px 0;min-height:28px}
+.mk .typing__faces{display:flex;align-items:center;flex:0 0 auto}
+.mk .typing__faces .avatar{width:22px;height:22px;box-shadow:0 0 0 2px var(--bg)}
+.mk .typing__faces .avatar + .avatar{margin-left:-8px}
+.mk .typing__dots{display:inline-flex;align-items:center;gap:3px;flex:0 0 auto; height:26px;padding:0 10px;border-radius:var(--r-pill);background:var(--surface);}
+.mk .typing__dots i{width:5px;height:5px;border-radius:50%;background:var(--muted); animation:typedot 1.25s var(--ease) infinite;}
+.mk .typing__dots i:nth-child(2){animation-delay:.16s}
+.mk .typing__dots i:nth-child(3){animation-delay:.32s}
+@keyframes typedot{0%,60%,100%{opacity:.32;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+.mk .typing__who{min-width:0;font-size:11.5px;line-height:1.3;color:var(--muted); overflow:hidden;text-overflow:ellipsis;}
+.mk .typing__who b{color:var(--text);font-weight:600}
+.mk .empty{margin:0 var(--gutter);padding:28px 20px 22px; border:1px solid var(--line);border-radius:var(--r-card);background:var(--section); display:flex;flex-direction:column;align-items:center;text-align:center;}
+.mk .tile{display:inline-flex;align-items:center;justify-content:center; width:52px;height:52px;border-radius:14px;flex:0 0 auto; background:var(--neutral-wash);color:var(--text);}
+.mk .tile svg{width:25px;height:25px}
+.mk .empty h3{margin:15px 0 0;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.mk .empty p{margin:7px 0 18px;font-size:12.5px;line-height:1.5;color:var(--muted);max-width:29ch}
+.mk .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px; min-height:52px;padding:0 22px; border:0;border-radius:var(--r-pill); background:var(--surface);color:var(--text); font:inherit;font-size:15px;font-weight:600;letter-spacing:-.005em;cursor:pointer; transition:background .18s var(--ease),transform .12s var(--ease);}
+.mk .btn svg{width:18px;height:18px;flex:0 0 auto}
+.mk .btn:hover{background:#222833}
+.mk .btn:active{transform:translateY(1px)}
+.mk .btn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .composer{position:fixed;left:0;right:0;bottom:0;z-index:20; max-width:420px;margin:0 auto; padding:10px var(--gutter) calc(10px + env(safe-area-inset-bottom,0px)); background:rgba(3,4,1,.93); -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px); border-top:1px solid var(--line);}
+.mk .composer--spec{position:static;max-width:none;margin:0 var(--gutter); padding:12px;border:1px solid var(--line); border-radius:var(--r-card);background:var(--section); -webkit-backdrop-filter:none;backdrop-filter:none;}
+.mk .cmp__row{display:flex;align-items:flex-end;gap:10px}
+.mk .cmp__av{width:30px;height:30px;margin-bottom:7px}
+.mk .cmp__field{flex:1;min-width:0;display:flex;flex-direction:column; min-height:var(--h-cmp);padding:10px 12px 9px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--surface); transition:border-color .16s var(--ease),box-shadow .16s var(--ease);}
+.mk .cmp__field:hover{border-color:rgba(255,255,255,.14)}
+.mk .cmp__field:focus-within,.mk .cmp__field.is-focus{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash);}
+.mk .cmp__field.is-over,.mk .cmp__field.is-over:focus-within{border-color:var(--red);box-shadow:0 0 0 3px var(--red-wash);}
+.mk .cmp__field.is-off{background:var(--sunken);border-color:var(--line-soft)}
+.mk .cmp__in{display:block;width:100%; min-height:23px;max-height:68px;overflow-y:auto; border:0;background:transparent;color:inherit; font:inherit;font-size:16px;line-height:1.44; padding:0;margin:0;outline:none;resize:none;}
+.mk .cmp__in::placeholder{color:var(--dim);opacity:1}
+.mk .cmp__in:disabled{color:var(--dim)}
+.mk .cmp__caret{display:block;position:relative;max-height:68px;overflow:hidden; font-size:16px;line-height:1.44;}
+.mk .cmp__caret::after{content:"";display:inline-block;vertical-align:-3px; width:1.5px;height:19px;margin-left:1px;background:var(--acid);}
+.mk .cmp__count{display:flex;align-items:center;gap:5px;align-self:flex-end;margin-top:6px; font-size:11px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;}
+.mk .cmp__count[hidden]{display:none}
+.mk .cmp__count svg{display:none;width:12px;height:12px}
+.mk .cmp__count.is-over{color:var(--red)}
+.mk .cmp__count.is-over svg{display:block}
+.mk .send{flex:0 0 auto; display:inline-flex;align-items:center;justify-content:center; width:var(--h-cmp);height:var(--h-cmp); border:0;border-radius:50%; background:var(--acid);color:var(--acid-ink);cursor:pointer; transition:background .18s var(--ease),transform .12s var(--ease),color .18s var(--ease);}
+.mk .send svg{width:19px;height:19px}
+.mk .send:hover{background:#A8EC33}
+.mk .send:active{transform:translateY(1px)}
+.mk .send:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .send[disabled]{background:var(--sunken);color:var(--dim);cursor:not-allowed;transform:none}
+.mk .send.is-busy{background:var(--sunken);color:var(--acid);cursor:progress}
+.mk .send.is-busy .send__plane{display:none}
+.mk .send__spin{display:none;transform-origin:12px 12px;animation:spin .9s linear infinite}
+.mk .send.is-busy .send__spin{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mk .cmp__strip{display:flex;align-items:center;gap:8px; margin:0 0 9px;padding:0 2px 0 4px; font-size:11.5px;line-height:1.3;color:var(--muted);}
+.mk .cmp__strip svg{width:14px;height:14px;flex:0 0 auto;color:var(--dim)}
+.mk .cmp__strip b{color:var(--text);font-weight:600}
+.mk .cmp__strip .ring{flex:0 0 auto;color:var(--muted);display:inline-flex}
+.mk .cmp__strip--warn svg{color:var(--red)}
+.mk .cmp__strip .linkbtn{margin-left:auto;height:28px}
+.mk .cmp__strip .linkbtn::after{top:-8px;bottom:-8px}
+.mk .muted-bar{display:flex;align-items:center;gap:10px; min-height:var(--h-cmp);padding:10px 12px; border-radius:var(--r-panel);background:var(--sunken); box-shadow:inset 0 0 0 1px var(--line);}
+.mk .muted-bar svg{width:17px;height:17px;flex:0 0 auto;color:var(--muted)}
+.mk .muted-bar p{margin:0;flex:1;min-width:0;font-size:12.5px;line-height:1.35;color:var(--muted)}
+.mk .muted-bar p b{color:var(--text);font-weight:600}
+.mk .jump{position:absolute;right:var(--gutter);top:-52px; display:inline-flex;align-items:center;gap:7px; height:38px;padding:0 6px 0 13px; border:0;border-radius:var(--r-pill); background:var(--surface);color:var(--text); box-shadow:0 10px 26px rgba(0,0,0,.55),inset 0 0 0 1px var(--line); font:inherit;font-size:12.5px;font-weight:600;cursor:pointer; transition:background .18s var(--ease),opacity .2s var(--ease);}
+.mk .jump::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .jump:hover{background:#222833}
+.mk .jump:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .jump__n{display:inline-flex;align-items:center;justify-content:center; min-width:24px;height:24px;padding:0 7px;border-radius:var(--r-pill); background:var(--acid-wash);color:var(--acid); font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;}
+.mk .jump__ar{width:15px;height:15px;margin-right:5px}
+.mk .jump[hidden]{display:none}
+.mk .jumpbay{position:relative;height:56px;margin:0 var(--gutter); border-radius:var(--r-panel);background:var(--sunken);}
+.mk .jumpbay .jump{top:9px;right:12px}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+  .mk .send__spin,.mk .typing__dots i,.mk .status-pill--beat::before{animation:none}
+  .mk .typing__dots i{opacity:.7}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Text chat</h1>
+    <p class="dek">The live text lane that runs beside the audio while a locker room is open. A member
+reads it with one thumb while somebody else is talking, types two words, and never comes back to
+it — which is why it is built nothing like the Comments thread that hangs off a proposal.</p>
+    <div class="meta">
+      <span><b>Component</b> chat</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><span class="side__item" aria-current="page">Text chat<span class="side__tag side__tag--new">This page</span></span></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">The third talking surface, and the fastest…</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="stagecol">
+      <div class="stage">
+        <div class="device" id="device">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk">
+<div class="mk__scroll"><main class="screen">
+
+  <h1 class="title">Text chat</h1>
+  <p class="title-sub">The live text lane that runs beside the audio while a locker room is open.
+     Ephemeral, fast, many short messages, read once and in order — not the threaded argument in
+     <b>Comments</b>, and not the audio stage in <b>Locker room</b>.</p>
+
+  <div class="note">
+    <dl>
+      <dt>Not a thread</dt>
+      <dd><b>Order is the only structure.</b> No replies, no indent, no sort control, no
+          “most agreed”. A chat you can re-order is a comment thread with a worse composer.</dd>
+      <dt>Not a ballot</dt>
+      <dd><b>Nothing here is counted.</b> Comments carries agree / disagree as ink; chat does not
+          carry agreement at all. No tallies, no percentages, no thresholds.</dd>
+      <dt>One accent fill</dt>
+      <dd><b>The send button, and nothing else.</b> Your own messages, the host, the club and the
+          unread divider all use accent as <em>ink or a hairline</em> — never as a fill.</dd>
+      <dt>In the code</dt>
+      <dd><b>None of this exists yet.</b> <code>chat_body.dart</code> is the Backchat home
+          scaffold — room lists and a refresh. There is no message model, no composer and no chat
+          socket anywhere in the repository.</dd>
+    </dl>
+  </div>
+
+  <!-- ============================================================
+       1 · THE LIVE CHAT
+       ============================================================ -->
+  <h2 class="label">Live</h2>
+
+  <header class="roombar">
+    <div class="roombar__top">
+      <button class="icon-btn" type="button" aria-label="Minimise room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>
+      </button>
+      <span class="spacer"></span>
+      <span class="status-pill status-pill--beat">Live</span>
+      <button class="icon-btn" type="button" aria-label="Everyone in the room, 220 people">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="9.5" cy="8" r="3.3"/><path d="M3.5 19a6 6 0 0 1 12 0"/>
+          <path d="M16.3 5.6a3.3 3.3 0 0 1 0 6.3"/><path d="M17.2 19a6.4 6.4 0 0 0-1.7-4.2"/>
+        </svg>
+      </button>
+    </div>
+    <h1 class="roombar__title">Post-Match Breakdown</h1>
+    <p class="roombar__by">
+      Hosted by <b>taythaytu</b>
+      <span class="dot-sep"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="9.5" cy="8" r="3.3"/><path d="M3.5 19a6 6 0 0 1 12 0"/>
+        <path d="M16.3 5.6a3.3 3.3 0 0 1 0 6.3"/><path d="M17.2 19a6.4 6.4 0 0 0-1.7-4.2"/>
+      </svg>
+      214 listening
+    </p>
+  </header>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Room view" data-tax>
+      <button class="tax__btn" type="button" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>
+        </svg>
+        Stage
+      </button>
+      <button class="tax__btn" type="button" role="tab" aria-selected="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.5 12.6c0 3.9-3.8 7-8.5 7a10 10 0 0 1-2.4-.3L4.6 21l1-3.6a6.5 6.5 0 0 1-2.1-4.8c0-3.9 3.8-7 8.5-7s8.5 3.1 8.5 7Z"/>
+        </svg>
+        Chat <span class="tax__n">318</span>
+      </button>
+    </div>
+  </div>
+  <p class="explain">The audio keeps playing while you read and type. Two views, one room —
+     switching never leaves it, and the mic state on the Stage is untouched.</p>
+
+  <ol class="log">
+
+    <!-- system: room opened -->
+    <li>
+      <p class="sys">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.5 3.5H6.5a1.5 1.5 0 0 0-1.5 1.5v14a1.5 1.5 0 0 0 1.5 1.5h8"/><path d="M11 12h.01"/><path d="M14.5 3.5 19 6v12l-4.5 2.5"/>
+        </svg>
+        Room opened by <b>taythaytu</b> · 19:04
+      </p>
+    </li>
+
+    <!-- club / official account, pinned -->
+    <li>
+      <article class="msg msg--club">
+        <span class="crest-av" role="img" aria-label="FC Barcelona crest">BAR</span>
+        <div class="msg__main">
+          <p class="pin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 13.6V21"/><path d="M8 3h8l-1.1 5.7L18 12.1H6l3.1-3.4L8 3Z"/>
+            </svg>
+            Pinned by the club
+          </p>
+          <div class="msg__by">
+            <span class="msg__name">FC Barcelona</span>
+            <svg class="verif" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Verified official account">
+              <path d="M12 2.9 19.4 5.6v5.4c0 4.3-3 7.6-7.4 9.1-4.4-1.5-7.4-4.8-7.4-9.1V5.6L12 2.9Z"/>
+              <path d="m8.8 11.7 2.4 2.4 4-4.4"/>
+            </svg>
+            <span class="badge">Club</span>
+            <span class="msg__when">19:36</span>
+          </div>
+          <p class="bub">Full time at the Camp Nou: Barcelona 2 Girona 1. Yamal 31', Torres 78'.
+            The manager is in the press room at 19:45 and we'll post the link in here.</p>
+        </div>
+      </article>
+    </li>
+
+    <!-- a member, two consecutive messages -->
+    <li>
+      <article class="msg">
+        <div class="avatar msg__av" style="background-image:var(--av-04)" role="img" aria-label="capitan_7"></div>
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">capitan_7</span>
+            <span class="msg__when">19:38</span>
+          </div>
+          <p class="bub">Torres has to start the derby after that.</p>
+        </div>
+      </article>
+      <article class="msg msg--cont">
+        <div class="msg__main">
+          <p class="bub">Two goals off the bench in a fortnight and he's still behind Lewandowski
+            on Sunday. Explain that one.</p>
+        </div>
+      </article>
+    </li>
+
+    <!-- the host -->
+    <li>
+      <article class="msg msg--host">
+        <div class="avatar msg__av" style="background-image:var(--av-01)" role="img" aria-label="taythaytu"></div>
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">taythaytu</span>
+            <span class="badge">Host</span>
+            <span class="msg__when">19:39</span>
+          </div>
+          <p class="bub">Mic's open for the next ten minutes — hand up on the Stage if you want it.
+            Keep the set-piece argument in here so we don't lose it.</p>
+        </div>
+      </article>
+    </li>
+
+    <li>
+      <article class="msg">
+        <div class="avatar msg__av" style="background-image:var(--av-07)" role="img" aria-label="scout_mode"></div>
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">scout_mode</span>
+            <span class="msg__when">19:39</span>
+          </div>
+          <p class="bub">Second goal was the same left-channel overload we've run since August.
+            Girona never once dropped their winger in to help.</p>
+        </div>
+      </article>
+    </li>
+
+    <!-- system: batched joins -->
+    <li>
+      <p class="sys">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 4.5h4a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5h-4"/><path d="M11 8.5 14.5 12 11 15.5"/><path d="M14.5 12H4.5"/>
+        </svg>
+        <b>camp_nou_kid</b>, <b>tiki_taka_ana</b> and 4 others joined
+      </p>
+    </li>
+
+    <!-- the viewer's own message -->
+    <li>
+      <article class="msg msg--you">
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">You</span>
+            <span class="msg__when">19:40</span>
+          </div>
+          <p class="bub">Their right back was booked in the 20th and got no cover for the rest of
+            the half. It was always going down that side.</p>
+        </div>
+      </article>
+    </li>
+
+    <li>
+      <article class="msg">
+        <div class="avatar msg__av" style="background-image:var(--av-10)" role="img" aria-label="fan_pulse"></div>
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">fan_pulse</span>
+            <span class="msg__when">19:41</span>
+          </div>
+          <p class="bub">We still conceded from a corner. Fourth time in five games.</p>
+        </div>
+      </article>
+      <article class="msg msg--cont">
+        <div class="msg__main">
+          <p class="bub">Nobody wants to talk about it while we're winning.</p>
+        </div>
+      </article>
+    </li>
+
+    <!-- unread divider -->
+    <li>
+      <p class="unread">
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5v13M6.5 13l5.5 5.5L17.5 13"/></svg>
+          12 new
+        </span>
+      </p>
+    </li>
+
+    <li>
+      <article class="msg">
+        <div class="avatar msg__av" style="background-image:var(--av-13)" role="img" aria-label="dons_mode"></div>
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">dons_mode</span>
+            <span class="msg__when">19:41</span>
+          </div>
+          <p class="bub">Set pieces are a coaching problem, not a personnel one. Same six men zonal
+            every week and it hasn't held since October.</p>
+        </div>
+      </article>
+    </li>
+
+    <!-- moderated: removed by a moderator -->
+    <li>
+      <p class="sys sys--gone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 3l18 18"/>
+          <path d="M10.7 5.4A9.9 9.9 0 0 1 12 5.3c5 0 8.6 3.6 9.7 6.7-.4 1.2-1.2 2.6-2.4 3.8"/>
+          <path d="M6.3 7C4.4 8.3 3.1 10.1 2.3 12c1.1 3.1 4.7 6.7 9.7 6.7 1.8 0 3.4-.4 4.8-1.2"/>
+          <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+        </svg>
+        A message from <b>transfer_brig</b> was removed by a moderator
+      </p>
+    </li>
+
+    <li>
+      <article class="msg">
+        <div class="avatar msg__av" style="background-image:var(--av-17)" role="img" aria-label="tiki_taka_ana"></div>
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">tiki_taka_ana</span>
+            <span class="msg__when">19:42</span>
+          </div>
+          <p class="bub">Give the kid the derby and stop overthinking it.</p>
+        </div>
+      </article>
+    </li>
+
+    <!-- own message, in flight -->
+    <li>
+      <article class="msg msg--you msg--pending">
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">You</span>
+            <span class="msg__when">19:42</span>
+          </div>
+          <p class="bub">Zonal isn't the problem, first contact is. Watch who attacks the ball at
+            the near post.</p>
+          <p class="stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.8v4.4l3 2"/></svg>
+            Sending
+          </p>
+        </div>
+      </article>
+    </li>
+
+    <!-- own message, failed -->
+    <li>
+      <article class="msg msg--you msg--fail">
+        <div class="msg__main">
+          <p class="bub">Nobody does.</p>
+          <p class="stat stat--fail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.6 21.4 20H2.6L12 3.6Z"/><path d="M12 10v4M12 16.8v.1"/></svg>
+            <b>Not sent</b> · no connection
+          </p>
+          <p class="retry">
+            <button class="linkbtn linkbtn--quiet" type="button">Delete</button>
+            <button class="linkbtn" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5A8 8 0 1 1 17.3 6"/><path d="M20.5 4v4.2h-4.2"/></svg>
+              Retry
+            </button>
+          </p>
+        </div>
+      </article>
+    </li>
+
+    <!-- typing -->
+    <li>
+      <p class="typing" aria-live="polite">
+        <span class="typing__faces" aria-hidden="true">
+          <span class="avatar" style="background-image:var(--av-04)"></span>
+          <span class="avatar" style="background-image:var(--av-07)"></span>
+        </span>
+        <span class="typing__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="typing__who"><b>capitan_7</b>, <b>scout_mode</b> and 1 other are typing</span>
+      </p>
+      <span data-foot aria-hidden="true"></span>
+    </li>
+  </ol>
+
+  <!-- ============================================================
+       2 · WHO IS SPEAKING
+       ============================================================ -->
+  <h2 class="label">Who is speaking</h2>
+  <p class="explain">Four kinds of author, and not one of them is told apart by hue. Every marker
+     below is a <b>position</b>, a <b>shape</b>, a <b>weight</b>, a <b>hairline</b> or a
+     <b>word</b>.</p>
+
+  <p class="state-tag">A member · the baseline</p>
+  <ol class="log log--spec">
+    <li>
+      <article class="msg">
+        <div class="avatar msg__av" style="background-image:var(--av-10)" role="img" aria-label="fan_pulse"></div>
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">fan_pulse</span>
+            <span class="msg__when">19:41</span>
+          </div>
+          <p class="bub">Round portrait, left aligned, tail bottom-left. Name in --muted 12/600.</p>
+        </div>
+        <button class="msg__of" type="button" aria-label="More options for fan_pulse's message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+            <path d="M12 6.4v.01M12 12v.01M12 17.6v.01"/>
+          </svg>
+        </button>
+      </article>
+    </li>
+  </ol>
+  <p class="explain">The overflow is shown here for the record. On the live surface it is revealed
+     by press-and-hold rather than sitting on all forty messages on screen — but it is still the
+     <b>only</b> route to Report, exactly as in Comments.</p>
+
+  <p class="state-tag">You · position, hairline, word</p>
+  <ol class="log log--spec">
+    <li>
+      <article class="msg msg--you">
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">You</span>
+            <span class="msg__when">19:40</span>
+          </div>
+          <p class="bub">Right aligned · no portrait · 1 px accent hairline · the literal word
+            “You”. No accent fill: that belongs to the send button.</p>
+        </div>
+      </article>
+    </li>
+  </ol>
+
+  <p class="state-tag">The host · badge, weight, rail, ring</p>
+  <ol class="log log--spec">
+    <li>
+      <article class="msg msg--host">
+        <div class="avatar msg__av" style="background-image:var(--av-01)" role="img" aria-label="taythaytu"></div>
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">taythaytu</span>
+            <span class="badge">Host</span>
+            <span class="msg__when">19:39</span>
+          </div>
+          <p class="bub">A <b>HOST</b> tile, the name at white 700, a 2 px white rail on the leading
+            edge, and a 1.5 px ring on the portrait.</p>
+        </div>
+      </article>
+    </li>
+  </ol>
+
+  <p class="state-tag">The club · crest tile, square, badge, shield, sunken</p>
+  <ol class="log log--spec">
+    <li>
+      <article class="msg msg--club">
+        <span class="crest-av" role="img" aria-label="FC Barcelona crest">BAR</span>
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">FC Barcelona</span>
+            <svg class="verif" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Verified official account">
+              <path d="M12 2.9 19.4 5.6v5.4c0 4.3-3 7.6-7.4 9.1-4.4-1.5-7.4-4.8-7.4-9.1V5.6L12 2.9Z"/>
+              <path d="m8.8 11.7 2.4 2.4 4-4.4"/>
+            </svg>
+            <span class="badge">Club</span>
+            <span class="msg__when">19:36</span>
+          </div>
+          <p class="bub">The portrait becomes an 8 px rounded square — an institution is not a
+            person — and the bubble drops to --sunken with a 1 px --line ring.</p>
+        </div>
+      </article>
+    </li>
+  </ol>
+
+  <p class="state-tag">Grouping · same author, inside two minutes</p>
+  <ol class="log log--spec">
+    <li>
+      <article class="msg">
+        <div class="avatar msg__av" style="background-image:var(--av-04)" role="img" aria-label="capitan_7"></div>
+        <div class="msg__main">
+          <div class="msg__by">
+            <span class="msg__name">capitan_7</span>
+            <span class="msg__when">19:38</span>
+          </div>
+          <p class="bub">First message keeps the portrait and the name row.</p>
+        </div>
+      </article>
+      <article class="msg msg--cont">
+        <div class="msg__main">
+          <p class="bub">The next one holds the 36 px avatar column open and drops the header.</p>
+          <p class="bub">Gap goes 12 → 3, and only the last bubble in the run keeps its tail.</p>
+        </div>
+      </article>
+    </li>
+  </ol>
+  <p class="explain">A new author, a two-minute gap, or a system line in between all break the run.
+     Individual times inside a run are available on press — the group header carries the one that
+     matters.</p>
+
+  <p class="state-tag">System lines · joined, left, opened, removed</p>
+  <ol class="log log--spec">
+    <li>
+      <p class="sys">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 4.5h4a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5h-4"/><path d="M11 8.5 14.5 12 11 15.5"/><path d="M14.5 12H4.5"/>
+        </svg>
+        <b>blaugrana_j</b> joined
+      </p>
+    </li>
+    <li>
+      <p class="sys">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M10 4.5H6a1.5 1.5 0 0 0-1.5 1.5v12A1.5 1.5 0 0 0 6 19.5h4"/><path d="M16.5 8.5 20 12l-3.5 3.5"/><path d="M20 12H9.5"/>
+        </svg>
+        <b>pressing_unit</b> left
+      </p>
+    </li>
+    <li>
+      <p class="sys">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 4.5h4a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5h-4"/><path d="M11 8.5 14.5 12 11 15.5"/><path d="M14.5 12H4.5"/>
+        </svg>
+        <b>camp_nou_kid</b>, <b>tiki_taka_ana</b> and 4 others joined
+      </p>
+    </li>
+    <li>
+      <p class="sys sys--gone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 3l18 18"/>
+          <path d="M10.7 5.4A9.9 9.9 0 0 1 12 5.3c5 0 8.6 3.6 9.7 6.7-.4 1.2-1.2 2.6-2.4 3.8"/>
+          <path d="M6.3 7C4.4 8.3 3.1 10.1 2.3 12c1.1 3.1 4.7 6.7 9.7 6.7 1.8 0 3.4-.4 4.8-1.2"/>
+          <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+        </svg>
+        A message from <b>transfer_brig</b> was removed by a moderator
+      </p>
+    </li>
+  </ol>
+  <p class="explain">Arrivals and departures inside a 30-second window batch into one line, capped
+     at two names plus a count. A 200-person room that logged every join would be a list of
+     arrivals with a conversation buried in it. Removal keeps the <b>Comments</b> rule: an icon,
+     a plain sentence, and no colour doing the work.</p>
+
+  <!-- ============================================================
+       3 · MESSAGE STATES
+       ============================================================ -->
+  <h2 class="label">Sending</h2>
+
+  <p class="state-tag">Sending · in flight</p>
+  <ol class="log log--spec">
+    <li>
+      <article class="msg msg--you msg--pending">
+        <div class="msg__main">
+          <p class="bub">Watch who attacks the ball at the near post.</p>
+          <p class="stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.8v4.4l3 2"/></svg>
+            Sending
+          </p>
+        </div>
+      </article>
+    </li>
+  </ol>
+  <p class="explain">The bubble is placed immediately at 72% opacity with a clock and the word
+     <b>Sending</b>. It is <em>not</em> hatched: the contract reserves the 135° accent hatch for
+     genuinely paused states, and a message in flight is the opposite of paused.</p>
+
+  <p class="state-tag">Failed · red hairline, red glyph, the word, two named controls</p>
+  <ol class="log log--spec">
+    <li>
+      <article class="msg msg--you msg--fail">
+        <div class="msg__main">
+          <p class="bub">Nobody does.</p>
+          <p class="stat stat--fail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.6 21.4 20H2.6L12 3.6Z"/><path d="M12 10v4M12 16.8v.1"/></svg>
+            <b>Not sent</b> · no connection
+          </p>
+          <p class="retry">
+            <button class="linkbtn linkbtn--quiet" type="button">Delete</button>
+            <button class="linkbtn" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5A8 8 0 1 1 17.3 6"/><path d="M20.5 4v4.2h-4.2"/></svg>
+              Retry
+            </button>
+          </p>
+        </div>
+      </article>
+    </li>
+  </ol>
+  <p class="explain">The text stays white and full-contrast — a failure is loud, not disabled. Red
+     appears only on the 12 px glyph and the 1 px hairline, both at or above the 3:1 non-text
+     floor, and it is paired with the words <b>Not sent</b> either way. <b>Retry</b> re-sends in
+     place and keeps the original position in the log; <b>Delete</b> removes it with no
+     confirmation, because nothing has left the device.</p>
+
+  <p class="state-tag">Jump to latest</p>
+  <div class="jumpbay">
+    <button class="jump" type="button">
+      <svg class="jump__ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v13M6 12.5l6 6 6-6"/></svg>
+      Latest
+      <span class="jump__n">4</span>
+    </button>
+  </div>
+  <p class="explain">Sits in the pinned layer above the composer, so it never scrolls away and
+     never lands on a message. It appears once the log is more than one screen from the foot, and
+     carries the unread count when there is one — with no count when the member simply scrolled
+     up. The log auto-scrolls <b>only</b> when already at the foot; it never yanks the view while
+     somebody is reading back.</p>
+
+  <!-- ============================================================
+       4 · COMPOSER
+       ============================================================ -->
+  <h2 class="label">Composer</h2>
+  <p class="explain">Comments' composer, unchanged: 12 px radius, <b>--surface</b> fill, the
+     accent border and 3 px <b>--acid-wash</b> focus ring every field in the kit uses, 16 px value
+     text, a <b>44 px</b> minimum height and a <b>44 px</b> accent send disc. Four things are
+     tuned for a live surface — the growth cap drops to <b>68 px</b> (three lines), the limit to
+     <b>300</b> characters, the counter appears at <b>40</b> remaining, and
+     <b>Return sends</b> while Shift+Return makes a newline.</p>
+
+  <p class="state-tag">Empty · send disabled</p>
+  <div class="composer composer--spec">
+    <div class="cmp__row">
+      <div class="avatar cmp__av" style="background-image:var(--av-16)" role="img" aria-label="You"></div>
+      <div class="cmp__field">
+        <span class="cmp__caret" style="color:var(--dim)">Message the room</span>
+      </div>
+      <span class="send" aria-hidden="true" style="background:var(--sunken);color:var(--dim)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/><path d="M10.9 14 20.5 4"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+
+  <p class="state-tag">Composing · counter at 40 remaining</p>
+  <div class="composer composer--spec">
+    <div class="cmp__row">
+      <div class="avatar cmp__av" style="background-image:var(--av-16)" role="img" aria-label="You"></div>
+      <div class="cmp__field is-focus">
+        <span class="cmp__caret">Zonal isn't the problem, first contact is. Watch who attacks the ball at the near post and it's the same</span>
+        <span class="cmp__count">38 left</span>
+      </div>
+      <span class="send" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/><path d="M10.9 14 20.5 4"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+  <p class="explain">Three lines is the cap. Past it the field scrolls rather than growing: the
+     field tops out at <b>108 px</b> with the counter showing, and the whole band at
+     <b>128 px</b> — a chat that needs a fourth line wants the Stage.</p>
+
+  <p class="state-tag">Reconnecting · the field survives, the send waits</p>
+  <div class="composer composer--spec">
+    <p class="cmp__strip">
+      <span class="ring" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="15" height="15">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".2"/>
+          <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+      </span>
+      <b>Reconnecting</b> — anything you send now goes out when the room is back
+    </p>
+    <div class="cmp__row">
+      <div class="avatar cmp__av" style="background-image:var(--av-16)" role="img" aria-label="You"></div>
+      <div class="cmp__field is-off">
+        <span class="cmp__caret" style="color:var(--dim)">Message the room</span>
+      </div>
+      <span class="send is-busy" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+          <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+  <p class="explain">The field keeps whatever was typed. A live surface that silently discards a
+     half-written message on a dropped socket is the single most-reported failure in a chat, and
+     it costs nothing to queue.</p>
+
+  <p class="state-tag">Muted · the field is replaced, not greyed</p>
+  <div class="composer composer--spec">
+    <div class="muted-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3.5 3.5 20.5 20.5"/><path d="M12 3.5a3 3 0 0 1 3 3v4.2M9 8.1v3.4a3 3 0 0 0 4.6 2.6"/>
+        <path d="M5.5 11.5a6.5 6.5 0 0 0 9.8 5.6M18.5 11.5v.6"/><path d="M12 18.5V21"/>
+      </svg>
+      <p><b>You're muted in this room until 19:58.</b> A moderator muted you for rule 3 — no abuse
+        aimed at named players or staff. You can still read.</p>
+      <button class="linkbtn" type="button">Appeal</button>
+    </div>
+  </div>
+  <p class="explain">A greyed field with a live placeholder invites a member to type a paragraph
+     into a box that throws it away. The field is removed and the reason, the end time and a route
+     to appeal take its place — the same construction as the moderation states in
+     <b>Comments</b>.</p>
+
+  <!-- ============================================================
+       5 · EMPTY
+       ============================================================ -->
+  <h2 class="label">Empty</h2>
+  <div class="empty">
+    <span class="tile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20.5 12.6c0 3.9-3.8 7-8.5 7a10 10 0 0 1-2.4-.3L4.6 21l1-3.6a6.5 6.5 0 0 1-2.1-4.8c0-3.9 3.8-7 8.5-7s8.5 3.1 8.5 7Z"/>
+        <path d="M8.6 12.4h.01M12 12.4h.01M15.4 12.4h.01"/>
+      </svg>
+    </span>
+    <h3>Nothing typed yet</h3>
+    <p>The room is live and 214 people are listening. Say the first thing.</p>
+    <button class="btn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 20h4L20.4 7.6a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="M15 6.1 18.5 9.6"/>
+      </svg>
+      Write a message
+    </button>
+  </div>
+  <p class="explain">Secondary pill, per <b>Comments</b> — a full-width accent pill in a talking
+     surface is the ballot's <em>Vote</em> button and nothing here is allowed to look like it. It
+     names the room's size, because “be first in an empty room” and “be first in front of 214
+     people” are different decisions.</p>
+
+</main></div>
+
+<!-- ============================================================
+     PINNED COMPOSER — outside <main>, per the contract.
+     It also carries the library's `tabbar` class, which is the hook
+     the review builder uses to keep bottom-pinned chrome pinned
+     inside the device frame. There is no tab bar inside a live room;
+     the composer owns the bottom of the screen.
+     ============================================================ -->
+<div class="composer tabbar" data-cmp>
+  <button class="jump" type="button" data-jump hidden>
+    <svg class="jump__ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v13M6 12.5l6 6 6-6"/></svg>
+    Latest
+    <span class="jump__n" data-jump-n>4</span>
+  </button>
+
+  <div class="cmp__row">
+    <div class="avatar cmp__av" style="background-image:var(--av-16)" role="img" aria-label="You"></div>
+    <div class="cmp__field">
+      <textarea class="cmp__in" rows="1" maxlength="340"
+                placeholder="Message the room" aria-label="Message the room"
+                aria-describedby="cmp-count"></textarea>
+      <span class="cmp__count" id="cmp-count" hidden aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4M12 17v.01"/></svg>
+        <span data-count-text>40 left</span>
+      </span>
+    </div>
+    <button class="send" type="button" aria-label="Send message" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="send__plane" d="M4 11.5 20.5 4 13 20.5l-2.1-6.5L4 11.5Z"/>
+        <path class="send__plane" d="M10.9 14 20.5 4"/>
+        <path class="send__spin" stroke-width="2.2" d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>
+      </svg>
+    </button>
+  </div>
+</div>
+</div>
+          </div>
+        </div>
+        <div class="stage__controls">
+          <div class="seg" role="group" aria-label="Device width">
+            <button type="button" data-w="375" aria-pressed="true">375</button>
+            <button type="button" data-w="414" aria-pressed="false">414</button>
+            <button type="button" data-w="430" aria-pressed="false">430</button>
+          </div>
+        </div>
+        <p class="stage__hint">Live and interactive — scroll the screen, tap the controls, switch width.</p>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The third talking surface, and the fastest one</h2>
+  <p>SportsHeist now has three places where members say things, and they are easy to confuse.
+    <b>Locker room</b> is the audio stage — hands up, mics, speakers, reactions, and nobody types.
+    <b>Comments</b> is the argument attached to a War Room proposal — a bordered panel of rows,
+    threaded one level, sortable, with agree and disagree counts, meant to be re-read the day a
+    vote closes. This screen is neither. It is the chat lane inside a room that is already live:
+    ephemeral, fast, dozens of short messages, read once and in the order they arrived.</p>
+  <p>Four rules keep it from drifting into either of the others. <b>Order is the only
+    structure</b> — no replies, no indent, no sort control, because a chat you can re-order is a
+    comment thread with a worse composer. <b>Nothing is counted</b> — Comments carries agreement
+    as ink, chat does not carry agreement at all. <b>Bubbles on the canvas, not rows in a
+    panel</b>, because a bubble's width tells you a message is two words long before you read it.
+    And <b>one accent fill on the whole screen — the send button</b>, exactly as in Comments,
+    where it means "post" and nothing else.</p>
+  <p>The screen is a proposal in full. The four kinds of author, the grouping rule, the system
+    lines, the unread divider, the jump-to-latest control, the typing indicator, every send state
+    and the moderation states are all new; see <b>Provenance</b> for the line-by-line split.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Room bar</td><td>Minimise · Live pill · people</td><td class="t-note">Lifted whole from <code>locker-room.html</code>. <code>38px</code> circular icon buttons on <code>--surface</code> with an <code>::after</code> inset to a <code>44px</code> hit area; the Live pill is the kit status pill — <code>--acid-wash</code> fill, <code>32px</code>, accent <code>11/700/.11em</code> caps, <code>6px</code> leading dot that pulses on a <code>2.4s</code> cycle.</td></tr>
+        <tr><td>Room bar</td><td>Topic + byline</td><td class="t-note">Topic <code>28/800/-.025em</code> uppercase, clamped to two lines. Byline <code>12.5px</code> <code>--muted</code>: <b>Hosted by taythaytu · 214 listening</b>, tabular figures.</td></tr>
+        <tr><td>Room bar</td><td>Stage / Chat switch</td><td class="t-note">The <code>.tax</code> segmented control from <code>results-actions.html</code>, unchanged: <code>46px</code> track on <code>--sunken</code>, <code>38px</code> buttons, selected item takes the accent fill with <code>--acid-ink</code>. It is chrome — it switches views, it holds no opinion — so it is allowed the fill. The unread total sits on the Chat side.</td></tr>
+        <tr><td>Log</td><td>Container</td><td class="t-note">A plain list on the canvas at the <code>16px</code> gutter. <b>No panel, no card, no hairlines</b> — the opposite of the Comments thread, which is a <code>--surface</code> panel divided by <code>--line-soft</code> rules.</td></tr>
+        <tr><td>Log</td><td>Bubble</td><td class="t-note"><code>--surface</code> fill, <code>14px</code> radius with the tail corner at <code>4px</code>, <code>9px 12px 10px</code> padding, text <code>14/1.42</code> white — <code>14.5:1</code> on <code>--surface</code>. Max width <code>calc(100% − 36px)</code>. <code>3px</code> between bubbles inside a run.</td></tr>
+        <tr><td>Log</td><td>Portrait + name row</td><td class="t-note"><code>28px</code> circle, bottom-aligned to the bubble, <code>8px</code> gap. Name <code>12/600</code> <code>--muted</code>, time <code>11px</code> <code>--dim</code> tabular. Portraits from <code>_assets/avatars.css</code> on <code>locker-room.html</code>'s mapping — <code>--av-01</code> taythaytu, <code>04</code> capitan_7, <code>07</code> scout_mode, <code>10</code> fan_pulse, <code>13</code> dons_mode, <code>16</code> dylan_n (you), <code>17</code> tiki_taka_ana.</td></tr>
+        <tr><td>Log</td><td>Grouped continuation</td><td class="t-note">Same author inside two minutes: portrait and name row dropped, a <code>36px</code> indent holds the avatar column open, gap falls <code>12px → 3px</code>, and only the last bubble in the run keeps its <code>4px</code> tail corner.</td></tr>
+        <tr><td>Log</td><td>Your own message</td><td class="t-note">Right aligned, <b>no portrait</b> (which buys <code>36px</code> of measure on a 375 pt screen), the literal word <b>You</b>, and a <code>1px</code> inset accent hairline at <code>rgba(155,226,34,.30)</code>. Tail flips to bottom-right. <b>No accent fill and no accent wash</b> — those belong to the send button and, in Comments, to the ballot.</td></tr>
+        <tr><td>Log</td><td>The host</td><td class="t-note">Four markers, no hue: a <code>HOST</code> monochrome badge tile, the name at white <code>700</code> against every other name at <code>--muted 600</code>, a <code>2px</code> rail at <code>rgba(255,255,255,.28)</code> on the bubble's leading edge, and a <code>1.5px</code> <code>--muted</code> ring on the portrait.</td></tr>
+        <tr><td>Log</td><td>The club account</td><td class="t-note"><code>comments.html</code>'s construction reused whole: the portrait becomes a <code>28px</code> monochrome crest tile at <code>8px</code> radius — a rounded square, because an institution is not a person — plus a <code>CLUB</code> badge, the shield-and-tick verified glyph, a <code>--sunken</code> bubble with a <code>1px --line</code> ring, and the <code>PINNED BY THE CLUB</code> tracked micro-label.</td></tr>
+        <tr><td>Log</td><td>System line</td><td class="t-note">Not a bubble, because nobody said it: centred <code>11px</code> <code>--dim</code> with a <code>13px</code> glyph, names in <code>--muted 600</code>. Joined, left, room opened, and removed-by-a-moderator.</td></tr>
+        <tr><td>Log</td><td>Unread divider</td><td class="t-note">A hairline in <code>rgba(155,226,34,.30)</code> either side of a <code>24px</code> <code>--sunken</code> pill with the same accent hairline and an accent <code>9.5/700/.13em</code> caps count. Accent as ink at <code>9.6:1</code>, never a fill.</td></tr>
+        <tr><td>Log</td><td>Sending</td><td class="t-note">Bubble placed immediately at <code>72%</code> opacity, with a <code>12px</code> clock glyph and the word <b>Sending</b> below it. Deliberately <b>not</b> the <code>135°</code> accent hatch — the contract reserves that for genuinely paused states.</td></tr>
+        <tr><td>Log</td><td>Failed</td><td class="t-note"><code>1px</code> <code>rgba(226,86,74,.28)</code> ring on the bubble, a <code>12px</code> <code>#E2564A</code> warning glyph, the words <b>Not sent · no connection</b>, then <b>Delete</b> and <b>Retry</b>. Message text stays full-contrast white: a failure is loud, not disabled. Red carries the glyph and the hairline only — <code>#E2564A</code> is <code>4.36:1</code> on <code>--surface</code>.</td></tr>
+        <tr><td>Log</td><td>Typing indicator</td><td class="t-note"><code>22px</code> stacked portraits overlapped <code>−8px</code>, a <code>26px</code> <code>--surface</code> pill holding three <code>5px</code> dots on a <code>1.25s</code> stagger, then the <b>names</b> — capped at two plus a count. It sits at the foot of the log, never in the composer: it is somebody else's activity, not the state of your field.</td></tr>
+        <tr><td>Pinned</td><td>Jump to latest</td><td class="t-note"><code>38px</code> pill on <code>--surface</code> with a <code>1px --line</code> inset ring and a <code>--acid-wash</code> count chip, <code>::after</code> to <code>44px</code>. Lives inside the pinned composer layer at <code>−52px</code>, so it never scrolls away and never lands on a message. Hidden while the foot of the log is on screen.</td></tr>
+        <tr><td>Pinned</td><td>Composer</td><td class="t-note"><code>comments.html</code> unchanged: <code>--surface</code> field at <code>12px</code> radius with <code>1px --line</code>, the accent border and <code>3px --acid-wash</code> focus ring, <code>16px</code> value text (below <code>16px</code> iOS zooms the page on focus), <code>44px</code> minimum height, <code>44px</code> accent send disc. Band is <code>rgba(3,4,1,.93)</code> with a <code>14px</code> backdrop blur and a <code>1px --line</code> top edge. Outside <code>&lt;main&gt;</code>, per the contract.</td></tr>
+        <tr><td>Pinned</td><td>Composer strip</td><td class="t-note">One slot above the field, never two occupants at once: connection state, the muted notice, or slow mode. <code>11.5px</code> <code>--muted</code> with a <code>14px</code> glyph and a trailing link.</td></tr>
+        <tr><td>Empty</td><td>Empty state</td><td class="t-note"><code>dialogs.html</code>'s empty panel: <code>--section</code> fill, <code>1px --line</code>, <code>--r-card</code>, a <code>52px</code> neutral-wash tile at <code>14px</code> radius holding a <code>1.5</code>-stroke glyph, and a <b>secondary</b> pill. Per Comments, a full-width accent pill in a talking surface is the ballot's <em>Vote</em> button and nothing here may look like it.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>A member</td><td class="t-note">The baseline. Round portrait, left aligned, tail bottom-left, name in <code>--muted 12/600</code>.</td></tr>
+        <tr><td>You</td><td class="t-note">Right aligned, portrait dropped, <code>1px</code> accent hairline, the word <b>You</b>. Three signals, none of them a fill.</td></tr>
+        <tr><td>Host</td><td class="t-note"><code>HOST</code> badge · white <code>700</code> name · <code>2px</code> white leading rail · <code>1.5px</code> portrait ring.</td></tr>
+        <tr><td>Club account</td><td class="t-note">Crest tile as a rounded square · <code>CLUB</code> badge · verified shield · <code>--sunken</code> bubble with a <code>--line</code> ring · optional <code>PINNED</code> label.</td></tr>
+        <tr><td>Grouped run</td><td class="t-note">Portrait and header dropped, <code>36px</code> indent, <code>3px</code> gaps, tail only on the last bubble. Broken by a new author, a two-minute gap, or a system line.</td></tr>
+        <tr><td>Joined / left</td><td class="t-note">Centred system line with a door glyph. Anything inside a 30-second window batches into one line, capped at two names plus a count — a 200-person room that logged every join would be a list of arrivals with a conversation buried in it.</td></tr>
+        <tr><td>Removed by a moderator</td><td class="t-note">The bubble is replaced by a system line naming the author and the fact of removal. Keeps the Comments rule: an icon, a plain sentence, and no colour doing the work.</td></tr>
+        <tr><td>Unread</td><td class="t-note">Accent hairline plus a <code>--sunken</code> pill carrying the count. Survives one scroll past it, then clears.</td></tr>
+        <tr><td>Sending</td><td class="t-note">Bubble in place at <code>72%</code> opacity, clock glyph, the word <b>Sending</b>.</td></tr>
+        <tr><td>Failed</td><td class="t-note">Red hairline, red glyph, <b>Not sent</b> plus a cause, then <b>Retry</b> and <b>Delete</b>. Retry re-sends in place and keeps the original position in the log; Delete needs no confirmation, because nothing left the device.</td></tr>
+        <tr><td>Composer · empty</td><td class="t-note">Send is disabled — <code>--sunken</code> disc, <code>--dim</code> glyph.</td></tr>
+        <tr><td>Composer · composing</td><td class="t-note">Accent border and <code>3px</code> wash. Grows one <code>23px</code> line at a time to <code>68px</code>, then scrolls. The counter appears at <b>40 characters remaining</b> of <b>300</b>; over the limit it takes a minus sign, a warning glyph, the red field border, and send disables.</td></tr>
+        <tr><td>Composer · sending</td><td class="t-note">Send disc goes <code>--sunken</code> with an accent ring spinner, <code>aria-busy="true"</code>, pointer events off, so it can't be double-submitted.</td></tr>
+        <tr><td>Composer · reconnecting</td><td class="t-note">Strip above the field with a ring spinner and the promise that anything typed now goes out when the room is back. The field keeps its text and stays enabled.</td></tr>
+        <tr><td>Composer · muted</td><td class="t-note">The field is <b>replaced</b>, not greyed: a <code>--sunken</code> bar with the reason, the end time and an <b>Appeal</b> link. A greyed field with a live placeholder invites a member to type a paragraph into a box that will throw it away.</td></tr>
+        <tr><td>Jump to latest</td><td class="t-note">Hidden while the foot of the log is on screen. Carries the unread count when there is one, and no count when the member has simply scrolled up. The log auto-scrolls only when already at the foot.</td></tr>
+        <tr><td>Empty</td><td class="t-note">Neutral tile, two lines, secondary pill. Names the size of the audience, because "be first in an empty room" and "be first in front of 214 people" are different decisions.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions off; the typing dots, the send spinner and the Live pulse all stop. The dots hold at <code>70%</code> opacity so the indicator still reads.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the library</h3>
+      <ul>
+        <li><b>Composer, field, focus ring, counter and the 44 px send disc</b> — <code>comments.html</code>, unchanged construction</li>
+        <li><b>Badge tile, crest tile, verified shield, PINNED micro-label</b> — <code>comments.html</code></li>
+        <li><b>Room bar, Live status pill, 38 px icon button</b> — <code>locker-room.html</code></li>
+        <li><b>Segmented Stage / Chat switch</b> — the <code>.tax</code> control from <code>results-actions.html</code></li>
+        <li><b>Empty panel, 52 px state tile, ring spinner</b> — <code>dialogs.html</code></li>
+        <li><b>44 px hit-area expansion via <code>::after</code></b> — the contract's sanctioned pattern, on every control under 44 px</li>
+        <li><b>Portraits and the username mapping</b> — <code>_assets/avatars.css</code> as used by <code>locker-room.html</code></li>
+        <li><b>Room, topic and host</b> — the same <b>Post-Match Breakdown</b> room, hosted by <b>taythaytu</b>, that <code>locker-room.html</code> shows the audio side of</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The whole screen.</b> <code>chat_body.dart</code> is the Backchat <em>home</em> scaffold — two 20%-opacity background PNGs, the shared hero with an <code>AddNewRoom</code> button, and a pull-to-refresh list of Fan Stadium plus live and upcoming rooms. There is no message list, no composer, no message model, no send call and no chat socket anywhere in the repository; <code>SocketIO</code> carries only <code>like</code> and <code>voted</code> proposal events. The bubbles, composer, send and emoji controls in the Backchat atlas (<code>BC-C60</code>–<code>BC-C64</code>) exist only in the BC-03/BC-04 screenshots, which the atlas records as <em>not located — no counterpart anywhere in lib/</em>.</li>
+        <li><b>Author distinction of any kind.</b> The shipped bubble is a single <code>#542BE2</code> pill with <em>no author, avatar, timestamp, in/out variant or max width</em>. Own-versus-others, host, club and system lines are all new.</li>
+        <li><b>Consecutive-message grouping</b> and the two-minute run rule — new</li>
+        <li><b>Join / leave system lines</b>, batched at 30 seconds and capped at two names — new</li>
+        <li><b>Unread divider</b> — new</li>
+        <li><b>Jump to latest</b>, and the rule that the log only auto-scrolls when already at the foot — new</li>
+        <li><b>Typing indicator</b> with names — new</li>
+        <li><b>Sending, failed, Retry and Delete</b> — new. The shipped send button has <em>no disabled rendering at all</em>.</li>
+        <li><b>Character limit, counter and the growth cap</b> — new; there is no limit or counter on the shipped composer</li>
+        <li><b>Return sends, Shift+Return newlines</b> — new</li>
+        <li><b>Reconnecting and muted composer states</b> — new</li>
+        <li><b>Removed-by-a-moderator line, and the overflow as the only route to Report</b> — new here, extending the moderation set <code>comments.html</code> proposed</li>
+        <li><b>Empty state</b> — new; there is no empty chat anywhere in the capture set</li>
+        <li><b>14 px bubble radius and the 4 px tail corner</b> — the only radii in the file outside the kit's three. The shipped bubble is <code>R≈36</code>, a full pill at one line, which reads as a control rather than as speech.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Is there a text chat at all, and who runs it?</h3>
+      <p>This is the first question, because nothing in the Flutter app sends a message. The room
+        runtime that produced BC-03 and BC-04 sits outside the repository — no RTC dependency, no
+        room page, and a font family that appears nowhere else in the product — so the bubbles in
+        those screenshots are almost certainly a third-party SDK's own UI. If that stays true,
+        this design is a <span class="flag">specification for a surface the SDK vendor would have
+        to be able to skin</span>, and the practical answer may be that the chat is built in-house
+        against the existing socket instead. We need to know which before build.</p></li>
+    <li><h3>Is the chat ephemeral or kept?</h3>
+      <p>Everything here assumes <span class="flag">ephemeral</span> — the log lives as long as
+        the room does and is gone when it closes. That assumption drives the absence of search,
+        of day dividers, of permalinks and of a "load earlier" control. If chat is retained and
+        readable after the room ends, it needs all four, plus a decision about whether a member
+        can delete their own history.</p></li>
+    <li><h3>Who can post, and is there a rate limit?</h3>
+      <p>The audio stage has hands-up and a speaker list, so a room already has a permission
+        model for talking. We have assumed <span class="flag">every attendee can type
+        immediately</span>, with no slow mode and no listener-only lock. A 200-person room during
+        a derby will need at least a host-controlled slow mode; the composer's strip has a slot
+        reserved for it, but the rule is not designed.</p></li>
+    <li><h3>Who moderates, and how fast?</h3>
+      <p>We have proposed a mute with an end time and an appeal, and a removed-message line, on
+        the same reasoning as <b>Comments</b> — a product with members under 18 cannot ship a live
+        unmoderated chat. But a live surface needs someone acting in <em>seconds</em>, not the
+        next working day. Does the host moderate their own room, does the club, or is there a
+        SportsHeist queue? We have assumed <span class="flag">the host can mute inside their own
+        room and the club moderates removals</span>.</p></li>
+    <li><h3>Are reactions and emoji in or out?</h3>
+      <p>The captures show a floating reaction layer and a <code>~54pt</code> emoji button inside
+        the composer, and <code>locker-room.html</code> already rebuilt reactions as a drawn tray
+        on the <em>audio</em> surface. We have left <span class="flag">both out of the chat</span>
+        so that reactions mean one thing in one place. If an emoji picker goes into the composer,
+        it needs a drawn glyph set — the contract permits no system emoji, and the shipped 🙏 is a
+        platform glyph the brand cannot recolour.</p></li>
+    <li><h3>Does 14 px body text stand?</h3>
+      <p>The contract's measured scale puts body copy at <code>13/400</code>, and Comments sets
+        comment text at <code>13px</code>. Chat bubbles here are <span class="flag">14px</span> —
+        the document's own body size — on the grounds that a live surface is read at a glance,
+        one-handed, while listening to something else. It is a deliberate one-step increase and
+        we would rather have it signed off than discovered.</p></li>
+    <li><h3>Should the room's unread total appear on the Backchat tab?</h3>
+      <p>The Stage / Chat switch carries the room's unread count. Nothing yet decides whether that
+        number also escapes the room — onto the Backchat tab badge, or into Alerts. We have
+        assumed <span class="flag">it does not</span>: a chat that pushes a badge for every
+        message trains members to ignore the badge.</p></li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  /* ---------- Stage / Chat switch (results-actions .tax) ---------- */
+  document.querySelectorAll('[data-tax]').forEach(function(track){
+    track.addEventListener('click', function(e){
+      var b = e.target.closest('.tax__btn'); if(!b) return;
+      track.querySelectorAll('.tax__btn').forEach(function(x){
+        x.setAttribute('aria-selected', String(x === b));
+      });
+    });
+  });
+
+  /* ---------- composer ------------------------------------------
+     MAX 300 with a 340 maxlength on the control, so the over-limit
+     state can actually be reached and reviewed. WARN at 40 left.
+     GROW caps at 68 px — three 23 px line boxes.                 */
+  var box = document.querySelector('[data-cmp]');
+  if(!box) return;
+
+  var MAX = 300, WARN = 40, GROW = 68;
+  var field = box.querySelector('.cmp__field');
+  var ta    = box.querySelector('.cmp__in');
+  var send  = box.querySelector('.send');
+  var count = box.querySelector('.cmp__count');
+  var ctext = box.querySelector('[data-count-text]');
+  var jump  = box.querySelector('[data-jump]');
+
+  function sync(){
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, GROW) + 'px';
+    var left = MAX - ta.value.length;
+    var over = left < 0;
+    var show = left <= WARN;
+    count.hidden = !show;
+    if(show) ctext.textContent = over ? '−' + Math.abs(left) + ' over' : left + ' left';
+    count.classList.toggle('is-over', over);
+    field.classList.toggle('is-over', over);
+    send.disabled = ta.value.trim() === '' || over;
+  }
+  ta.addEventListener('input', sync);
+  sync();
+
+  /* Return sends, Shift+Return makes a newline. In a thread Return is
+     a paragraph break; in a chat, sending is the whole point.       */
+  ta.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      if(!send.disabled) send.click();
+    }
+  });
+
+  send.addEventListener('click', function(){
+    if(send.disabled) return;
+    send.classList.add('is-busy');
+    send.disabled = true;
+    send.setAttribute('aria-busy','true');
+    window.setTimeout(function(){
+      send.classList.remove('is-busy');
+      send.removeAttribute('aria-busy');
+      ta.value = '';
+      sync();
+      ta.focus();
+    }, 700);
+  });
+
+  /* ---------- jump to latest ------------------------------------
+     Shown only while the foot of the log is off-screen — which is
+     exactly the rule on the live surface. An IntersectionObserver on
+     a sentinel works whether the scroller is the window or the review
+     page's device frame.                                          */
+  var foot = document.querySelector('[data-foot]');
+  if(jump && foot){
+    jump.hidden = true;
+    if(window.IntersectionObserver){
+      new IntersectionObserver(function(rows){
+        rows.forEach(function(r){ jump.hidden = r.isIntersecting; });
+      }, {rootMargin:'0px 0px -120px 0px'}).observe(foot);
+    } else {
+      jump.hidden = false;
+    }
+    jump.addEventListener('click', function(){
+      if(foot.scrollIntoView) foot.scrollIntoView({block:'end'});
+      jump.hidden = true;
+    });
+  }
+
+  /* the empty state's CTA and the log both point at the one field */
+  document.querySelectorAll('.empty .btn').forEach(function(b){
+    b.addEventListener('click', function(){ ta.focus(); });
+  });
+})();
+</script>

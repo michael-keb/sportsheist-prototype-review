@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en" data-component="voting-card">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Voting Card &amp; Ballot</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — VOTING CARD + BALLOT
+   Sibling of idea-card.html: the same 268 px shell with the
+   gauge panel swapped for a threshold bar, and the filled
+   Like CTA swapped for its outlined ghost variant.
+
+   Tokens copied from _assets/CONTRACT.md. Nothing invented
+   except two washes derived exactly as --acid-wash is derived
+   from --acid (see --sh-danger-wash / --sh-neutral-wash).
+   ============================================================ */
+:root{
+  /* surfaces */
+  --sh-bg:            #030401;
+  --sh-surface:       #1C2129;
+  --sh-sunken:        #13171E;
+  --sh-line:          rgba(255,255,255,.075);
+  --sh-line-soft:     rgba(255,255,255,.045);
+  --sh-hairline:      rgba(255,255,255,.06);
+
+  /* accent */
+  --sh-accent:        #9BE222;
+  --sh-accent-ink:    #0B0E06;
+  --sh-accent-wash:   rgba(155,226,34,.12);
+  --sh-accent-track:  #2E3F1F;   /* dark green bar track */
+
+  /* semantic red — the only other hue in the system */
+  --sh-danger:        #E2564A;
+  --sh-danger-wash:   rgba(226,86,74,.14);
+
+  /* neutral wash + neutral track, for the frozen / veto-hold state */
+  --sh-neutral-wash:  rgba(255,255,255,.07);
+  --sh-ring-track:    #3D424B;
+
+  /* text */
+  --sh-text:          #FFFFFF;
+  --sh-text-muted:    #99A0AE;
+  --sh-text-dim:      #5B606B;
+
+  /* geometry — identical to the Idea Card */
+  --sh-card-w:        268px;
+  --sh-card-pad:      16px;
+  --sh-r-card:        16px;
+  --sh-r-panel:       12px;
+  --sh-r-pill:        999px;
+  --sh-gutter:        16px;
+
+  --sh-ease:          cubic-bezier(.16,1,.3,1);
+  --sh-font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+             "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* portraits — pasted from _assets/avatars.css */
+  --av-01:url(data:image/jpeg;base64,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);
+  --av-02:url(data:image/jpeg;base64,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);
+  --av-03:url(data:image/jpeg;base64,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);
+  --av-04:url(data:image/jpeg;base64,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);
+  --av-05:url(data:image/jpeg;base64,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);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--sh-bg);
+  color:var(--sh-text);
+  font-family:var(--sh-font);
+  font-size:14px;
+  line-height:1.4;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ---------- section header (context, not the component) ----------- */
+.sh-head{position:relative;display:flex;align-items:center;gap:8px;margin:10px var(--sh-gutter) 12px}
+.sh-head h1{flex:1;margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.sh-iconbtn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;flex:0 0 auto;
+  border:0;border-radius:var(--sh-r-pill);
+  background:var(--sh-sunken);color:var(--sh-text-muted);
+  cursor:pointer;transition:background .18s var(--sh-ease),color .18s var(--sh-ease);
+}
+.sh-iconbtn:hover{background:#1A1F27;color:var(--sh-text)}
+.sh-iconbtn:focus-visible{outline:2px solid var(--sh-accent);outline-offset:2px}
+.sh-iconbtn svg{width:17px;height:17px}
+.sh-iconbtn[aria-pressed="true"]{background:var(--sh-accent);color:var(--sh-accent-ink)}
+/* an empty rail has nothing to filter: the control reads inert, not dead */
+.sh-iconbtn[disabled]{background:var(--sh-sunken);color:var(--sh-text-dim);cursor:default;opacity:.55}
+.sh-iconbtn[disabled]:hover{background:var(--sh-sunken);color:var(--sh-text-dim)}
+.sh-textbtn{
+  display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px;
+  border:0;border-radius:var(--sh-r-pill);
+  background:var(--sh-sunken);color:var(--sh-text);
+  font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:background .18s var(--sh-ease);
+}
+.sh-textbtn:hover{background:#1A1F27}
+
+/* ---------- rail ------------------------------------------------- */
+.sh-rail{
+  display:flex;gap:12px;
+  padding:0 var(--sh-gutter) 6px;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scroll-padding-left:var(--sh-gutter);   /* keep the first card on the gutter */
+  scrollbar-width:none;-ms-overflow-style:none;
+  -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
+}
+.sh-rail::-webkit-scrollbar{display:none}
+.sh-rail--top{align-items:flex-start}
+
+
+/* ---------- screen frame (documentation chrome, not the product) -- */
+.frame{
+  width:375px;max-width:100%;margin:0 auto;
+  border:1px solid var(--sh-line);border-radius:22px;
+  background:var(--sh-bg);overflow:hidden;
+}
+.frame + .frame{margin-top:26px}
+
+/* ============================================================
+   THE CARD SHELL — identical geometry to .sh-idea-card
+   ============================================================ */
+.sh-vote-card{
+  flex:0 0 auto;
+  scroll-snap-align:start;
+  width:var(--sh-card-w);
+  padding:var(--sh-card-pad);
+  border-radius:var(--sh-r-card);
+  background:var(--sh-surface);
+  display:flex;flex-direction:column;
+  box-shadow:inset 0 1px 0 var(--sh-hairline);
+}
+
+/* -- author row --------------------------------------------------- */
+.sh-vote-card__author{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.sh-avatars{display:flex;flex:0 0 auto}
+.sh-avatars > .sh-avatar + .sh-avatar{margin-left:-9px}
+.sh-avatar{
+  width:22px;height:22px;border-radius:50%;flex:0 0 auto;
+  border:1.5px solid var(--sh-surface);
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+.sh-vote-card__byline{
+  min-width:0;
+  font-size:12.5px;color:var(--sh-text-muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* -- title + body ------------------------------------------------- */
+.sh-vote-card__title{
+  margin:0 0 8px;
+  font-size:17px;font-weight:600;line-height:1.2;letter-spacing:-.015em;
+  color:var(--sh-text);
+}
+.sh-vote-card__body{margin:0 0 7px;font-size:13px;line-height:1.35;color:var(--sh-text-muted)}
+.sh-vote-card__body:last-of-type{margin-bottom:0}
+
+/* -- meta row ----------------------------------------------------- */
+.sh-vote-card__meta{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin:14px 0 10px;
+}
+.sh-timer{display:inline-flex;align-items:center;gap:6px;color:var(--sh-text)}
+.sh-timer svg{width:14px;height:14px;flex:0 0 auto}
+.sh-timer time,.sh-timer span{
+  font-size:13.5px;font-weight:600;letter-spacing:.01em;
+  font-variant-numeric:tabular-nums;
+}
+.sh-timer--frozen,.sh-timer--closed{color:var(--sh-text-dim)}
+.sh-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--sh-accent);white-space:nowrap;
+}
+.sh-tag::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;flex:0 0 auto}
+
+/* ============================================================
+   THRESHOLD PANEL — the Voting Card's answer to the gauge panel
+   ============================================================ */
+.sh-vote{
+  padding:12px 14px;
+  border-radius:var(--sh-r-panel);
+  background:var(--sh-sunken);
+  overflow:hidden;
+  /* per-state bar colours, overridden by the state modifiers below */
+  --sh-bar-track:var(--sh-accent-track);
+  --sh-bar-fill:var(--sh-accent);
+  --sh-now-ink:var(--sh-text);
+}
+
+/* header line: lede + verdict pill */
+.sh-vote__head{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
+.sh-vote__lede{
+  flex:1;min-width:0;
+  font-size:13.5px;font-weight:600;line-height:1.25;letter-spacing:-.005em;
+  color:var(--sh-text);
+}
+.sh-verdict{
+  flex:0 0 auto;max-width:110px;
+  padding:5px 9px;border-radius:var(--sh-r-pill);
+  background:var(--sh-accent-wash);color:var(--sh-accent);
+  font-size:10px;font-weight:700;letter-spacing:.1em;line-height:1.3;
+  text-transform:uppercase;text-align:center;
+}
+.sh-verdict--off{background:var(--sh-danger-wash);color:var(--sh-danger)}
+.sh-verdict--hold{background:var(--sh-neutral-wash);color:var(--sh-text-muted)}
+
+/* leading-option line + circled ! */
+.sh-vote__opt{display:flex;align-items:flex-start;gap:8px;margin-top:11px}
+.sh-vote__name{
+  flex:1;min-width:0;
+  font-size:15px;font-weight:600;line-height:1.25;letter-spacing:-.01em;
+  color:var(--sh-text);
+}
+.sh-info{
+  flex:0 0 auto;width:18px;height:18px;padding:0;margin-top:1px;
+  border:0;background:transparent;color:var(--sh-text-dim);cursor:pointer;
+  transition:color .18s var(--sh-ease);
+}
+.sh-info svg{width:18px;height:18px;display:block}
+.sh-info:hover{color:var(--sh-accent)}
+.sh-info:focus-visible{outline:2px solid var(--sh-accent);outline-offset:2px;border-radius:50%}
+
+/* -- the threshold bar -------------------------------------------- */
+.sh-bar{
+  position:relative;height:8px;margin:13px 0 0;
+  border-radius:var(--sh-r-pill);
+  background:var(--sh-bar-track);
+}
+.sh-bar__fill{
+  position:absolute;left:0;top:0;bottom:0;width:0;
+  border-radius:var(--sh-r-pill);
+  background:var(--sh-bar-fill);
+  transition:width 1.15s var(--sh-ease);
+}
+.sh-vote-card.is-drawn .sh-bar__fill{width:calc(var(--now) * 1%)}
+/* marker knob rides the fill's leading edge */
+.sh-bar__knob{
+  position:absolute;right:0;top:50%;
+  width:14px;height:14px;border-radius:50%;
+  transform:translate(50%,-50%);
+  background:var(--sh-bar-fill);
+  box-shadow:0 0 0 3px var(--sh-sunken);
+}
+/* threshold tick, dropping below the bar — clears the knob's ring */
+.sh-bar__tick{
+  position:absolute;left:calc(var(--req) * 1%);top:calc(100% + 5px);
+  width:2px;height:7px;margin-left:-1px;border-radius:1px;
+  background:var(--sh-accent);
+}
+
+/* -- figures ------------------------------------------------------ */
+.sh-figs{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:17px}
+.sh-figs b{font-size:14px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.sh-figs span{margin-left:4px;font-size:11.5px;font-weight:500;color:var(--sh-text-dim)}
+.sh-figs__now b{color:var(--sh-now-ink)}
+.sh-figs__req b{color:var(--sh-accent)}
+
+/* -- panel state modifiers ---------------------------------------- */
+.sh-vote--off{
+  --sh-bar-track:var(--sh-danger-wash);
+  --sh-bar-fill:var(--sh-danger);
+  --sh-now-ink:var(--sh-danger);
+}
+.sh-vote--hold{
+  --sh-bar-track:var(--sh-ring-track);
+  --sh-bar-fill:var(--sh-text-muted);
+  --sh-now-ink:var(--sh-text-muted);
+}
+
+/* ============================================================
+   CTA — outlined ghost pill (the Idea Card's Like, unfilled)
+   ============================================================ */
+.sh-ghost{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;height:52px;margin-top:10px;
+  border:1px solid var(--sh-accent);border-radius:var(--sh-r-pill);
+  background:transparent;color:var(--sh-accent);
+  font:inherit;font-size:15px;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;
+  transition:background .18s var(--sh-ease),transform .12s var(--sh-ease);
+}
+.sh-ghost svg{width:19px;height:19px;flex:0 0 auto}
+.sh-ghost:hover{background:var(--sh-accent-wash)}
+.sh-ghost:active{transform:translateY(1px)}
+.sh-ghost:focus-visible{outline:2px solid var(--sh-accent);outline-offset:3px}
+
+/* ============================================================
+   BALLOT — open ranked-choice variant
+   ============================================================ */
+.sh-vote--ballot{padding-bottom:0}
+.sh-ballot__hint{
+  display:flex;align-items:flex-start;gap:7px;
+  margin:9px 0 0;
+  font-size:11.5px;line-height:1.35;color:var(--sh-text-muted);
+}
+.sh-ballot__hint svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:var(--sh-text-dim)}
+
+.sh-ballot{list-style:none;margin:11px -14px 0;padding:0}
+.sh-opt{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:9px 14px;
+  border:0;border-top:1px solid var(--sh-line-soft);
+  background:transparent;color:var(--sh-text);
+  font:inherit;text-align:left;cursor:pointer;
+  transition:background .18s var(--sh-ease),box-shadow .18s var(--sh-ease);
+}
+.sh-ballot li:first-child .sh-opt{border-top:0}
+.sh-opt:hover{background:rgba(255,255,255,.035)}
+.sh-opt:focus-visible{outline:2px solid var(--sh-accent);outline-offset:-2px}
+.sh-opt[aria-pressed="true"]{
+  background:var(--sh-accent-wash);
+  box-shadow:inset 3px 0 0 var(--sh-accent);
+}
+.sh-opt[aria-pressed="true"]:hover{background:rgba(155,226,34,.17)}
+
+/* the rank affordance — a visible numbered slot */
+.sh-opt__slot{
+  flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:25px;height:25px;border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.18);
+  background:transparent;color:var(--sh-text-dim);
+  font-size:12px;font-weight:800;letter-spacing:0;
+  font-variant-numeric:tabular-nums;
+  transition:background .18s var(--sh-ease),border-color .18s var(--sh-ease),color .18s var(--sh-ease);
+}
+.sh-opt[aria-pressed="true"] .sh-opt__slot{
+  border-color:var(--sh-accent);
+  background:var(--sh-accent);
+  color:var(--sh-accent-ink);
+}
+.sh-opt__name{
+  flex:1;min-width:0;
+  display:flex;align-items:center;gap:6px;
+  font-size:13.5px;font-weight:600;line-height:1.25;letter-spacing:-.005em;
+}
+.sh-opt__name svg{width:13px;height:13px;flex:0 0 auto;color:var(--sh-danger)}
+.sh-opt__pct{
+  flex:0 0 auto;
+  font-size:13px;font-weight:700;color:var(--sh-text-muted);
+  font-variant-numeric:tabular-nums;
+}
+.sh-opt[aria-pressed="true"] .sh-opt__pct{color:var(--sh-text)}
+.sh-opt--reject .sh-opt__name{color:var(--sh-text-muted)}
+.sh-opt--reject[aria-pressed="true"] .sh-opt__name{color:var(--sh-text)}
+
+/* -- ballot action pair ------------------------------------------- */
+.sh-actions{display:flex;gap:10px;margin-top:12px}
+.sh-btn{
+  flex:1;height:46px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:0;border-radius:var(--sh-r-pill);
+  font:inherit;font-size:14.5px;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;
+  transition:background .18s var(--sh-ease),color .18s var(--sh-ease),transform .12s var(--sh-ease);
+}
+.sh-btn:active{transform:translateY(1px)}
+.sh-btn:focus-visible{outline:2px solid var(--sh-accent);outline-offset:3px}
+.sh-btn--cancel{background:transparent;border:1px solid rgba(255,255,255,.16);color:var(--sh-text)}
+.sh-btn--cancel:hover{background:rgba(255,255,255,.05)}
+.sh-btn--vote{background:var(--sh-accent);color:var(--sh-accent-ink)}
+.sh-btn--vote:hover{background:#A8EC33}
+.sh-btn--vote:disabled{
+  background:var(--sh-sunken);color:var(--sh-text-dim);
+  cursor:not-allowed;transform:none;
+}
+
+/* ============================================================
+   POPOVERS — the filter menu and the threshold explainer
+   ============================================================ */
+.sh-pop{
+  position:absolute;z-index:80;width:212px;padding:6px;
+  border-radius:var(--sh-r-panel);
+  background:var(--sh-surface);border:1px solid var(--sh-line);
+  box-shadow:0 18px 44px rgba(0,0,0,.55);
+}
+.sh-pop--head{top:40px;right:0}
+.sh-pop[hidden]{display:none}
+.sh-pop__k{
+  margin:4px 8px 6px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--sh-text-dim);
+}
+.sh-pop__o{
+  display:flex;align-items:center;gap:8px;width:100%;height:38px;padding:0 9px;
+  border:0;border-radius:8px;background:transparent;color:var(--sh-text);
+  font:inherit;font-size:13px;text-align:left;cursor:pointer;
+}
+.sh-pop__o:hover{background:var(--sh-sunken)}
+.sh-pop__o:focus-visible{outline:2px solid var(--sh-accent);outline-offset:-2px}
+.sh-pop__o[aria-checked="true"]{color:var(--sh-accent);font-weight:600}
+.sh-pop__tick{width:15px;height:15px;flex:0 0 auto;opacity:0;color:var(--sh-accent)}
+.sh-pop__o[aria-checked="true"] .sh-pop__tick{opacity:1}
+
+/* The ⓘ explainer. The panel clips its own overflow so the ballot list can
+   bleed to its edges, which rules out a floating popover here — this is an
+   inline disclosure instead: same open/close contract, nothing clipped. */
+.sh-explain{
+  margin:10px 0 0;padding:10px 11px;
+  border-radius:9px;background:rgba(255,255,255,.045);
+  box-shadow:inset 0 0 0 1px var(--sh-line-soft);
+}
+.sh-explain h4{margin:0 0 5px;font-size:12.5px;font-weight:600;letter-spacing:-.005em}
+.sh-explain p{margin:0;font-size:11.5px;line-height:1.45;color:var(--sh-text-muted)}
+.sh-explain p + p{margin-top:6px}
+.sh-info[aria-expanded="true"]{color:var(--sh-accent)}
+
+/* nothing left in the rail once a filter is applied */
+.sh-railnote{
+  flex:0 0 auto;width:var(--sh-card-w);
+  display:flex;align-items:center;justify-content:center;
+  min-height:120px;padding:16px;border-radius:var(--sh-r-card);
+  background:var(--sh-surface);color:var(--sh-text-muted);
+  font-size:13px;text-align:center;
+}
+
+/* ============================================================
+   A CAST BALLOT IS SETTLED
+   Once the vote is in, the ballot stops being a control: the rows
+   keep their ranks but lose every affordance, and the panel reads
+   back what was cast. It must LOOK settled, not merely refuse.
+   ============================================================ */
+.sh-opt[disabled]{cursor:default;opacity:1}
+.sh-opt[disabled]:hover{background:transparent}
+.sh-opt[disabled][aria-pressed="true"]{background:var(--sh-accent-wash)}
+.sh-opt[disabled][aria-pressed="true"]:hover{background:var(--sh-accent-wash)}
+.sh-vote--cast .sh-opt__name{color:var(--sh-text-muted)}
+.sh-vote--cast .sh-opt[aria-pressed="true"] .sh-opt__name{color:var(--sh-text)}
+.sh-verdict--cast{background:var(--sh-accent-wash);color:var(--sh-accent)}
+.sh-vote--ballot.sh-vote--cast{padding-bottom:12px}
+.sh-cast{
+  display:flex;align-items:flex-start;gap:7px;
+  margin:11px 0 0;padding:10px 0 0;border-top:1px solid var(--sh-line-soft);
+  font-size:11.5px;line-height:1.4;color:var(--sh-text-muted);
+}
+.sh-cast svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:var(--sh-accent)}
+.sh-cast b{color:var(--sh-text);font-weight:600}
+.sh-btn[disabled]{
+  background:var(--sh-sunken);color:var(--sh-text-dim);
+  border-color:transparent;cursor:default;transform:none;
+}
+.sh-btn--cancel[disabled]:hover{background:var(--sh-sunken)}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.sh-vote-card--empty{
+  align-items:center;justify-content:center;text-align:center;
+  min-height:250px;gap:16px;
+}
+.sh-vote-card--empty p{margin:0;font-size:13.5px;color:var(--sh-text-muted)}
+.sh-vote-card--empty svg{width:52px;height:52px;color:var(--sh-accent);opacity:.9}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+<!-- ============================================================
+     SCREEN 1 — THE VOTING RAIL
+     ============================================================ -->
+<section class="frame" data-title="Voting rail">
+
+  <div class="sh-head">
+    <h1>Voting</h1>
+
+    <button class="sh-iconbtn" type="button" aria-label="Filter proposals">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+        <path d="M4 7h16M6.5 12h11M10 17h4"/>
+      </svg>
+    </button>
+
+    <button class="sh-textbtn" type="button">
+      View all
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13">
+        <path d="M7 17 17 7M9 7h8v8"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ================= rail 1 · card states ================= -->
+  <div class="sh-rail">
+
+    <!-- ---- 1 · on track to be approved ---- -->
+    <article class="sh-vote-card" data-state="open">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-01)" role="img" aria-label="capitan_7"></span>
+        </span>
+        <span class="sh-vote-card__byline">by capitan_7</span>
+      </div>
+
+      <h2 class="sh-vote-card__title">Change Manager</h2>
+      <p class="sh-vote-card__body">Members pick the next first-team manager from the club’s official shortlist.</p>
+      <p class="sh-vote-card__body">Ranked-choice count; the winner has to clear 70% to be approved.</p>
+
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT2H47M6S" data-countdown="10026">02:47:06</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+
+      <div class="sh-vote">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Option 1 leading</span>
+          <span class="sh-verdict">On track to be approved</span>
+        </div>
+
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Pep Guardiola</span>
+          <button class="sh-info" type="button" aria-label="How the 70% threshold works">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="sh-bar" style="--now:74;--req:70"
+             role="img" aria-label="74% of the vote against a 70% threshold">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>74%</b><span>now</span></span>
+          <span class="sh-figs__req"><b>70%</b><span>required</span></span>
+        </div>
+      </div>
+
+      <button class="sh-ghost" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+        View details
+      </button>
+    </article>
+
+    <!-- ---- 2 · below threshold ---- -->
+    <article class="sh-vote-card" data-state="open">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-02)" role="img" aria-label="scout_mode"></span>
+          <span class="sh-avatar" style="background-image:var(--av-03)" role="img" aria-label="dons_mode"></span>
+        </span>
+        <span class="sh-vote-card__byline">by scout_mode &amp; dons_mode</span>
+      </div>
+
+      <h2 class="sh-vote-card__title">Shirt sponsor renewal</h2>
+      <p class="sh-vote-card__body">Renew with the current shirt sponsor, or open the slot to new bidders.</p>
+      <p class="sh-vote-card__body">Support has slipped since the fan forum published the fee.</p>
+
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT41M58S" data-countdown="2518">00:41:58</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+
+      <div class="sh-vote sh-vote--off">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Option 1 leading</span>
+          <span class="sh-verdict sh-verdict--off">Not on track</span>
+        </div>
+
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Renew for three years</span>
+          <button class="sh-info" type="button" aria-label="How the 70% threshold works">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="sh-bar" style="--now:41;--req:70"
+             role="img" aria-label="41% of the vote against a 70% threshold">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>41%</b><span>now</span></span>
+          <span class="sh-figs__req"><b>70%</b><span>required</span></span>
+        </div>
+      </div>
+
+      <button class="sh-ghost" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+        View details
+      </button>
+    </article>
+
+    <!-- ---- 3 · veto hold (counting frozen) ---- -->
+    <article class="sh-vote-card" data-state="hold">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-04)" role="img" aria-label="fan_pulse"></span>
+        </span>
+        <span class="sh-vote-card__byline">by fan_pulse</span>
+      </div>
+
+      <h2 class="sh-vote-card__title">Ticket price freeze</h2>
+      <p class="sh-vote-card__body">Hold every season-ticket band at this season’s price for two more years.</p>
+      <p class="sh-vote-card__body">Counting is paused while the board reviews a veto filed against it.</p>
+
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer sh-timer--frozen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M10.4 11.4v4.2M13.6 11.4v4.2M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT1H12M40S">01:12:40</time>
+        </span>
+        <span class="sh-tag">Position</span>
+      </div>
+
+      <div class="sh-vote sh-vote--hold">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Option 1 leading</span>
+          <span class="sh-verdict sh-verdict--hold">Veto hold</span>
+        </div>
+
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Freeze every band</span>
+          <button class="sh-info" type="button" aria-label="Why counting is on veto hold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="sh-bar" style="--now:63;--req:70"
+             role="img" aria-label="63% of the vote against a 70% threshold, counting paused">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>63%</b><span>frozen</span></span>
+          <span class="sh-figs__req"><b>70%</b><span>required</span></span>
+        </div>
+      </div>
+
+      <button class="sh-ghost" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+        View details
+      </button>
+    </article>
+
+    <!-- ---- 4 · closed · result published ---- -->
+    <article class="sh-vote-card" data-state="closed">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-05)" role="img" aria-label="council_fc"></span>
+        </span>
+        <span class="sh-vote-card__byline">by council_fc</span>
+      </div>
+
+      <h2 class="sh-vote-card__title">Academy budget uplift</h2>
+      <p class="sh-vote-card__body">Raise the academy budget from July, funded out of the transfer levy.</p>
+      <p class="sh-vote-card__body">The count closed on 12 July and the full tally is published.</p>
+
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer sh-timer--closed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5"/><path d="m8.2 12.2 2.6 2.6 5-5.4"/>
+          </svg>
+          <span>Closed 12 Jul</span>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+
+      <div class="sh-vote">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Option 2 approved</span>
+          <span class="sh-verdict">Result published</span>
+        </div>
+
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Uplift by 12% from July</span>
+          <button class="sh-info" type="button" aria-label="How this count was settled">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="sh-bar" style="--now:76;--req:70"
+             role="img" aria-label="Closed at 76% of the vote against a 70% threshold">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>76%</b><span>final</span></span>
+          <span class="sh-figs__req"><b>70%</b><span>required</span></span>
+        </div>
+      </div>
+
+      <button class="sh-ghost" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+        View result
+      </button>
+    </article>
+
+    <p class="sh-railnote" role="status" hidden>No proposals in that state right now.</p>
+  </div>
+
+  <div style="height:28px" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     SCREEN 2 — OPEN BALLOT (ranked choice)
+     ============================================================ -->
+<section class="frame" data-title="Open ballot">
+
+  <div class="sh-head">
+    <button class="sh-iconbtn" type="button" aria-label="Back to voting">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 5l-7 7 7 7"/>
+      </svg>
+    </button>
+    <h1>Voting</h1>
+  </div>
+
+  <div class="sh-rail sh-rail--top">
+
+    <article class="sh-vote-card">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-01)" role="img" aria-label="capitan_7"></span>
+        </span>
+        <span class="sh-vote-card__byline">by capitan_7</span>
+      </div>
+
+      <h2 class="sh-vote-card__title">Change Manager</h2>
+      <p class="sh-vote-card__body">If your first preference is eliminated, your next one carries the vote.</p>
+
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT2H47M6S" data-countdown="10026">02:47:06</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+
+      <div class="sh-vote sh-vote--ballot" data-ballot>
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Rank all four</span>
+          <span class="sh-verdict sh-verdict--hold" data-ballot-count>Ranked 0/4</span>
+        </div>
+
+        <p class="sh-ballot__hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.4"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/>
+          </svg>
+          Tap in order of preference. Tap again to clear a rank.
+        </p>
+
+        <ul class="sh-ballot">
+          <li>
+            <button class="sh-opt" type="button" aria-pressed="false">
+              <span class="sh-opt__slot" aria-hidden="true"></span>
+              <span class="sh-opt__name">Pep Guardiola</span>
+              <span class="sh-opt__pct">34%</span>
+            </button>
+          </li>
+          <li>
+            <button class="sh-opt" type="button" aria-pressed="false">
+              <span class="sh-opt__slot" aria-hidden="true"></span>
+              <span class="sh-opt__name">Michael Carrick</span>
+              <span class="sh-opt__pct">28%</span>
+            </button>
+          </li>
+          <li>
+            <button class="sh-opt" type="button" aria-pressed="false">
+              <span class="sh-opt__slot" aria-hidden="true"></span>
+              <span class="sh-opt__name">José Mourinho</span>
+              <span class="sh-opt__pct">22%</span>
+            </button>
+          </li>
+          <li>
+            <button class="sh-opt sh-opt--reject" type="button" aria-pressed="false">
+              <span class="sh-opt__slot" aria-hidden="true"></span>
+              <span class="sh-opt__name">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                  <path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>
+                </svg>
+                Reject all options
+              </span>
+              <span class="sh-opt__pct">16%</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sh-actions">
+        <button class="sh-btn sh-btn--cancel" type="button" data-ballot-cancel>Cancel</button>
+        <button class="sh-btn sh-btn--vote" type="button" data-ballot-submit disabled>Vote</button>
+      </div>
+    </article>
+  </div>
+
+  <div style="height:28px" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     SCREEN 3 — NO OPEN PROPOSALS
+     ============================================================ -->
+<section class="frame" data-title="Empty state">
+
+  <div class="sh-head">
+    <h1>Voting</h1>
+
+    <!-- an empty rail has nothing to filter, so the control is disabled
+         rather than left reading as tappable -->
+    <button class="sh-iconbtn" type="button" aria-label="Filter proposals — nothing to filter" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+        <path d="M4 7h16M6.5 12h11M10 17h4"/>
+      </svg>
+    </button>
+
+    <button class="sh-textbtn" type="button">
+      View all
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13">
+        <path d="M7 17 17 7M9 7h8v8"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="sh-rail sh-rail--top">
+    <article class="sh-vote-card sh-vote-card--empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6.8 3h6.9L18 7.3V19.5A1.5 1.5 0 0 1 16.5 21h-9.7A1.5 1.5 0 0 1 5.3 19.5V4.5A1.5 1.5 0 0 1 6.8 3Z"/>
+        <path d="M13.6 3v3.8a.9.9 0 0 0 .9.9H18"/>
+        <path d="m8.6 13.8 2.1 2.1 4-4.4"/>
+      </svg>
+      <p>Waiting for Proposals</p>
+    </article>
+  </div>
+
+  <div style="height:28px" aria-hidden="true"></div>
+</section>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---- animate the threshold fills on scroll-into-view ---- */
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.sh-vote-card'));
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('is-drawn'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.25 });
+    cards.forEach(function (c) { io.observe(c); });
+  } else {
+    cards.forEach(function (c) { c.classList.add('is-drawn'); });
+  }
+
+  var TICK = '<svg class="sh-pop__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+             'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+             '<path d="M4.5 12.5l5 5 10-11"/></svg>';
+
+  /* ---- filter the rail by proposal state --------------------------------
+     Wired per frame, not per document: this file carries three frames and a
+     document-level query would only ever reach the first one. */
+  var STATES = [
+    { v: 'all',    t: 'All proposals' },
+    { v: 'open',   t: 'Open for votes' },
+    { v: 'hold',   t: 'On veto hold' },
+    { v: 'closed', t: 'Closed' }
+  ];
+
+  Array.prototype.forEach.call(document.querySelectorAll('section.frame'), function (frame) {
+    var head = frame.querySelector('.sh-head');
+    var btn  = head && head.querySelector('[aria-label^="Filter proposals"]');
+    var rail = frame.querySelector('.sh-rail');
+    if (!btn || btn.disabled || !rail) return;
+
+    var cardsIn = Array.prototype.slice.call(rail.querySelectorAll('.sh-vote-card'));
+    var note    = rail.querySelector('.sh-railnote');
+
+    var pop = document.createElement('div');
+    pop.className = 'sh-pop sh-pop--head';
+    pop.hidden = true;
+    pop.setAttribute('role', 'dialog');
+    pop.setAttribute('aria-label', 'Filter proposals');
+    pop.innerHTML = '<p class="sh-pop__k">Show</p>' + STATES.map(function (o) {
+      return '<button class="sh-pop__o" type="button" role="radio" data-v="' + o.v + '" ' +
+             'aria-checked="' + (o.v === 'all') + '">' + TICK + '<span>' + o.t + '</span></button>';
+    }).join('');
+    head.appendChild(pop);
+
+    btn.setAttribute('aria-haspopup', 'dialog');
+    btn.setAttribute('aria-expanded', 'false');
+
+    function apply(v) {
+      var shown = 0;
+      cardsIn.forEach(function (c) {
+        var hit = (v === 'all') || (c.dataset.state === v);
+        c.hidden = !hit;
+        if (hit) shown++;
+      });
+      if (note) note.hidden = shown > 0;
+      btn.setAttribute('aria-pressed', String(v !== 'all'));
+      pop.querySelectorAll('.sh-pop__o').forEach(function (o) {
+        o.setAttribute('aria-checked', String(o.dataset.v === v));
+      });
+      rail.scrollLeft = 0;
+    }
+    function open() {
+      pop.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      document.addEventListener('mousedown', away, true);
+      document.addEventListener('keydown', esc, true);
+      var f = pop.querySelector('.sh-pop__o[aria-checked="true"]') || pop.querySelector('.sh-pop__o');
+      if (f) f.focus();
+    }
+    function close(refocus) {
+      pop.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('mousedown', away, true);
+      document.removeEventListener('keydown', esc, true);
+      if (refocus) btn.focus();
+    }
+    function away(e) { if (!head.contains(e.target)) close(false); }
+    function esc(e)  { if (e.key === 'Escape') { e.stopPropagation(); close(true); } }
+
+    btn.addEventListener('click', function () { pop.hidden ? open() : close(true); });
+    pop.addEventListener('click', function (e) {
+      var o = e.target.closest('.sh-pop__o'); if (!o) return;
+      apply(o.dataset.v); close(true);
+    });
+
+    apply('all');
+  });
+
+  /* ---- the ⓘ on every threshold panel -----------------------------------
+     An inline disclosure rather than a popover: .sh-vote clips its own
+     overflow so the ballot can bleed to the panel edges, and a floating
+     card anchored inside it would be cut off. */
+  var COPY = {
+    open:   ['How the 70% threshold works',
+             ['The leading option has to hold at least <b>70%</b> of the counted vote when the ' +
+              'clock stops. Below that, the proposal falls even if it is ahead.',
+              'The tick under the bar marks the threshold; the knob marks where the count stands now.']],
+    hold:   ['Why counting is on veto hold',
+             ['Club Management has filed a veto, so the count is <b>paused at 63%</b> — no further ' +
+              'ballots are taken while the hold stands.',
+              'Nothing is decided. If the hold is lifted, counting resumes from exactly these figures.']],
+    closed: ['How this count was settled',
+             ['The count closed on <b>12 July</b> at 76%, clear of the 70% threshold, so the ' +
+              'proposal carried.',
+              'Closed figures are final — the bar is a record, not a live reading.']]
+  };
+
+  Array.prototype.forEach.call(document.querySelectorAll('.sh-info'), function (info) {
+    var panel = info.closest('.sh-vote');
+    var card  = info.closest('.sh-vote-card');
+    if (!panel || !card) return;
+    var copy = COPY[card.dataset.state] || COPY.open;
+
+    var box = document.createElement('div');
+    box.className = 'sh-explain';
+    box.hidden = true;
+    box.setAttribute('role', 'region');
+    box.innerHTML = '<h4>' + copy[0] + '</h4>' + copy[1].map(function (p) {
+      return '<p>' + p + '</p>';
+    }).join('');
+    var opt = panel.querySelector('.sh-vote__opt');
+    if (!opt) return;
+    opt.parentNode.insertBefore(box, opt.nextSibling);
+
+    info.setAttribute('aria-expanded', 'false');
+
+    function esc(e) {
+      if (e.key === 'Escape') { e.stopPropagation(); shut(true); }
+    }
+    function away(e) { if (!panel.contains(e.target)) shut(false); }
+    function shut(refocus) {
+      box.hidden = true;
+      info.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('keydown', esc, true);
+      document.removeEventListener('mousedown', away, true);
+      if (refocus) info.focus();
+    }
+    info.addEventListener('click', function () {
+      if (box.hidden) {
+        box.hidden = false;
+        info.setAttribute('aria-expanded', 'true');
+        document.addEventListener('keydown', esc, true);
+        document.addEventListener('mousedown', away, true);
+      } else { shut(true); }
+    });
+  });
+
+  /* ---- ranked-choice ballot ----
+     Casting settles the ballot: the rows keep their ranks, lose every
+     affordance, and the panel reads back what was cast. A settled ballot
+     never takes another vote. */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-ballot]'), function (panel) {
+    var card    = panel.closest('.sh-vote-card');
+    var opts    = Array.prototype.slice.call(panel.querySelectorAll('.sh-opt'));
+    var counter = panel.querySelector('[data-ballot-count]');
+    var hint    = panel.querySelector('.sh-ballot__hint');
+    var lede    = panel.querySelector('.sh-vote__lede');
+    var cancel  = card.querySelector('[data-ballot-cancel]');
+    var submit  = card.querySelector('[data-ballot-submit]');
+    var order   = [];
+    var cast    = false;
+
+    function render() {
+      opts.forEach(function (btn) {
+        var i    = order.indexOf(btn);
+        var slot = btn.querySelector('.sh-opt__slot');
+        var name = btn.querySelector('.sh-opt__name').textContent.trim();
+        btn.setAttribute('aria-pressed', i > -1 ? 'true' : 'false');
+        slot.textContent = i > -1 ? String(i + 1) : '';
+        btn.setAttribute('aria-label', cast
+          ? name + (i > -1 ? ', your preference ' + (i + 1) : ', unranked') + '. Your vote is cast.'
+          : (i > -1
+              ? name + ', ranked ' + (i + 1) + ' of ' + opts.length + '. Tap to clear.'
+              : name + ', unranked. Tap to rank next.'));
+      });
+      if (cast) return;
+      var full = order.length === opts.length;
+      counter.textContent = 'Ranked ' + order.length + '/' + opts.length;
+      counter.classList.toggle('sh-verdict--hold', !full);
+      submit.disabled = !full;
+    }
+
+    opts.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (cast) return;
+        var i = order.indexOf(btn);
+        if (i > -1) { order.splice(i, 1); } else { order.push(btn); }
+        render();
+      });
+    });
+
+    cancel.addEventListener('click', function () {
+      if (cast) return;
+      order = []; render();
+    });
+
+    submit.addEventListener('click', function () {
+      if (cast || submit.disabled) return;
+      cast = true;
+      render();
+
+      /* the ballot stops being a control */
+      opts.forEach(function (b) { b.disabled = true; b.setAttribute('aria-disabled', 'true'); });
+      panel.classList.add('sh-vote--cast');
+      if (hint) hint.hidden = true;
+
+      counter.textContent = 'Vote cast';
+      counter.classList.remove('sh-verdict--hold');
+      counter.classList.add('sh-verdict--cast');
+      if (lede) lede.textContent = 'Your ballot is in';
+
+      var names = order.map(function (b) {
+        return b.querySelector('.sh-opt__name').textContent.trim();
+      });
+      var read = document.createElement('p');
+      read.className = 'sh-cast';
+      read.setAttribute('role', 'status');
+      read.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M4.5 12.5l5 5 10-11"/></svg>' +
+        '<span>Counted in this order: <b>' + names.join('</b>, <b>') + '</b>. ' +
+        'A cast ballot cannot be changed — the count closes when the clock runs out.</span>';
+      panel.appendChild(read);
+
+      submit.disabled = true;
+      submit.textContent = 'Vote cast';
+      cancel.disabled = true;
+      cancel.setAttribute('aria-disabled', 'true');
+    });
+
+    render();
+  });
+
+  /* ---- countdowns ---- */
+  function pad(n) { return String(n).padStart(2, '0'); }
+  var clocks = Array.prototype.slice.call(document.querySelectorAll('[data-countdown]'))
+    .map(function (el) { return { el: el, left: parseInt(el.dataset.countdown, 10) || 0 }; });
+
+  if (clocks.some(function (c) { return c.left > 0; })) {
+    setInterval(function () {
+      clocks.forEach(function (c) {
+        if (c.left <= 0) return;
+        c.left -= 1;
+        var h = Math.floor(c.left / 3600),
+            m = Math.floor((c.left % 3600) / 60),
+            s = c.left % 60;
+        c.el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+        c.el.setAttribute('datetime', 'PT' + h + 'H' + m + 'M' + s + 'S');
+      });
+    }, 1000);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<p class="dek">The club-management screens reached from Profile: the clubs you are registered with, adding
+one, the guest-or-member fork, the annual fee and its terms, the two dialogs either side of payment,
+and the sheet that switches your current club. Twelve screens — eleven of them a proposal, and one,
+frame 12, the screen that is actually in the app today.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>What ships, and what is a proposal</h2>
+
+  <p><b>Read frame 12 first.</b> Frame 12 — <em>Add a club · as shipped</em> — is the screen a member
+  reaches today when they try to join a club. It shows the crest, one line of copy, and a button. The
+  copy is <code>"To add this club, kindly log in to sports heist on desktop"</code>, and the button's
+  entire job is to close the sheet. There is no next step. Frames 04 to 10 — the four-step picker, the
+  guest fork, the fee screen, the membership-ID dialog, the receipt and the declined card — build the
+  in-app journey the specs describe, and <b>none of it exists in code</b>. We checked: the one endpoint
+  that would add a club is never called from anywhere in the app, and there is no payment library, no
+  charge call and no card-capture screen in the codebase at all. Frames 04 to 10 are a proposal for
+  work that has not been built, not a rebrand of something that has.</p>
+
+  <p>That contrast is the reason frame 12 is in here. A client tapping through frames 04 to 10 would
+  reasonably conclude that joining a club works in the app. It does not, and the review should not
+  imply otherwise.</p>
+
+  <p>The rest is the club flow as it should look. Seven of the twelve frames are rebuilds of screens in
+  the capture set — the clubs list, the four-step picker, the guest upsell, the fee screen, the
+  membership-ID dialog, the success dialog and the club switcher. Four more are the states the capture
+  set never recorded: <b>no clubs yet</b>, <b>clubs loading</b>, <b>catalogue unavailable</b> and
+  <b>card declined</b>.</p>
+
+  <p>Third-party crests are the hard part of this flow, and it is the only flow where several of them
+  appear at once. The current build puts them straight onto the card fill at four different sizes, so a
+  yellow crest measures about <code>15:1</code> against the panel while a blue one drops to about
+  <code>1.4:1</code> and dissolves. Every crest here sits on the <b>crest plate</b> settled in Club
+  selection — a fixed light plate at one of three sizes, with the crest fitted to the padded square.
+  We measure the plate, not the artwork, so the number is <code>14.4:1</code> on <code>--surface</code>
+  for every club in the catalogue.</p>
+
+  <p>The second thing this flow gets wrong is that it never says which club is <em>current</em>. On the
+  shipped list the only difference on the Barcelona card is that its <code>Remove</code> link is
+  missing — a side effect standing in for a signal. Here the current club carries a <code>Current</code>
+  pill, an accent edge, and a <code>Remove</code> control that is explicitly disabled with the reason
+  written underneath it.</p>
+
+  <p>The third is the 3-club-per-league limit. It is stated in the shipped app as a three-line prose
+  footnote in the lowest-contrast text on the screen, in two different wordings on two different
+  screens, and never as a number. Here it is a counted readout with ticks, placed above the control it
+  constrains, on both the list and the picker — and the clubs you have already used it on are named.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. Twelve frames; frame 12 is the only one that exists in code.</caption>
+      <thead><tr><th scope="col">Frame</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>01 Your clubs</td><td>Top bar</td><td class="t-note"><code>margin:34px var(--gutter) 14px</code> — the library clearance so the bar does not render behind the device island. One <code>38px</code> back disc, <code>--surface</code>, with an <code>::after</code> expansion to a <code>44px</code> hit area.</td></tr>
+        <tr><td>01</td><td>Screen title</td><td class="t-note"><code>Your clubs</code> at <code>34/800/-.025em</code> uppercase, plus a <code>13px --muted</code> intro.</td></tr>
+        <tr><td>01</td><td>Limit readout</td><td class="t-note">Section container: <code>--section</code> fill, <code>1px --line</code>, <code>--r-card</code>, <code>12px</code> padding. Holds a status pill <code>2 of 3 used · champions league</code>, three <code>4px</code> ticks (<code>--acid</code> used, <code>rgba(255,255,255,.14)</code> free), and a <code>12.5px --muted</code> note.</td></tr>
+        <tr><td>01</td><td>Club card ×3</td><td class="t-note"><code>--surface</code>, <code>--r-card</code>, <code>1px --line</code>, <code>14px</code> padding. Three rails split by <code>1px --line-soft</code>: head (plate + name + leagues), body (auto-renewal switch row), foot (current / make-current, then Remove). Nothing competes with the name for the head row, so <code>Borussia Dortmund</code> and <code>Manchester United</code> both set on one line.</td></tr>
+        <tr><td>01</td><td>→ Crest plate</td><td class="t-note"><code>--plate 40px</code>: ground <code>rgba(255,255,255,.94)</code>, inner hairline <code>rgba(0,0,0,.13)</code>, radius <code>11.2px</code>, padding <code>5px</code>, <code>object-fit:contain</code> into the padded square.</td></tr>
+        <tr><td>01</td><td>→ Club name + sub</td><td class="t-note"><code>17/600/-.015em</code> white; leagues on the line below at <code>11.5px --muted</code>. The shipped sheet concatenates <code>(CL, LL)</code> into the name string; here it is a separate metadata line.</td></tr>
+        <tr><td>01</td><td>→ Current marker</td><td class="t-note"><code>--acid-wash</code> status pill at <code>24px</code> leading the foot rail, plus <code>inset 3px 0 0 var(--acid)</code> on the card. Non-current cards carry a <code>34px</code> <code>Make current</code> pill in the same slot.</td></tr>
+        <tr><td>01</td><td>→ Auto renewal</td><td class="t-note">forms.html toggle: <code>46 × 28</code>, <code>--sunken</code> track off, <code>--acid</code> track on, white knob in both states. Sub-line states the consequence — <code>Renews 12 Aug 2026 · $30</code> when on, <code>Off — ends 19 Jun 2026</code> when off.</td></tr>
+        <tr><td>01</td><td>→ Remove</td><td class="t-note"><code>12/600 --muted</code> label with a bin glyph, <code>::after</code> expanded to <code>44px</code>. Not red: <code>#E2564A</code> on <code>--surface</code> is <code>4.36:1</code>, which fails AA for text this size.</td></tr>
+        <tr><td>01</td><td>Docked action</td><td class="t-note"><code>position:sticky;bottom:0</code> with <code>margin-top:auto</code> inside the frame, <code>--bg</code> fill, <code>1px --line</code> top rule, <code>46px</code> acid button. Sticky rather than fixed so the bar belongs to this frame only, sits at the foot of a short screen and stays pinned on a long one.</td></tr>
+        <tr><td>02 Empty</td><td>Empty panel</td><td class="t-note"><code>--section</code> panel, centred, <code>74px</code> shield-and-plus line art at <code>1.5</code> stroke in <code>--dim</code>, <code>17/600</code> heading, <code>12.5px --muted</code> body capped at <code>29ch</code>, acid CTA.</td></tr>
+        <tr><td>02</td><td>Price line</td><td class="t-note"><code>$30 a year</code> bolded inside a <code>12.5px --muted</code> note, plus the 3-per-league rule. The empty state is the only place the price appears before the fee screen.</td></tr>
+        <tr><td>03 Loading</td><td>Skeleton cards</td><td class="t-note">Same card geometry, so nothing reflows. Bars are <code>rgba(255,255,255,.07)</code> pulsing <code>.45 → .95</code> over <code>1.4s</code>, suppressed under <code>prefers-reduced-motion</code>.</td></tr>
+        <tr><td>03</td><td>→ Crest slot</td><td class="t-note">The <b>code plate</b>, not a grey box: <code>BAR</code>, <code>BVB</code>, <code>MUN</code> at <code>800</code>, <code>-.03em</code>, <code>--acid-ink</code>, <code>12px</code>. The plate is already correct at rest, so artwork replaces the code without a reflow or a flash.</td></tr>
+        <tr><td>04 Add a club</td><td>Cascade</td><td class="t-note">Four numbered steps on one <code>2px</code> rail. Rail and mark go acid once a step is satisfied; a locked step keeps a padlock in its label and on its field. <code>26px</code> step marks, <code>15/600</code> labels.</td></tr>
+        <tr><td>04</td><td>→ Select field</td><td class="t-note"><code>--surface</code>, <code>1px --line</code>, <code>--r-panel</code>, <code>52px</code> minimum, value <code>15/600</code>, chevron <code>18px --muted</code>. Locked variant drops to <code>--sunken</code> with a padlock and no chevron.</td></tr>
+        <tr><td>04</td><td>→ Step 4 panel</td><td class="t-note"><code>--section</code> container holding the limit readout, a search field, then the club list. The limit sits above the list because it constrains what the list can do.</td></tr>
+        <tr><td>04</td><td>→ Already registered</td><td class="t-note"><code>28px</code> plates plus club names on a hairline inside the limit block, so the two used slots are named rather than only counted.</td></tr>
+        <tr><td>04</td><td>→ Club row</td><td class="t-note"><code>40px</code> plate, name <code>14/600</code>, sub <code>11.5px --muted</code>, <code>9px</code> vertical padding, <code>1px --line-soft</code> divider. Selected = <code>--acid-wash</code> plus <code>inset 3px 0 0 var(--acid)</code> plus an acid tick.</td></tr>
+        <tr><td>04</td><td>→ Blocked club</td><td class="t-note">Manchester United renders at <code>.38</code> opacity with a padlock and the sub-line <code>Already registered</code>, and is not selectable.</td></tr>
+        <tr><td>05 Can't load</td><td>Failure inside the step</td><td class="t-note">The error renders <em>inside the step that failed</em>, not as a full-screen takeover: <code>34px</code> red tile at <code>1px var(--red-line)</code>, <code>14.5/600</code> heading, <code>12.5px --muted</code> body, two <code>38px</code> ghost actions. Downstream steps stay visibly locked.</td></tr>
+        <tr><td>06 Guest or member</td><td>Overflow</td><td class="t-note">A second <code>38px</code> disc, right, three <code>1.7px</code> dots.</td></tr>
+        <tr><td>06</td><td>Club lockup</td><td class="t-note"><code>--surface</code> card: <code>64px</code> plate, name <code>22/700/-.02em</code>, league <code>12px --muted</code>, plus a quiet <code>Guest</code> pill on <code>--neutral-wash</code>.</td></tr>
+        <tr><td>06</td><td>Tier table</td><td class="t-note">Six capability rows in a <code>--section</code> container. Two <code>62px</code> columns headed <code>Guest</code> (<code>--muted</code>) and <code>Member</code> (<code>--acid</code>). Yes is a <code>17px</code> acid tick; no is an <code>11 × 2</code> <code>--dim</code> dash — a different mark, not a different colour.</td></tr>
+        <tr><td>06</td><td>Two paths</td><td class="t-note">Stacked in the dock: acid <code>Become a member — $30/year</code> above ghost <code>Stay a guest</code>. Both <code>46px</code>, both full width, distinguished by fill against hairline.</td></tr>
+        <tr><td>07 Register</td><td>Fee card</td><td class="t-note"><code>$30</code> at <code>34/800/-.03em</code> tabular, <code>a year</code> at <code>12.5px --muted</code>, and the return — <code>30</code> at <code>17/700 --acid</code> over a <code>credits back</code> micro-label — right-aligned in the same card.</td></tr>
+        <tr><td>07</td><td>Payment method</td><td class="t-note"><code>34px</code> neutral tile with a <code>1.9</code>-stroke card glyph, <code>Visa •••• 4242</code> at <code>14.5/600</code> tabular, <code>Expires 12/2028</code> at <code>11.5px --muted</code>, <code>Change</code> as a <code>34px</code> pill.</td></tr>
+        <tr><td>07</td><td>Renewal row</td><td class="t-note">The same toggle row as the list card, so the control the member meets before paying is the control they later manage.</td></tr>
+        <tr><td>07</td><td>Top-up disclosure</td><td class="t-note"><code>--sunken</code> panel, <code>1px --line</code>, with a <code>34px --acid-wash</code> info tile. Replaces the shipped navy <code>#202461</code> panel, which is the only navy surface in the app.</td></tr>
+        <tr><td>07</td><td>CTA</td><td class="t-note">Scrolls with the content, as captured. <code>Pay $30 and register</code> — the amount is in the label, so the commitment is stated at the point of commitment.</td></tr>
+        <tr><td>08 Membership ID</td><td>Scrim</td><td class="t-note"><code>rgba(3,4,1,.72)</code> with a <code>10px</code> blur and <code>saturate(.9)</code>, and an opaque <code>rgba(3,4,1,.86)</code> fallback where <code>backdrop-filter</code> is unsupported.</td></tr>
+        <tr><td>08</td><td>Dialog</td><td class="t-note">dialogs.html shell unchanged: <code>--surface</code>, <code>--r-card</code>, <code>1px --line</code>, <code>20px</code> padding, <code>20px</code> insets, <code>340px</code> cap, <code>0 24px 60px rgba(0,0,0,.55)</code>.</td></tr>
+        <tr><td>08</td><td>→ Lockup</td><td class="t-note"><code>64px</code> code plate <code>FCB</code>, name <code>18/600</code>, league <code>11.5px --muted</code>. Left-aligned, not centred — the same lockup as frame 06 at dialog scale.</td></tr>
+        <tr><td>08</td><td>→ Field</td><td class="t-note">forms.html shell: label outside and above at <code>12.5/600</code> white, <code>52px</code> control, <code>16px</code> tabular value, focus = <code>--acid</code> border plus a <code>3px --acid-wash</code> ring. Help text explains where the number comes from.</td></tr>
+        <tr><td>08</td><td>→ Actions</td><td class="t-note">Two-up <code>46px</code>: ghost <code>Cancel</code>, acid <code>Verify</code>. Ink on the acid fill is <code>--acid-ink</code> at <code>12.31:1</code>.</td></tr>
+        <tr><td>09 Registered</td><td>Success mark</td><td class="t-note"><code>64px</code> crest plate with a <code>28px</code> solid <code>--acid</code> disc notched into its lower-right on a <code>3px --surface</code> ring. The tick is <code>--acid-ink</code>, the only ink the contract allows on an accent fill — the badge overlaps the white plate, where an accent wash would vanish. The shipped modal has no success mark at all.</td></tr>
+        <tr><td>09</td><td>Receipt</td><td class="t-note">Title <code>18/600</code>, then <code>$30 charged to Visa •••• 4242</code> at <code>13px --muted</code>, then a <code>--sunken</code> figure block: <code>30</code> at <code>20/800 --acid</code> over a tracked micro-label. The shipped modal restates no amount, no card and no reference.</td></tr>
+        <tr><td>09</td><td>Actions</td><td class="t-note">Stacked: acid <code>Make Liverpool my current club</code>, ghost <code>Back to my clubs</code>. The shipped modal's single <code>Okay</code> goes somewhere unverified.</td></tr>
+        <tr><td>10 Declined</td><td>Alert dialog</td><td class="t-note"><code>role="alertdialog"</code>, <code>44px</code> red tile with a <code>2</code>-stroke warning triangle. Copy states three negatives explicitly: not charged, not added, allowance untouched.</td></tr>
+        <tr><td>11 Switcher</td><td>Sheet</td><td class="t-note">sheets.html shell unchanged: <code>18px</code> top corners, <code>40 × 4</code> grabber in a <code>26px</code> strip, <code>surface → sunken</code> gradient, <code>1px --line</code>, head on a hairline, scrolling body, footer on the safe area.</td></tr>
+        <tr><td>11</td><td>→ Head</td><td class="t-note"><code>Your current club</code> at <code>11/700/.14em</code> caps, with an <code>Add</code> pill. The shipped sheet's <code>+</code> control carries no label and no accessible name.</td></tr>
+        <tr><td>11</td><td>→ Rows</td><td class="t-note"><code>48px</code> minimum option rows: <code>40px</code> plate, name <code>14/600</code>, leagues <code>11.5px --muted</code>. Selected carries four markers — accent wash, <code>--acid-line</code> rim, accent label and a tick.</td></tr>
+        <tr><td>11</td><td>→ Footer</td><td class="t-note">Ghost <code>Manage my clubs</code>, which is the route back to frame 01. The shipped sheet ends in <code>~200pt</code> of empty panel.</td></tr>
+        <tr><td>12 As shipped</td><td>The whole frame</td><td class="t-note"><b>This is the current app, not a proposal.</b> Source <code>lib/pages/profile/club/add_club.dart:9</code>, presented at full screen height from <code>pick_club.dart:210</code>. Reached from Profile → Current team → Change club (<code>profile_body.dart:510</code> → <code>change_club.dart:37</code>) → pick a crest.</td></tr>
+        <tr><td>12</td><td>Screen behind</td><td class="t-note">A stub of the shipped <code>PICK A CLUB</code> sheet (<code>pick_club.dart:18</code>) — search field and three club rows — so the frame stands alone at <code>375 × 812</code>. Not a rebuild; context only.</td></tr>
+        <tr><td>12</td><td>Sheet</td><td class="t-note"><code>sheets.html</code> shell unchanged, same as frame 11. The shipped sheet is presented at full device height and fills the surplus with two decorative PNGs (<code>add_club_top.png</code> at <code>277pt</code>, <code>add_club_bottom.png</code> at <code>40%</code> of the screen); here the sheet takes the height its content needs.</td></tr>
+        <tr><td>12</td><td>→ Head</td><td class="t-note"><code>Add a club</code> at <code>11/700/.14em</code> caps, and a <code>30px</code> <code>.sheet__x</code> close disc from <code>sheets.html</code> with the contract's <code>::after</code> expansion to <code>44px</code>. The quiet <code>In the app today</code> pill beside it is a <b>review annotation, not a control in the app</b> — it exists so this frame cannot be mistaken for part of the proposal.</td></tr>
+        <tr><td>12</td><td>→ Club lockup</td><td class="t-note"><code>64px</code> crest plate, name <code>22/700/-.02em</code>, league <code>12px --muted</code> — the same lockup as frames 06 and 07. Replaces <code>ClubChoosed</code> (<code>lib/pages/profile/widget/club_choosed.dart:4</code>), which renders the crest over a background PNG under a black gradient with the name in caps across it.</td></tr>
+        <tr><td>12</td><td>→ The message</td><td class="t-note"><code>--sunken</code> panel, <code>1px --line</code>, <code>--r-card</code>, with a <code>34px</code> neutral tile holding a <code>1.9</code>-stroke desktop glyph. Copy at <code>14px</code> white — primary contrast, because it is the entire content of the screen. The string is verbatim from <code>assets/translations/en.json</code>, key <code>pages.login.home.userProfile.club adding</code>: <code>"To add this club, kindly log in to sports heist on desktop"</code>. The app renders it <code>.toUpperCase()</code> (<code>add_club.dart:65-67</code>); it is set here in the sentence case it is authored in.</td></tr>
+        <tr><td>12</td><td>→ Action</td><td class="t-note">One full-width <code>46px</code> acid button, <code>Okay</code> — <code>notification.okay</code> in <code>en.json</code>, which is <code>"OKAY"</code>. Its whole handler is <code>routes.pop()</code> (<code>add_club.dart:88</code>): it dismisses the sheet and nothing else. No request is made and no club is added.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Populated list</td><td class="t-note">Frame 01. Three cards, one current, mixed renewal states, <code>2 of 3</code> used in the league on show.</td></tr>
+        <tr><td>Current club</td><td class="t-note"><code>Current</code> acid-wash pill, accent edge on the card, and <code>Remove</code> disabled with the reason stated. Every other card offers <code>Make current</code>.</td></tr>
+        <tr><td>Auto renewal on</td><td class="t-note">Acid track, white knob right, sub-line naming the renewal date and the amount.</td></tr>
+        <tr><td>Auto renewal off</td><td class="t-note"><code>--sunken</code> track, white knob left, sub-line naming the date the registration ends. Off is the darkest thing in the row; the shipped Material switch renders off <em>lighter</em> than on.</td></tr>
+        <tr><td>Not removable</td><td class="t-note">Padlock glyph, <code>--dim</code> label, and one line of explanation. The shipped card simply omits the link.</td></tr>
+        <tr><td>Empty — no clubs</td><td class="t-note"><b>New.</b> Frame 02. Panel, line-art shield, price and the 3-per-league rule, one CTA. The docked note reads <code>You have no clubs to manage yet.</code></td></tr>
+        <tr><td>Loading</td><td class="t-note"><b>New.</b> Frame 03. Three skeleton cards at exact height, crest slots holding code plates, disabled dock, and a live-region status line.</td></tr>
+        <tr><td>Cascade — step satisfied</td><td class="t-note">Acid mark with a tick, acid rail above the next step, value at <code>15/600</code> white.</td></tr>
+        <tr><td>Cascade — step active</td><td class="t-note"><code>1.5px --acid</code> ring on the mark, no fill, the step's panel expanded.</td></tr>
+        <tr><td>Cascade — step locked</td><td class="t-note">Mark at <code>.5</code> opacity, padlock in the label, field on <code>--sunken</code> with the prerequisite written in it and no chevron.</td></tr>
+        <tr><td>Club already registered</td><td class="t-note">Row at <code>.38</code> opacity, padlock, sub-line <code>Already registered</code>, not selectable.</td></tr>
+        <tr><td>Search no match</td><td class="t-note"><code>No club in this league matches that name.</code> at <code>13px --dim</code>, centred in the list container.</td></tr>
+        <tr><td>Catalogue unavailable</td><td class="t-note"><b>New.</b> Frame 05. Red tile, two recovery actions, error scoped to the failed step, downstream steps still locked.</td></tr>
+        <tr><td>Guest</td><td class="t-note">Frame 06. Quiet <code>Guest</code> pill on the lockup, three capabilities marked with a dash, two mutually exclusive actions.</td></tr>
+        <tr><td>At the 3-club limit</td><td class="t-note">The readout carries <code>.limit--full</code>, which turns the used ticks <code>--muted</code> and the pill to <code>--neutral-wash</code>, so a full allowance stops reading as an achievement. Not drawn as its own frame.</td></tr>
+        <tr><td>Membership required</td><td class="t-note">Frame 08. Focused field with a caret ring, the value present, <code>Verify</code> live.</td></tr>
+        <tr><td>Registered</td><td class="t-note">Frame 09. Crest with a tick badge, the amount and card restated, the credits figure isolated on <code>--sunken</code>.</td></tr>
+        <tr><td>Card declined</td><td class="t-note"><b>New.</b> Frame 10. Red tile, <code>role="alertdialog"</code>, three explicit negatives, two recovery actions.</td></tr>
+        <tr><td>No crest artwork</td><td class="t-note">The plate holds the club's 2–4 character code at <code>800</code>, <code>-.03em</code>, <code>--acid-ink</code>, <code>calc(size * .30)</code>. Manchester United is drawn this way throughout, so the fallback can be read against real artwork in the same list.</td></tr>
+        <tr><td>Pale or reversed artwork</td><td class="t-note">Artwork whose mean luminance over its alpha-covered pixels exceeds <code>0.82</code> is rejected at ingest and falls back to the code plate. There is deliberately no dark-plate variant — two plate tones in one list destroys the constant optical weight the plate exists to create.</td></tr>
+        <tr><td>Add a club — <b>as shipped today</b></td><td class="t-note"><b>Not a state of the proposal. The current app.</b> Frame 12. Crest, one line of copy sending the member to the desktop site, one button that closes the sheet. Everything in frames 04 to 10 is what we are proposing to replace it with, and none of it is built.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">Every transition and the skeleton pulse are suppressed under <code>prefers-reduced-motion:reduce</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the library</h3>
+      <ul>
+        <li><b>Crest plate</b> — the plate settled in <code>club-selection.html</code>, unchanged: fixed
+          <code>rgba(255,255,255,.94)</code> ground, <code>rgba(0,0,0,.13)</code> inner hairline,
+          <code>.28</code> radius, <code>.125</code> padding, contain-fit into the padded square, three
+          sizes (<code>28</code> / <code>40</code> / <code>64</code>), code-plate fallback.</li>
+        <li><b>Cascade</b> — the numbered, railed, locked four-step selector from
+          <code>club-selection.html</code>, applied to the Profile entry point.</li>
+        <li><b>Dialog shell</b> — <code>dialogs.html</code> verbatim: <code>20px</code> insets,
+          <code>340px</code> cap, <code>20px</code> padding, <code>44px</code> icon tiles, two-up and
+          stacked action rows, one scrim at <code>rgba(3,4,1,.72)</code> with a <code>10px</code> blur.</li>
+        <li><b>Sheet shell</b> — <code>sheets.html</code> verbatim: <code>18px</code> top corners,
+          grabber, hairline head, scrolling body, safe-area foot, and the <code>.opt</code> row with its
+          four selection markers.</li>
+        <li><b>Control shell and toggle</b> — <code>forms.html</code> verbatim: the <code>52px</code>
+          <code>.ctl</code> box, the label-outside-above convention, and the accent-on-track switch.</li>
+        <li><b>Limit readout</b> — the counted ticks from <code>club-selection.html</code>.</li>
+        <li><b>Tap targets</b> — the contract's <code>::after</code> expansion on every sub-44 px
+          control, so the sampled <code>38px</code> and <code>34px</code> visuals survive. Now also on
+          <code>sheets.html</code>'s <code>30px</code> <code>.sheet__x</code> close disc, which frame 12
+          introduces to this file.</li>
+        <li><b>Frame 12, from the app itself</b> — not from the library and not from the Figma. It is a
+          straight rebuild of <code>lib/pages/profile/club/add_club.dart</code>, copy included, and it is
+          the only frame here whose behaviour exists in code today.</li>
+      </ul>
+    </div>
+
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The entire add-a-club journey — frames 04 to 10.</b> Not a rebrand. There is no code
+          behind any of it: <code>addUserClub</code> (<code>lib/service/src/club.dart:46</code>) has zero
+          callers, and there is no payment library, charge call or card capture anywhere in
+          <code>lib/</code>. Building these seven frames is new product work, not restyling. Frame 12 is
+          what replaces them today.</li>
+        <li><b>Current-club marker</b> — a <code>Current</code> pill, an accent card edge, and a
+          <code>Make current</code> action on the others. The shipped list identifies the current club
+          only by the absence of its <code>Remove</code> link.</li>
+        <li><b>Three-rail club card</b> — head, switch row, meta row. The shipped card puts name,
+          switch and <code>Remove</code> on one <code>99pt</code> rail with the switch floating near the
+          horizontal centre, so nothing labels it.</li>
+        <li><b>Renewal consequence line</b> — the switch sub-line names the renewal date and the amount
+          when on, and the end date when off. The shipped screen says only <code>Auto renewal</code>.</li>
+        <li><b>Remove reason</b> — the disabled <code>Remove</code> carries one line explaining why.</li>
+        <li><b>Empty state</b> — frame 02. The shipped list has none; the profile screen it is reached
+          from actually crashes for a zero-club account (see Decisions).</li>
+        <li><b>Loading state</b> — frame 03, with the code plate as the crest placeholder so nothing
+          reflows.</li>
+        <li><b>Catalogue-failure state</b> — frame 05, scoped to the step that failed.</li>
+        <li><b>Declined state</b> — frame 10. There is no failure counterpart to the success modal
+          anywhere in the capture set.</li>
+        <li><b>Tier comparison table</b> — six capability rows replacing two paragraphs of prose in
+          which every word is capitalised. Yes/no is a tick against a dash.</li>
+        <li><b>Fee card</b> — the amount and what it returns in one lockup. The shipped screen sets
+          <code>$30 ANNUAL REGISTRATION FEE</code> as a caps heading with the amount and the descriptor
+          at the same weight, and never puts the amount on the button.</li>
+        <li><b>Receipt in the success dialog</b> — amount, card and credits restated. The shipped modal
+          restates none of them.</li>
+        <li><b>Success mark</b> — an acid tick tile on the crest. The shipped modal's only success
+          signal is the word <code>Successfully</code>.</li>
+        <li><b>Blocked club rows</b> — clubs you are already registered with are shown, locked and
+          labelled, rather than silently absent.</li>
+        <li><b>League as metadata</b> — leagues on their own line instead of concatenated into the club
+          name string as <code>BARCELONA (CL, LL)</code>.</li>
+        <li><b>Search that matches</b> — the shipped filter strips spaces from the query but not from
+          the club name, so <code>manchester united</code> matches nothing. Both sides are normalised
+          here.</li>
+        <li><b>Sentence-case labels throughout</b> — the folder splits 3–2 between Title Case and ALL
+          CAPS button labels across seven screens. One convention here.</li>
+        <li><b>Plain-English step names</b> — <code>Competition level</code> and <code>League</code>
+          replace <code>Jurisdictional level</code> and <code>League / Franchise</code>, matching
+          <code>club-selection.html</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li><h3>Do you want joining a club to work in the app at all?</h3>
+      <p>This is the biggest open question in the component, and frame 12 is the answer the code gives.
+      Today the journey ends at a sheet that says <code>"To add this club, kindly log in to sports heist
+      on desktop"</code> and an <code>OKAY</code> button that closes it
+      (<code>lib/pages/profile/club/add_club.dart:65-67</code> and <code>:88</code>). We re-checked every
+      claim behind that before drawing it, and all of it holds:</p>
+      <p><b>One</b> — <code>addUserClub</code> (<code>lib/service/src/club.dart:46</code>), the only
+      endpoint that would register a member with a club, has <b>zero callers</b>. The identifier appears
+      exactly once in the whole of <code>lib/</code>, at its own declaration.
+      <b>Two</b> — there is <b>no payment library, no charge call and no card capture</b> anywhere in the
+      app. <code>pubspec.yaml</code> lists no payment or in-app-purchase dependency at all. What does
+      exist is inert: <code>lib/models/src/api.dart:346-347</code> and <code>:374</code> mirror dj-stripe
+      fields that nothing reads, <code>Metadata.checkoutKey</code> / <code>checkoutCode</code>
+      (<code>lib/models/src/api.dart:511-512</code>) are parsed and never referenced outside the model,
+      and <code>ErrorResEnum.paymentError</code> (<code>lib/constants/src/enum.dart:223</code>) resolves
+      to the string <code>'credit_not_enough'</code> (<code>enum.dart:232-233</code>) — it is an
+      <em>in-app participation-credit</em> shortfall, not money. The Add Child Account flow says the same
+      thing as the club flow: <code>"To add a child account, please proceed to Sports Heist on
+      Desktop"</code>.</p>
+      <p>So frames 04 to 10 are <span class="flag">a proposal for capability that does not exist</span>,
+      not a rebrand of something that does — and that is a budget question, not a design one. If the
+      answer is that registration stays on desktop, then frame 12 is the screen to invest in and the
+      right version of it hands off deliberately: a link that opens the desktop page with the club
+      already chosen, rather than an <code>OKAY</code> that drops the member back where they started.</p></li>
+
+    <li><h3>Are the three defects in the shipped picker in scope?</h3>
+      <p>Frame 12 is reached through the <code>PICK A CLUB</code> sheet
+      (<code>lib/pages/profile/club/pick_club.dart:18</code>), and we verified three faults in it that
+      are cheap to fix and visible to any member:</p>
+      <p><b>One — multi-word club names cannot be found.</b> The filter at
+      <code>pick_club.dart:45-47</code> strips spaces from the <em>query</em> but not from the club name:
+      <code>club.name!.toLowerCase().contains(value.replaceAll(' ', '').toLowerCase())</code>. Typing
+      <code>manchester united</code> searches for <code>manchesterunited</code> against
+      <code>manchester united</code> and returns nothing. Frame 04 normalises both sides.
+      <b>Two — the list is re-sorted during layout.</b> <code>pick_club.dart:172-181</code> calls
+      <code>.sort()</code> on the club list from inside the horizontal <code>ListView.builder</code>'s
+      <code>itemBuilder</code>, so the collection is mutated once per item while the frame is being
+      built — a source of items jumping under the finger and of index errors on long leagues.
+      <b>Three — a crest that fails to load takes the row with it.</b>
+      <code>lib/pages/profile/widget/club_choosed.dart:50</code> renders the crest with
+      <code>Image.network</code> and <b>no</b> <code>errorBuilder</code> and no
+      <code>loadingBuilder</code>, so a broken or slow URL throws into the widget tree instead of
+      degrading. <em>(Note the path: the file is in <code>pages/profile/widget/</code>, not
+      <code>pages/profile/club/</code> where it is sometimes cited.)</em></p>
+      <p>The third one the library already answers: the <b>crest plate</b> carries a code fallback that
+      doubles as the loading placeholder, so a row never reflows and never depends on artwork arriving.
+      We have assumed <span class="flag">all three are fixed as part of this work</span>. Confirm, or
+      tell us to leave the picker alone.</p></li>
+
+    <li><h3>What can a guest actually not do?</h3>
+      <p>The guest screen promises that members unlock posting and liking ideas, voting on proposals
+      and hosting locker rooms. <b>The code enforces none of it.</b> The only place the guest/member
+      role is read at all is <code>lib/pages/profile/profile_body.dart:127</code>, and it is read
+      purely to print a status label. Posting an idea is gated
+      (<code>lib/cubit/proposal/idea.dart:305</code>) but by <em>club-config flags and credit
+      balance</em>, identically for a guest and a member. Liking, voting and creating a locker room
+      have no role check at any layer of the client. <code>CLString.statusMember = ["MEMBER","GUEST"]</code>
+      (<code>lib/constants/src/list_string.dart:3</code>) has zero references, and
+      <code>ProfileS.statusMember</code> (<code>lib/cubit/profile/profile.dart:450</code>) is declared,
+      initialised to <code>null</code>, and never assigned — it is absent from <code>copyWith</code>, so
+      it can never become anything else. We drew <span class="flag">the four capability splits the
+      upsell copy claims</span>. Confirm the list is right, and confirm whether the gate is meant to be
+      the tier or simply the credit balance — because today it is the credit balance, and a guest with
+      credits can do everything.</p></li>
+
+    <li><h3>Which currency is <code>$30</code>?</h3>
+      <p>The fee renders as a bare <code>$30</code> with no qualifier on the captured screen, and
+      <code>ConfigClub.creditAnnualMembershipCharge</code>
+      (<code>lib/models/src/api.dart:772</code>) is parsed but never read by any widget, so the code
+      does not disclose one either. We rendered <span class="flag"><code>$30</code> unqualified</span>.
+      With Australian league data in the catalogue this needs settling before it ships.</p></li>
+
+    <li><h3>Should the profile screen survive a zero-club account?</h3>
+      <p>Today it does not. <code>lib/cubit/profile/profile.dart:115-117</code> does
+      <code>indexWhere((element) =&gt; element.defaultClub == true)</code> and then indexes the list
+      with the result. If no club is flagged default — or if the account has no clubs at all —
+      <code>indexWhere</code> returns <code>-1</code> and <code>resultsClub[-1]</code> throws a
+      <code>RangeError</code> before the screen can render. Immediately after,
+      <code>profile_body.dart:127</code> calls <code>state.currentClub!.roles!.first</code>, which
+      throws again on an empty roles array. That is why no empty state was ever captured: the flow
+      cannot reach one. We drew <span class="flag">a real empty state</span> on the assumption the fix
+      is intended.</p></li>
+
+    <li><h3>Does switching the current club need a confirmation?</h3>
+      <p>Today it does not, and it also does not wait. <code>change_club.dart:76-81</code> calls
+      <code>changeClubDefault(...)</code> and then <code>routes.pop()</code> on the very next line,
+      without awaiting it — so the sheet closes before the request resolves, and a failure has nowhere
+      to surface. The cubit does show a loader (<code>profile.dart:275-277</code>), but by then the
+      caller has already dismissed. Related: the sheet's <code>BlocBuilder</code> rebuilds only when
+      <code>currentTeamID</code> changes (<code>change_club.dart:57-58</code>), so if the club list
+      arrives after the sheet is open the sheet stays empty. We drew
+      <span class="flag">immediate commit with no confirmation</span>, matching the shipped intent, but
+      the sheet needs to stay open until the switch lands.</p></li>
+
+    <li><h3>Is auto renewal a real setting yet?</h3>
+      <p><code>ResultsClub.subscription</code> (<code>lib/models/src/api.dart:278</code>) is a complete
+      dj-stripe subscription mirror, including <code>cancelAtPeriodEnd</code> — the field an
+      auto-renewal toggle would drive. It is parsed, serialised, and <b>read by nothing</b>, and no
+      endpoint in <code>lib/service/src/</code> writes to a subscription. So the toggle we drew on the
+      list card and on the fee screen has no backing write path in this tree. We drew it
+      <span class="flag">as a live per-club setting</span>, as the specs show. Confirm the write
+      endpoint exists server-side.</p></li>
+
+    <li><h3>Is the 3-club limit per league, and is it enforced anywhere?</h3>
+      <p>The rule appears only as prose, in two different wordings, on two screens
+      (<code>CL-01</code> and <code>CL-05</code>), and nothing in <code>lib/</code> counts, caps or
+      mentions it. We built it as <span class="flag">3 registrations per league per season, counted and
+      shown, with already-registered clubs locked in the picker</span>. If the limit is per account
+      rather than per league, the readout's label and the picker's locked rows both change.</p></li>
+
+    <li><h3>What is a participation credit worth?</h3>
+      <p>The captured screens state the same figure two ways — <code>30 Participation Credits</code> on
+      the fee screen and <code>30.0 worth of Participation Credits</code> on the success modal, the
+      second an unformatted float with the unit noun dropped. We rendered
+      <span class="flag"><code>30</code> as an integer, labelled <code>credits back</code> and
+      <code>participation credits added</code></span>. If credits are fractional, the whole component's
+      figures need decimals and a stated precision.</p></li>
+  </ol>
+</section>

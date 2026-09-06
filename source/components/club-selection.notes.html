@@ -1,0 +1,335 @@
+<p class="dek">The screen where a member picks the club they follow — the one choice that determines
+their War Room, their Backchat and their standings. Four dependent steps on one rail, ending in a
+league's club list with a hard three-club limit.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>A cascade rebuilt so the dependencies show</h2>
+  <p>
+    Club selection exists in the current product as a stack of four dropdowns: sport, then competition
+    level, then league, then club. Each one only works once the one above it is answered, but nothing on
+    screen says so — a member taps a dead control and nothing happens. This build is new in the dark
+    language and it fixes that by numbering the steps and railing them together: the rail above a step
+    is accent once that step is satisfied and a hairline while it is not, and a step that cannot yet be
+    answered carries a padlock and says what it is waiting for.
+  </p>
+  <p>
+    The second problem this screen solves is crests. Club artwork is authored for light grounds — kit,
+    print, letterhead — and dropping it on a near-black card produced a tenfold contrast spread inside a
+    single container in the current build: one club's yellow measured about <code>15:1</code> while
+    another club's blue measured about <code>1.4:1</code> and effectively disappeared. Rather than
+    measure each crest against our surface, every crest sits on an app-owned plate and we measure the
+    plate. That number is then a constant for every club in the catalogue.
+  </p>
+  <p>
+    The third is the limit. A member may follow three clubs in any one league, and the limit is placed
+    <em>above</em> the control it constrains rather than surfacing as an error after the tap.
+  </p>
+  <p>
+    Two devices sit above. The first is the screen itself: the cascade, the club list and the confirmed
+    pick are one screen, because the list is revealed inside step 4 rather than navigated to. The second
+    is the crest-plate specimen sheet — reference material, not a screen a member ever reaches, and now
+    on its own device rather than trailing the product screen in one long scroll.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Header</td><td>Back control</td>
+          <td class="t-note"><code>38&nbsp;px</code> circle on <code>#1C2129</code> with an 18&nbsp;px
+            1.9-stroke chevron, in a <code>44&nbsp;px</code> bar at the gutter.</td>
+        </tr>
+        <tr>
+          <td>Header</td><td>Title and intro</td>
+          <td class="t-note"><code>Club selection</code> at 34/800, uppercase, tracking
+            <code>-.025em</code>, left aligned — the system's one screen-title treatment, replacing the
+            centred app-bar title of the old build. Below it a <code>31ch</code> line at 13&nbsp;px in
+            <code>#99A0AE</code> stating what the choice does.</td>
+        </tr>
+        <tr>
+          <td>Cascade</td><td>Step rail</td>
+          <td class="t-note">A <code>2&nbsp;px</code> vertical rail running from each step marker to the
+            next, <code>12&nbsp;px</code> in from the gutter. It is <code>--line</code> while the step is
+            unanswered and accent at 50% opacity once it is done, so the dependency chain is readable
+            without interacting.</td>
+        </tr>
+        <tr>
+          <td>Cascade</td><td>Step marker</td>
+          <td class="t-note"><code>26&nbsp;px</code> circle on <code>#13171E</code> with a 1&nbsp;px
+            inset hairline, carrying the step number at 12/800 in <code>#5B606B</code>. Active gains a
+            1.5&nbsp;px accent ring and accent numeral; done fills accent with an
+            <code>#0B0E06</code> tick replacing the numeral; locked drops to <code>opacity:.5</code>.</td>
+        </tr>
+        <tr>
+          <td>Cascade</td><td>Step label</td>
+          <td class="t-note">15/600 at <code>-.01em</code>. A locked step's label goes
+            <code>#99A0AE</code> and reveals a 13&nbsp;px <code>#5B606B</code> padlock beside it.</td>
+        </tr>
+        <tr>
+          <td>Steps 1–3</td><td>Select field</td>
+          <td class="t-note">Full width, <code>52&nbsp;px</code> minimum height, padding
+            <code>8px 14px</code>, <code>R12</code>, fill <code>#1C2129</code>, 1&nbsp;px
+            <code>--line</code> border. Value at 15/600 truncating; 18&nbsp;px muted chevron that rotates
+            180° when open. Open state brings the border to
+            <code>rgba(155,226,34,.45)</code>.</td>
+        </tr>
+        <tr>
+          <td>Steps 1–3</td><td>Empty and locked fields</td>
+          <td class="t-note">Empty drops the value to 400 weight in <code>#99A0AE</code> and reads
+            <code>Choose a league</code>. Locked swaps the fill to <code>#13171E</code>, softens the
+            border to <code>--line-soft</code>, drops the text to <code>#5B606B</code>, replaces the
+            chevron with a 16&nbsp;px padlock, and reads what it is waiting for —
+            <code>Choose a sport first</code>.</td>
+        </tr>
+        <tr>
+          <td>Steps 1–3</td><td>Option list</td>
+          <td class="t-note">Inline below the field rather than a modal: <code>R12</code> list on
+            <code>#13171E</code> with a 1&nbsp;px border and <code>6&nbsp;px</code> padding. Options are
+            <code>10px 11px</code> at 14&nbsp;px on an <code>R8</code> row, hovering to white 5%. The
+            selected option goes accent at 600 and reveals a 14&nbsp;px tick.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Panel</td>
+          <td class="t-note">The section-container pattern: <code>#080A0C</code> fill, 1&nbsp;px
+            <code>--line</code>, <code>R16</code>, <code>12&nbsp;px</code> padding. When no league is
+            chosen it collapses to a single hint line instead —
+            <code>Choose a league first — clubs are listed by league.</code></td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Limit pill</td>
+          <td class="t-note">The status pill in its full <code>32&nbsp;px</code> form on
+            <code>rgba(155,226,34,.12)</code>, accent at 11/700 tracking <code>.11em</code>, reading
+            <code>2 of 3 used in this league</code>. It is a live region, so the count is announced as
+            it changes.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Limit ticks</td>
+          <td class="t-note">Three <code>4&nbsp;px</code> bars <code>5&nbsp;px</code> apart at
+            <code>rgba(255,255,255,.14)</code>. Used slots fill accent; the pending slot — the club being
+            chosen right now — fills accent at 45% opacity, so the pick is visibly provisional.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Already following</td>
+          <td class="t-note">Below a 1&nbsp;px <code>--line-soft</code> rule: a tracked
+            <code>ALREADY FOLLOWING</code> label at 10.5/700 then the clubs already held in this league,
+            each a <code>28&nbsp;px</code> plate and its name at 11.5&nbsp;px in
+            <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Search</td>
+          <td class="t-note"><code>44&nbsp;px</code> field, fully rounded, fill <code>#13171E</code>,
+            1&nbsp;px <code>--line</code>, <code>40&nbsp;px</code> left padding for a 17&nbsp;px
+            <code>#5B606B</code> magnifier. Placeholder names the league —
+            <code>Search Champions League clubs</code>. Focus takes the accent border. Matching ignores
+            spaces and also matches the short code.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Club row</td>
+          <td class="t-note"><code>9px 12px</code>, <code>11&nbsp;px</code> gap, 1&nbsp;px
+            <code>--line-soft</code> top border with none on the first, inside an <code>R12</code> list on
+            <code>#1C2129</code>. A <code>40&nbsp;px</code> plate, then the club name at 14/600 with the
+            league beneath at 11.5&nbsp;px in <code>#99A0AE</code>, then the end slot.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Row end slot</td>
+          <td class="t-note">Selected shows an 18&nbsp;px accent tick. Already-followed shows the word
+            <code>FOLLOWING</code> at 10.5/700 tracking <code>.11em</code> in <code>#5B606B</code>.
+            Blocked by the limit shows a 16&nbsp;px <code>#5B606B</code> padlock — the pill above already
+            states <em>why</em>, so the row does not repeat the sentence.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>Selected row</td>
+          <td class="t-note">Accent wash fill with a <code>3&nbsp;px</code> accent edge inset on the left
+            and the sub-line switching to accent and the word <code>Selected</code> — the same
+            viewer's-row emphasis used on the Merits leaderboard.</td>
+        </tr>
+        <tr>
+          <td>Step 4</td><td>No matches</td>
+          <td class="t-note"><code>22px 12px</code> centred line at 13&nbsp;px in <code>#5B606B</code>
+            naming the league: <code>No club in Champions League matches that.</code></td>
+        </tr>
+        <tr>
+          <td>Crest plate</td><td>Construction</td>
+          <td class="t-note">Ground is a fixed <code>rgba(255,255,255,.94)</code> — never per-club — with
+            a <code>rgba(0,0,0,.13)</code> inner hairline that reads as a bevel and stops pale artwork
+            bleeding into the plate edge. Radius is <code>28%</code> of the plate, padding
+            <code>12.5%</code>, and artwork is <code>object-fit:contain</code> into the padded square
+            rather than height-fitted, so a wide roundel and a tall shield occupy the same bounding box.
+            No shadow, no glow, no per-club tint, no accent ring.</td>
+        </tr>
+        <tr>
+          <td>Crest plate</td><td>Measured contrast</td>
+          <td class="t-note">The plate against each surface: <code>~14.4:1</code> on
+            <code>#1C2129</code>, <code>~15.6:1</code> on <code>#13171E</code>,
+            <code>~17.5:1</code> on <code>#080A0C</code>, <code>~18.3:1</code> on
+            <code>#030401</code>. Because the plate is app-owned, that is a constant for every club.</td>
+        </tr>
+        <tr>
+          <td>Crest plate</td><td>Size steps</td>
+          <td class="t-note">Three, and only three. <code>28&nbsp;px</code> for dense rows and meta
+            lines, <code>40&nbsp;px</code> for select values and club rows — the primary tap target —
+            and <code>64&nbsp;px</code> for headers and confirmation lockups. Radius, padding and code
+            type derive from the size: <code>8/3.5/8.4</code>, <code>11.2/5/12</code>,
+            <code>17.9/8/19.2&nbsp;px</code>.</td>
+        </tr>
+        <tr>
+          <td>Crest plate</td><td>Code fallback</td>
+          <td class="t-note">2–4 characters, uppercase, 800 weight, tracking <code>-.03em</code>, in
+            <code>#0B0E06</code> — the existing ink-on-a-light-ground token — at 30% of the plate size.
+            Used when no artwork exists, when artwork fails ingest, and while artwork loads, so the row
+            never reflows and never flashes an empty box.</td>
+        </tr>
+        <tr>
+          <td>Your pick</td><td>Confirmation card</td>
+          <td class="t-note"><code>R16</code> card on <code>#1C2129</code>, <code>16&nbsp;px</code>
+            padding, holding a <code>64&nbsp;px</code> plate, a tracked <code>YOUR PICK</code> eyebrow,
+            the club at 17/600 truncating, the league and sport at 12&nbsp;px in <code>#99A0AE</code>,
+            and a <code>34&nbsp;px</code> <code>Change</code> pill.</td>
+        </tr>
+        <tr>
+          <td>Dock</td><td>Primary action</td>
+          <td class="t-note">Fixed outside the scroll: <code>#030401</code> bar with a 1&nbsp;px
+            <code>--line</code> top edge, a centred 12&nbsp;px note in <code>#99A0AE</code> that reports
+            exactly what is missing, and a <code>52&nbsp;px</code> <code>R12</code> accent button at
+            15/700. Disabled and enabled differ by <code>opacity:.38</code> only — same fill, same
+            1&nbsp;px accent border, same radius, same height. The old build swapped the fill and dropped
+            the border.</td>
+        </tr>
+        <tr>
+          <td>Specimens</td><td>Second device</td>
+          <td class="t-note">A reference sheet on its own device, not part of the product: the plate at
+            its three size steps and with its code fallback; the same plate holding four kinds of artwork
+            on <code>#1C2129</code> and again on <code>#13171E</code>; the select field filled, empty and
+            locked; and the primary action in both opacities.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Step locked</td><td class="t-note">Marker at 50% opacity, label muted with a padlock, field on <code>#13171E</code> with a padlock and a sentence naming what it is waiting for. Not focusable.</td></tr>
+        <tr><td>Step active</td><td class="t-note">Marker ringed 1.5&nbsp;px in accent with an accent numeral; the field is live.</td></tr>
+        <tr><td>Step done</td><td class="t-note">Marker fills accent with a tick, and the rail above the next step turns accent at 50%.</td></tr>
+        <tr><td>Field open</td><td class="t-note">Border to <code>rgba(155,226,34,.45)</code>, chevron rotated, inline option list below. Tapping anywhere outside closes it.</td></tr>
+        <tr><td>Changing an earlier step</td><td class="t-note">Answering step 1 clears the level, league and club; answering step 2 clears the league and club. The cascade re-locks and the dock note changes with it — a stale answer is never left standing.</td></tr>
+        <tr><td>League chosen</td><td class="t-note">A <code>28&nbsp;px</code> plate carrying the league's code appears inside the step-3 field, and step 4 opens with the search placeholder naming that league.</td></tr>
+        <tr><td>Limit under</td><td class="t-note">Accent pill counting used slots, accent ticks, and the note explaining that the pick counts even if you leave mid-season.</td></tr>
+        <tr><td>Limit reached</td><td class="t-note">Pill drops to white 6% with muted text and reads <code>Limit reached · 3 of 3</code>, the filled ticks go muted, the note tells you to leave a club first, and every unselected row locks.</td></tr>
+        <tr><td>Row already followed</td><td class="t-note">Plate and text at 38% opacity, end slot reads <code>FOLLOWING</code>, not tappable, no hover.</td></tr>
+        <tr><td>Row blocked by the limit</td><td class="t-note">Same dimming with a padlock in the end slot. The reason lives once, in the pill.</td></tr>
+        <tr><td>Row selected</td><td class="t-note">Accent wash, <code>3&nbsp;px</code> accent edge, sub-line reads <code>Selected</code>, tick in the end slot. Tapping again deselects.</td></tr>
+        <tr><td>Search with no match</td><td class="t-note">The list is replaced by one centred line naming the league searched.</td></tr>
+        <tr><td>Pick made</td><td class="t-note">The confirmation card appears, the dock note becomes <code>Barcelona · Champions League</code>, and Continue enables.</td></tr>
+        <tr><td>Artwork missing or reversed</td><td class="t-note">Falls back to the code plate. Artwork whose mean luminance over its alpha-covered pixels exceeds <code>0.82</code> is rejected at ingest, because a plate cannot outline a white-on-transparent mark. A second dark-plate variant is deliberately not offered.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Tokens</b> — surfaces, hairlines, accent, acid-ink, radii and the type scale, copied verbatim from the sampled set</li>
+        <li><b>Screen title</b> — 34/800 uppercase at <code>-.025em</code>, left aligned</li>
+        <li><b>Section container</b> — <code>#080A0C</code>, 1&nbsp;px <code>--line</code>, <code>R16</code>, <code>12&nbsp;px</code> padding, used for the club panel</li>
+        <li><b>Status pill</b> — the <code>LIVE NOW</code> geometry, type and dot, carrying the limit count</li>
+        <li><b>Icon button and pill button</b> — <code>38&nbsp;px</code> circle, <code>34&nbsp;px</code> dark pill</li>
+        <li><b>Card and row</b> — <code>R16</code> card on <code>#1C2129</code>, rows with a <code>--line-soft</code> top border and none on the first</li>
+        <li><b>Selected-row emphasis</b> — accent wash plus a <code>3&nbsp;px</code> edge, from the Merits leaderboard</li>
+        <li><b>Eyebrow</b> — 10.5/700 tracked micro-label in <code>#5B606B</code></li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The whole screen</b> — the current build is four unrelated dropdowns; there is no designed frame in this brand</li>
+        <li><b>Numbered, railed cascade</b> — the dependency between the four steps is drawn, not implied</li>
+        <li><b>Locked-step language</b> — padlock plus a sentence naming the blocker, on both the marker and the field</li>
+        <li><b>Crest plate</b> — the ground, the bevel hairline, the <code>28%</code> radius and <code>12.5%</code> padding rule, the contain-fit, the three size steps and the derived radius/padding/type at each</li>
+        <li><b>Plate-not-crest contrast strategy</b> — measuring an app-owned constant instead of third-party artwork</li>
+        <li><b>Ingest rule</b> — reject artwork above <code>0.82</code> mean luminance over its alpha coverage and fall back to the code plate, rather than shipping a second plate tone</li>
+        <li><b>Code fallback</b> — the short code as placeholder, error state and loading state in one</li>
+        <li><b>Inline option list</b> — replaces the modal picker, so the answer lands next to the question</li>
+        <li><b>Three-club limit, promoted</b> — pill, ticks, note and the already-following strip, all above the control they constrain</li>
+        <li><b>Pending tick</b> — the provisional third slot at 45% accent, so a pick reads as not yet committed</li>
+        <li><b>Search across name and code</b> — space-insensitive matching</li>
+        <li><b>Confirmation card</b> — the pick restated with a <code>64&nbsp;px</code> plate and a <code>Change</code> escape</li>
+        <li><b>Docked action with a live note</b> — the note always names the next missing answer, and disabled differs from enabled by opacity alone</li>
+        <li><b>Artwork stand-ins</b> — four CSS blocks representing high-key stripes, low-key stripes, a pale keylined shield and a dark roundel. They are the only non-token colours in the file and they stand for artwork the app does not own; nothing in the product may reuse them</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Where does crest artwork come from, and who checks it?</h3>
+      <p>No crest image assets exist. Every crest on this screen is either a
+      <span class="flag">code plate</span> or one of four CSS stand-ins built to prove the plate contains
+      real artwork. Before build we need a licensed source, a delivery format, and agreement that the
+      ingest rule applies — reversed white-on-transparent marks get rejected and fall back to the code,
+      because a light plate cannot hold an edge against them.</p>
+    </li>
+    <li>
+      <h3>Is a light plate acceptable in a dark app?</h3>
+      <p>It is the one place the product shows a light ground, and that is deliberate: crests are authored
+      for light, so compositing them on light preserves the internal contrast their own designers signed
+      off, and the app then takes responsibility only for plate-versus-surface, which it fully controls.
+      The alternative is a tenfold contrast spread inside a single list, which is what the current build
+      has. We need this agreed as a rule, not per screen.</p>
+    </li>
+    <li>
+      <h3>Are the three-letter codes ours to invent?</h3>
+      <p>Codes like <code>BAR</code>, <code>RMA</code>, <code>BVB</code>, <code>SU58</code> and
+      <code>WI</code> were written for this build. Some are conventional, some are guesses, and the plate
+      allows <span class="flag">2–4 characters</span>. They need to come from the catalogue rather than
+      from us, because they appear wherever artwork is missing — which, today, is everywhere.</p>
+    </li>
+    <li>
+      <h3>Is the limit three per league, and what does "counts" mean?</h3>
+      <p>The build enforces <span class="flag">three clubs in any one league</span> and warns that the
+      pick counts even if you leave mid-season. Both came from the spec and both need confirming. In
+      particular: does leaving a club free the slot immediately, at the end of the season, or never? The
+      note currently implies never, which is the strictest reading and the one that most needs to be
+      right.</p>
+    </li>
+    <li>
+      <h3>Is the catalogue really this shape?</h3>
+      <p>Sport → competition level → league → club is four decisions to follow one team, and the
+      International level puts the same clubs in more than one league — Real Madrid appears in the
+      Champions League, the Club World Cup, La Liga <em>and</em> EuroLeague basketball. If a member
+      following Barcelona in La Liga should automatically see them in Europe, the cascade is measuring
+      competitions when the member is choosing a club, and step 2 may not need to exist.</p>
+    </li>
+    <li>
+      <h3>Can a member follow more than one club at all?</h3>
+      <p>The screen supports it — the limit, the already-following strip and the per-league counting all
+      assume multiple clubs. But the intro says the pick becomes "your war room, your Backchat and your
+      standings", singular. If following several clubs is real, every one of those surfaces needs a club
+      switcher, and that is not designed.</p>
+    </li>
+  </ol>
+</section>

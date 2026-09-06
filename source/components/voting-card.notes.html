@@ -1,0 +1,225 @@
+<p class="dek">The rail card a member sees while a proposal is open for voting, and the ballot they
+open to cast a ranked vote. It is the Idea card's sibling: the same shell, with the likes gauge
+replaced by a threshold bar.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One shell, two data readings</h2>
+  <p>The War Room rails carry two card types. The Idea card counts likes towards a threshold and
+    draws them as a ring. The Voting card counts the vote and draws it as a bar, because a vote has
+    something a like does not: a line it has to cross. A ring cannot show a line; a bar can.</p>
+  <p>Everything else is identical — <code>268 px</code> wide, <code>16 px</code> padding,
+    <code>R16</code>, author row, title, body, countdown and type, panel, then one action. Put the two
+    side by side in the rail and they read as one family.</p>
+  <p>The bar states the whole position in one glance: how far the vote has got, where it has to
+    get to, and whether it is going to make it. The verdict is written out in words as well, so the
+    card does not depend on colour alone.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <p>The component covers three separate screens, each on its own phone above. <b>01 Voting rail</b> is
+    the War Room rail, with the card in each of its four readings side by side. <b>02 Open ballot</b> is
+    the screen a member opens to cast a ranked vote; it carries its own back control and title.
+    <b>03 Empty rail</b> is the same rail with nothing open. None of the three depends on the one beside
+    it.</p>
+  <div class="tablewrap">
+    <table>
+      <caption>Grouped by screen and region. Order matches the reading order within each screen. Values
+        as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Card</td><td>Shell</td><td class="t-note"><code>268 px</code> wide,
+          <code>16 px</code> padding, <code>R16</code>, fill <code>#1C2129</code>, one inside
+          hairline at <code>rgba(255,255,255,.06)</code>. Identical to the Idea card.</td></tr>
+        <tr><td>Card</td><td>Author row</td><td class="t-note"><code>22 px</code> portrait circles,
+          overlapping by <code>9 px</code> when a proposal has two authors, each ringed
+          <code>1.5 px</code> in the card fill. Byline <code>12.5 px</code> in
+          <code>#99A0AE</code>, truncated with an ellipsis.</td></tr>
+        <tr><td>Card</td><td>Title</td><td class="t-note"><code>17 px</code> / 600, white,
+          <code>-0.015em</code>, wrapping to two lines.</td></tr>
+        <tr><td>Card</td><td>Body</td><td class="t-note">Two paragraphs at <code>13 px</code> / 400
+          in <code>#99A0AE</code>, <code>7 px</code> apart. The open ballot carries one.</td></tr>
+        <tr><td>Card</td><td>Countdown and type</td><td class="t-note">Stopwatch glyph plus a live
+          <code>HH:MM:SS</code> readout at <code>13.5 px</code> / 600, tabular figures. Type on the
+          right in accent <code>#9BE222</code> at <code>11 px</code> / 700, <code>.09em</code>,
+          uppercase, with a <code>5 px</code> leading dot.</td></tr>
+        <tr><td>Panel</td><td>Threshold panel</td><td class="t-note"><code>R12</code>,
+          <code>#13171E</code>, <code>12 px 14 px</code> padding — the same footprint the Idea card
+          gives its gauge.</td></tr>
+        <tr><td>Panel</td><td>Lede and verdict pill</td><td class="t-note">Lede
+          <code>13.5 px</code> / 600 white. Verdict pill on the right: <code>10 px</code> / 700,
+          <code>.1em</code>, uppercase, accent on <code>rgba(155,226,34,.12)</code>, capped at
+          <code>110 px</code> so a long verdict wraps rather than squeezing the lede.</td></tr>
+        <tr><td>Panel</td><td>Leading option</td><td class="t-note">Option name at
+          <code>15 px</code> / 600 white, with a circled <code>!</code> at
+          <code>18 px</code> in <code>#5B606B</code> at the right — a tap target that explains the
+          threshold rule.</td></tr>
+        <tr><td>Panel</td><td>Threshold bar</td><td class="t-note">Track <code>8 px</code>,
+          full width, <code>R999</code>, dark green <code>#2E3F1F</code>. Fill accent
+          <code>#9BE222</code>. A <code>14 px</code> accent knob rides the fill's leading edge,
+          ringed <code>3 px</code> in the panel fill so it reads over the track. A
+          <code>2 × 7 px</code> accent tick drops below the bar at the required percentage.</td></tr>
+        <tr><td>Panel</td><td>Figures</td><td class="t-note">Current share left at
+          <code>14 px</code> / 700 white; required share right at <code>14 px</code> / 700 accent.
+          Both tabular, each followed by a <code>11.5 px</code> label in
+          <code>#5B606B</code>.</td></tr>
+        <tr><td>Card</td><td>Action</td><td class="t-note">Outlined pill, <code>52 px</code>,
+          transparent fill, <code>1 px</code> accent border, accent label at <code>15 px</code> / 600
+          with a leading <code>19 px</code> reticle glyph. The ghost of the Idea card's filled
+          <code>Like</code>: the Idea card asks for a commitment, this one opens a
+          screen.</td></tr>
+        <tr><td>Ballot</td><td>Panel header</td><td class="t-note"><code>Rank all four</code> plus a
+          progress pill, <code>Ranked 0/4</code>. The pill is neutral while the ballot is
+          incomplete and turns accent on the fourth rank.</td></tr>
+        <tr><td>Ballot</td><td>Instruction</td><td class="t-note">One line at
+          <code>11.5 px</code> in <code>#99A0AE</code> with a circled <code>i</code>, inside the
+          panel.</td></tr>
+        <tr><td>Ballot</td><td>Option rows</td><td class="t-note">Rows bleed to the panel edges,
+          divided by <code>1 px</code> <code>rgba(255,255,255,.045)</code> hairlines. Each carries a
+          <code>25 px</code> rank slot, the option name at <code>13.5 px</code> / 600, and its
+          first-preference share right-aligned at <code>13 px</code> / 700. A ranked row fills with
+          <code>rgba(155,226,34,.12)</code> and takes a <code>3 px</code> accent rule at its left
+          edge.</td></tr>
+        <tr><td>Ballot</td><td>Rank slot</td><td class="t-note">Empty: a <code>25 px</code> circle
+          outlined <code>1.5 px</code> in <code>rgba(255,255,255,.18)</code>. Ranked: filled accent
+          with the position in <code>12 px</code> / 800 <code>#0B0E06</code>.</td></tr>
+        <tr><td>Ballot</td><td>Reject row</td><td class="t-note"><code>Reject all options</code>
+          carries a <code>13 px</code> <code>✕</code> in <code>#E2564A</code> and a muted label until
+          it is ranked. It is an option, not a control, so it ranks like the rest.</td></tr>
+        <tr><td>Ballot</td><td>Action pair</td><td class="t-note">Two <code>46 px</code> pills,
+          <code>10 px</code> apart. <code>Cancel</code> outlined <code>1 px</code> in
+          <code>rgba(255,255,255,.16)</code> with a white label; <code>Vote</code> filled accent, and
+          disabled to <code>#13171E</code> with a <code>#5B606B</code> label until every option is
+          ranked.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <p>The first four rows are one screen, not four: they are the same card in four readings, sitting side
+    by side in the voting rail (01). The three ballot rows all belong to the open ballot (02), and the
+    empty rail is its own screen (03).</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>On track</td><td class="t-note">Fill past the tick. Pill
+          <code>ON TRACK TO BE APPROVED</code> in accent. Shown at
+          <code>74%</code> against <code>70%</code>.</td></tr>
+        <tr><td>Below threshold</td><td class="t-note">Fill stops short of the tick and turns
+          <code>#E2564A</code>, as does the knob and the current figure. Pill
+          <code>NOT ON TRACK</code> on a <code>rgba(226,86,74,.14)</code> wash. The tick stays accent
+          — the target does not change because the vote is behind.</td></tr>
+        <tr><td>Veto hold</td><td class="t-note">Counting is paused, so nothing that implies movement
+          stays coloured: the countdown greys to <code>#5B606B</code> and its glyph becomes a pause,
+          the track becomes neutral <code>#3D424B</code>, the fill and knob
+          <code>#99A0AE</code>, and the figure reads <code>frozen</code> rather than
+          <code>now</code>. Pill <code>VETO HOLD</code> on a white wash. The accent tick still marks
+          the bar the vote has to clear when counting resumes.</td></tr>
+        <tr><td>Closed, result published</td><td class="t-note">Countdown replaced by a tick glyph and
+          <code>Closed 12 Jul</code> in <code>#5B606B</code>. The lede names the option that won, the
+          pill reads <code>RESULT PUBLISHED</code>, the figure reads <code>final</code>, and the CTA
+          reads <code>View result</code>.</td></tr>
+        <tr><td>Open ballot, nothing ranked</td><td class="t-note">Screen 02 as it opens. All four slots empty,
+          <code>Ranked 0/4</code>, <code>Vote</code> disabled.</td></tr>
+        <tr><td>Open ballot, part ranked</td><td class="t-note">Ranked rows carry their number and the
+          accent wash; unranked rows stay plain. Clearing a rank shifts every rank below it up by
+          one. <code>Vote</code> stays disabled.</td></tr>
+        <tr><td>Open ballot, complete</td><td class="t-note"><code>Ranked 4/4</code> turns accent and
+          <code>Vote</code> enables.</td></tr>
+        <tr><td>Empty rail</td><td class="t-note">Screen 03. <code>250 px</code> card, centred accent ballot
+          glyph at <code>52 px</code>, <code>Waiting for Proposals</code> in
+          <code>#99A0AE</code>.</td></tr>
+        <tr><td>Scroll into view</td><td class="t-note">The fill animates from zero to its value over
+          <code>1.15 s</code> on the shared easing curve, once per card, the way the Idea card draws
+          its gauge. Suppressed under reduced-motion.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Card shell</b> — <code>268 px</code>, <code>16 px</code> padding, <code>R16</code>,
+          author row, title, body, countdown and type row, panel, action. Taken from the Idea
+          card.</li>
+        <li><b>Threshold bar</b> — track, accent fill, marker knob and threshold tick, as drawn in
+          the dark-mode export.</li>
+        <li><b>Verdict pill</b> — <code>ON TRACK TO BE APPROVED</code> in accent on
+          <code>--acid-wash</code>, tracked uppercase at <code>10 px</code> / 700.</li>
+        <li><b>Panel lede and leading option</b> — <code>Option 1 leading</code> at
+          <code>13.5 px</code> / 600 over the option name at <code>15 px</code> / 600, with the
+          circled <code>!</code> at the right.</li>
+        <li><b>Outlined CTA</b> — transparent pill, <code>1 px</code> accent border, accent label with
+          a leading glyph.</li>
+        <li><b>Highlighted row</b> — accent wash plus a <code>3 px</code> inset accent rule, the
+          treatment the Merits leaderboard uses for the member's own row.</li>
+        <li><b>Ballot content</b> — the option set and the <code>Cancel</code> / <code>Vote</code>
+          pair, from the current build's voting detail.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Visible rank slots</b> — the current build tells members to click options until they
+          are numbered, then renders no number, badge, handle or checkbox. The slot is drawn empty
+          and fills with the rank, so the instruction and the screen finally agree.</li>
+        <li><b>Ranked progress pill</b> — <code>Ranked 0/4</code>, so a member can see they have not
+          finished before they reach for a disabled button.</li>
+        <li><b>Short instruction</b> — one line inside the panel replaces the build's four-line
+          <code>118 pt</code> navy banner. The banner also carried the only blue in the War
+          Room.</li>
+        <li><b>Veto-hold treatment</b> — the build has frozen-bar tokens but no recorded design. Every
+          moving part greys; only the target stays accent.</li>
+        <li><b>Two derived washes</b> — <code>rgba(226,86,74,.14)</code> for the off-track pill and
+          track, and <code>rgba(255,255,255,.07)</code> for the frozen pill. Both are built the way
+          <code>--acid-wash</code> is built from <code>--acid</code>: no new hue, only a
+          transparency of a colour already in the set.</li>
+        <li><b>No per-option colour</b> — the build gives each option its own hue as a bright avatar
+          and a dark swatch. The rebrand has one accent, so rank and share carry the distinction
+          instead.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Is the verdict a prediction or a statement of fact?</h3>
+      <p><code>ON TRACK TO BE APPROVED</code> reads as a forecast. If the vote is counted by
+        elimination rounds, a leading option on <code>74%</code> of first preferences is not yet
+        approved and the wording may promise more than the count can deliver. We have assumed the
+        pill states <span class="flag">the current standing against the threshold, not a
+        prediction of the final round</span>. Confirm, or give us the wording you want.</p></li>
+    <li><h3>Should the closed card say what was decided?</h3>
+      <p>The closed state currently reads <code>Option 2 approved</code> plus
+        <code>RESULT PUBLISHED</code>, and its CTA reads <span class="flag">View result</span> rather
+        than <code>View details</code>. Confirm that a settled proposal keeps its place in the
+        Voting rail at all, rather than moving to Results.</p></li>
+    <li><h3>Can a member vote without ranking every option?</h3>
+      <p>The build's instruction says to rank until all are numbered, so we disable
+        <code>Vote</code> until the ballot is <span class="flag">complete</span>. If a partial
+        ranking is a valid vote, the button should enable on the first rank and we need to know what
+        happens to the options left blank.</p></li>
+    <li><h3>What does the circled <code>!</code> open?</h3>
+      <p>We have it opening an explanation of <span class="flag">how the threshold works</span>. The
+        build uses a circled <code>?</code> beside the taxonomy labels for something similar. One
+        glyph and one behaviour across the app would be better than two.</p></li>
+    <li><h3>Does a veto stop the clock or the count?</h3>
+      <p>We freeze both: the countdown greys and the bar stops. If a veto only blocks the outcome
+        while voting continues, the bar should stay live and only the verdict pill should
+        change.</p></li>
+  </ol>
+</section>

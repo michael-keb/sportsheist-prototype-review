@@ -1,0 +1,180 @@
+<p class="dek">Backchat is tab 3 of 5 and the app's live-social surface. A fan lands here to walk
+into the club's always-on Fan Stadium, drop into a Locker Room that is running right now, or book
+a place in one that opens later.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One hub, three ways into a room</h2>
+  <p>The screen is deliberately short. A hero names the place, one photographic card opens the
+  Fan Stadium, and a single <b>Locker Rooms</b> heading owns everything else — a container of rooms
+  that are live now, and a container of rooms that are scheduled. Starting a room is the green
+  <code>+</code> beside the heading; seeing the rest is the <code>View all ↗</code> pill opposite it.</p>
+
+  <p>The live rooms sit in a horizontal carousel that snaps, so the second card deliberately peeks
+  at the right edge — that peek is the only signal that the row scrolls, and it is intentional.
+  Scheduled rooms stack vertically instead, because a date is something you read down a list rather
+  than swipe through.</p>
+
+  <p>One thing worth flagging from the current live app: the word <b>live</b> is rendered in four
+  different colours across this one feature — amber <code>#DFAA11</code> on the locker-room card,
+  a violet <code>#542BE2</code> pill with a red <code>#FF244C</code> dot on the Fan Stadium card,
+  a dark-violet <code>#361F59</code> pill with a white dot inside the room, and red
+  <code>#E70A0A</code> in the code — plus bronze <code>#B08126</code> for the scheduled variant, and
+  no marker at all on the live room screen itself. Here there is exactly one: the accent
+  <code>#9BE222</code>. Scheduled rooms are distinguished by weight and fill, not by inventing a
+  second hue.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Hero</td><td>Banner</td><td class="t-note"><code>138px</code>, <code>R16</code>, gutter <code>16px</code>. Field is <code>linear-gradient(112deg,#0D3617,#17481C 58%,#0C3416)</code>.</td></tr>
+        <tr><td>Hero</td><td>Chevron field</td><td class="t-note">Three rows of stroked chevrons, <code>#000</code> at <code>13px</code> stroke, opacity <code>.13</code> / <code>.09</code> / <code>.06</code>, brightest at the bottom. Non-interactive.</td></tr>
+        <tr><td>Hero</td><td>Acid range</td><td class="t-note">Three <code>#9BE222</code> peaks anchored bottom-right at <code>54% × 38%</code> of the banner.</td></tr>
+        <tr><td>Hero</td><td>Microphone prop</td><td class="t-note"><strong>Asset gap.</strong> The knockout microphone belongs in front of the peaks at <code>z-index:2</code>. It has not been exported from Figma, so the slot is marked in the markup and nothing is drawn in its place. The <code>.hero__prop</code> rule is already in the stylesheet.</td></tr>
+        <tr><td>Hero</td><td>Title</td><td class="t-note"><code>BACKCHAT</code>, <code>34px</code> / <code>800</code> / <code>-.025em</code>, uppercase, white, left-aligned, above both decorations. No strapline.</td></tr>
+        <tr><td>Fan Stadium</td><td>Section label</td><td class="t-note"><code>Fan Stadium</code>, <code>18px</code> / <code>600</code> / <code>-.015em</code>, white, at the gutter, no adornment.</td></tr>
+        <tr><td>Fan Stadium</td><td>Stadium card</td><td class="t-note"><code>132px</code>, <code>R16</code>, full width less gutters, the whole card is the tap target. <strong>Asset gap.</strong> The stadium photograph is not exported; everything inside <code>.stadium__art</code> is a CSS stand-in — a pitch radial in <code>#35802F → #061309</code>, two floodlight blooms over a dark stand band, and mown stripes at <code>93deg</code>. It is meant to be replaced by the image, not extended.</td></tr>
+        <tr><td>Fan Stadium</td><td><code>LIVE 24/7</code> pill</td><td class="t-note">Top-left, inset <code>12px</code>. <code>28px</code> tall, <code>R999</code>, fill <code>rgba(3,4,1,.55)</code> with <code>backdrop-filter:blur(9px)</code>. Label accent <code>#9BE222</code> at <code>10.5px</code> / <code>700</code> / <code>.14em</code> uppercase, preceded by a <code>6px</code> accent dot.</td></tr>
+        <tr><td>Fan Stadium</td><td><code>Enter ↗</code> pill</td><td class="t-note">Top-right, same translucent fill and height. Label white <code>12.5px</code> / <code>600</code> with a <code>13px</code> stroked arrow.</td></tr>
+        <tr><td>Locker Rooms</td><td>Section header</td><td class="t-note">Label <code>18px</code> / <code>600</code>, then a <code>30px</code> accent circle carrying a <code>2.6</code>-stroke <code>+</code> in <code>#0B0E06</code>, then a right-aligned <code>View all ↗</code> pill (<code>34px</code>, <code>#1C2129</code>, <code>R999</code>). This one header owns both containers below it.</td></tr>
+        <tr><td>Live</td><td>Section container</td><td class="t-note">Fill <code>#080A0C</code>, 1px <code>rgba(255,255,255,.075)</code>, <code>R16</code>, <code>12px</code> padding.</td></tr>
+        <tr><td>Live</td><td><code>LIVE NOW</code> pill</td><td class="t-note">Left of the container bar. <code>32px</code>, <code>R999</code>, fill <code>rgba(155,226,34,.12)</code>, accent label <code>11px</code> / <code>700</code> / <code>.11em</code> uppercase, <code>6px</code> leading dot.</td></tr>
+        <tr><td>Live</td><td>Icon buttons</td><td class="t-note">Three <code>38px</code> <code>#1C2129</code> circles, right-aligned: search, filter, reminder. White inline SVG at <code>1.9</code> stroke, round caps and joins.</td></tr>
+        <tr><td>Live</td><td>Carousel</td><td class="t-note">Flex row, <code>10px</code> gaps, <code>scroll-snap-type:x mandatory</code>, cards <code>244px</code> wide. Negative <code>-12px</code> margins let the row bleed to the container's inner edge so a card can sit flush while still snapping.</td></tr>
+        <tr><td>Room card</td><td>Card</td><td class="t-note"><code>#1C2129</code>, <code>R12</code>, <code>14px</code> padding, <code>142px</code> tall in the carousel. <code>R12</code> rather than <code>R16</code> because the card is nested inside an <code>R16</code> container — the same inner-panel radius merits.html uses.</td></tr>
+        <tr><td>Room card</td><td>Title</td><td class="t-note"><code>15px</code> / <code>600</code> / <code>1.27</code>, clamped to two lines. Carousel cards reserve both lines (<code>min-height:2.54em</code>) so every footer in the row aligns; list cards collapse to the text.</td></tr>
+        <tr><td>Room card</td><td>Host row</td><td class="t-note"><code>24px</code> circular avatar, then <code>host : club_staff</code> at <code>12px</code> in <code>#99A0AE</code>, truncating with an ellipsis. The value is the account username.</td></tr>
+        <tr><td>Room card</td><td>Footer</td><td class="t-note">1px <code>rgba(255,255,255,.045)</code> top border, <code>11px</code> above the content. Microphone glyph + speaker count, then people glyph + head count, both <code>12.5px</code> / <code>600</code> with <code>tabular-nums</code> and <code>#99A0AE</code> <code>14px</code> glyphs. Right-aligned access label <code>OPEN ROOM</code> / <code>LOCKED ROOM</code> at <code>10.5px</code> / <code>700</code> / <code>.13em</code> in <code>#99A0AE</code>, with a <code>12px</code> padlock — open shackle or closed.</td></tr>
+        <tr><td>Upcoming</td><td>Section container</td><td class="t-note">The same shell as the live container, <code>10px</code> below it.</td></tr>
+        <tr><td>Upcoming</td><td><code>UPCOMING</code> pill</td><td class="t-note">Same <code>32px</code> pill geometry as <code>LIVE NOW</code>, but filled <code>#13171E</code> with a <code>#99A0AE</code> label and <strong>no dot</strong>. Scheduled reads as quieter than live without a second colour.</td></tr>
+        <tr><td>Upcoming</td><td>Day / time strip</td><td class="t-note"><code>SUNDAY · APRIL 19 · 6:00 PM</code> above the title, accent <code>#9BE222</code> at <code>10.5px</code> / <code>700</code> / <code>.14em</code> uppercase, <code>tabular-nums</code>, middle dots as separators.</td></tr>
+        <tr><td>Upcoming</td><td>List</td><td class="t-note">Vertical stack, <code>10px</code> gaps, cards at full container width — <code>317px</code> at 375, <code>362px</code> at 430.</td></tr>
+        <tr><td>Nav</td><td>Tab bar</td><td class="t-note">Floating <code>#1C2129</code> pill outside <code>&lt;main&gt;</code>, <code>58px</code> tall, <code>10px</code> inner padding, five tabs. Backchat is active: an accent pill carrying both the microphone icon and the label. The other four are outline icons only.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Live — populated</td><td class="t-note">As shipped in the file: three cards in the snapping carousel, the third clipped at the container edge.</td></tr>
+        <tr><td>Live — empty</td><td class="t-note"><code>No Locker Rooms in session</code>. A <code>#1C2129</code> panel at <code>R12</code>, <code>28px</code> / <code>14px</code> padding, centred <code>13px</code> text in <code>#5B606B</code>. It ships in the markup carrying <code>hidden</code>; remove that attribute to preview it. The live app renders this panel at <code>R2</code> in near-white on a dark canvas.</td></tr>
+        <tr><td>Upcoming — populated</td><td class="t-note">Two cards, each opening with the accent day / time strip.</td></tr>
+        <tr><td>Upcoming — empty</td><td class="t-note"><code>No Upcoming Locker Rooms</code>, in the same panel, also shipped with <code>hidden</code>.</td></tr>
+        <tr><td>Open room</td><td class="t-note"><code>OPEN ROOM</code> with an open-shackle padlock.</td></tr>
+        <tr><td>Locked room</td><td class="t-note"><code>LOCKED ROOM</code> with a closed padlock. Same slot, same colour, same size — the shackle is the whole difference.</td></tr>
+        <tr><td>Live vs scheduled</td><td class="t-note">A card is live if it sits in the <code>LIVE NOW</code> container; scheduled if it carries the day / time strip. There is no per-card live badge, so nothing needs a second colour to carry the distinction.</td></tr>
+        <tr><td>Overflow</td><td class="t-note">The <code>View all ↗</code> pill in the section header is the single route to the full list, for both containers. The live app has two different overflow controls — an <code>ALL</code> tile in the carousel and a <code>View All</code> bar under the list.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note"><code>prefers-reduced-motion</code> disables every transition, including the <code>+</code> button's hover scale.</td></tr>
+        <tr><td>430 px wide</td><td class="t-note">No horizontal overflow. The carousel keeps its <code>244px</code> cards, so a wider phone simply shows more of the next card.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Hero construction</b> — <code>138px</code> panel, <code>112deg</code> field, acid peaks at <code>54% × 38%</code>, prop in front of the peaks, uppercase title left. Same build as the Merits hero.</li>
+        <li><b>Section container, status pill, icon button, avatar, tab bar</b> — lifted unchanged from merits.html, which sampled them from the Backchat and War Room dark-mode exports.</li>
+        <li><b>Token block</b> — copied verbatim; no colour, radius or type value is invented.</li>
+        <li><b>Portraits</b> — from the export set. <code>taythaytu</code>, <code>capitan_7</code> and <code>scout_mode</code> get the same three faces they have on Merits, so a username reads as the same person across screens.</li>
+        <li><b>Content</b> — <code>Manager Auto Room</code>, host <code>taythaytu</code>, the <code>1</code> / <code>2</code> counts and the open / locked room labels are the captured screen's own data. The <code>Barcelona v Arsenal</code> fixture and the <code>April 19</code> date come from the captured Matches screen.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Chevron hero field</b> — a darker chevron texture (<code>#000</code> at <code>.06</code>–<code>.13</code>) rather than the faint white triangles Merits uses at <code>2.4</code>–<code>3%</code>.</li>
+        <li><b>Stadium card artwork</b> — a CSS floodlit-pitch stand-in, because the photograph has not been exported. It is a placeholder, not a design.</li>
+        <li><b>One colour for "live"</b> — the accent replaces four colours plus a bronze scheduled variant.</li>
+        <li><b>Green <code>+</code> circle</b> — room creation becomes a <code>30px</code> accent circle in the section header, replacing the full-width <code>＋ NEW LOCKER ROOM</code> block. It is the only accent-filled control on the screen apart from the active tab.</li>
+        <li><b><code>Enter ↗</code> pill</b> — replaces the circular chevron button that the live card clips a third of the way through.</li>
+        <li><b>Quiet <code>UPCOMING</code> pill</b> — same pill, <code>#13171E</code> fill, muted label, no dot.</li>
+        <li><b>Reminder icon button</b> — the third control is a bell (rooms you are reminded about). The live app's third control is a sort mark; sort is not exposed here.</li>
+        <li><b>Snap carousel</b> — the live app clips the second card mid-word with no snap or peek treatment.</li>
+        <li><b>Two-line title box</b> — titles clamp at two lines and reserve both lines inside the carousel, so footers align. The live app fixes card height at <code>125pt</code> regardless of title length.</li>
+        <li><b>One colour for the footer figures</b> — the live app renders three colours across the three values in that row.</li>
+        <li><b>Two radii, not nine</b> — this screen is <code>R16</code> and <code>R12</code> plus pills. The captured screen renders nine distinct radii in one viewport.</li>
+        <li><b><code>16px</code> gutter</b> — the captured screen uses <code>24pt</code>; the code uses <code>16</code>. The contract's <code>16px</code> wins.</li>
+        <li><b>Live search</b> — the magnifier opens a field that filters the carousel by room title or host.</li>
+        <li><b>Access filter sheet</b> — open or locked rooms, with a live count and Clear&nbsp;all.</li>
+        <li><b>Reminder filter</b> — the bell is a two-state toggle that narrows the carousel to rooms you have a reminder set on.</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:14px">
+    <b>All three section-bar controls are live.</b> Until this pass every one of them was an
+    <code>aria-hidden</code> glyph on a button with no handler. Access is the only axis in the
+    filter sheet because the open/locked badge is the only thing a live card actually carries
+    beyond its counts — and the filter reads that badge back off the card rather than a second
+    copy of the value. The bell filters to <code>Manager Auto Room</code>, which is the room
+    Alerts says you set a reminder on, so the two screens agree. All three controls compose: a
+    search plus a locked-room filter plus the bell can legitimately return nothing, and the rail
+    then says so rather than going blank. The sheet closes on the scrim, on <code>Esc</code> and
+    on its close button, returning focus to the glyph; closing without pressing
+    <code>Apply</code> discards whatever was ticked.
+  </p>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Can we have the two photographs?</h3><p>Two images in the Figma frame are not in the
+      export set: the <b>knockout microphone</b> that sits in front of the hero's acid peaks, and the
+      <b>stadium photograph</b> behind the Fan Stadium card. The hero currently ships with the slot
+      empty rather than with drawn clip-art, and the stadium is a
+      <span class="flag">CSS gradient stand-in</span>. Both slots are marked in the markup and swap
+      in without touching anything else.</p></li>
+
+    <li><h3>Should the Fan Stadium card name the room?</h3><p>As designed, the card carries only the
+      two pills — no room name. That reads well over a photograph, but it does mean the club's
+      flagship room is unlabelled, and the live app already gives it three different names:
+      <code>FAN STADIUM</code> in the section header, <code>BARCELONA'S STADIUM</code> on the card and
+      <code>BARCELONA'S FAN STADIUM</code> inside the room. We have put
+      <span class="flag">Barcelona’s Stadium</span> in the card's accessible label only. If it should
+      be visible, it needs a bottom-left slot on the card — and one canonical name.</p></li>
+
+    <li><h3>Two copy strings need fixing</h3><p>The shipped strings include
+      <code>Delete this rooms?</code> (the delete-room dialog title) and
+      <code>TO BE REMINDED ROOMS</code> (a filter option). Neither is on this screen, but both belong
+      to this feature and both read as unfinished. We suggest
+      <span class="flag">Delete this room?</span> and <span class="flag">Rooms I'm reminded about</span>
+      — confirm and we will carry them through the sheets and dialogs.</p></li>
+
+    <li><h3>Is search / filter / reminder the right trio?</h3><p>The live app offers search, sort and
+      filter, on both the live and the upcoming section. We have kept
+      <span class="flag">search, filter and reminder</span> on the live container and given the
+      upcoming container no controls at all, on the grounds that a short scheduled list sorts itself by
+      time. If sort matters, it comes back as a fourth <code>38px</code> circle — which is the practical
+      limit at 375 wide.</p></li>
+
+    <li><h3>What do the two figures mean on a scheduled room?</h3><p>On a live card they are speakers
+      in the room and people in the room. On a scheduled card there is nobody in the room yet, so we
+      have read them as <span class="flag">confirmed speakers</span> and
+      <span class="flag">people booked in</span>. The glyphs are identical in both places; if those are
+      different quantities they may need different glyphs, or a label.</p></li>
+
+    <li><h3>Username or display name in the host row?</h3><p>The row renders
+      <code>host : club_staff</code> — the account username, as the live app does. Elsewhere the same
+      person appears as a surname in caps and as a Title Case name. We have assumed
+      <span class="flag">username</span> is deliberate for a social surface; say if the host byline
+      should use display names instead.</p></li>
+  </ol>
+</section>

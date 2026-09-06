@@ -1,0 +1,421 @@
+<p class="dek">The interruption kit: one modal shell in eleven specimens, plus toasts, loaders, the empty state and the
+inline banner. These are the components that tell a member something happened, ask them to confirm
+something, or make them wait. It now also carries an inventory of all 19 dialogs the app ships, and
+which of them should be deleted rather than redesigned.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One shell replacing three, and a warning without amber</h2>
+  <p>
+    The app currently has three different modal shells across four screens — a hand-built dialog at
+    about 78% width with no border and no shadow, a shared <code>customSimpleDialog</code> at a
+    16&nbsp;pt inset with a raster image behind its title, and an untouched operating-system alert. It
+    also has a full-bleed square-cornered snackbar sitting on top of the floating tab bar, and a loader
+    that defaults to Material blue. This page defines one of each.
+  </p>
+  <p>
+    That is mostly a tidying job. The interesting problem is <em>warning</em>. Every other design system
+    solves it with a third colour — amber — and the palette here has exactly two hues. So warning is
+    built from the same red as error and separated from it by <b>wash and ring alone</b>: error is a red
+    glyph on a red wash inside a red hairline ring; warning is the same red glyph on the neutral white
+    wash with no ring. Same hue, one step quieter, and the words in the title carry the rest.
+  </p>
+  <p>
+    Everything on the page is a specimen laid out in the flow rather than overlaid, so every variant
+    can be read at once. Two live examples open properly over the real scrim, four buttons fire real
+    toasts into the dock, and one button demonstrates the in-button busy state.
+  </p>
+  <p>
+    <b>Extended after the coverage audit.</b> A count of the dialog layer found the kit was covering the
+    wrong five. The app declares <b>19</b> dialog presenters and the two most-used of them were not in
+    this kit at all: the generic server-error surface, referenced <b>27</b> times, which shows a member
+    the words “INTERNAL SERVER”; and the general error, referenced <b>30</b> times, whose one control is
+    a Vietnamese text link and which dismisses itself after five seconds. A third, the locker-room
+    reminder, has ten references across two screens and had never been drawn. All three are now here,
+    along with a shell for dialogs that carry form controls and a table listing every presenter, its
+    reference count and whether it should be built or deleted. That table is the most useful thing on
+    the page for scoping: five of the nineteen have no caller worth keeping.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Shell</td><td>Panel</td>
+          <td class="t-note"><code>100%&nbsp;−&nbsp;40&nbsp;px</code> capped at <code>340&nbsp;px</code>
+            — so <code>335&nbsp;px</code> at a 375 screen and a <code>45&nbsp;px</code> inset at 430 —
+            <code>R16</code>, <code>20&nbsp;px</code> padding all round, fill <code>#1C2129</code>,
+            1&nbsp;px <code>rgba(255,255,255,.075)</code> border,
+            <code>0 24px 60px rgba(0,0,0,.55)</code> lift, vertically centred.</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Dismiss</td>
+          <td class="t-note"><code>30&nbsp;px</code> circle pinned top-right on <code>#13171E</code>
+            with a <code>rgba(255,255,255,.045)</code> hairline and a 15&nbsp;px cross in
+            <code>#99A0AE</code>. Present on <em>every</em> variant — the dialog it replaces had no way
+            out except the primary action.</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Stack</td>
+          <td class="t-note">Fixed order: <code>44&nbsp;px</code> icon tile, title at
+            18/600/<code>-.015em</code> with <code>26&nbsp;px</code> right padding to clear the close
+            button, body at 13/400 line-height <code>1.5</code> in <code>#99A0AE</code> with white 600
+            for the object being acted on, then the action row at <code>18&nbsp;px</code>.</td>
+        </tr>
+        <tr>
+          <td>Shell</td><td>Icon tile</td>
+          <td class="t-note"><code>44&nbsp;px</code> at <code>R12</code> holding a 22&nbsp;px glyph.
+            Four variants, differing only in wash and glyph colour: <b>acid</b>
+            <code>rgba(155,226,34,.12)</code> wash with <code>#9BE222</code> glyph; <b>red</b>
+            <code>rgba(226,86,74,.12)</code> wash, <code>#E2564A</code> glyph, plus an
+            <code>inset 0 0 0 1px rgba(226,86,74,.28)</code> ring; <b>warn</b> the same red glyph on
+            <code>rgba(255,255,255,.06)</code> with no ring; <b>neutral</b> that same wash with a white
+            glyph. A <code>52&nbsp;px</code> step at <code>R14</code> with a 25&nbsp;px glyph is used by
+            the empty state.</td>
+        </tr>
+        <tr>
+          <td>Action row</td><td>Layout</td>
+          <td class="t-note">Secondary left, primary right, equal widths at <code>flex:1</code>,
+            <code>10&nbsp;px</code> gap. A single action goes full width. Every button is
+            <code>46&nbsp;px</code> at <code>R&nbsp;pill</code>, label 14.5/700, sentence case,
+            <code>white-space:nowrap</code>.</td>
+        </tr>
+        <tr>
+          <td>Action row</td><td>Button variants</td>
+          <td class="t-note">Primary: accent fill, <code>#0B0E06</code> ink, hover
+            <code>#A8EC33</code>. Secondary: <code>#13171E</code> with a 1&nbsp;px inset hairline.
+            Destructive: <code>#E2564A</code> fill with <em>the same</em> <code>#0B0E06</code> ink, so
+            saturated fills behave identically — white on that red is <code>3.71:1</code> and never
+            used.</td>
+        </tr>
+        <tr>
+          <td>Action row</td><td>Busy state</td>
+          <td class="t-note"><code>aria-busy="true"</code> hides the label with
+            <code>visibility</code> so it keeps its box and the control cannot change width, overlays a
+            20&nbsp;px ring in the label's own ink, drops opacity to <code>.85</code> and stops pointer
+            events, so it cannot be double-submitted.</td>
+        </tr>
+        <tr>
+          <td>Variants</td><td>The five core</td>
+          <td class="t-note"><b>Success</b> acid tile, two actions. <b>Error</b> red tile with the ring,
+            one action — and the primary stays accent, because the button is the way out, not the danger.
+            <b>Warning</b> red glyph on neutral wash, two actions, the recommended one primary.
+            <b>Confirm</b> neutral tile, cancel and a named verb. <b>Destructive confirm</b> red tile and
+            the only filled red button in the system, with the secondary naming the safe outcome
+            (<code>Keep it</code>) rather than saying <code>Cancel</code>.</td>
+        </tr>
+        <tr>
+          <td>Variants</td><td>Server error</td>
+          <td class="t-note">The error tile — red glyph, red wash,
+            <code>rgba(226,86,74,.28)</code> ring — over a two-rack server glyph with a bang where the
+            lower LEDs sit. Body carries cause, consequence and next step in that order. Then a
+            <b>reference row</b>: <code>R12</code> on <code>#13171E</code> with a
+            <code>rgba(255,255,255,.045)</code> hairline, a 10/700/<code>.14em</code> tracked
+            <code>REFERENCE</code> label over a 12&nbsp;px monospace tabular value
+            (<code>SH-500 · 4F2A9C · 18:24 CET</code>), and a <code>32&nbsp;px</code> copy disc with a
+            <code>-6&nbsp;px</code> <code>::after</code> expansion to a 44&nbsp;px target. Actions
+            <code>Get help</code> / <code>Try again</code>, accent primary.</td>
+        </tr>
+        <tr>
+          <td>Variants</td><td>Error, relayed</td>
+          <td class="t-note">The same error tile with no ring change, but written for a body that is an
+            <em>arbitrary server string</em> rather than authored copy — the presenter's six heaviest
+            callers are the API layer. Fallback title when the server sends none is
+            <code>Something went wrong</code>. Two actions where the failure has somewhere to go
+            (<code>See the result</code> / <code>Got it</code>). <b>No timeout</b> on any variant.</td>
+        </tr>
+        <tr>
+          <td>Variants</td><td>Reminder ×3</td>
+          <td class="t-note">Three states of one variant, all in the standard shell. Tiles reuse the
+            <em>exact</em> glyph paths from <code>all-locker-rooms.html</code>'s <code>.rem</code>
+            trigger so the panel is visibly the control that opened it: <b>set</b> neutral tile with a
+            bell + plus, <b>remove</b> neutral tile with a bell + cross, <b>confirmed</b> acid tile with
+            a bell + check. Asks take the neutral wash like every other ask; only the report goes accent.
+            Actions <code>Not now</code>/<code>Set reminder</code>,
+            <code>Keep it</code>/<code>Remove reminder</code> — accent, not red, because the bell puts it
+            straight back — and a single <code>Got it</code> on the report.</td>
+        </tr>
+        <tr>
+          <td>Variants</td><td>Form controls</td>
+          <td class="t-note">Control block sits between the body and the action row.
+            <code>forms.html</code>'s <code>.ctl</code> shell unchanged — <code>52&nbsp;px</code>,
+            <code>R12</code>, 1&nbsp;px hairline, 16&nbsp;px value so iOS does not zoom on focus, accent
+            border plus a 3&nbsp;px <code>rgba(155,226,34,.12)</code> focus ring — with <b>one</b>
+            alteration: the fill drops <code>#1C2129</code> → <code>#13171E</code>, because the panel is
+            itself <code>#1C2129</code>. Textarea variant is <code>auto</code> height with a
+            <code>72&nbsp;px</code> minimum (three 16/1.5 line boxes) and a trailing
+            <code>11.5&nbsp;px</code> tabular counter. Two fields maximum — past that it is a sheet.</td>
+        </tr>
+        <tr>
+          <td>Inventory</td><td>Presenter table</td>
+          <td class="t-note">All 19 <code>UDialog</code> presenters plus <code>stopLoading</code>, each
+            with line number, reference count and
+            a one-phrase ruling, inside the standard bordered <code>#080A0C</code> container at
+            <code>R16</code>. Counts are non-comment references in <code>lib/</code>
+            <em>including</em> the declaration, so call sites are always one fewer. Rows to be deleted
+            carry a <b>strikethrough on the name</b> and the word <code>Delete</code> in
+            <code>#E2564A</code> — never the dimmed colour alone.</td>
+        </tr>
+        <tr>
+          <td>Scrim</td><td>Backdrop</td>
+          <td class="t-note"><code>rgba(3,4,1,.72)</code> — the canvas at 72% — with a
+            <code>10&nbsp;px</code> backdrop blur and <code>saturate(.9)</code>, falling back to a flat
+            <code>rgba(3,4,1,.86)</code> where <code>backdrop-filter</code> is unsupported. Covers the
+            full canvas including the tab bar. The panel enters on opacity plus
+            <code>translateY(10px) scale(.985)</code> over <code>.2/.28s</code>.</td>
+        </tr>
+        <tr>
+          <td>Scrim</td><td>Focus behaviour</td>
+          <td class="t-note">Opening moves focus into the dialog, holds Tab inside it, and returns focus
+            to the button that opened it. Dismissible by the close button, a scrim tap or
+            <code>Esc</code>.</td>
+        </tr>
+        <tr>
+          <td>Toast</td><td>Construction</td>
+          <td class="t-note">Inset <code>16&nbsp;px</code> each side, <code>R16</code>,
+            <code>#1C2129</code> with a 1&nbsp;px hairline and a
+            <code>0 14px 34px rgba(0,0,0,.5)</code> lift, minimum height <code>52&nbsp;px</code> growing
+            with the message. Message at 13/500. Leading semantic marker is a
+            <code>3&nbsp;×&nbsp;22&nbsp;px</code> rounded bar plus a 19&nbsp;px glyph in the same
+            colour — accent for success, <code>#E2564A</code> for error, white 34% for info. Optional
+            <code>32&nbsp;px</code> action pill on the matching wash. Clears the tab bar by
+            <code>10&nbsp;px</code>, sitting <code>82&nbsp;px</code> off the screen edge. Lives
+            <code>4s</code>, or <code>6s</code> when it carries an action.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>Peaks</td>
+          <td class="t-note">A <code>62&nbsp;×&nbsp;26</code> three-peak mark — the brand silhouette —
+            pulsing each triangle from <code>.22</code> to full opacity over <code>1.15s</code>, staggered
+            <code>0</code>&nbsp;/&nbsp;<code>.16s</code>&nbsp;/&nbsp;<code>.32s</code>, in a
+            <code>104&nbsp;px</code> bay. Used where a whole panel is waiting, under a tracked caption
+            naming what is loading.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>Ring</td>
+          <td class="t-note">Two sizes, <code>28&nbsp;px</code> and <code>20&nbsp;px</code>: a track in
+            white at <code>18%</code> and a 90° accent sweep with round caps rotating over
+            <code>.9s</code>, at <code>2.4</code> and <code>2.8</code> stroke respectively — heavier as
+            the size drops, per the optical stroke rule. Used inline and inside controls.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>One mark, not two</td>
+          <td class="t-note">The peaks and the ring are two <em>sizes</em> of one loader, split by
+            blocking versus inline — not two loaders. The app's second loading treatment is retired:
+            <code>startLoadingHori</code> is a character-for-character copy of <code>startLoading</code>
+            differing only in which Lottie file it plays, and the two files' hardcoded default colours
+            disagree — <code>Colors.blue</code> against <code>Colors.black</code>, neither a brand
+            colour. Both Lottie assets go.</td>
+        </tr>
+        <tr>
+          <td>Empty state</td><td>Panel</td>
+          <td class="t-note">Bordered <code>#080A0C</code> card at <code>R16</code>,
+            <code>52&nbsp;px</code> neutral tile, headline at 16/600, one line of body at 12.5/400 muted
+            capped at <code>26ch</code>, and an accent <code>34&nbsp;px</code> pill giving the member
+            something to do.</td>
+        </tr>
+        <tr>
+          <td>Banner</td><td>In-flow variant</td>
+          <td class="t-note"><code>R12</code> on <code>#13171E</code> with a 1&nbsp;px hairline —
+            <em>panel</em> radius, not card, because it sits in the flow rather than floating. Headline
+            at 13/600 white over body at 12.5/400 muted, with an optional accent text action.
+            The warning variant takes the red wash and the <code>rgba(226,86,74,.28)</code> hairline, its
+            glyph and action go red, and its body copy warms to <code>#D9BDB9</code>.</td>
+        </tr>
+        <tr>
+          <td>Icons</td><td>The set</td>
+          <td class="t-note">Eight drawn glyphs — success, error, warning, confirm, destructive, info,
+            alerts-ask and dismiss — all inline SVG on a 24 box at <code>1.7</code> stroke with round
+            caps and joins, matching the tab bar and row icons. No emoji: the platform thumbs-up and flag
+            currently used are glyphs the brand cannot recolour and which render differently on every OS
+            version.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Success</td><td class="t-note">Acid tile, acid primary. The only variant that reports rather than asks.</td></tr>
+        <tr><td>Error</td><td class="t-note">Red tile with the red ring — the loudest step. Single accent action, because the way out should not look dangerous.</td></tr>
+        <tr><td>Warning</td><td class="t-note">Same red glyph, neutral wash, no ring. Distinguished from error by wash and ring alone, with the recommended action as the primary.</td></tr>
+        <tr><td>Confirm</td><td class="t-note">Neutral tile. Question in the title, consequence in the body, the title's verb repeated on the button.</td></tr>
+        <tr><td>Destructive</td><td class="t-note">Red tile and a filled red button — the one place it is permitted — with the safe outcome named on the secondary.</td></tr>
+        <tr><td>Server error (5xx)</td><td class="t-note">Error tile plus a sunken reference row the member can quote to support. Says which side failed, whether the action went through, and gives one way forward. Never says “internal”.</td></tr>
+        <tr><td>Error, relayed message</td><td class="t-note">Body is a server string of unknown length and language, so the variant is written to survive one rather than to read well. Title falls back to <code>Something went wrong</code> when the server sends none — <em>not</em> to the current default <code>Cảnh báo</code>, which mislabels every error as a warning and does it in Vietnamese.</td></tr>
+        <tr><td>Reminder · not set</td><td class="t-note">Neutral tile, bell + plus, names the room and the exact time it opens, and says where the reminder can be removed. <code>Not now</code> / <code>Set reminder</code>.</td></tr>
+        <tr><td>Reminder · already set</td><td class="t-note">Neutral tile, bell + cross. Accent primary, not red: removal is reversible from the bell, so it does not qualify for the filled red. Secondary names the safe outcome, <code>Keep it</code>.</td></tr>
+        <tr><td>Reminder · confirmed</td><td class="t-note">Acid tile, bell + check, single <code>Got it</code> — the one dialog in the kit that earns the generic label. Recommended as a <b>toast</b> instead; the shipped flow stacks three modals to set one reminder.</td></tr>
+        <tr><td>Form · filled / empty</td><td class="t-note">Control on <code>#13171E</code> with a 1&nbsp;px hairline; placeholder in <code>#5B606B</code>; focus takes the accent border and the 3&nbsp;px accent wash ring; counter in <code>#5B606B</code> tabular. Submit repeats the verb, secondary is <code>Cancel</code> because nothing is recommended.</td></tr>
+        <tr><td>Auto-dismiss</td><td class="t-note"><b>Removed.</b> No dialog in this kit times out. The presenter it replaces auto-popped after 5&nbsp;s, which is under the reading time of the messages it carries. A message that may go unread is a toast or a banner, not a modal.</td></tr>
+        <tr><td>Presenter · dead</td><td class="t-note">Struck-through name and the word <code>Delete</code>. Five of nineteen: no caller, or one caller that becomes a toast.</td></tr>
+        <tr><td>Opening / closing</td><td class="t-note">Scrim fades over <code>.2s</code>; the panel lifts <code>10&nbsp;px</code> and settles from <code>scale(.985)</code> over <code>.28s</code>.</td></tr>
+        <tr><td>Button busy</td><td class="t-note">Label hidden but boxed, ring in the label's ink, opacity <code>.85</code>, pointer events off, <code>aria-busy</code> set.</td></tr>
+        <tr><td>Toast success / error / info</td><td class="t-note">Marker bar, glyph and action wash all change together; nothing else does. Error and info carry an action, success does not.</td></tr>
+        <tr><td>Banner info / warning</td><td class="t-note">Neutral hairline and muted body, versus the red wash, red hairline, red glyph and warmed body copy.</td></tr>
+        <tr><td>No backdrop-filter support</td><td class="t-note">Scrim falls back to a flat <code>rgba(3,4,1,.86)</code>, dark enough to do the separating on its own.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">Transitions suppressed and every SVG animation paused with <code>pauseAnimations()</code>, so the loaders hold a static frame rather than disappearing.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <p>
+    This is a system kit, and it is <b>almost entirely proposed</b>. No dialog, toast, loader, empty
+    state or banner is designed in the new brand. What exists is the shipped behaviour and its copy —
+    which screens interrupt, what they say, what they do next — and the shipped implementations are the
+    thing being replaced rather than the thing being reproduced.
+  </p>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Tokens, surfaces and radii</b> — sampled, not approximated</li>
+        <li><b>Section container</b> — the bordered <code>#080A0C</code> wrapper, used for the spec panels and the empty state</li>
+        <li><b>Status pill</b> — the <code>LIVE NOW</code> treatment, reused to mark the interactive panel</li>
+        <li><b>Tab bar</b> — reconstructed from the active-state frames, so the toast clearance can be shown honestly</li>
+        <li><b>Icon construction</b> — 24-box, round caps, optical stroke weight</li>
+        <li><b>Three-peak mark</b> — the hero range silhouette, reused as the panel loader</li>
+        <li><b>Dialog content</b> — the situations, addresses, counts and consequences come from the shipped flows</li>
+        <li><b>Reminder glyphs</b> — the bell + plus and bell + check are lifted straight from <code>all-locker-rooms.html</code>'s reminder trigger, so the dialog reads as the control that opened it</li>
+        <li><b>Reminder copy</b> — the shipped <code>KEEP</code> / <code>REMOVE</code> pair and the three shipped states (set, cancel, set-confirmed) are preserved, in sentence case</li>
+        <li><b>Form control shell</b> — <code>forms.html</code>'s <code>.ctl</code>, unchanged but for the fill</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The dialog shell</b> — one construction replacing the three the app ships</li>
+        <li><b>Five variants</b> — success, error, warning, confirm, destructive, differing only in tile, title, body and action row</li>
+        <li><b>Warning without a third hue</b> — the amber <code>#E08A09</code> in the current colour file is dropped; warning is red on the neutral wash</li>
+        <li><b>Always-present dismiss</b> — the shell it replaces offered no way out but the action, and one variant relied on a 5-second timeout</li>
+        <li><b>The verb convention</b> — the affirmative repeats the title's verb, imperative, sentence case, three words at most; <code>Got it</code> is the only permitted generic, and only for an acknowledgement</li>
+        <li><b>Ink on red</b> — <code>#0B0E06</code>, so both saturated fills behave the same way</li>
+        <li><b>Scrim</b> — 72% plus a 10&nbsp;px blur, against the flat ~45% no-blur backdrop that currently leaves the form behind the dialog fully legible</li>
+        <li><b>Focus trap and focus return</b></li>
+        <li><b>Toast</b> — inset, card radius, semantic marker bar, icon, optional action, timed life. The shipped snackbar is the only full-bleed square-cornered element in the captured set: flat green, ~90&nbsp;pt tall, no icon, no action, overlapping the floating tab bar</li>
+        <li><b>Loaders</b> — the peaks and the two ring sizes, replacing a loader whose default paints a Material <code>#2196F3</code> dot-ring, a hue that appears nowhere else in the brand</li>
+        <li><b>In-button busy state</b></li>
+        <li><b>Empty state</b> — replacing a pure <code>#000000</code> panel with a lilac border and one line of shouted display type, which offered nothing to do next</li>
+        <li><b>Inline banner</b> — both variants; nothing like it exists</li>
+        <li><b>Eight drawn state icons</b> — in place of two platform emoji</li>
+        <li><b>Server-error variant</b> — the app's generic 5xx surface, referenced 27 times and never drawn. Cause, consequence, one next step and a quotable reference, replacing the words <code>INTERNAL SERVER</code> in 34&nbsp;pt display type coloured <code>#E04A09</code> over a raster</li>
+        <li><b>A reference code the member can quote</b> — the 5xx surface currently gives support nothing to search on</li>
+        <li><b>Reminder dialog, all three states</b> — ten references across Backchat and All Locker Rooms, never captured or drawn</li>
+        <li><b>A dialog that carries form controls</b> — a shape the kit did not have; <code>media.html</code> should use this shell</li>
+        <li><b>One loader, not two</b> — the second treatment and both Lottie assets are retired</li>
+        <li><b>No auto-dismissing dialogs</b> — the 5-second timeout on the app's most-used error goes</li>
+        <li><b>Presenter inventory</b> — all 19 presenters counted and ruled on, with five marked for deletion</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Can we delete five dialogs instead of rebranding them?</h3>
+      <p>The app declares <b>19</b> dialog presenters. Counting every non-comment reference in the code,
+      <span class="flag">five of them are not worth building</span>, and the inventory table on the page
+      marks each with a struck-through name and the word <code>Delete</code>. Four have <b>no caller at
+      all</b> — <code>showDialogNoButton</code>, <code>customActionSheet</code>,
+      <code>showConfirmSP</code>, and <code>common</code>, which has no external caller and is only
+      reached through the two presenters we are replacing anyway. The fifth,
+      <code>showSuccess</code>, has one caller and it should be a toast. Two more,
+      <code>showCustomDialogWithCustomContent</code> and <code>showNormalDialog</code>, exist only to
+      serve a single file and fold into the standard shell. <code>customActionSheet</code> is worth
+      naming separately: it is the <b>only Cupertino surface in the entire codebase</b>, so deleting it
+      removes the last iOS-styled component from an app that is otherwise Material throughout, at the
+      cost of nothing, because nothing calls it. We need agreement that deleting is in scope — it takes
+      roughly a quarter of the dialog layer off the build, and the alternative is paying to restyle code
+      that never runs.</p>
+    </li>
+    <li>
+      <h3>Should the app's most-used error stop dismissing itself?</h3>
+      <p><code>showError</code> is referenced <b>30</b> times, more than any other dialog. Its one
+      control is a full-width text link reading <b>Thoát</b> — Vietnamese for “Exit” — and it calls
+      <code>.timeout(Duration(seconds: 5))</code>, which pops the dialog whether or not the member has
+      finished reading. Six of its callers are the API layer, so the body is a relayed server string
+      whose length nobody controls. We have assumed <span class="flag">no dialog auto-dismisses</span>,
+      the label becomes a real button in English, and the null-title fallback becomes
+      <code>Something went wrong</code> rather than the current <b>Cảnh báo</b> (“Warning”), which
+      mislabels every error. If any of the 30 sites genuinely wants a message that disappears, that site
+      wants a toast, and we should list them.</p>
+    </li>
+    <li>
+      <h3>How much should a member be told about a 5xx?</h3>
+      <p><code>showInternal</code> is referenced <b>27</b> times and shows a member the words
+      <b>INTERNAL SERVER</b>. We have replaced it with cause, consequence, one next step and a
+      <span class="flag">support reference — <code>SH-500 · 4F2A9C · 18:24 CET</code></span>. Two things
+      need confirming: that the reference format is something your support process can actually search
+      on, and that <code>Get help</code> has somewhere to go. If there is no support channel behind that
+      button, the dialog should be single-action and the reference should still be copyable.</p>
+    </li>
+    <li>
+      <h3>Does setting a reminder need a dialog at all?</h3>
+      <p>The shipped flow puts <b>three modals in a row</b> — ask, loading, confirm — so a member taps a
+      bell and dismisses two panels to end up where the bell already showed them they were. Meanwhile
+      <code>all-locker-rooms.html</code> toggles the bell optimistically with no dialog. We recommend
+      <span class="flag">toggle for set, dialog only for remove, toast for both outcomes</span>, and have
+      built all three states so you can see what is being given up. Whichever way this goes, the list and
+      the dialog kit have to agree, because the bell is the only entry point.</p>
+    </li>
+    <li>
+      <h3>Is warning distinguishable enough from error?</h3>
+      <p>This is the one genuinely uncomfortable decision in the kit. With two hues available, warning
+      and error share a colour and differ only by <span class="flag">wash and ring</span> — red glyph on
+      a red wash inside a red ring for error, red glyph on the neutral wash with no ring for warning. It
+      reads correctly side by side, and the title always says which it is, but they are two steps of one
+      signal rather than two signals. The alternative is admitting a third hue for warning alone, which
+      the contract forbids and which we would rather not open. We need you to look at the two specimens
+      together and tell us it holds.</p>
+    </li>
+    <li>
+      <h3>What should each dialog's affirmative actually say?</h3>
+      <p>The app currently uses five different affirmatives across four dialogs — three of them shouted
+      in caps, and two of them still in Vietnamese from the source project. We have replaced them with a
+      convention: repeat the title's verb, imperative, sentence case. Someone who owns the product
+      language needs to sign off the resulting labels, because the convention is only as good as the
+      titles it derives from.</p>
+    </li>
+    <li>
+      <h3>Toast, or dialog?</h3>
+      <p>Several flows currently interrupt with a modal where a toast would do — a saved profile does not
+      need a dismissal. We have assumed <span class="flag">dialogs are for decisions and failures a
+      member must act on; toasts are for confirmations and recoverable errors</span>. Applying that rule
+      will change which control several existing screens use, so it should be agreed before build rather
+      than screen by screen.</p>
+    </li>
+    <li>
+      <h3>How long should a toast live?</h3>
+      <p><span class="flag">4 seconds</span>, or <span class="flag">6</span> when it carries an action,
+      are our numbers — long enough to read, short enough not to block the tab bar. If a toast can be
+      the only notification of a failed vote, it is the wrong component for that message and it should be
+      a banner that persists.</p>
+    </li>
+    <li>
+      <h3>Does anything besides delete get a red button?</h3>
+      <p>We have restricted the filled red to irreversible destruction of something the member owns.
+      Leaving a locker room, withdrawing an idea and cancelling a vote are all arguably destructive and
+      all currently use it. Drawing that line narrowly is what keeps the red meaningful.</p>
+    </li>
+  </ol>
+</section>

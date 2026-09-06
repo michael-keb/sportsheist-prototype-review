@@ -1,0 +1,659 @@
+[
+  {
+    "name": "Opening the app",
+    "journeys": [
+      {
+        "id": "mem-cold-launch",
+        "name": "A member opens the app and lands in their club",
+        "who": "Returning member",
+        "why": "The first four seconds of every session — the only screens every member sees every day.",
+        "steps": [
+          { "screen": "launch/0", "note": "The splash holds while the stored sign-in is checked. The three acid peaks are both the brand mark and the sign that the app is still working; the shipped splash has no indicator at all, so a slow check is indistinguishable from a frozen app." },
+          { "screen": "war-room/0", "note": "The check comes back and the member lands in their club's War Room. Nothing was typed and nothing was tapped." },
+          { "screen": "backchat", "note": "Backchat is one tap along the bar. This is the whole of a normal opening." }
+        ]
+      },
+      {
+        "id": "mem-splash-slow",
+        "name": "The sign-in check takes too long",
+        "who": "Returning member",
+        "why": "The splash promises an answer within fifteen seconds. That promise is the reason the failure screen has to exist.",
+        "steps": [
+          { "screen": "launch/0", "note": "At four seconds the line at the foot is replaced by a panel that names the wait — your connection looks slow. There is deliberately no button: the app is still working, so asking the member to do something would be a lie." },
+          { "screen": "launch/1", "note": "At fifteen seconds the splash gives up and becomes this. Both numbers are ours and need to match whatever timeout the sign-in request actually uses." }
+        ]
+      },
+      {
+        "id": "mem-coldstart-offline",
+        "name": "The app opens with no connection",
+        "who": "Returning member",
+        "why": "Being offline is a condition, not a fault — and the member must not be told they have been signed out.",
+        "steps": [
+          { "screen": "launch/0", "note": "The check starts as normal. The member is on a train and the phone has nothing." },
+          { "screen": "launch/1", "note": "The offline version: a neutral tile, the last time we synced, and the most important line on the screen — you're still signed in. Nothing red, and nothing that suggests the account is gone." },
+          { "screen": "war-room/0", "note": "Try Again once the signal returns, and they are through. Worth saying plainly: the shipped app has no connectivity handling of any kind, so this screen is a proposal, not a rebrand." }
+        ]
+      },
+      {
+        "id": "mem-coldstart-server",
+        "name": "The app opens and we are the problem",
+        "who": "Returning member",
+        "why": "The one state that admits we do not yet know the cause — it earns that by handing over a reference number.",
+        "steps": [
+          { "screen": "launch/0", "note": "The phone is online. The sign-in check goes out and does not come back." },
+          { "screen": "launch/1", "note": "The server version: a red tile, what happened and what to do next, and a reference number the member can quote. That turns an unhelpful message into a support ticket." },
+          { "screen": "war-room/0", "note": "Try Again holds its width and swaps its label for a ring, so the second attempt is visible and the button cannot be pressed twice. Then they are in." }
+        ]
+      },
+      {
+        "id": "mem-entry-fork",
+        "name": "The choice between logging in and signing up",
+        "who": "Anyone opening the app",
+        "why": "We recommend deleting this screen. Stepping through it is the fastest way to see why.",
+        "steps": [
+          { "screen": "auth/0", "note": "Get started — the one pre-auth screen already designed in the new brand, reproduced here rather than reinterpreted. It already has a button." },
+          { "screen": "launch/2", "note": "The fork exists only to ask which of two doors to open. One statement and two labelled destinations replace the shipped screen's question, which asked about club membership but decided something else entirely." },
+          { "screen": "auth/1", "note": "Log in. Our recommendation is that Get started carries Sign up with a Log in link underneath, and this middle screen disappears — one less tap for everyone who opens the app." }
+        ]
+      },
+      {
+        "id": "mem-alerts-priming",
+        "name": "Asking for notifications before the phone does",
+        "who": "New member",
+        "why": "iOS allows exactly one permission alert per install. Everything the app can influence happens on the screen before it.",
+        "steps": [
+          { "screen": "club-selection/0", "note": "The member has just chosen their club. In the shipped app the system permission alert fires at about this moment, unexplained, alongside a success bar and an empty page." },
+          { "screen": "launch/4", "note": "Instead: one sentence on why, four things we would send, a fifth row promising nothing else, and a plain warning that saying no is permanent until they go to Settings. The greyscale specimen beneath shows exactly how much of Apple's own alert we control — the app's name, and when it fires." },
+          { "screen": "alerts/0", "note": "What actually arrives later. The promise on the priming screen is only worth making if this list stays honest." }
+        ]
+      },
+      {
+        "id": "mem-alerts-declined",
+        "name": "A member says no to notifications",
+        "who": "New member",
+        "why": "The shipped app records no follow-up either way, so a member who declines simply never hears from us again.",
+        "steps": [
+          { "screen": "launch/4", "note": "The declined state: a neutral tile, Alerts are off, and the honest explanation that we cannot ask again. Not red, and not phrased as a mistake." },
+          { "screen": "account-settings/3", "note": "Turning the phone's permission back on is a trip to Settings; what the member chooses to receive once it is on lives here." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Joining",
+    "journeys": [
+      {
+        "id": "mem-signup-happy",
+        "name": "A new member signs up and picks a club",
+        "who": "Prospective member",
+        "why": "The whole first run, end to end. Every screen after Get started is a proposal — see the contrast journeys.",
+        "steps": [
+          { "screen": "launch/0", "note": "Cold launch. There is no stored sign-in, so the app hands straight over to the pre-auth screens." },
+          { "screen": "auth/0", "note": "Get started. The greeting, the positioning line, and one pill." },
+          { "screen": "launch/2", "note": "The fork. Everything runs off one account: log in, or sign up." },
+          { "screen": "onboarding/0", "note": "Step 1 of 4. Member or guest — the product's only tier screen. The member card is the hero and the guest card recedes; the shipped build renders both identically and gives no steer at all." },
+          { "screen": "onboarding/1", "note": "Step 2. The details we have to verify. The ID-check notice that was buried in grey body copy is now a framed notice above every field, because it is the legal backbone of a product that signs children up through adults." },
+          { "screen": "onboarding/2", "note": "Step 3. The name and picture everyone else sees — and the privacy advice to use an avatar rather than a face, also lifted out of the fine print." },
+          { "screen": "club-selection/0", "note": "Step 4. The one choice that determines their War Room, their Backchat and their standings." },
+          { "screen": "war-room/0", "note": "Landed. The member is in." }
+        ]
+      },
+      {
+        "id": "mem-signup-tier",
+        "name": "Choosing between member and guest",
+        "who": "Prospective member",
+        "why": "This is the product's only pricing surface, and it currently carries no price.",
+        "steps": [
+          { "screen": "onboarding/0", "note": "PREMIUM has moved out of the middle of a bullet list, where it appeared to qualify one benefit, into the card header where it qualifies the tier. The guest card is labelled LIMITED and states outright the one thing it cannot do." },
+          { "screen": "onboarding/3", "note": "The stepper at all five positions. A guest leaves the flow at step 1, so the stepper leaves with them; if they become a member later they rejoin at step 2 of 4." },
+          { "screen": "onboarding/1", "note": "The member path continues here. Two questions for the client: what does membership cost, and is guest access real — the screen before this one says membership is mandatory." }
+        ]
+      },
+      {
+        "id": "mem-signup-guest",
+        "name": "Someone looks around as a guest",
+        "who": "Prospective guest",
+        "why": "The app says membership is required on one screen and offers a guest pathway on the next. Both cannot be true.",
+        "steps": [
+          { "screen": "onboarding/0", "note": "The guest card, with its own benefit list, its own button, and one exclusion row stating what a guest cannot do." },
+          { "screen": "onboarding/3", "note": "Guests leave the flow at step 1, which is why the stepper has to know about them." },
+          { "screen": "profile/4", "note": "Where a guest ends up: an account with no club behind it. If membership really is mandatory, the guest card becomes a look-around-first link and the copy needs rewriting." }
+        ]
+      },
+      {
+        "id": "mem-age-gate",
+        "name": "The member turns out to be under 18",
+        "who": "Prospective member",
+        "why": "The under-18 note is stated twice in the shipped app and branches nowhere. A note that leads nowhere is the worst version of it.",
+        "steps": [
+          { "screen": "onboarding/0", "note": "The under-18 question sits on the member card as a framed note rather than a line of grey text." },
+          { "screen": "onboarding/1", "note": "The date of birth field is where it becomes real. The format hint says DD/MM/YYYY and the date is echoed back in words with the age spelled out, so 02/06/2001 cannot be read two ways." },
+          { "screen": "child-account/1", "note": "The only place in the prototype where a young person is actually handled: an adult sets them up and consents on their behalf. Before build we need the real mechanism for someone who signs themselves up and is under age — a guardian's email, a code, or a blocked state." }
+        ]
+      },
+      {
+        "id": "mem-signup-details-fail",
+        "name": "The details step fights back",
+        "who": "Prospective member",
+        "why": "Three quiet defects in the shipped form, fixed here rather than merely noted.",
+        "steps": [
+          { "screen": "onboarding/1", "note": "Country is the master: it filters the province list and sets the dial code, so the form can no longer hold a Vietnamese dial code, a Vietnamese address and an Italian country at once. A line under the phone box confirms the match and offers a Change." },
+          { "screen": "onboarding/1", "note": "The two-up rows now share a baseline — both live pairs are misaligned by about eight points — and a focused field gets an accent border and halo, where the shipped build renders no focus treatment at all." },
+          { "screen": "onboarding/2", "note": "On to identity, with the stepper showing two of four done." }
+        ]
+      },
+      {
+        "id": "mem-signup-username-taken",
+        "name": "The username they wanted is gone",
+        "who": "Prospective member",
+        "why": "A validation failure the shipped build has no design for at all.",
+        "steps": [
+          { "screen": "onboarding/1", "note": "Details done. The next step is the only one where another member's choices can block you." },
+          { "screen": "onboarding/2", "note": "The username field in its failed state: a red border, a plain message, and three suggestions as tappable pills. Continue is disabled and says why underneath — never a dead button with no explanation. Choosing a suggestion clears the error and unlocks it." },
+          { "screen": "club-selection/0", "note": "Unblocked, and on to the last step. We still need the real username rules and the reserved-word list from the API." }
+        ]
+      },
+      {
+        "id": "mem-signup-stepper",
+        "name": "Knowing how far through you are",
+        "who": "Prospective member",
+        "why": "The shipped registration is four screens long and tells you nothing about that — you answer questions until they stop.",
+        "steps": [
+          { "screen": "onboarding/3", "note": "The stepper on its own: four labelled segments, the current one part-filled, plus a step-count pill. Nothing like it exists in the live flow." },
+          { "screen": "onboarding/0", "note": "Step 1 of 4 in place." },
+          { "screen": "onboarding/2", "note": "Step 3 of 4. The labels are the flow's public promise, so we need the real sequence confirmed — email and password are collected somewhere too, and that may make it five." }
+        ]
+      },
+      {
+        "id": "mem-club-pick",
+        "name": "Picking a club out of the catalogue",
+        "who": "New member",
+        "why": "Four dependent dropdowns in the shipped app, with nothing on screen saying they depend on each other.",
+        "steps": [
+          { "screen": "club-selection/0", "note": "Sport, then level, then league, then club — numbered and railed together. A step that cannot yet be answered carries a padlock and says what it is waiting for, instead of a member tapping a dead control and nothing happening." },
+          { "screen": "club-selection/0", "note": "The club list opens inside step 4 rather than on another screen, with search that matches the name or the short code. The pick is restated in a confirmation card with a Change escape, and the docked button names whatever is still missing." },
+          { "screen": "war-room/0", "note": "Continue, and the choice has decided their War Room, their Backchat and their standings." }
+        ]
+      },
+      {
+        "id": "mem-club-crests",
+        "name": "Why club crests sit on a white plate",
+        "who": "Reviewer",
+        "why": "One club's crest measured about 15:1 against the dark card and another about 1.4:1 — a tenfold contrast spread inside one list.",
+        "steps": [
+          { "screen": "club-selection/1", "note": "The specimen sheet — reference material, not a screen a member reaches. Every crest sits on an app-owned light plate, so we measure the plate rather than third-party artwork, and that number is then a constant for every club in the catalogue." },
+          { "screen": "club-selection/0", "note": "The plate in use. It is the one place the product shows a light ground, and we need that agreed as a rule rather than screen by screen. No crest artwork exists yet — every crest here is a short code or a stand-in." }
+        ]
+      },
+      {
+        "id": "mem-club-limit",
+        "name": "Following more than one club",
+        "who": "New member",
+        "why": "The limit is real, the switcher that a multi-club member would need is not designed.",
+        "steps": [
+          { "screen": "club-selection/0", "note": "Three clubs per league. The count, the ticks and the clubs already followed all sit above the control they constrain, rather than surfacing as an error after the tap. The third pick shows at partial opacity while it is still provisional." },
+          { "screen": "clubs/0", "note": "The clubs the member ends up holding." },
+          { "screen": "clubs/10", "note": "And the switcher that multi-club support implies. The intro copy on club selection still talks about the pick in the singular, so this needs settling: one club, or several?" }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Signing in and getting back in",
+    "journeys": [
+      {
+        "id": "mem-login-happy",
+        "name": "A member signs in",
+        "who": "Returning member",
+        "why": "One of only two genuinely rebranded pre-auth screens — this one exists and works today.",
+        "steps": [
+          { "screen": "auth/0", "note": "Get started." },
+          { "screen": "auth/1", "note": "Log in, assembled entirely from the Forms kit — same field, same 52px control, same validation row. The show-password toggle is a real pressed control that renames itself, and the Don't have an account? prompt sits in flow rather than stranded below a screenful of empty canvas." },
+          { "screen": "war-room/0", "note": "In. While the request is out the button holds its accent fill with a spinning ring rather than greying out — the shipped build shows a blue dot-ring here, the only blue in the product." }
+        ]
+      },
+      {
+        "id": "mem-login-invalid",
+        "name": "The password is wrong",
+        "who": "Returning member",
+        "why": "The string for this exists in the shipped app and nothing renders it.",
+        "steps": [
+          { "screen": "launch/2", "note": "They pick Log in." },
+          { "screen": "auth/1", "note": "Email and password go in, and the server rejects them." },
+          { "screen": "auth/1", "note": "The failure specimen beneath the frame: an alert above the fields and the error ring on both controls, because the API returns one undifferentiated failure and cannot say which value was wrong. The message admits that outright. The button stays enabled — the next thing to do is try again." }
+        ]
+      },
+      {
+        "id": "mem-reset-proposed",
+        "name": "A member resets a forgotten password in the app",
+        "who": "Locked-out member",
+        "why": "What we are asking to build. Read it against the shipped journey below — the pair is the point.",
+        "steps": [
+          { "screen": "auth/1", "note": "Forgot password? sits under the primary action." },
+          { "screen": "auth/3", "note": "One email field, a line stating that the code lasts ten minutes, and a busy state that holds the accent fill rather than greying it — the request is in flight, not unavailable. Then a confirmation card naming the address we sent to and the address it will come from, so the member knows what to look for in spam." },
+          { "screen": "auth/1", "note": "Back to sign in with a working password. The six digits, the ten minutes and the sender address are all assumed — if the real mechanism is a magic link, these two frames change shape." }
+        ]
+      },
+      {
+        "id": "mem-reset-shipped",
+        "name": "What resetting a password actually does today",
+        "who": "Locked-out member",
+        "why": "The contrast with the journey above, and the biggest decision on the pre-auth screens.",
+        "steps": [
+          { "screen": "auth/1", "note": "The member has just failed to log in and taps Forgot password?" },
+          { "screen": "auth/2", "note": "This is the live screen, rebranded and nothing else. Three things on it: a title, one sentence telling the member to go to the Sport Heist website, and a link. No email field, no code, no confirmation, and roughly 500px of empty canvas reproduced rather than tidied up, because the emptiness is the screen." },
+          { "screen": "auth/1", "note": "The link opens the desktop site in the phone's browser and drops the member back here — whether or not the browser actually opened. A full in-app reset is routed in the code, but nothing navigates into it, so none of it runs." }
+        ]
+      },
+      {
+        "id": "mem-reset-pair",
+        "name": "The same journey twice: shipped, then proposed",
+        "who": "Reviewer",
+        "why": "Handing someone who has just failed to log in over to a browser is where accounts are abandoned. This is a build decision, not a design one.",
+        "steps": [
+          { "screen": "auth/2", "note": "What a member gets today." },
+          { "screen": "auth/3", "note": "What we are asking to build. If reset stays on the web, this frame comes out of the library — but the shipped copy still needs rewriting, because it names no destination and gives no reason." }
+        ]
+      },
+      {
+        "id": "mem-reset-code",
+        "name": "Entering the code we said we would send",
+        "who": "Locked-out member",
+        "why": "The catalogue has a gap here, and it is worth the client seeing it.",
+        "steps": [
+          { "screen": "auth/3", "note": "The confirmation card promises a six-digit code and offers Enter code, Send it again and Back to sign in. Resend has no cooldown, because no rule exists in the code — most products disable it for 30 to 60 seconds and count down." },
+          { "screen": "child-account/4", "note": "There is no code-entry frame in the sign-in flow. This is the only place in the prototype where a code is actually typed — the child-account journey — and it stands in for what the member-facing screen would look like." },
+          { "screen": "auth/1", "note": "Code accepted, password set, back at sign in." }
+        ]
+      },
+      {
+        "id": "mem-password-change",
+        "name": "Changing a password you know, versus resetting one you don't",
+        "who": "Member",
+        "why": "One of these two journeys works in the app today and the other does not.",
+        "steps": [
+          { "screen": "account-settings/1", "note": "A signed-in member changing their password inside the app. No browser, no email, no code." },
+          { "screen": "auth/2", "note": "The same member, locked out, gets this instead — a sentence and an outbound link." },
+          { "screen": "auth/3", "note": "The proposal that closes the gap between them." }
+        ]
+      },
+      {
+        "id": "mem-no-account-yet",
+        "name": "Someone on Log in decides to sign up",
+        "who": "Prospective member",
+        "why": "The footer link and the fork button lead to the same place, and today that place is a browser.",
+        "steps": [
+          { "screen": "auth/1", "note": "Don't have an account? Sign up, at the foot of the form, in the one link style used across the library." },
+          { "screen": "launch/3", "note": "In the shipped app that leads here: a dialog telling the member to go to the club's website, and then the phone's browser. Whether they finish registering is invisible to the app." },
+          { "screen": "onboarding/0", "note": "What we propose instead." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "What ships today — the contrasts",
+    "journeys": [
+      {
+        "id": "mem-shipped-signup",
+        "name": "What sign-up actually does today",
+        "who": "Prospective member",
+        "why": "There is no registration screen in the shipped app at all. One exists in the code, and the only link to it is commented out.",
+        "steps": [
+          { "screen": "launch/2", "note": "Our fork: Log In and Sign Up, both continuing inside the app." },
+          { "screen": "launch/3", "note": "What the live build raises the moment the sign-up control is pressed — LEAVING THE APP, reproduced word for word including the misspelling, do you want to proeed. The buttons say NO and YES, which are the dialog presenter's defaults rather than anything chosen for this screen, and the dialog never names where YES goes. Both strings are hardcoded rather than translated, so they stay English in every language." },
+          { "screen": "onboarding/0", "note": "And the four-step registration we propose in its place. These cannot both be true: sign-up is either in the app or on the website, and that decision takes four frames in or out of the library." }
+        ]
+      },
+      {
+        "id": "mem-desktop-deadends",
+        "name": "Everything the app hands to the desktop site",
+        "who": "Reviewer",
+        "why": "The single most likely misreading of this prototype. Four journeys a client will believe complete in the app, and none of them do.",
+        "steps": [
+          { "screen": "launch/3", "note": "Sign-up. Opens the club's website in the phone's browser." },
+          { "screen": "auth/2", "note": "Password reset. Opens the website and returns the member to Log in." },
+          { "screen": "clubs/11", "note": "Adding a club. To add this club, kindly log in to sports heist on desktop — no API call, no payment." },
+          { "screen": "child-account/17", "note": "Adding a child account. Same answer again: proceed to Sports Heist on Desktop. Four dead ends with the same shape, and the prototype builds the in-app flow for all four." }
+        ]
+      },
+      {
+        "id": "mem-shipped-launch",
+        "name": "What the shipped app does when the launch goes wrong",
+        "who": "Returning member",
+        "why": "A dropped connection is currently presented as being logged out, which is the worst possible reading of it.",
+        "steps": [
+          { "screen": "launch/0", "note": "The splash is the most brand-heavy screen in the product, and it renders no loading indicator at all." },
+          { "screen": "launch/1", "note": "There is no failure screen. This frame is entirely new." },
+          { "screen": "auth/0", "note": "What happens instead: after a one-second delay the app drops the member into the signed-out flow on both a real failure and a genuine sign-out. A bad tunnel looks exactly like being logged out." }
+        ]
+      },
+      {
+        "id": "mem-product-name",
+        "name": "What is the product actually called?",
+        "who": "Reviewer",
+        "why": "Four spellings ship in one app, and one of them is a staging build suffix shown to real users.",
+        "steps": [
+          { "screen": "auth/2", "note": "The shipped reset copy, quoted as-is: Sport Heist, two words, no s on Sport." },
+          { "screen": "onboarding/0", "note": "The product name appeared five times in the thirteen strings on the live pathway screen, including Browse Sports Heist app. It appears once here, spelled SportsHeist." },
+          { "screen": "launch/0", "note": "The logo says SPORTSHEIST. The iOS notification alert says Sports Heist(stg). That last one is a build setting, not a design change, and it must be fixed before release." }
+        ]
+      },
+      {
+        "id": "mem-one-verb-pair",
+        "name": "Sign in, or Log in?",
+        "who": "Reviewer",
+        "why": "A five-minute change now and a find-and-replace across every string later.",
+        "steps": [
+          { "screen": "auth/1", "note": "The live flow uses three verbs for two concepts — LOGIN in the title, SIGN IN on the button, SIGN UP in the footer. One pair has to win; we picked Sign in / Sign up, because Log in / Log up is not a pair." },
+          { "screen": "launch/2", "note": "These frames say Log in / Sign up, because they take their geometry and wording from the Get started export. Two near-identical words, one library — it needs settling once, for everything. The same is true of button height: 64px here, 52px on several other kits." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Backchat — finding a room",
+    "journeys": [
+      {
+        "id": "bc-hub",
+        "name": "A fan arrives at Backchat",
+        "who": "Member",
+        "why": "Tab 3 of 5 and the app's live-social surface. This part of the feature is real code, faithfully rebranded.",
+        "steps": [
+          { "screen": "backchat", "note": "One hub, three ways into a room: the always-on Fan Stadium, a snapping carousel of rooms running right now, and a stacked list of rooms scheduled for later. The word live is drawn five different ways across the shipped feature; here it is one accent pill, everywhere." },
+          { "screen": "all-locker-rooms", "note": "View all opens the whole set. The hub shows four live and four scheduled; this is everything, with search, sort, filter and the four scope chips the code already ships." },
+          { "screen": "locker-room/1", "note": "And a room card leads here. Note the two photographs the hub still needs: the knockout microphone in the hero, and the stadium shot behind the Fan Stadium card." }
+        ]
+      },
+      {
+        "id": "bc-live-vs-upcoming",
+        "name": "Live rooms and scheduled rooms are not the same list",
+        "who": "Member",
+        "why": "The code carries a separate sort for each mode, hides one chip in Live, and shows a different figure in the card footer.",
+        "steps": [
+          { "screen": "all-locker-rooms", "note": "The segmented control switches mode, and everything below it re-reads: the sort options, the filter options, the chips, even the search sheet's title. The shipped screen reaches this list already set to one mode and gives no way to change it." },
+          { "screen": "backchat", "note": "On a live card the two figures are speakers and people in the room. On a scheduled card there is nobody in the room yet, so we read them as confirmed speakers and people booked in — the glyphs are identical in both places, and that needs confirming." }
+        ]
+      },
+      {
+        "id": "bc-search",
+        "name": "Searching for a room, a host or an attendee",
+        "who": "Member",
+        "why": "The shipped search sheet shows a blank white area until you type, and an empty white area when nothing matches.",
+        "steps": [
+          { "screen": "backchat", "note": "The magnifier on the live container filters the carousel by room title or host." },
+          { "screen": "all-locker-rooms", "note": "The full search sheet: recent searches before you type, results as full room cards, and a no-match panel that quotes the term back and says what search does and does not read. Typing club_staff, arsenal, sergi_gol or goalkeeper each reaches a different state." },
+          { "screen": "locker-room/1", "note": "A hit, and the room behind it. Two things need deciding: whether search inherits the list's filters (we built it that way; the code resets them silently) and whether it debounces at all — today it fires a request per keystroke." }
+        ]
+      },
+      {
+        "id": "bc-filter-sort",
+        "name": "Filtering a long room list",
+        "who": "Member",
+        "why": "Nothing in the shipped build marks an applied filter, which is the single most common way a list looks broken.",
+        "steps": [
+          { "screen": "all-locker-rooms", "note": "The sort trigger names the applied order and the filter trigger carries a count — replacing three unlabelled icons that give no hint of the current state. When a filter is on it is said in five places, including a Clear link beside the tally." },
+          { "screen": "all-locker-rooms", "note": "Filtered to nothing gets its own quieter panel with one Clear filters button, distinct from an empty club — there are rooms, and the fix is one tap. The shipped build shows the same no-rooms-available panel for both, which reads as an outage." },
+          { "screen": "locker-room/0", "note": "And through to a room. Note the filter is multi-select here; the endpoint currently takes a single value, so that is an API change as well as a UI one." }
+        ]
+      },
+      {
+        "id": "bc-chips-or-filters",
+        "name": "Invitations and reminders are set from two places at once",
+        "who": "Reviewer",
+        "why": "A duplication we built as shipped so the client can see it, with a recommendation attached.",
+        "steps": [
+          { "screen": "all-locker-rooms", "note": "INVITATIONS and REMINDERS are scope chips, and the same two facts are also filter options in the sheet. The code resolves the clash by letting whichever the chip sets win, so the filter row appears to do nothing." },
+          { "screen": "backchat", "note": "Our recommendation: keep the chips, drop the two rows from the filter sheet, and let filter mean access only." }
+        ]
+      },
+      {
+        "id": "bc-reminder",
+        "name": "Setting a reminder on a room that opens later",
+        "who": "Member",
+        "why": "The only way a member secures a place in a room before it exists.",
+        "steps": [
+          { "screen": "all-locker-rooms", "note": "The bell on a scheduled card. The glyph changes as well as the fill, so the state never rests on colour, and toggling it moves the room in and out of the REMINDERS chip and the reminder filter." },
+          { "screen": "alerts/0", "note": "The reminder lands here when the room opens." },
+          { "screen": "backchat", "note": "Back on the hub, the bell filters the carousel to the rooms you set a reminder on — so the two screens agree about the same fact." }
+        ]
+      },
+      {
+        "id": "bc-early-to-scheduled",
+        "name": "A member turns up early for a scheduled room",
+        "who": "Member",
+        "why": "A real gap: there is no screen for a room that has not opened yet.",
+        "steps": [
+          { "screen": "backchat", "note": "The scheduled card, with its day and time strip. Nothing about it is tappable into a room, because the room does not exist yet." },
+          { "screen": "all-locker-rooms", "note": "The booked-in figure in the footer is the number of people who set a reminder, not the number in the room." },
+          { "screen": "alerts/0", "note": "The reminder is the intended route in — the app tells you when it opens rather than you waiting on it." },
+          { "screen": "locker-room/1", "note": "And this is the only pre-join screen we have, which assumes the room is already running: it reads started 24 minutes ago. A member who arrives before the start has nowhere to land, and that screen is not drawn." }
+        ]
+      },
+      {
+        "id": "bc-locked-room",
+        "name": "An open room and a locked one",
+        "who": "Member",
+        "why": "The same fact is called two different things in the shipped app, on screens one tap apart.",
+        "steps": [
+          { "screen": "backchat", "note": "Every card carries OPEN ROOM or LOCKED ROOM with a padlock. Same slot, same colour, same size — the shackle is the whole difference." },
+          { "screen": "all-locker-rooms", "note": "The filter calls the same rooms Closed. We standardised on locked, because that is what the card, the padlock and the room editor's tiles all say, and we would change the enum to match." },
+          { "screen": "locker-room/1", "note": "A locked room still shows its pre-join screen. Who can get in is set by the host when the room is scheduled." }
+        ]
+      },
+      {
+        "id": "bc-list-states",
+        "name": "A room list loading, ending and empty",
+        "who": "Member",
+        "why": "Four states you cannot reach by tapping, and the shipped list has none of them.",
+        "steps": [
+          { "screen": "all-locker-rooms", "note": "First load is four skeleton cards matching the app's own shimmer count. The shipped skeleton is a light-theme grey sweep on a dark screen that draws four portraits and four stats regardless of the card it stands in for." },
+          { "screen": "all-locker-rooms", "note": "There are no page numbers — the list loads more when you reach the end — so it needs exactly three things: a skeleton holding the incoming card, a marker while the request is out, and a line when there is nothing left. The shipped list simply ends in an empty box, so a member cannot tell whether it finished or stalled." },
+          { "screen": "backchat", "note": "The hub's own empty panels ship hidden in the markup. No rooms in session, and nothing scheduled — the second gets a promise line rather than a button, because nothing the member does moves it forward." }
+        ]
+      },
+      {
+        "id": "bc-one-live-colour",
+        "name": "One colour for live",
+        "who": "Reviewer",
+        "why": "Across the shipped feature, live is drawn five different ways — and the one genuinely live screen has no marker at all.",
+        "steps": [
+          { "screen": "backchat", "note": "Amber on the locker-room card, a violet pill with a red dot on the Fan Stadium card, and a bronze variant for scheduled. Here: one accent pill, and scheduled is distinguished by weight and fill rather than a second hue." },
+          { "screen": "all-locker-rooms", "note": "The same pill in the list, and the same rule for the mode counts." },
+          { "screen": "locker-room/0", "note": "And inside the room, where the pill gains a slow pulse. The shipped room screen carries no live marker whatsoever." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Inside a Locker Room",
+    "journeys": [
+      {
+        "id": "bc-join-room",
+        "name": "A member joins a room that is running",
+        "who": "Member",
+        "why": "The core Backchat promise — and the one part of it with no runtime in this checkout.",
+        "steps": [
+          { "screen": "backchat", "note": "A live card in the carousel. Tapping it does not drop the member straight into a live microphone." },
+          { "screen": "locker-room/1", "note": "Before you join: who is hosting, how many are speaking and listening, whether the room is open, and a card stating plainly that you join muted and the phone will only ask for the microphone if the host invites you up." },
+          { "screen": "locker-room/0", "note": "Inside. The stage sits on the brand's own green field rather than the shipped grain-textured locker illustration, so the room reads as part of SportsHeist the moment it opens." }
+        ]
+      },
+      {
+        "id": "bc-prejoin",
+        "name": "The screen before you commit to a room",
+        "who": "Member",
+        "why": "The shipped flow drops you straight into the room. This frame is entirely new.",
+        "steps": [
+          { "screen": "locker-room/1", "note": "Three facts, a preview of who is in there, the microphone promise, and one full-width Join action with a line under it: listening only, you can leave whenever you like." },
+          { "screen": "locker-room/0", "note": "And in. Leaving is a neutral pill rather than a red one, deliberately — leaving destroys nothing and you can walk straight back in." }
+        ]
+      },
+      {
+        "id": "bc-speaking-states",
+        "name": "Telling who is talking",
+        "who": "Member",
+        "why": "A state that has to survive a colour-blind viewer and a still screenshot.",
+        "steps": [
+          { "screen": "locker-room/0", "note": "Speaking is four signals at once: an accent ring on the portrait, an accent badge with a moving level meter, the name at a heavier weight, and the word Speaking. Never hue alone. Mic-on and Muted use the same badge with a different glyph and a different word." },
+          { "screen": "locker-room/2", "note": "The same tile on the roster, so a person looks the same on both sides of one tap. In the captured screenshot the two people on the roster render in a different family, case and weight from the room they are standing in." }
+        ]
+      },
+      {
+        "id": "bc-attendees",
+        "name": "Seeing everyone in the room",
+        "who": "Member",
+        "why": "The one screen in the set with a device capture behind it and, until this pass, no built counterpart.",
+        "steps": [
+          { "screen": "locker-room/0", "note": "The people control in the room bar. In the previous build it led nowhere." },
+          { "screen": "locker-room/2", "note": "Hosts and Audience, each with a count, each in the kit's own container. The data already exists — the room record the app fetches returns a host list with names and avatars, an invited-member list and both totals. The screen had a source; it just had no screen." },
+          { "screen": "locker-room/0", "note": "Back to the stage. Two open questions: the roster has no search and no defined order at 214 people, and it is read-only — which is defensible for a member and hard to defend for a host, who has nowhere else to moderate." }
+        ]
+      },
+      {
+        "id": "bc-raise-hand",
+        "name": "A listener asks to speak",
+        "who": "Member",
+        "why": "The whole permission model of a room rests on this one control.",
+        "steps": [
+          { "screen": "locker-room/1", "note": "You join muted, and the phone's microphone prompt is deferred until it is actually needed." },
+          { "screen": "locker-room/0", "note": "Raise a hand and the control becomes an accent pill reading Hand up; the note under the listener stack states the rule — the host decides who comes up. If moderation works differently, with co-hosts or pre-approved speakers, the stage and the dock both change." },
+          { "screen": "locker-room/2", "note": "And the roster is where a host would see who is asking — if hosts are meant to act from here, the tile needs an affordance and this screen needs a permission model." }
+        ]
+      },
+      {
+        "id": "bc-reactions",
+        "name": "Reacting without talking",
+        "who": "Member",
+        "why": "Reactions should mean one thing in one place, and right now the captures put them in two.",
+        "steps": [
+          { "screen": "locker-room/0", "note": "Six named reactions drawn as artwork rather than emoji — Clap, Fire, Goal, Love, Wow, Boo — rising through a reserved lane at the foot of the stage so one never lands on a face. Boo is the one worth a decision: it is the only negative one, and it is aimed at people in the room." },
+          { "screen": "chat", "note": "Deliberately none in the chat lane. The captures show an emoji button in the composer; we left it out so reactions live on the audio surface only." }
+        ]
+      },
+      {
+        "id": "bc-chat-lane",
+        "name": "Typing while somebody else is talking",
+        "who": "Member",
+        "why": "The third place members say things, and the fastest one.",
+        "steps": [
+          { "screen": "locker-room/0", "note": "The room bar carries a Stage / Chat switch with the unread count on the Chat side." },
+          { "screen": "chat", "note": "Bubbles on the canvas rather than rows in a panel, because a bubble's width tells you a message is two words long before you read it. Order is the only structure — no replies, no sorting, nothing counted. Your own messages drop the portrait and take a thin accent hairline; the host, the club account and system lines each read differently without a second colour." },
+          { "screen": "locker-room/0", "note": "And back to the stage. The shipped bubble is a single violet pill with no author, no avatar, no timestamp and no in-or-out variant." }
+        ]
+      },
+      {
+        "id": "bc-chat-empty",
+        "name": "Being the first to say something",
+        "who": "Member",
+        "why": "There is no empty chat anywhere in the capture set, and being first in front of 214 people is a different decision from being first in an empty room.",
+        "steps": [
+          { "screen": "locker-room/1", "note": "214 listening — the size of the audience is known before the member ever opens the chat." },
+          { "screen": "chat", "note": "The empty state names that audience rather than saying be the first, and offers a quiet secondary pill. A full-width accent button in a talking surface is the ballot's Vote button, and nothing here may look like it. The composer's send disc stays disabled until something is typed — the shipped send button has no disabled rendering at all." }
+        ]
+      },
+      {
+        "id": "bc-chat-send-fails",
+        "name": "A message does not send",
+        "who": "Member",
+        "why": "A live surface on a phone in a stadium will fail constantly, and the shipped composer has no state for it.",
+        "steps": [
+          { "screen": "chat", "note": "The bubble is placed immediately at reduced opacity with the word Sending. If it fails it keeps full-contrast text with a red hairline, a warning glyph and the cause — a failure is loud, not disabled — then Retry, which re-sends in place and keeps its position in the log, and Delete, which needs no confirmation because nothing left the device." },
+          { "screen": "locker-room/0", "note": "Meanwhile the audio carries on. The chat's reconnecting state keeps whatever was typed and promises to send it when the room is back." }
+        ]
+      },
+      {
+        "id": "bc-three-talking-surfaces",
+        "name": "Three places members talk, and why they look different",
+        "who": "Reviewer",
+        "why": "They are easy to confuse, and confusing them is how a chat turns into a worse comment thread.",
+        "steps": [
+          { "screen": "locker-room/0", "note": "The audio stage: hands up, mics, speakers and reactions. Nobody types." },
+          { "screen": "chat", "note": "The chat lane inside a live room: ephemeral, fast, read once and in the order it arrived. Nothing is counted, because agreement is not a thing chat measures." },
+          { "screen": "comments", "note": "And the argument attached to a proposal: a bordered panel, threaded one level, sortable, with agree and disagree counts, meant to be re-read the day a vote closes. Three surfaces, three shapes, one composer construction shared between the last two." }
+        ]
+      },
+      {
+        "id": "bc-no-runtime",
+        "name": "The room that has no engine behind it",
+        "who": "Reviewer",
+        "why": "The most important caveat in the whole Backchat set, and the client should hear it out loud.",
+        "steps": [
+          { "screen": "backchat", "note": "Real: the hub, the room lists, and the code behind them." },
+          { "screen": "all-locker-rooms", "note": "Real: browsing, searching, filtering, sorting. These two screens rebrand working code." },
+          { "screen": "locker-room/1", "note": "Not in this checkout: there is no room page in the source we hold, and no live-audio dependency of any kind — no Agora, LiveKit, WebRTC, Jitsi or Twilio. The only realtime packages carry events, not voice." },
+          { "screen": "locker-room/0", "note": "The evidence suggests the screenshots we worked from come from a build newer than our code — the captures use colours and a typeface already declared in this repository, and they disagree with Dart files we do hold. So these may be rebrands of screens that exist somewhere, not pure invention." },
+          { "screen": "chat", "note": "The same applies here. The first question for the client is simple: can we have the build these screenshots came from? Nothing else about the room can be answered before that one." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Hosting a room",
+    "journeys": [
+      {
+        "id": "bc-schedule-room",
+        "name": "A member schedules a Locker Room",
+        "who": "Host",
+        "why": "The largest screen in Backchat and the only one that has never had a design — it has only ever existed as code.",
+        "steps": [
+          { "screen": "backchat", "note": "The green plus beside the Locker Rooms heading. Any member can start a room, so it stays available even when the list is empty." },
+          { "screen": "locker-room-editor", "note": "In the order a host actually moves: write the topic, choose open or locked, set when it opens, invite people, review, publish. The room stores exactly four things — topic, start time, open or locked, and who is invited — so rather than draw fields nothing could accept, the screen states the gaps: duration reads Open-ended, because a room genuinely has no end." },
+          { "screen": "backchat", "note": "Published, and the success dialog shows the actual room card the club will see. The new room joins the Upcoming list." }
+        ]
+      },
+      {
+        "id": "bc-schedule-validation",
+        "name": "The host misses something",
+        "who": "Host",
+        "why": "Two shipped error strings are wrong, and both errors arrive as modals rather than on the field they are about.",
+        "steps": [
+          { "screen": "locker-room-editor", "note": "The action is disabled with its reason always visible — add a topic and a start time to continue — rather than a dead button. Errors land on the field, with a count in the app bar; the shipped app raises two OOPS modals instead, one of which reads Start at must greater than current time, missing its verb and naming a database field." },
+          { "screen": "locker-room-editor", "note": "Pick a time in the past and the summary strip turns red and says how long ago it would have opened. Past dates in the calendar are struck through and inert — the shipped calendar accepts the tap and silently discards it." },
+          { "screen": "backchat", "note": "Fixed, published, live on the hub." }
+        ]
+      },
+      {
+        "id": "bc-start-now-defect",
+        "name": "A host wants a room right now",
+        "who": "Host",
+        "why": "This one blocks build: as shipped, there is no working route to an immediate room.",
+        "steps": [
+          { "screen": "locker-room-editor", "note": "The time sheet offers six shortcuts, the shipped ones — Now, in an hour, in two, three, five, twelve. Now cannot succeed as written: it resolves to the moment the screen was opened, which the app then rejects for being in the past." },
+          { "screen": "locker-room-editor", "note": "Here the offsets run from the live clock and round up to the next quarter hour, so Now lands about eleven minutes out and passes. The alternatives are a shorter floor, or splitting start a room now into its own action that opens the room immediately. Which of the three do you want?" },
+          { "screen": "backchat", "note": "Either way the room appears here. If an immediate path is added, this screen's plus button probably needs to offer both." }
+        ]
+      },
+      {
+        "id": "bc-invite-people",
+        "name": "Inviting people to a room",
+        "who": "Host",
+        "why": "Roles exist, but they are assigned inside the room rather than here, and the screen has to say so.",
+        "steps": [
+          { "screen": "locker-room-editor", "note": "A sheet of members with already-invited pinned to the top, the host's own row shown with a padlock rather than a remove control, and a real empty state — nobody invited yet, plus a checkbox saying you will invite people once the room starts. In the shipped build that checkbox is decoration: nothing reads it." },
+          { "screen": "locker-room/2", "note": "Who ends up in the room. A host cannot name speakers in advance today — the request sends one flat list, and roles are handed out at runtime. If lining up two co-speakers matters, that is a new field on the request." }
+        ]
+      },
+      {
+        "id": "bc-edit-room",
+        "name": "Editing a room already scheduled",
+        "who": "Host",
+        "why": "One change on this screen can quietly lock people out of a room they were invited to.",
+        "steps": [
+          { "screen": "all-locker-rooms", "note": "EDIT appears in the footer of a scheduled room you host. In the shipped build it is bare text with no padding; here it has a proper tap target." },
+          { "screen": "locker-room-editor", "note": "The same screen with every field filled and the countdown in the bar. Switching an open room to locked now warns how many invited members lose access — the update sends all four fields, so that consequence is real and silent today." },
+          { "screen": "backchat", "note": "Saved. The card on the hub is the same component the editor previewed." }
+        ]
+      },
+      {
+        "id": "bc-delete-room",
+        "name": "Calling a room off",
+        "who": "Host",
+        "why": "A destructive action whose shipped confirmation has a grammatical error in its title and no detail in its body.",
+        "steps": [
+          { "screen": "all-locker-rooms", "note": "The host opens their scheduled room from the list." },
+          { "screen": "locker-room-editor", "note": "Delete sits beside Save changes, and the confirmation names the room and how many invites are being cancelled. The shipped title reads Delete this rooms? for a single room; corrected here. Worth flagging for build: a failed delete currently closes the screen as though it had worked." }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,370 @@
+<p class="dek">The screen a member lands on when they tap an Idea in the War Room: the idea in full,
+how many Likes it has against how many it needs, how long is left, and the one decision — back it or
+don't. Ten screens covering the live states, the lapse, and the two failures.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>One decision, wrapped in one number</h2>
+
+  <p>Every Idea in SportsHeist is a race against two things at once: a threshold and a clock. It needs
+  a set number of Likes, and it needs them before its window closes. Clear both and it becomes a
+  Proposal that the whole club votes on. Miss either and it lapses, and the member who posted it loses
+  their deposit. That is the entire proposition, and this screen exists to make it legible in about
+  four seconds.</p>
+
+  <p>The live screen is the second-largest page file in the app — <code>like_count.dart</code>,
+  1,377 lines — and has never been captured beyond a single default-state screenshot. It renders on a
+  white canvas with black text, which is not what the shipped app looks like. So this is the first
+  time the screen has been drawn in the brand at all, and the first time its states have been drawn
+  at any point.</p>
+
+  <p>The rebuild makes three changes worth flagging up front, all covered in Decisions below. It
+  states the cost of a Like <b>before</b> the tap rather than only inside the confirming dialog. It
+  gives a lapse a screen of its own, instead of a modal that shouts <code>OOPS!</code> and then walks
+  the member out of the flow before they can read the outcome. And it lets the screen show what
+  loaded when part of it fails, instead of showing nothing at all.</p>
+
+  <p>The progress chart is the piece most worth a careful look, because what it plots is not obvious
+  and the live rendering obscures it. The Y axis is not the share of the membership that has liked the
+  Idea. It is <b>progress toward the number of Likes this particular club requires</b> — so
+  <code>100%</code> is the threshold itself, and the "idea becomes proposal" marker necessarily sits
+  on the top gridline. That is exactly what the code computes. The old build drew a decorative green
+  band across the top 10% of the card, which happened to land near the right place without meaning
+  anything.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Reading order on the default screen (frame 01). Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Hero</td><td>Banner</td><td class="t-note"><code>138px</code>, <code>16px</code>
+          radius, gradient <code>#0D3617</code>→<code>#17481C</code> at <code>112deg</code>, white
+          triangles at <code>2.4–3%</code>, three acid peaks bottom-right at
+          <code>54% × 38%</code>. Pushed-route variant: no knockout prop, because this is a route
+          opened over the Ideas list rather than a tab root.</td></tr>
+        <tr><td>Hero</td><td>Back disc</td><td class="t-note"><code>36px</code> circle,
+          <code>rgba(255,255,255,.12)</code>, white <code>1.9</code>-stroke chevron, expanded to a
+          <code>44px</code> hit area with an <code>::after</code>. Replaces the lilac long-arrow the
+          live header uses.</td></tr>
+        <tr><td>Hero</td><td>Title</td><td class="t-note"><code>Like count</code>, <code>34/800</code>,
+          <code>-.025em</code>, uppercase. Kept from the live app bar.</td></tr>
+        <tr><td>Nav</td><td>Stage strip</td><td class="t-note">Four segments in a
+          <code>--sunken</code> pill, <code>36px</code> tall. Active = <code>--acid-wash</code> pill
+          with an acid label; inactive = <code>--dim</code>. Replaces four raster/SVG pictograms and a
+          <code>stack_header.png</code> marker, none of which have dark-mode exports.</td></tr>
+        <tr><td>Body</td><td>Verdict bar</td><td class="t-note"><code>70px</code>,
+          <code>12px</code> radius. Four tones, two hues: accent wash for a live/passed state,
+          <code>#E2564A</code> wash for closing, the <code>135°</code> acid hatch for held, and
+          <code>--sunken</code> inert for finished. Carries the word, a glyph and the figures.</td></tr>
+        <tr><td>Body</td><td>Subject card</td><td class="t-note"><code>--surface</code>,
+          <code>16px</code> radius, <code>16px</code> padding. Type chip
+          (<code>Position</code>) + reference (<code>#4207</code>) + title at
+          <code>21/700/-.02em</code>.</td></tr>
+        <tr><td>Body</td><td>Author row</td><td class="t-note"><code>30px</code> portrait, handle at
+          <code>13/600</code>, posting time and window length at <code>11.5</code>
+          <code>--muted</code>, and the club crest plate at the right.</td></tr>
+        <tr><td>Body</td><td>Crest plate</td><td class="t-note"><code>28px</code> — the dense-row size
+          — <code>rgba(255,255,255,.94)</code> plate, <code>rgba(0,0,0,.13)</code> inner hairline,
+          <code>8px</code> radius, <code>3.5px</code> padding. Fallback form holding the club code.
+          Measured against the surface at <code>~14.4:1</code> for every club.</td></tr>
+        <tr><td>Body</td><td>Description</td><td class="t-note"><code>13/1.5</code>
+          <code>--muted</code>, clamped to <b>4 lines</b> with <code>READ MORE</code> —
+          the live <code>maxLines: flag ? 4 : 10</code> behaviour, but a real clamp rather than a
+          single-line ellipsis. <code>READ MORE</code> is an acid text button at
+          <code>34px</code>.</td></tr>
+        <tr><td>Body</td><td>Clock</td><td class="t-note">Full-width <code>--sunken</code> slab,
+          <code>16px</code> radius, digits at <code>44/800/-.035em</code> with
+          <code>tabular-nums</code>. Live ticking. The live build asks for
+          <code>"Helvetica Neue Heavy"</code>, a family commented out of
+          <code>pubspec.yaml</code>, so it renders in the platform default anyway.</td></tr>
+        <tr><td>Body</td><td>Ring gauge</td><td class="t-note"><code>96px</code> —
+          <code>idea-card.html</code>'s <code>64px</code> gauge scaled to detail size.
+          <code>8px</code> stroke, <code>#3D424B</code> track, acid fill driven by
+          <code>pathLength="100"</code> so progress is set in percent. Centre reads the percentage
+          and the words <code>OF TARGET</code>.</td></tr>
+        <tr><td>Body</td><td>Progress figures</td><td class="t-note"><code>41 of 64 likes</code> at
+          <code>15/600</code> — the count the percentage is a percentage <em>of</em>, which the card
+          has no room for. Plus the derivation: <code>5% of 1,284 members</code>.</td></tr>
+        <tr><td>Body</td><td>Progress bar</td><td class="t-note"><code>10px</code> track at
+          <code>rgba(255,255,255,.08)</code>, acid fill, and a <code>2px</code> white threshold mark
+          at <code>100%</code>. Legend beneath in tracked caps.</td></tr>
+        <tr><td>Body</td><td>Like CTA</td><td class="t-note"><code>52px</code>, R pill,
+          <code>--acid</code> with <code>--acid-ink</code> — the only accent fill on the screen.
+          Pressed state drops to <code>--sunken</code> with acid ink and swaps the outline thumb for
+          the solid one, so the state is carried by fill, glyph <em>and</em> word.</td></tr>
+        <tr><td>Body</td><td>Cost line</td><td class="t-note"><code>12/1.5</code>
+          <code>--muted</code> with a <code>--dim</code> info glyph. States what a Like costs and
+          when, before the tap.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <caption>The chart (frame 02). Geometry is a <code>300 × 176</code> viewBox; the plot is
+        <code>252 × 120</code>.</caption>
+      <thead><tr><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Plot ground</td><td class="t-note"><code>--sunken</code> inside a
+          <code>--surface</code> panel. The live plot is pure <code>#000000</code> on the violet
+          canvas; black is not a surface in this system.</td></tr>
+        <tr><td>Y ladder</td><td class="t-note"><code>100% 75% 50% 25% 0%</code> —
+          <code>CNum.valueYIDea</code>, with <code>0%</code> restored (the live build renders it
+          transparent). <code>9px/600</code> <code>--dim</code>, decorative weight only.</td></tr>
+        <tr><td>Threshold</td><td class="t-note"><code>1.4</code> acid dash <code>4 3</code> on the
+          <b>top gridline</b>, labelled <code>IDEA BECOMES PROPOSAL · 64 LIKES</code> right-aligned in
+          <code>8.5/800/.12em</code> acid. It sits at <code>100%</code> because the Y scale is already
+          normalised to the club's required Likes.</td></tr>
+        <tr><td>X ladder</td><td class="t-note"><code>3h · 2h 15m · 1h 30m · 45m · 0</code> — the five
+          quarter-steps <code>CFunc.findChartElement</code> produces, counting <b>down</b> left to
+          right. Written as durations; the live build prints the first as
+          <code>3 hour</code> and leaves the rest unitless.</td></tr>
+        <tr><td>Series</td><td class="t-note"><code>2.4</code> acid polyline, round caps, one
+          <code>2.1</code> dot per counted Like, a <code>3.8</code> tip ringed in
+          <code>--surface</code>. Draws in over <code>1.15s</code> on scroll-into-view.</td></tr>
+        <tr><td>Now</td><td class="t-note"><code>1px</code> vertical dash at the current time, a
+          <code>rgba(255,255,255,.022)</code> wash over the remaining window labelled
+          <code>STILL TO RUN</code>, and <code>NOW · 1h 12m LEFT</code> under the axis in full-contrast
+          white. The line <b>stops at now</b>.</td></tr>
+        <tr><td>Tip labels</td><td class="t-note"><code>64%</code> in <code>11/800</code> acid, with
+          <code>41 OF 64</code> above it in <code>8.5</code> white at <code>55%</code>.</td></tr>
+        <tr><td>Read-out rows</td><td class="t-note">Four rows beneath the plot: Likes counted,
+          required by this club, the derivation, and the last 15 minutes as a signed delta with a
+          <code>2.8</code>-stroke rise arrow.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>01 · The idea</td><td class="t-note">The full read. Verdict reads
+          <code>GATHERING LIKES</code> in the accent wash. Clock ticking, gauge at
+          <code>64%</code>, description clamped, Like CTA live.</td></tr>
+        <tr><td>02 · Progress chart</td><td class="t-note">The same screen scrolled to the plot. Chart
+          plus the four read-out rows plus the clock. Nothing here is a separate route — it is one
+          scroll, shown as its own device because the contract gives each screen its own
+          phone.</td></tr>
+        <tr><td>03 · Not yet liked</td><td class="t-note">The decision, with the three-row cost
+          explainer above it: free now · <code>1.0 Credit</code> if it becomes a Proposal · nothing if
+          it lapses, is Vetoed, Cancelled or Ruled Out. One accent fill on the screen.</td></tr>
+        <tr><td>04 · Liked</td><td class="t-note">An accent-wash receipt with a solid-thumb badge:
+          <code>You liked this idea</code>, the time it was counted, and the member's position in the
+          count. The live build states this as three stacked centred lines —
+          <code>You have</code> / <code>LIKED</code> / <code>this idea</code> — assembled from three
+          separate translation templates, which is why it reads as a broken sentence with a shouted
+          verb in the middle. Rebuilt as one sentence. CTA becomes a pressed
+          <code>Liked</code>.</td></tr>
+        <tr><td>05 · Final minutes</td><td class="t-note"><code>SliderCountDown(isDanger: true)</code>
+          — 5 minutes for a window of an hour or more, 1 minute for a shorter one, 15 seconds under
+          five minutes. The clock slab goes to <code>--red-wash</code> with a
+          <code>rgba(226,86,74,.28)</code> ring, and the state is also carried by an alert glyph, the
+          word <code>CLOSING</code>, and a stated shortfall. Digits stay
+          <b>full-contrast white</b>.</td></tr>
+        <tr><td>06 · Your own idea</td><td class="t-note">Two changes: the deposit appears, on the
+          <code>135°</code> hold hatch because locked Credits are neither spent nor returned; and
+          there is <b>no Like button</b>. In its place a stated fact with a no-entry glyph —
+          <code>You cannot like your own idea</code> — plus a Share action. A greyed-out button
+          invites tapping and explains nothing.</td></tr>
+        <tr><td>07 · Discussion</td><td class="t-note"><code>comments.html</code>'s thread and
+          composer, unchanged: <code>--surface</code> panel, <code>--line-soft</code> hairlines, ink
+          agree/disagree with no fills, <code>AUTHOR</code> badge tile, accent ring on the viewer's own
+          portrait, and the <code>44px</code> acid send disc — the one accent fill in the region, and
+          it means "post", not "support". Composer is the in-page specimen variant, not the pinned
+          one.</td></tr>
+        <tr><td>08 · Lapsed</td><td class="t-note">Verdict goes <b>inert</b> — finished is quiet, so
+          no red plate for an expiry. The gauge takes an <b>enumerated dash list</b> on
+          <code>pathLength="100"</code> in <code>--muted</code>, the contract's mark for a figure that
+          has stopped moving. The clock is replaced by the closing timestamp. Then the Credits:
+          <code>−25.0 Credits</code> forfeited, red glyph, minus sign, and the sentence that a lapse
+          is the <b>only</b> outcome that forfeits. A member who is not the author sees the same
+          screen without that section.</td></tr>
+        <tr><td>09 · Nothing yet</td><td class="t-note">Seconds after posting.
+          <code>vote-history</code> returns empty, so the plot carries one point at the origin and the
+          words <code>NOTHING PLOTTED YET</code>. The live build fills the same gap with a flat run at
+          zero, which looks like a stalled Idea rather than a new one. Description block covers
+          <code>description == null</code>, which the live build renders to the member as the literal
+          string <code>null</code>. Discussion takes the empty panel from
+          <code>states.html</code>.</td></tr>
+        <tr><td>10 · Couldn't load</td><td class="t-note">The screen fires three calls in parallel and
+          the live code requires <b>all three</b> to return 200 before it renders anything; the
+          <code>catch</code> branch shows
+          <code>UDialog().showError(text: e.toString())</code> — a raw exception string in a dialog.
+          Here: what failed, what still works as a three-row list, one retry, and the clock, because
+          the clock comes from the Idea and not from the chart.</td></tr>
+        <tr><td>Veto appeal</td><td class="t-note">Not given its own frame, but the chip is built. An
+          Idea of type <code>reject_veto</code> gets a second chip beside the type chip carrying
+          <code>Veto hold</code> on the <code>135°</code> hatch. The live build fills it
+          <code>#DFAA11</code> at 23% — a colour that is not in this palette.</td></tr>
+        <tr><td>Cancelled by management</td><td class="t-note">Not built. The live
+          <code>buildCancelSection()</code> replaces the chart with hard-coded English strings, a
+          <code>#D9104C</code> <code>CANCELLED</code> plate and the placeholder
+          <code>Your idea poses a threat to... {Management message}</code>. It belongs with the veto
+          and cancellation work, not here.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the library</h3>
+      <ul>
+        <li><b>Token block</b> — <code>merits.html</code>, copied verbatim. No new colour, no new
+          radius.</li>
+        <li><b>Hero, verdict bar, subject card, 4-line clamp, READ MORE</b> —
+          <code>action-detail.html</code>, unchanged.</li>
+        <li><b>Ring gauge and Like CTA</b> — <code>idea-card.html</code>, scaled from
+          <code>64px</code> to <code>96px</code> and from card width to screen width. Same
+          construction, same <code>#3D424B</code> track, same thumb pair.</li>
+        <li><b>Chart vocabulary</b> — <code>results-actions.html</code>:
+          <code>.chart .ax .grid .axnum .thresh .threshlab .series .wdot .wtip .valnum</code>.</li>
+        <li><b>Thread and composer</b> — <code>comments.html</code>, including the
+          <code>44px</code> send disc and the counter that appears at 80 characters
+          remaining.</li>
+        <li><b>Hold hatch</b> — <code>veto.html</code>: <code>rgba(155,226,34,.11)</code> bars at
+          <code>135°</code>, <code>5px</code> on / <code>6px</code> off, over <code>--sunken</code>,
+          with a <code>rgba(155,226,34,.30)</code> ring. Static.</li>
+        <li><b>Crest plate</b> — <code>club-selection.html</code>, at the <code>28px</code> dense-row
+          size in its code-fallback form.</li>
+        <li><b>Empty and error panel</b> — <code>states.html</code>, with its illustration rules:
+          surface fill for context, dashed accent for something that should exist and does not
+          yet.</li>
+        <li><b>Rows, amount lockup, deposit figure</b> — <code>create-idea.html</code> and
+          <code>idea-gate.html</code>. <code>25.0 Credits</code> is the same number all three
+          use.</li>
+        <li><b>44px hit areas</b> — the contract's sanctioned <code>::after</code> expansion on every
+          <code>38px</code> and <code>36px</code> disc.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>A chart with a real axis.</b> The live axis ladders are <code>Text</code> widgets in a
+          <code>Stack</code> spaced with <code>MainAxisAlignment.spaceBetween</code>, while the chart's
+          own axis labels are set to <code>Colors.transparent</code>. So the visible ladders are
+          decorative and are not guaranteed to align with the plotted points. Here the labels are
+          anchored to the same coordinate space as the series.</li>
+        <li><b>The threshold on the top gridline.</b> A dashed acid line at <code>100%</code>, labelled
+          with the actual figure. Replaces a fixed <code>320 × 0.1</code> green band pinned to the top
+          of the card regardless of the data.</li>
+        <li><b>The count the percentage is of.</b> <code>41 of 64 likes</code>, and the derivation
+          <code>5% of 1,284 members</code>. The live screen shows a percentage and never the
+          number.</li>
+        <li><b>The cost stated before the tap.</b> Three rows saying free now / charged if it becomes a
+          Proposal / never charged if it fails. The live screen puts all of this inside the dialog that
+          opens after the member has already committed.</li>
+        <li><b>A lapsed screen.</b> The live build has none: on the clock hitting zero it opens a modal
+          headed <code>OOPS! THIS IDEA HAS LAPSED</code> and then pops the route twice, so the member
+          never sees the outcome in place. Here the screen becomes the record — where it finished, and
+          what happened to the deposit.</li>
+        <li><b>An author state.</b> No Like button, and the deposit on screen. The live build has
+          <b>no author guard at all</b> — it only hides the <code>by &lt;author&gt;</code> row when the
+          viewer is the author, and draws the same Like CTA. Only the server can refuse it.</li>
+        <li><b>Remove a Like.</b> The API already takes <code>voteProposal(status: false)</code>; the
+          screen only ever sends <code>true</code>. The pressed CTA toggles back.</li>
+        <li><b>Partial-failure rendering.</b> Showing the two calls that succeeded instead of nothing
+          at all.</li>
+        <li><b>Stage strip as a segmented rail.</b> The four raster pictograms and the
+          <code>stack_header.png</code> active marker have no dark-mode exports, so this is drawn:
+          four 24-box glyphs at <code>1.8</code> stroke in an acid-wash pill.</li>
+        <li><b>One sentence instead of three lines.</b> <code>You liked this idea</code>, replacing the
+          <code>You have</code> / <code>LIKED</code> / <code>this idea</code> lockup.</li>
+        <li><b>Durations on the X axis.</b> <code>2h 15m</code> rather than a bare
+          <code>2.25</code>, and no <code>3 hour</code>.</li>
+        <li><b>Nothing is pinned.</b> Deliberate: the review page replays bottom chrome into
+          <em>every</em> frame, which would put a Like button on the lapsed screen and the error
+          screen. It also matches the live build, where the CTA and the composer are both inside the
+          scroll view.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li>
+      <h3>What does a Like cost, and when?</h3>
+      <p>The threshold and the deposit are both real config. The Like charge is not settled anywhere in
+      the library. <code>ConfigClub.credit_like_idea</code> exists and is read on this screen, but no
+      value has been agreed, and the string it feeds says the charge lands only once the Idea becomes
+      a Proposal. We have shown <span class="flag">1.0 Credit, charged only on conversion</span> across
+      frames 01, 03 and 04. Confirm the figure, and confirm that it is charged on conversion rather
+      than at the moment of liking — the whole cost explainer rests on that.</p>
+    </li>
+    <li>
+      <h3>Is the like threshold ever weighted?</h3>
+      <p>Today it is flat: <code>target_percentage_like × total_member</code>, both from the club
+      config. But the config object also parses three fields that <b>nothing in the app reads</b> —
+      <code>target_percentage_like_with_early_influencers</code>,
+      <code>..._with_leading_influencers</code> and <code>..._with_emerging_influencers</code>. That
+      looks like a planned rule where an Idea backed by influential members needs fewer Likes. We have
+      built the flat threshold and said so on screen: <span class="flag">5% of 1,284 members = 64
+      Likes</span>. If the weighted version is coming, the screen needs a way to say "the bar moved,
+      and here is why", and the chart's Y scale changes underneath it.</p>
+    </li>
+    <li>
+      <h3>Should the author be blocked from liking their own idea, in the client?</h3>
+      <p>We have assumed <span class="flag">yes — no Like control at all for the author</span>, on the
+      grounds that a member should not be able to buy their own deposit back. The live build has no
+      such guard: it draws the same button and relies on the server to refuse. If the server does
+      <em>not</em> refuse it, the author currently can like their own Idea, and that is a rule
+      question, not a UI one.</p>
+    </li>
+    <li>
+      <h3>Can a member remove a Like?</h3>
+      <p>The API accepts it. The screen never offers it. We have made the CTA a
+      <span class="flag">toggle while the Idea is still in the Ideas stage</span>, matching
+      <code>idea-card.html</code>. Confirm that is allowed, and confirm what happens if a removal
+      drops the count back below the threshold after it has been crossed.</p>
+    </li>
+    <li>
+      <h3>What happens the instant the threshold is crossed?</h3>
+      <p>Today, nothing on this screen: the code detects the crossing, refetches the history, waits
+      three seconds and then <code>pushReplacementNamed</code>s the member onto the Voting screen. So
+      there is no "it made it" moment — the screen the member was reading is replaced under them. We
+      have not built that state, because it needs a decision: <span class="flag">a confirmation on
+      this screen with a deliberate move to Voting</span> would be our recommendation, rather than an
+      automatic redirect after an arbitrary delay.</p>
+    </li>
+    <li>
+      <h3>Is a lapse always a forfeit, including for a scheduled or short window?</h3>
+      <p>The settled rule is that a lapse is the one case where the <code>25.0 Credit</code> deposit is
+      forfeited, and frame 08 states it plainly. Worth confirming the edges: an Idea whose window
+      outruns the fixture is cancelled and refunded, and a scheduled Idea cancelled before it posts is
+      refunded — so the forfeit only applies to an Idea that actually ran and fell short. That is what
+      we have written.</p>
+    </li>
+    <li>
+      <h3>Does the description need images or links?</h3>
+      <p>Built as plain paragraphs with a 4-line clamp, matching the live field. If members are
+      expected to attach a photograph or link to a fixture report, the subject card needs a media slot
+      and the clamp needs to account for it.</p>
+    </li>
+    <li>
+      <h3>Sorting and moderation in the discussion</h3>
+      <p>The live comment list sorts newest-first and offers no other order, no replies and no report
+      path. <code>comments.html</code> proposes most-agreed sorting, one level of replies, and an
+      overflow menu on every comment. We have shown the thread <span class="flag">newest-first with the
+      overflow present</span> and left the sort control off this screen. Confirm whether the War Room
+      thread gets the full <code>comments.html</code> behaviour or the reduced one.</p>
+    </li>
+  </ol>
+</section>

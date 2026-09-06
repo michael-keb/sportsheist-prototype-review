@@ -1,0 +1,477 @@
+<p class="dek">Tab 1 of 5 and the app's home screen. Four rails stacked in lifecycle order — Ideas,
+Voting, Results, Actions — so a member can see everything the club is deciding, everything it has
+decided, and what is being done about it, in one scroll. Four screens: the hub, and the three
+states it passes through before it gets there.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>A rebrand, not a redesign</h2>
+  <p>
+    War Room is one of only two tabs that already exist as designed frames in the Figma file. This
+    build reproduces those frames in the dark palette: the hero, the four rails, the card shells and
+    the card interiors are all drawn in the export and are rebuilt here at measured values rather
+    than reinterpreted. What changed is colour and surface, not structure.
+  </p>
+  <p>
+    The four rails are the product's whole lifecycle. An <strong>Idea</strong> collects likes against
+    a bar; if it clears the bar it becomes a <strong>Proposal</strong> and moves to the Voting rail;
+    the vote produces a <strong>Result</strong>; the result produces an <strong>Action</strong> with
+    an owner. Each rail is the same shape — a header with controls, a divider, a horizontal carousel
+    of <code>268&nbsp;px</code> cards — so the four stages read as one machine.
+  </p>
+  <p>
+    Everything in this file is live: the countdowns tick, the gauges and meters draw when a card
+    scrolls into view, and the Like control toggles. That is deliberate — the mechanic is the point
+    of the screen, and a static screenshot hides it.
+  </p>
+  <p>
+    <b>Why four phones.</b> The hub used to be shown as one screen, which only documented the
+    happy path. It is now four frames, because the tab reaches three other states before it reaches
+    that one. Frame <b>02</b> is the loading skeleton the build already has, redrawn dark. Frame
+    <b>03</b> is a club with nothing running — four empty rails, each carrying the app's own
+    string. Frame <b>04</b> is a failed load, and it is the one screen here with <em>no</em> code
+    behind it: <code>WarRoomStatus.fails</code> is declared and raised twice, and nothing in the
+    app ever tests for it, so a failure currently renders as frame <b>03</b>. A member whose
+    request died is told their club has nothing going on. That is the single most consequential
+    finding on this tab.
+  </p>
+  <p>
+    Three things in the current build were measured and are fixed here rather than carried over.
+    The live hero prints its title straight over the club crest with no scrim, which measures about
+    <code>1.9:1</code> on the largest text in the product; the crest is gone from this hero and the
+    title now measures <code>10.6:1</code> at the lightest point of the green field and
+    <code>13.5:1</code> at the darkest. Card titles in the live build read
+    <code>Auto Position Proposal 1776537160301</code> — a raw epoch-millisecond id — so every title
+    here is clamped to two lines and will degrade instead of tearing the card apart. And the live
+    chart panel prints <code>Current: 1 votes</code>; every count on this screen is rendered from
+    the number, so the singular case is built as a state you can see rather than a bug waiting to
+    reappear.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Hero</td><td>Banner</td>
+          <td class="t-note"><code>138&nbsp;px</code> tall, <code>16&nbsp;px</code> side margins,
+            <code>R16</code>. Field gradient at <code>112deg</code>: <code>#0D3617</code> at 0%,
+            <code>#17481C</code> at 58%, <code>#0C3416</code> at 100%. Inner padding
+            <code>0 18px</code>.</td>
+        </tr>
+        <tr>
+          <td>Hero</td><td>Field triangles</td>
+          <td class="t-note">Three white paths in a <code>343 × 132</code> viewBox at
+            <code>3.0%</code>, <code>2.4%</code> and <code>2.6%</code> opacity.</td>
+        </tr>
+        <tr>
+          <td>Hero</td><td>Acid peaks</td>
+          <td class="t-note">Three <code>#9BE222</code> peaks pinned bottom-right at
+            <code>54% × 38%</code> of the banner, <code>z-index:1</code>. White on the peaks would
+            measure <code>1.58:1</code>, so the title is held left and the peaks bottom-right; at
+            <code>375&nbsp;px</code> the title occupies <code>34–218&nbsp;px</code> and the prop
+            starts at <code>282&nbsp;px</code>, so nothing overlaps at any width up to
+            <code>430&nbsp;px</code>.</td>
+        </tr>
+        <tr>
+          <td>Hero</td><td>Knockout prop</td>
+          <td class="t-note"><code>124&nbsp;px</code> tall, <code>14&nbsp;px</code> from the right
+            edge, sitting on the bottom, <code>opacity:.95</code>, <code>z-index:2</code> — in front
+            of the peaks. This is the athlete cutout, the only prop in the asset set; see the
+            decisions below.</td>
+        </tr>
+        <tr>
+          <td>Hero</td><td>Screen title</td>
+          <td class="t-note"><code>War Room</code> at 34/800, uppercase, tracking
+            <code>-.025em</code>, line-height 1. Title only — no strapline, and no crest behind it.</td>
+        </tr>
+        <tr>
+          <td>Rail</td><td>Header</td>
+          <td class="t-note">Label at 18/600, tracking <code>-.015em</code>, truncating with an
+            ellipsis, then the controls. Ideas carries three: a <code>34&nbsp;px</code> accent circle
+            with a 2.4-stroke <code>+</code>, a <code>34&nbsp;px</code> dark filter circle at 1.9
+            stroke, and a <code>View&nbsp;all ↗</code> pill. Voting, Results and Actions carry the
+            filter and the pill only.</td>
+        </tr>
+        <tr>
+          <td>Rail</td><td><code>View all ↗</code> pill</td>
+          <td class="t-note"><code>34&nbsp;px</code>, fully rounded, fill <code>#1C2129</code>,
+            label 12.5/500, 13&nbsp;px glyph. Hover lifts to <code>#222833</code>. All three controls
+            share the <code>34&nbsp;px</code> height so the header has one baseline.</td>
+        </tr>
+        <tr>
+          <td>Rail</td><td>Divider</td>
+          <td class="t-note">A 1&nbsp;px rule that fades to nothing at both ends —
+            <code>rgba(155,226,34,.34)</code> at 20%, <code>.52</code> at the centre, back to
+            <code>.34</code> at 80% — over a <code>9&nbsp;px</code> radial bloom at
+            <code>rgba(155,226,34,.19)</code>, inset 6% at each end. This is the dark-mode reading of
+            the lens-flare rule in the export. Decorative; it carries no state.</td>
+        </tr>
+        <tr>
+          <td>Rail</td><td>Carousel</td>
+          <td class="t-note"><code>scroll-snap-type:x mandatory</code> with
+            <code>scroll-padding-left:16px</code>, <code>12&nbsp;px</code> between cards and a
+            <code>16&nbsp;px</code> gutter, so the next card peeks. Scrollbar hidden, horizontal
+            overscroll contained. Each rail scrolls <code>860&nbsp;px</code> of content in a
+            <code>375&nbsp;px</code> viewport.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Shell</td>
+          <td class="t-note"><code>268&nbsp;px</code> wide, <code>16&nbsp;px</code> padding,
+            <code>R16</code>, fill <code>#1C2129</code>, with a 1&nbsp;px inset highlight at white
+            7.5% along the top edge. Identical in all four rails.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Rail alignment</td>
+          <td class="t-note">Cards in a rail stretch to one height, and the elements below the body
+            take an <code>auto</code> top margin, so the countdown row, the panel and the action pill
+            land on the same line in every card of a rail whatever the copy length. On Results and
+            Actions the title reserves <code>2.4em</code> — two lines — for the same reason, which is
+            what lines the verdict bars up.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Author row</td>
+          <td class="t-note">One or two <code>22&nbsp;px</code> portraits overlapped by
+            <code>9&nbsp;px</code> and ringed 1.5&nbsp;px in the card fill, then the byline at
+            12.5&nbsp;px in <code>#99A0AE</code>, truncating. Ideas read <code>by capitan_7 &amp;
+            scout_mode</code>; Proposals read <code>Proposal by council_fc</code>.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Title</td>
+          <td class="t-note">17/600, tracking <code>-.015em</code>, line-height 1.2, clamped to two
+            lines so a machine-generated title degrades instead of pushing the card apart.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Body</td>
+          <td class="t-note">One or two paragraphs at 13/400 in <code>#99A0AE</code>, line-height
+            1.35, <code>7&nbsp;px</code> apart.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Facts row</td>
+          <td class="t-note">Left: a 14&nbsp;px stopwatch at 1.9 stroke and a live countdown at
+            13.5/600 in <code>tabular-nums</code>. Right: the type tag at 11/700, tracking
+            <code>.09em</code>, uppercase, accent, with a 5&nbsp;px leading dot. Four tags appear —
+            <code>Decision</code>, <code>Position</code>, <code>Management</code>,
+            <code>Off-field</code>. The tag is text, not a fixed-width chip, so
+            <code>Management</code> sets in full where the live build truncates it to
+            <code>Manage…</code>.</td>
+        </tr>
+        <tr>
+          <td>Ideas</td><td>Likes gauge</td>
+          <td class="t-note"><code>R12</code> panel on <code>#13171E</code> at
+            <code>12/14&nbsp;px</code> padding. Label <code>50% of required likes</code> at 13.5/600
+            on two lines; a <code>64&nbsp;px</code> ring, radius 27, 7&nbsp;px stroke, track
+            <code>#3D424B</code>, accent fill with round caps drawn clockwise from twelve o'clock,
+            percentage centred at 14.5/600. Cards show 50%, 75% and 32%.</td>
+        </tr>
+        <tr>
+          <td>Ideas</td><td>Like control</td>
+          <td class="t-note">Full-width pill, <code>52&nbsp;px</code>, accent fill with
+            <code>#0B0E06</code> label at 15/600 and an outline thumb. Pressed state drops the fill to
+            <code>#13171E</code>, switches to a solid thumb and reads <code>Liked</code> in accent.
+            Focus ring is a 2&nbsp;px accent outline at <code>3&nbsp;px</code> offset.</td>
+        </tr>
+        <tr>
+          <td>Voting</td><td>Ballot panel</td>
+          <td class="t-note">Same <code>R12</code> sunken panel. <code>Approve</code> at 13/600 with
+            the figure at 19/700 in accent (<code>11.4:1</code> on the panel); a <code>9&nbsp;px</code>
+            meter on the <code>#3D424B</code> track with an accent fill; a 1.5&nbsp;px white-55% tick
+            standing <code>4&nbsp;px</code> proud of the bar at the <code>70%</code> threshold; legend
+            <code>Reject 36%</code> with a <code>#E2564A</code> dot and <code>Threshold 70%</code>,
+            both in <code>#99A0AE</code>. Cards show 64%, 81% and 100%.</td>
+        </tr>
+        <tr>
+          <td>Voting</td><td>Vote count</td>
+          <td class="t-note">11.5&nbsp;px in <code>#99A0AE</code>, tabular, rendered from the number
+            so the singular reads <code>1 vote cast</code> and the plural groups thousands
+            (<code>1,204</code>). Not <code>#5B606B</code>: a figure is never set in the tertiary
+            tone, which measures <code>2.85:1</code> on this panel.</td>
+        </tr>
+        <tr>
+          <td>Voting</td><td>Action</td>
+          <td class="t-note"><code>Vote here</code> — the same <code>52&nbsp;px</code> accent pill as
+            Like, with a 19&nbsp;px tick glyph at 1.9 stroke. Not a toggle.</td>
+        </tr>
+        <tr>
+          <td>Results · Actions</td><td>Eyebrow</td>
+          <td class="t-note">10.5/700, tracking <code>.14em</code>, uppercase, <code>#5B606B</code> —
+            a tracked micro-label, the one place the tertiary tone is allowed. Reads
+            <code>Result · 12 Jul · 1,204 votes</code> or <code>Action · issued 13 Jul</code>. The
+            card has no countdown, so the date carries the time information and the eyebrow carries
+            the turnout, which keeps the footer short enough not to truncate.</td>
+        </tr>
+        <tr>
+          <td>Results · Actions</td><td>Verdict bar</td>
+          <td class="t-note"><code>40&nbsp;px</code>, <code>R12</code>, <code>0 12px</code> padding,
+            17&nbsp;px glyph at 2.1 stroke, label at 12/700 tracking <code>.10em</code> uppercase.
+            Approved sits on the accent wash <code>rgba(155,226,34,.12)</code> in accent, which
+            measures <code>7.8:1</code>. Rejected keeps the <code>#13171E</code> panel ground and
+            takes a 1&nbsp;px ring at <code>rgba(226,86,74,.30)</code> instead of a tint, because red
+            on a 12% red tint measures <code>3.84:1</code> and fails, where red on the panel measures
+            <code>4.84:1</code>. Vetoed is a <em>hold</em>, not a settled outcome, so it takes the canonical
+            paused treatment from <code>veto.html</code>: the same <code>#13171E</code> ground carrying
+            static accent bars struck at <code>135°</code> — <code>rgba(155,226,34,.11)</code>,
+            <code>5&nbsp;px</code> on / <code>6&nbsp;px</code> off — with a
+            <code>rgba(155,226,34,.30)</code> ring and the <code>⊘</code> glyph and label in accent.
+            It replaces the neutral <code>--line</code> ring and 88% white this card used to carry,
+            which read as disabled rather than held. Still two colours: the hatch is a different kind
+            of mark, not a third hue. Every state carries a glyph and a word, so none of them rests on
+            colour.</td>
+        </tr>
+        <tr>
+          <td>Results · Actions</td><td>Card footer</td>
+          <td class="t-note">Pinned to the foot of the card, <code>11&nbsp;px</code> below a 1&nbsp;px
+            <code>--line-soft</code> rule. Left: the stat at 11.5&nbsp;px in <code>#99A0AE</code> with
+            the figure in white 600 — <code>71% approve</code>, <code>Held · appeal open</code>, or for
+            Actions <code>Owner · club board</code>. Right: <code>View details</code> at 12/600 with a
+            12&nbsp;px glyph, going accent on hover.</td>
+        </tr>
+        <tr>
+          <td>Frame 02</td><td>Skeleton</td>
+          <td class="t-note">The States kit's bone — white at <code>5.5%</code> under a single
+            <code>1.5&nbsp;s</code> sheen — laid out in the shipped shimmer's own shape: one tall
+            block where the banner will be, then three rails of two cards. Cards keep the rail's
+            <code>268&nbsp;px</code> width and the interiors match their loaded counterparts, so
+            nothing reflows on arrival. The banner is a bone rather than the real banner because
+            <code>buildShimmerEffect()</code> returns from the top of <code>build()</code> and
+            replaces the header too.</td>
+        </tr>
+        <tr>
+          <td>Frame 03</td><td>Empty rail</td>
+          <td class="t-note">The rail header and divider stay; the carousel is replaced by the
+            States kit's panel — <code>--section</code> fill, 1&nbsp;px <code>--line</code>,
+            <code>R16</code>, <code>24/20/22&nbsp;px</code> padding, centred. Each carries a
+            <code>132 × 88</code> illustration drawn on the kit's three rules (surface fill for
+            context, accent wash and a 1.8 stroke for what exists, a 1.8 accent stroke dashed
+            <code>5-5</code> for what should exist and does not), the app's own heading at
+            <code>17/600</code>, and one supporting line at <code>12.5&nbsp;px</code> capped at
+            <code>31ch</code>. The <code>View&nbsp;all ↗</code> pill and the filter control are
+            dropped from an empty rail; the <code>+</code> on Ideas stays.</td>
+        </tr>
+        <tr>
+          <td>Frame 04</td><td>Error panel</td>
+          <td class="t-note">The same panel with the icon tile instead of an illustration — an
+            error is a thing that happened, not a space that is unfilled. Tile is
+            <code>52&nbsp;px</code> at <code>R14</code> on
+            <code>rgba(226,86,74,.12)</code> with a <code>rgba(226,86,74,.28)</code> ring and a
+            1.7-stroke retry-with-alert glyph in <code>#E2564A</code>. It replaces all four rails,
+            not one; the banner stays.</td>
+        </tr>
+        <tr>
+          <td>Frame 04</td><td>Retry</td>
+          <td class="t-note"><code>46&nbsp;px</code> accent pill, <code>0 22px</code> padding,
+            label 14.5/700 in <code>#0B0E06</code> (<code>12.31:1</code>). Pressing it sets
+            <code>aria-busy</code> and overlays a spinner on the label without changing the
+            button's width, so the second attempt is visible and a double press is
+            impossible.</td>
+        </tr>
+        <tr>
+          <td>Chrome</td><td>Tab bar</td>
+          <td class="t-note">Floating pill outside the scroll: <code>58&nbsp;px</code>,
+            <code>10&nbsp;px</code> inner padding, fill <code>#1C2129</code>, shadow
+            <code>0 10px 30px rgba(0,0,0,.6)</code>, sitting <code>14&nbsp;px</code> above the safe
+            area. Five tabs at <code>38&nbsp;px</code>; War Room is active as an accent pill with icon
+            <em>and</em> label, the other four are 19&nbsp;px outline icons at 1.7 stroke.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Not yet liked</td><td class="t-note">Accent pill, <code>#0B0E06</code> label, outline thumb, <code>aria-pressed="false"</code>.</td></tr>
+        <tr><td>Liked</td><td class="t-note">Fill drops to <code>#13171E</code>, label and solid thumb go accent, text changes to <code>Liked</code>. Toggles both ways.</td></tr>
+        <tr><td>Gauge and meter drawing</td><td class="t-note">Both animate from zero over <code>1.1&nbsp;s</code> when the card crosses 25% visibility, then hold. Cards further along a rail draw as you scroll to them. Suppressed under <code>prefers-reduced-motion</code>.</td></tr>
+        <tr><td>Counting down</td><td class="t-note">Every card clock ticks once a second in <code>HH:MM:SS</code>; tabular figures hold the layout steady and the <code>datetime</code> attribute is kept in step.</td></tr>
+        <tr><td>Above / below threshold</td><td class="t-note">The tick stays at <code>70%</code> and the fill runs past it or stops short. No colour change — the geometry carries it.</td></tr>
+        <tr><td>First vote in</td><td class="t-note">100% approve on a single vote, and the string is singular: <code>1 vote cast</code>. Built as a visible card rather than a footnote, because the live build prints <code>Current: 1 votes</code>.</td></tr>
+        <tr><td>Long or machine title</td><td class="t-note">Two lines, then an ellipsis. On Results and Actions two lines are reserved whether or not they are used, so a one-line title and a two-line title still align their verdict bars.</td></tr>
+        <tr><td>Result · approved</td><td class="t-note">Accent-wash bar, tick-in-circle glyph, footer carries the approval share.</td></tr>
+        <tr><td>Result · rejected</td><td class="t-note">Panel ground with a red ring, cross-in-circle glyph, same footer shape.</td></tr>
+        <tr><td>Result · veto hold</td><td class="t-note">The one card in the Results rail that is not a result. It takes the hold hatch — static accent bars at <code>135°</code> over the panel ground, accent ring, <code>⊘</code> glyph — because the appeal is still open and nothing has been decided. Eyebrow reads <code>Veto hold</code> rather than <code>Result</code>, the footer reads <code>Held · appeal open</code>, and no percentage is shown. Turnout stays in the eyebrow. The hatch is static: an animated barber-pole would read as <em>in progress</em>, the opposite of held.</td></tr>
+        <tr><td>Action outcome</td><td class="t-note">The same bars carrying different words — <code>Publish it!</code> and <code>Ruled out</code> — with the owner in the footer instead of a figure.</td></tr>
+        <tr><td>Loading (frame 02)</td><td class="t-note">The dark skeleton. One detail is reproduced deliberately: the shipped shimmer draws <b>three</b> rails — Ideas, Voting, Results — and the loaded screen has <b>four</b>, so Actions appears out of nowhere when the data lands. That is the build's behaviour, not ours.</td></tr>
+        <tr><td>Empty rail (frame 03)</td><td class="t-note">Each rail has its own empty branch in code and they use two different templates, so the four headings read <code>No ideas added yet</code>, <code>No voting added yet</code>, <code>No results yet</code> and <code>No actions yet</code>. All four are the app's strings, verbatim. Every rail can be empty independently; frame <b>03</b> shows all four at once, which is what a club looks like on day one.</td></tr>
+        <tr><td>Load failed (frame 04)</td><td class="t-note"><b>Proposed — nothing in the app produces this.</b> Red icon tile, a heading, one sentence of reason and a <code>Try again</code> button. Today a failure falls through to the loaded layout with empty lists, so it is drawn as frame <b>03</b>: a club with nothing running.</td></tr>
+        <tr><td>Tab switching</td><td class="t-note">Tapping a tab moves <code>aria-current="page"</code>, which reveals that tab's label and hides the others'.</td></tr>
+        <tr><td>430&nbsp;px width</td><td class="t-note">The scroll caps at <code>420&nbsp;px</code> and centres; gutters shift <code>5&nbsp;px</code> and nothing reflows. No horizontal page overflow at either width.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>The screen</b> — War Room is a designed frame; this is a reproduction in the dark palette, not a new layout</li>
+        <li><b>Hero banner</b> — height, gradient angle and stops, field triangles, acid peaks, prop-in-front layering</li>
+        <li><b>Four rails in lifecycle order</b> — Ideas → Voting → Results → Actions, and the header controls on each</li>
+        <li><b>Card geometry</b> — <code>268&nbsp;px</code>, <code>16&nbsp;px</code> padding, <code>R16</code>, taken from the Idea card</li>
+        <li><b>Idea card interior</b> — gauge ring, countdown, type tag and both Like states</li>
+        <li><b>Approve / reject standing</b> — the Voting card's job, and the <code>Vote here</code> action</li>
+        <li><b>Verdict bar</b> — a full-width filled band with a circular glyph and a caps label, under the card title</li>
+        <li><b>Content and behaviour</b> — the rails, the CTA words, the countdown format and the lifecycle come from <code>WR-01</code>, <code>WR-09</code> and <code>WR-10</code></li>
+        <li><b>Tab bar</b> — 58&nbsp;px pill, active-as-accent-with-label, four outline icons</li>
+        <li><b>Photography</b> — all six portraits and the athlete cutout come from the exports</li>
+        <li><b>Surfaces, radii, type scale</b> — sampled, not approximated</li>
+        <li><b>Loading shape</b> — frame <b>02</b> follows the shipped shimmer's own structure, including its three-rail count</li>
+        <li><b>Empty-rail copy</b> — all four headings on frame <b>03</b> are the app's strings, verbatim</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Rail divider</b> — the fading acid hairline over a bloom. The export's violet lens flare has no equivalent in this palette, so it is re-read rather than recoloured</li>
+        <li><b>No crest behind the title</b> — the crest is out of the hero, which is what takes the title from about <code>1.9:1</code> to <code>10.6:1</code></li>
+        <li><b>Approve / reject as a linear meter</b> — the export draws a semicircular dial with a white needle and an unlabelled painted arc. Two encodings on one gauge, neither labelled; this states the share, the reject share and the threshold in words and figures</li>
+        <li><b>Stated threshold</b> — <code>Threshold 70%</code> and a tick on the bar. The export shows the bar's position but never names it</li>
+        <li><b>Rejected bar without a tint</b> — a red ring on the panel ground instead of a red fill, because the tinted version measures <code>3.84:1</code></li>
+        <li><b>Veto-hold verdict</b> — the hub export has approved and rejected only. Drawn with the hold hatch settled in <code>veto.html</code> rather than a neutral ring, so a hold looks the same here as it does there</li>
+        <li><b>Two-line title clamp and reserved title lines</b> — protects the card from the build's auto-generated titles and lines the rails up</li>
+        <li><b>Vote-count pluralisation</b> — the count is rendered from the number so <code>1 vote cast</code> cannot regress</li>
+        <li><b>Gauge and meter draw-in, ticking countdowns</b> — the frames are static strings</li>
+        <li><b>Turnout in the eyebrow</b> — moved off the footer, which truncated at <code>268&nbsp;px</code> when it carried both the share and the count</li>
+        <li><b>Focus states</b> — visible keyboard focus on every in-card action, absent from the frames</li>
+        <li><b>Dropped: the <code>MORE →</code> rail-end card</b> — the header's <code>View&nbsp;all ↗</code> pill does that job, and the export carried both</li>
+        <li><b>Dropped: the full-width <code>+ NEW IDEA</code> pill</b> — folded into the accent <code>+</code> circle in the Ideas header</li>
+        <li><b>Copy fixes</b> — <code>35% of Likes required</code> loses its mid-sentence capital; <code>Manage…</code> sets in full</li>
+        <li><b>Dark skeleton</b> — the shipped shimmer is <code>Colors.grey.shade300 → shade100</code>, a light-theme skeleton running on a dark screen. Redrawn on the States kit's bone</li>
+        <li><b>Empty rails as a screen</b> — the build draws a bordered box holding one line of text. This is the States kit's panel with a drawn illustration and one line saying what fills the rail. The supporting sentence under each heading is new</li>
+        <li><b>The whole load-failed frame</b> — <code>WarRoomStatus.fails</code> has no branch anywhere in the app. Both sentences are new, modelled on the one failure string the product does have, in Profile</li>
+        <li><b>Four working rail filters</b> — one sheet per rail, each on the axes that rail's own cards carry</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:14px">
+    <b>All four filter glyphs are live.</b> Each was an <code>aria-hidden</code> icon on a button
+    with no handler. Each now opens the library's standard bottom sheet, filters only its own
+    rail, and leaves a count and a dot on the glyph so an active filter is visible after the
+    sheet closes. The axes differ per rail because the cards differ: an <b>Idea</b> has a kind
+    and a like, a <b>Proposal</b> has a kind and a position against its threshold, a
+    <b>Result</b> and an <b>Action</b> have a verdict. Within a group any tick matches; across
+    groups all must — so <em>Management</em> plus <em>Below threshold</em> narrows rather than
+    widens.
+  </p>
+  <p style="margin-top:10px">
+    Every axis is read back off the card at the moment the filter runs — the tag it prints, the
+    pressed state of its own Like button, the <code>--approve</code> and <code>--th</code> pair
+    on its meter, the verdict modifier on its plate. Nothing is duplicated into a second
+    attribute, so a filter cannot drift from what the card is drawing. That also means the two
+    controls interact honestly: with the Ideas rail filtered to <em>Ideas I have liked</em>,
+    un-liking the last matching card empties the rail in front of you. The empty rails frame
+    drops the filter glyph entirely, because there is nothing to filter.
+  </p>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Which hero object belongs to War Room?</h3>
+      <p>Only one prop asset exists — the knockout athlete cut from the Get&nbsp;Started group shot —
+      so every hero in the set currently reuses the same figure. The Figma War Room hero carries a
+      <span class="flag">helmet</span>, and we have used the athlete in its place because drawing a
+      pseudo-3D helmet by hand would be worse than no object. Either supply the helmet cutout, or
+      commit to figure-based cutouts on all five tabs and we will vary the crop per tab.</p>
+    </li>
+    <li>
+      <h3>Should the club crest come back?</h3>
+      <p>The live hero prints <code>WAR ROOM</code> straight over the FC Barcelona crest with no
+      scrim, which measures about <code>1.9:1</code> — the worst contrast in the product, on its
+      largest text. We removed the crest rather than scrim it, so the hero now carries
+      <span class="flag">no club identity at all</span>. If the crest has to be there, the canonical
+      crest plate at <code>64&nbsp;px</code> beside the title is the way to do it — measured, and
+      constant for every club — but it changes the hero lockup and we would rather you chose.</p>
+    </li>
+    <li>
+      <h3>Is the yes bar 70% or 80%?</h3>
+      <p>Every voting card here shows <code>Threshold 70%</code>, while the idea body copy on the
+      first card says the hire only counts if the vote clears the <code>80%</code> yes bar. Both came
+      from the source material. We built <span class="flag">70%</span> as the displayed threshold
+      because it is the value drawn on the meter. If the bar varies by category or by stage, the card
+      needs to say which bar applies.</p>
+    </li>
+    <li>
+      <h3>Are there two tag vocabularies or one?</h3>
+      <p>Ideas are tagged <code>Decision</code> and <code>Position</code>. Proposals on the very next
+      rail are tagged <code>Management</code> and <code>Off-field</code>. That reads as two
+      taxonomies on the same card shape — one describing what kind of thing an idea is, one
+      describing its subject area. We rendered <span class="flag">both in the same accent tag</span>.
+      If both are real they should look different; if only one is real, the other should go.</p>
+    </li>
+    <li>
+      <h3>What does a veto show, and should a hold sit in Results at all?</h3>
+      <p>The vetoed card carries a turnout but no percentage, and reads
+      <code>Held · appeal open</code>. We assumed <span class="flag">a veto suppresses the outcome
+      figure</span>, because the figure is no longer what decided it. If members are entitled to see
+      how the vote actually went before it was held, that is a different card.</p>
+      <p>We also read this card's own copy as a <em>hold</em> rather than a concluded veto — it says
+      the board is holding it and the appeal is open — so it now carries the hold hatch settled in
+      <code>veto.html</code>. A veto that has run out its appeal window is a different thing: that one
+      is finished, and it is drawn in red on the Results screen, not hatched. Confirm the hub rail only
+      ever shows the live, still-appealable case; if a concluded veto can appear here too, this rail
+      needs both treatments and the eyebrow has to say which is which.</p>
+    </li>
+    <li>
+      <h3>Where do the Action verdict strings come from?</h3>
+      <p>Results read <code>Approved</code>, <code>Rejected</code>, <code>Vetoed</code>. Actions read
+      <code>Publish it!</code> and <code>Ruled out</code> — a different register, and the only
+      exclamation mark, in the same bar shape. We kept them <span class="flag">verbatim</span>
+      because they are the strings in the source, but they should either join the results vocabulary
+      or be defined as a separate set with its own rules.</p>
+    </li>
+    <li>
+      <h3>Rail header controls at 34&nbsp;px or 38&nbsp;px?</h3>
+      <p>The contract puts a circular icon button at <code>38&nbsp;px</code> and the
+      <code>View&nbsp;all ↗</code> pill at <code>34&nbsp;px</code>. In a rail header the two sit on
+      one line, so we matched the circles to the pill at <span class="flag">34&nbsp;px</span>, which
+      is also what the Idea card component does. Confirm that, or we will raise the pill to
+      <code>38&nbsp;px</code> everywhere instead — the one thing we should not ship is two heights in
+      one row.</p>
+    </li>
+    <li>
+      <h3>What does an empty rail say?</h3>
+      <p>Answered by the code, and frame <b>03</b> now uses its words. Each rail has its own empty
+      branch, but they draw on two templates — <code>No {} added yet</code> for Ideas and Voting,
+      <code>No {} yet</code> for Results and Actions — which is why the Voting rail reads
+      <span class="flag"><code>No voting added yet</code></span>. Nobody adds a voting. We kept it
+      verbatim rather than quietly correcting it, because it is the string a member sees today, but
+      it should become <code>No votes open yet</code> or the four rails should share one template.
+      The second line under each heading is ours: the shipped box says only that the rail is empty,
+      never what would fill it.</p>
+    </li>
+    <li>
+      <h3>Should a failed load look different from an empty club?</h3>
+      <p>This is the biggest gap on the tab and it needs a product decision, not a design one.
+      <code>WarRoomStatus.fails</code> exists and is raised twice, and <em>nothing anywhere tests
+      for it</em> — the screen branches on <code>inProcess</code> and treats everything else as
+      success. So when the request dies, the hub renders against the empty lists it started with,
+      and the member is told their club has no ideas, no votes, no results and no actions. A
+      failure is displayed as an accurate-looking report that the club is doing nothing.</p>
+      <p>Frame <b>04</b> is what we think should be there instead: <span class="flag">one
+      full-screen panel with a retry</span>, replacing all four rails. The alternative worth
+      considering is a per-rail failure, since the hub makes two calls and one can fail while the
+      other succeeds — but the cubit collapses both into a single status, so per-rail would need
+      the state model changed first. Confirm which, and the words: both sentences on frame
+      <b>04</b> are ours.</p>
+    </li>
+  </ol>
+</section>

@@ -1,0 +1,272 @@
+<p class="dek">The whole Ideas stage for a club, reached from the <code>View all ↗</code> pill on the
+War Room's Ideas rail. Any member uses it to find an Idea worth a Like before its clock runs out,
+and to keep track of the ones they have already backed.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The rail shows three ideas; this is all of them</h2>
+  <p>The War Room's Ideas rail is a carousel: it peeks three cards and then stops. This screen is
+    the same cards, run at full column width, with the controls the carousel had no room for — a
+    Decisions / Positions switch, a category chip row, a sort sheet, a filter sheet and search.</p>
+  <p>The card itself is untouched. It is <code>idea-card.html</code>'s card — the same
+    <code>16px</code> padding, <code>17px</code> title, <code>64px</code> gauge ring, tabular clock
+    and <code>52px</code> Like pill — with one edit: it runs the full column instead of a
+    <code>268px</code> rail cell. A list is not a licence to redesign the card.</p>
+  <p>Two things about the shipped screen are worth saying plainly before the anatomy. There is
+    <strong>no pagination and no infinite scroll</strong>: one request, <code>limit: 50</code>, the
+    response's <code>next</code> ignored. And the sheet the toolbar's filter glyph opens
+    <strong>only sorts</strong> — its three options are the whole of it. Both are documented below
+    rather than designed around.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. Five frames:
+        the list, the sort sheet, the filter sheet, first load, and nothing open.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Header</td><td>Back control</td><td class="t-note"><code>38px</code> disc,
+          <code>#1C2129</code>, white <code>1.9</code>-stroke arrow, with the
+          <code>create-idea.html</code> <code>::after</code> expansion to a <code>44px</code> hit
+          area. Returns to the War Room — the code's <code>routes.pop(true)</code>, where
+          <code>true</code> tells the War Room to re-fetch.</td></tr>
+        <tr><td>Header</td><td>Eyebrow</td><td class="t-note"><code>War Room</code> at
+          <code>10.5/700/.14em</code> uppercase in <code>#5B606B</code> — decorative tracked
+          micro-label, which is the only thing <code>--dim</code> is allowed to carry.</td></tr>
+        <tr><td>Header</td><td>Create control</td><td class="t-note"><code>38px</code> acid disc,
+          <code>2.4</code>-stroke plus, ink <code>#0B0E06</code> (<code>12.31:1</code>). Goes to the
+          Idea gate — <code>idea-gate.html</code>, frame 01. Present <strong>only when
+          <code>CIdeaPost.canPost</code> is true</strong>.</td></tr>
+        <tr><td>Title</td><td>Screen title</td><td class="t-note"><code>Ideas</code> at
+          <code>34/800/-.025em</code> uppercase, gutter <code>16px</code>.</td></tr>
+        <tr><td>Title</td><td>Lede</td><td class="t-note"><code>13/400/1.5</code> in
+          <code>#99A0AE</code> (<code>~5.0:1</code>). Two sentences: what the list is, and the rule
+          that makes it matter.</td></tr>
+        <tr><td>Segment</td><td>Decisions / Positions</td><td class="t-note"><code>48px</code>
+          <code>#1C2129</code> track, R pill, <code>4px</code> inner padding, two <code>40px</code>
+          halves. Active = acid fill with <code>--acid-ink</code>; inactive = <code>#99A0AE</code>.
+          Each half carries a count in a <code>#13171E</code> pill. This is
+          <code>CLString.listFilterPri</code> — <code>["DECISIONS","POSITIONS"]</code> — sent as
+          <code>type=decisions</code> or <code>type=position</code>. It is a different request, not
+          a client-side tab.</td></tr>
+        <tr><td>Search</td><td>Trigger</td><td class="t-note"><code>forms.html</code>'s
+          <code>52px</code> control shell, R <code>12px</code>, opening the real field inside the
+          search sheet. <strong>New.</strong></td></tr>
+        <tr><td>Toolbar</td><td>Sort trigger</td><td class="t-note"><code>44px</code> pill,
+          <code>1px</code> <code>rgba(255,255,255,.075)</code>, <code>12.5/600</code>. Shows the
+          applied sort inline, so a member never has to open the sheet to read the order.</td></tr>
+        <tr><td>Toolbar</td><td>Filter trigger</td><td class="t-note">Same pill. Carries a count in
+          an <code>--acid-wash</code> pill and takes an <code>rgba(155,226,34,.30)</code> border
+          when anything is on — count, border and icon colour together, never colour alone.</td></tr>
+        <tr><td>Chips</td><td>Category row</td><td class="t-note"><code>36px</code> pills,
+          <code>#13171E</code>, <code>11/700/.11em</code> uppercase, horizontally scrolling.
+          <code>CLString.listFilterSupIDea</code> is <code>["", "ALL", "MY IDEAS"]</code>; index 0
+          is the sheet trigger, not a chip, so two chips render. Active =
+          <code>--acid-wash</code> + acid border + acid text.</td></tr>
+        <tr><td>Tally</td><td>Count + applied sort</td><td class="t-note"><code>11/700/.11em</code>
+          uppercase, <code>aria-live="polite"</code>, tabular figure. <code>Clear</code> appears
+          only when a chip or a filter is on.</td></tr>
+        <tr><td>Card</td><td>Idea card</td><td class="t-note"><code>idea-card.html</code>, unchanged
+          except <code>width:100%</code>. Author avatars <code>22px</code> overlapping
+          <code>-9px</code> with a <code>1.5px</code> <code>#1C2129</code> ring; byline
+          <code>12.5px</code>; title <code>17/600/-.015em</code>; body <code>13/1.35</code> in
+          <code>#99A0AE</code>; clock <code>13.5/600</code> tabular with a <code>1.9</code>-stroke
+          timer; category tag <code>11/700/.09em</code> acid with a <code>5px</code> dot; gauge panel
+          <code>#13171E</code> R<code>12px</code> holding a <code>64px</code> ring on a
+          <code>#3D424B</code> track; CTA <code>52px</code> acid pill.</td></tr>
+        <tr><td>Card</td><td>Final-minutes clock</td><td class="t-note"><code>isDanger</code>. Clock
+          turns <code>#E2564A</code> (<code>4.36:1</code> — AA large only) <em>and</em> gains the
+          word <code>FINAL</code> at <code>9.5/700/.13em</code>, so the state never rests on the
+          hue.</td></tr>
+        <tr><td>Card</td><td>Veto hold</td><td class="t-note"><code>status = veto</code>. The gauge
+          panel takes the canonical hold hatch: static accent bars at <code>135°</code>,
+          <code>rgba(155,226,34,.11)</code>, <code>5px</code> on / <code>6px</code> off over
+          <code>#13171E</code>, with an <code>rgba(155,226,34,.30)</code> ring and a <code>⊘</code>
+          glyph. The ring gauge switches to <code>pathLength="100"</code> with an enumerated dash
+          list. The clock keeps <strong>full-contrast white digits</strong> — held is loud, finished
+          is quiet. CTA becomes the outlined ghost pill, <code>View details</code>.</td></tr>
+        <tr><td>Card</td><td>Scheduled</td><td class="t-note"><code>status = pending</code>. The
+          code's own branch: a clock glyph beside the title, a <code>SCHEDULED</code> plate on
+          <code>#13171E</code>, the local post time in acid tabular figures, and
+          <code>EDIT</code>. No countdown, no gauge, no Like.</td></tr>
+        <tr><td>Card</td><td>Reject-veto</td><td class="t-note"><code>type = reject_veto</code>. Tag
+          reads <code>Reject veto</code>; CTA reads <code>Like to reject veto</code> — the code's
+          own string.</td></tr>
+        <tr><td>Tail</td><td>End-of-list line</td><td class="t-note"><code>10.5/700/.14em</code>
+          uppercase between two <code>rgba(255,255,255,.045)</code> rules. The shipped list ends in
+          nothing, so a member cannot tell whether it finished or stalled.</td></tr>
+        <tr><td>Tail</td><td>Cap notice</td><td class="t-note"><code>--section</code> panel with a
+          <code>1px</code> <code>--line</code>, explaining the <code>limit: 50</code> ceiling in
+          plain English. <strong>New</strong>, and only needed because the ceiling is real.</td></tr>
+        <tr><td>Sheet</td><td>Sort</td><td class="t-note"><code>sheets.html</code> shell:
+          R<code>18px</code> top corners, <code>#1C2129 → #13171E</code> gradient, grabber
+          <code>40 × 4</code>, <code>48px</code> option rows, radio. Three options, single-select,
+          applying on tap.</td></tr>
+        <tr><td>Sheet</td><td>Filter</td><td class="t-note">Same shell with a count pill,
+          <code>Clear all</code>, and a committing <code>Apply</code> in a <code>#13171E</code>
+          footer. Multi-select: OR inside a group, AND across groups.</td></tr>
+        <tr><td>Sheet</td><td>Search</td><td class="t-note">Sticky <code>44px</code> field on
+          <code>#181D25</code>, recent terms as <code>36px</code> pills, results rendered as the
+          same Idea card, and a no-match panel. Sort and filter open <em>over</em> it, so the panes
+          stack.</td></tr>
+        <tr><td>Loading</td><td>Skeleton</td><td class="t-note">Four cards, matching
+          <code>childCount: 4</code>. <code>states.html</code>'s bone —
+          <code>rgba(255,255,255,.055)</code> with one <code>1.5s</code> sheen at
+          <code>rgba(255,255,255,.06)</code>.</td></tr>
+        <tr><td>Empty</td><td>Nothing open</td><td class="t-note"><code>--section</code> panel,
+          <code>1px</code> <code>--line</code>, R<code>16px</code>, a <code>132 × 88</code>
+          <code>1.8</code>-stroke illustration, a headline at <code>17/600</code>, one sentence of
+          <code>12.5px</code> body, and a <code>44px</code> acid <code>Start an idea</code>
+          pill.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Default</td><td class="t-note"><code>DECISIONS</code> segment,
+          <code>ALL</code> chip, <code>MOST RECENT</code> sort — the exact defaults
+          <code>IdeaS.initial()</code> sets: <code>currentFilterPri: 0</code>,
+          <code>currentFilterSup: 1</code>, <code>currentSortIdea: 0</code>.</td></tr>
+        <tr><td>Open for Likes</td><td class="t-note">Acid gauge ring drawing to its percentage on
+          scroll-in, running clock, filled <code>Like</code> pill.</td></tr>
+        <tr><td>Liked</td><td class="t-note"><code>aria-pressed="true"</code>: pill drops to
+          <code>#13171E</code> with acid text, the thumb glyph swaps outline → solid, and the label
+          becomes <code>View likes</code> — the code's string.</td></tr>
+        <tr><td>Final minutes</td><td class="t-note">Clock <code>#E2564A</code> plus the word
+          <code>FINAL</code>. Reachable live: the countdowns run.</td></tr>
+        <tr><td>Veto hold</td><td class="t-note">Hatched gauge panel, dashed ring, white clock
+          digits, ghost <code>View details</code> CTA.</td></tr>
+        <tr><td>Reject-veto</td><td class="t-note">Tag and CTA both change wording; the gauge is
+          otherwise identical, because it is still a Like count.</td></tr>
+        <tr><td>Scheduled</td><td class="t-note">No clock, no gauge, no CTA. Plate + post time +
+          <code>EDIT</code>. Only ever the member's own Idea.</td></tr>
+        <tr><td>Positions segment</td><td class="t-note">Different request, different list, its own
+          count. The chip row does not change — for Ideas it is
+          <code>listFilterSupIDea</code> in both segments.</td></tr>
+        <tr><td>Filtered to nothing</td><td class="t-note">Quieter panel than a true empty state,
+          because the fix is one tap: <code>No idea matches that combination</code> and a
+          <code>Clear filters</code> pill.</td></tr>
+        <tr><td>Nothing open</td><td class="t-note">Illustrated panel naming how many Ideas are open
+          in the <em>other</em> segment, and a <code>Start an idea</code> pill. The pill is dropped
+          when <code>CIdeaPost.canPost</code> is false; the panel keeps its sentence.</td></tr>
+        <tr><td>First load</td><td class="t-note">Four skeleton cards. A chip or sort change replaces
+          only the list (<code>buildShimmerEffectFilter()</code>), so the header does not
+          flash.</td></tr>
+        <tr><td>Search, nothing typed</td><td class="t-note">Recent terms plus a
+          <code>How it works</code> paragraph that says exactly what search reads.</td></tr>
+        <tr><td>Search, no match</td><td class="t-note">The quoted term in the headline, a scoped
+          sentence naming the current segment, and <code>Clear search</code>.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">Every transition off; the bone's sheen stops
+          and the bone flattens to <code>rgba(255,255,255,.08)</code>. The hold hatch is static
+          anyway — an animated barber pole would read as "in progress", the opposite of held.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the library and the code</h3>
+      <ul>
+        <li><b>The Idea card</b> — <code>idea-card.html</code>, unchanged but for
+          <code>width:100%</code></li>
+        <li><b>Sheet shell, option row, checkbox and radio</b> — <code>sheets.html</code></li>
+        <li><b>Search and text controls</b> — <code>forms.html</code>'s <code>52px</code> field</li>
+        <li><b>The skeleton bone</b> — <code>states.html</code></li>
+        <li><b>The hold hatch</b> — <code>veto.html</code>, via the contract</li>
+        <li><b>The screen furniture</b> — back disc, eyebrow, <code>34px</code> title, segment,
+          chips, tally and end-of-list line all come from
+          <code>all-locker-rooms.html</code>, the sibling "view all"</li>
+        <li><b>Segment labels</b> — <code>CLString.listFilterPri</code>, in enum order</li>
+        <li><b>Chip labels</b> — <code>CLString.listFilterSupIDea</code>, index 0 dropped</li>
+        <li><b>Sort options</b> — <code>CLString.listSortProposal</code>, all three, in order</li>
+        <li><b>Card-state branches</b> — <code>ideas_screen.dart</code>'s own
+          <code>pending</code> / <code>veto</code> / <code>rejectVeto</code> / <code>isDanger</code>
+          splits</li>
+        <li><b>CTA wording</b> — <code>ideas_screen.dart</code>'s
+          <code>actions.like</code> / <code>actions.view</code> strings</li>
+        <li><b>The create entry point</b> — <code>CRoute.warningIdea</code>, gated on
+          <code>CIdeaPost.canPost</code>, landing on <code>idea-gate.html</code></li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Search</b> — there is no proposal search endpoint; <code>getListIdea</code> takes no
+          query parameter. Built as a client-side match on title and author over the page already
+          in memory, so it ships with no backend work</li>
+        <li><b>The filter sheet</b> — the app has none. Every option is an existing
+          <code>MProposal</code> field: <code>status</code>, <code>type</code>,
+          <code>isVote</code>, <code>isDanger</code></li>
+        <li><b>The applied sort, shown on the trigger</b> — the shipped trigger is a bare glyph, so
+          the order is invisible until the sheet is opened</li>
+        <li><b>The tally line</b> — the count of what is currently showing</li>
+        <li><b>The end-of-list line</b> — the shipped list simply stops</li>
+        <li><b>The cap notice</b> — <code>limit: 50</code> is a real ceiling and nothing in the app
+          admits it</li>
+        <li><b>The empty state</b> — the shipped screen has none at all</li>
+        <li><b>The filtered-to-nothing panel</b> — distinct from a genuinely empty stage</li>
+        <li><b>The <code>FINAL</code> word on a red clock</b> — the shipped card carries the state
+          in the plate colour alone</li>
+        <li><b>Dropping the tooltip discs</b> — the segment's two <code>16px</code> question-mark
+          discs are wired to tooltips whose body is <code>Lorem ipsum dolor sit amet</code>. Not
+          rebuilt until there is copy</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Should this list paginate at all?</h3>
+      <p>It does not today. <code>getListIdea</code> sends <code>limit: 50</code> with no offset and
+        no cursor, and the response's <code>next</code> is never read — so the 51st open Idea is
+        unreachable. We have assumed <span class="flag">50 is a real cap and the screen should say
+        so</span> rather than silently truncating. If a busy club can exceed 50 open Ideas, this
+        needs either cursor paging (the pattern <code>all-locker-rooms.html</code> already
+        documents) or server-side filtering on the chips.</p></li>
+    <li><h3>Is the sheet a sort sheet or a filter sheet?</h3>
+      <p>The file is <code>show_filter.dart</code>, the trigger draws a filter glyph, and everything
+        inside sorts. We have assumed <span class="flag">two separate sheets — Sort with the code's
+        three real options, and a new Filter sheet</span>. The alternative is one combined sheet, but
+        sort is single-select and applies instantly while filters are multi-select and need an
+        Apply, so combining them mixes two commit models in one surface.</p></li>
+    <li><h3>What do the tooltips on Decisions and Positions say?</h3>
+      <p>Both halves of the segment carry a question-mark disc wired to a tooltip whose body is
+        currently lorem ipsum. The distinction between a Decision and a Position is the single most
+        load-bearing idea on this screen, so it needs real copy. We have
+        <span class="flag">removed the discs</span> until it exists.</p></li>
+    <li><h3>Should the chip row for Ideas match Voting's?</h3>
+      <p>Voting offers five chips under Decisions — <code>ALL</code>, <code>ON-FIELD</code>,
+        <code>OFF-FIELD</code>, <code>MANAGEMENT</code>, <code>MY IDEAS</code>. Ideas offers two:
+        <code>ALL</code> and <code>MY IDEAS</code>. That is what the code does
+        (<code>listFilterSupIDea</code> versus <code>listFilterSup</code>) and we have
+        <span class="flag">kept it</span>, but the same Idea passes through both screens, so a
+        member who filters to <code>ON-FIELD</code> while voting cannot do it while liking.</p></li>
+    <li><h3>Is pull-to-refresh meant to jump to the bottom?</h3>
+      <p><code>_reloadPage()</code> calls
+        <code>scrollController.jumpTo(position.maxScrollExtent)</code> before re-fetching, so
+        pulling down from the top throws the member to the end of the list. We have assumed
+        <span class="flag">this is a bug and refresh should stay where it is</span>.</p></li>
+    <li><h3>Does a scheduled Idea belong in this list?</h3>
+      <p>It appears here today, but it is the member's own draft, visible to nobody else, with no
+        clock and no Like. It reads as a different object in a list of live ones. We have
+        <span class="flag">kept it in place and given it a filter tick of its own</span>, but moving
+        drafts to the profile is defensible.</p></li>
+  </ol>
+</section>

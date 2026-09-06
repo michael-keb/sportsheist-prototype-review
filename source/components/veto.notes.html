@@ -1,0 +1,365 @@
+<p class="dek">Veto is the club's power to stop a member decision it cannot legally or contractually
+carry out. These four frames cover the moment a member is told their proposal has been frozen, the
+full rationale behind it, the club-side confirmation that places it, and how a veto sits alongside
+approved and rejected in the results cards.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>A veto is a hold, not a verdict</h2>
+
+  <p>This is the most delicate screen in the product. A member has posted a proposal, the club has
+    voted on it, and management is now stopping it. If that reads as <em>rejected</em>, the member
+    concludes the vote was theatre. If it reads as <em>broken</em>, they conclude the app failed.
+    It has to read as <strong>held</strong> — paused, reversible, and with a reason attached.</p>
+
+  <p>The palette gives us one accent, <code>#9BE222</code>, and one semantic red,
+    <code>#E2564A</code>. Neither is right: acid means the club decided yes, red means the club
+    decided no. So the hold is not given a third colour at all. It is given a different
+    <strong>kind of mark</strong>: the accent, struck through with 45° bars. A filled plate means a
+    decision was reached; bars across the accent mean it was interrupted. The stroke equivalent is
+    a dashed arc — the gauge on a held card is drawn in dashes rather than a solid sweep, so a
+    figure that has stopped moving looks like one.</p>
+
+  <p>Two things this replaces. The live build renders veto in amber <code>#DFAA11</code>, which is
+    also its celebration colour — the same hue says "you won" and "you have been overruled". And it
+    renders the frozen countdown in grey, which reads as disabled: the clock looks broken rather
+    than paused. Here the held clock keeps <strong>full-contrast white digits</strong> on a hatched
+    panel with a pause glyph, and it sits beside a second, plainly-drawn clock — the appeal window —
+    which is the one thing still running. Held is loud. Dead is quiet. The live build has it the
+    wrong way round.</p>
+
+  <p>The member-facing copy does three things in order: it says nothing has been decided, it names
+    who holds it and why in their own words, and it shows the way out. The words
+    <code>Veto</code>, <code>Idea to Reject the Veto</code>, <code>Participation Deposit</code> and
+    <code>Support</code> are the live build's own vocabulary and are kept.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. Four labelled
+        <code>375&nbsp;px</code> frames inside one <code>.screen</code> at
+        <code>max-width:420px</code>.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>All frames</td><td>Top bar</td><td class="t-note"><code>52&nbsp;px</code>, back
+          chevron and trailing control as <code>36&nbsp;px</code> <code>--surface</code> circles,
+          centred title <code>15/600/-.01em</code>. No banded header, no scrim — the veto screens
+          carry no tab bar in the live build either.</td></tr>
+
+        <tr><td>1 · Hold notice</td><td>Hold banner</td><td class="t-note">Full-gutter strip,
+          <code>--r-panel 12px</code>, <code>13/14&nbsp;px</code> padding. Fill
+          <code>#13171E</code> under bars of <code>rgba(155,226,34,.11)</code> at
+          <code>135deg</code>, <code>5&nbsp;px</code> on / <code>6&nbsp;px</code> off; ring
+          <code>1px rgba(155,226,34,.30)</code>. Leading <code>38&nbsp;px</code> disc holding the
+          <code>&oslash;</code> veto glyph in <code>#9BE222</code>. Label
+          <code>11/700/.14em</code> uppercase accent; sub-line <code>11.5&nbsp;px</code>
+          <code>--muted</code>; right-hand figure <code>14/700</code> tabular over the word
+          <code>held</code>.</td></tr>
+        <tr><td>↳</td><td>Proposal lockup</td><td class="t-note"><code>.eyebrow</code>
+          <code>10.5/700/.14em</code> <code>--dim</code> over the title at
+          <code>24/700/-.025em</code>. Sentence case, not the hero's uppercase — this is a member's
+          words, not a stage name.</td></tr>
+        <tr><td>↳</td><td>Notice card</td><td class="t-note"><code>--surface</code>,
+          <code>--r-card 16px</code>, <code>16&nbsp;px</code> padding, body
+          <code>13/400</code> at <code>1.5</code> in <code>--muted</code> with the figure and the
+          phrase <em>Nothing has been decided</em> lifted to <code>#FFFFFF</code>
+          <code>600</code>.</td></tr>
+        <tr><td>↳</td><td>Two clocks</td><td class="t-note">Equal pair, <code>10&nbsp;px</code>
+          gap. <b>Held:</b> hatched panel, accent pause glyph, micro-label
+          <code>VOTING · PAUSED</code> in accent, digits <code>24/700/-.03em</code> tabular
+          <strong>white</strong>. <b>Running:</b> plain <code>--sunken</code>, <code>--dim</code>
+          clock glyph and label, same white digits, live countdown. The only marked panel is the
+          one that has stopped.</td></tr>
+        <tr><td>↳</td><td>Reason card</td><td class="t-note">Section label
+          <code>18/600/-.015em</code> <em>Reason for the veto</em>, then the management text and a
+          signature row built on the canonical club crest plate at
+          <code>40&nbsp;px</code>: <code>rgba(255,255,255,.94)</code> fill,
+          <code>inset 0 0 0 1px rgba(0,0,0,.13)</code>, radius <code>11.2px</code>
+          (<code>40 × .28</code>), <code>5&nbsp;px</code> padding. No Barcelona artwork exists in
+          <code>_assets</code>, so it renders the spec'd fallback — the club code
+          <code>BAR</code> at <code>12/800/-.03em</code> (<code>40 × .30</code>) in
+          <code>--acid-ink</code>. Name <code>13/600</code>, publication line
+          <code>11.5&nbsp;px</code> <code>--muted</code>.</td></tr>
+        <tr><td>↳</td><td>Steps</td><td class="t-note">Three numbered rows separated by
+          <code>1px --line-soft</code>. Counter disc <code>23&nbsp;px</code>,
+          <code>--acid-wash</code> fill, accent numeral. Heading <code>13.5/600</code>, body
+          <code>12.5/400</code>.</td></tr>
+        <tr><td>↳</td><td>Action pair</td><td class="t-note"><code>52&nbsp;px</code>,
+          <code>--r-pill</code>. Secondary <em>Accept veto</em> <code>--surface</code> at
+          <code>41%</code> width; primary <em>Appeal the veto</em> filled <code>#9BE222</code> with
+          <code>--acid-ink #0B0E06</code>. A button is an action, not a state, so it stays solid
+          acid.</td></tr>
+
+        <tr><td>2 · Veto detail</td><td>Support readout</td><td class="t-note">Figure
+          <code>38/800/-.04em</code> tabular, <code>70% needed</code> pill in
+          <code>--sunken</code> at <code>10.5/700/.09em</code>. Bar <code>12&nbsp;px</code>
+          <code>--r-pill</code>: track <code>rgba(255,255,255,.08)</code>, fill
+          <code>#9BE222</code> to <code>75%</code> <strong>struck through with
+          <code>rgba(3,4,1,.62)</code> bars</strong> at <code>135deg</code>,
+          <code>4&nbsp;px</code> on / <code>5&nbsp;px</code> off. Threshold tick
+          <code>2&nbsp;px</code> white at <code>70%</code>.</td></tr>
+        <tr><td>↳</td><td>Split rows</td><td class="t-note">Two rows, <code>11&nbsp;px</code>
+          vertical padding, <code>1px --line-soft</code>. Option <code>13.5/600</code>, share
+          <code>14/700</code> tabular (winning share in accent), vote count
+          <code>11.5&nbsp;px</code> <code>--muted</code> &mdash; a vote count is a value, so it
+          cannot sit in <code>--dim</code> at <code>2.56:1</code>.</td></tr>
+        <tr><td>↳</td><td>Voter stack</td><td class="t-note">Four <code>24&nbsp;px</code> portraits
+          at <code>-8px</code> overlap with a <code>1.5px --surface</code> ring, plus
+          <code>12&nbsp;px</code> <code>--muted</code> caption.</td></tr>
+        <tr><td>↳</td><td>Frozen strip</td><td class="t-note">Inner hatched strip — bars over
+          <code>rgba(155,226,34,.05)</code>, no ring, radius <code>10&nbsp;px</code> — carrying the
+          pause glyph and the sentence that fixes the figures in time.</td></tr>
+        <tr><td>↳</td><td>Rationale</td><td class="t-note">Three paragraphs, each opening with a
+          white <code>600</code> lead-in (<em>The commitment</em>, <em>The cost of
+          withdrawing</em>, <em>What we are doing instead</em>), closed by the same signature
+          row.</td></tr>
+        <tr><td>↳</td><td>Trust card</td><td class="t-note">Three paragraphs, deliberately
+          <strong>not</strong> hatched: this is reassurance, not a hold marker, so it must not read
+          as part of the warning.</td></tr>
+
+        <tr><td>3 · Confirm</td><td>Backdrop</td><td class="t-note">The club-side review screen at
+          <code>blur(3px)</code> and <code>opacity:.5</code>, under a
+          <code>rgba(3,4,1,.72)</code> scrim with a further <code>backdrop-filter:blur(2px)</code>.
+          Frame set to <code>min-height:812px</code> so the dialog centres the way it will on
+          device.</td></tr>
+        <tr><td>↳</td><td>Dialog card</td><td class="t-note"><code>--surface</code>,
+          <code>--r-card 16px</code>, <code>1px --line</code>,
+          <code>18/18/16&nbsp;px</code> padding, <code>14&nbsp;px</code> inset from the frame,
+          <code>0 18px 50px rgba(0,0,0,.7)</code>. Measured height
+          <code>756&nbsp;px</code> — it fits <code>812</code> without scrolling.</td></tr>
+        <tr><td>↳</td><td>Status disc</td><td class="t-note"><code>52&nbsp;px</code> hatched circle,
+          <code>1px rgba(155,226,34,.30)</code>, accent <code>&oslash;</code> glyph at
+          <code>26&nbsp;px</code>. The dialog announces a hold, so the disc is hatched, not
+          red.</td></tr>
+        <tr><td>↳</td><td>Title &amp; restatement</td><td class="t-note">
+          <code>20/700/-.02em</code> centred, then a <code>12.5&nbsp;px</code> deck naming the
+          proposal in white. Three-row read-back in <code>--sunken</code>: keys
+          <code>11/700/.1em</code> <code>--dim</code>, values <code>12.5/600</code> tabular,
+          right-aligned.</td></tr>
+        <tr><td>↳</td><td>Reason preview</td><td class="t-note">Hatched panel holding the exact text
+          members will see, clamped to three lines with an <code>Edit</code> pill. The veto cannot
+          be placed without a published reason, so the reason is inside the confirmation, not
+          behind it.</td></tr>
+        <tr><td>↳</td><td>Consequences</td><td class="t-note">Three bullets at
+          <code>12/400</code>, <code>4&nbsp;px</code> <code>--dim</code> dots, figures in white
+          <code>600</code>. The last one — <em>your reason is published to all 1,284 members,
+          signed</em> — is the accountability line and is deliberately last.</td></tr>
+        <tr><td>↳</td><td>Warning strip</td><td class="t-note">The only red surface in the flow:
+          <code>rgba(226,86,74,.11)</code> fill, <code>1px rgba(226,86,74,.30)</code> ring,
+          <code>#E2564A</code> triangle glyph, white body. Red is attached to the
+          <em>destructiveness of the act</em>, never to the veto state itself.</td></tr>
+        <tr><td>↳</td><td>Consent &amp; actions</td><td class="t-note"><code>22&nbsp;px</code>
+          <code>7px</code>-radius checkbox, checked state <code>#9BE222</code> with
+          <code>--acid-ink</code> tick; the confirm button is disabled until it is ticked. Pair:
+          <em>Cancel</em> on <code>--sunken</code> with a <code>1px --line</code> ring (plain
+          <code>--surface</code> is invisible on a <code>--surface</code> card), and
+          <em>Place veto</em> filled <code>#E2564A</code> with <code>--acid-ink</code>
+          text.</td></tr>
+
+        <tr><td>4 · Card family</td><td>Held card</td><td class="t-note"><code>268&nbsp;px</code>
+          idea-card shell. Accent pause glyph on a white <code>41:12</code>,
+          <code>VETO HOLD</code> tag in accent, hatched gauge panel, and a
+          <strong>dashed</strong> ring: <code>r27</code>, <code>7&nbsp;px</code> accent stroke,
+          <code>pathLength="100"</code> with fifteen <code>3&nbsp;2</code> pairs then
+          <code>0&nbsp;25</code> — an exact dashed <code>75%</code> sweep. CTA
+          <em>Read the veto</em>.</td></tr>
+        <tr><td>↳</td><td>Verdict bars</td><td class="t-note">All <code>--r-panel</code>,
+          <code>11/13&nbsp;px</code> padding, <code>26&nbsp;px</code> badge, label
+          <code>15/800/.02em</code> uppercase, share right-aligned. <code>APPROVED</code> filled
+          <code>#9BE222</code>; <code>REJECTED</code> filled <code>#E2564A</code>; both take
+          <code>--acid-ink #0B0E06</code>. <code>VETOED</code> is hatched with a
+          <code>rgba(155,226,34,.30)</code> ring and accent label.</td></tr>
+        <tr><td>↳</td><td>Reason line</td><td class="t-note"><code>--sunken</code> strip on the
+          vetoed card only, shield glyph plus <code>11.5&nbsp;px</code> summary. A vetoed card
+          always carries its reason; an approved one has nothing to explain, which is why the rail
+          uses <code>align-items:flex-start</code> and lets the vetoed card be
+          taller.</td></tr>
+        <tr><td>↳</td><td>Released banner</td><td class="t-note">Solid <code>#9BE222</code> plate,
+          <code>30&nbsp;px</code> tick badge, <code>VETO OVERRULED</code> at
+          <code>12.5/800/.1em</code>. The bars resolve into a plate — the visual proof that a hold
+          is a temporary state.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Held (veto placed)</td><td class="t-note">Accent bars at <code>135deg</code> over
+          <code>--sunken</code>, <code>1px rgba(155,226,34,.30)</code> ring, accent
+          <code>&oslash;</code> glyph, accent label. Nothing filled, nothing greyed.</td></tr>
+        <tr><td>Clock held</td><td class="t-note">Hatched panel, accent pause glyph, digits stay
+          <code>#FFFFFF</code> at full weight. Explicitly not <code>--dim</code>.</td></tr>
+        <tr><td>Clock running</td><td class="t-note">Plain <code>--sunken</code>,
+          <code>--dim</code> glyph and label, white digits, live <code>MM:SS</code>
+          countdown.</td></tr>
+        <tr><td>Clock finished</td><td class="t-note"><code>00:00</code> with glyph and digits both
+          in <code>--muted</code> — on a resolved card the clock genuinely is over, so it goes quiet,
+          but it stays a readable value at <code>~5:1</code> rather than dropping to
+          <code>--dim</code>.</td></tr>
+        <tr><td>Figure held</td><td class="t-note">Linear: acid fill struck with
+          <code>rgba(3,4,1,.62)</code> bars. Circular: acid stroke drawn as dashes rather than a
+          solid sweep. Both read at a glance as "real number, no longer moving".</td></tr>
+        <tr><td>Approved</td><td class="t-note">Filled <code>#9BE222</code> plate, tick badge,
+          <code>--acid-ink</code> label.</td></tr>
+        <tr><td>Rejected</td><td class="t-note">Filled <code>#E2564A</code> plate, cross badge,
+          <code>--acid-ink</code> label. Same construction as approved — a decision either way is
+          a filled plate.</td></tr>
+        <tr><td>Vetoed (resolved)</td><td class="t-note">Hatched plate, <code>&oslash;</code> badge,
+          accent label, plus the reason strip. Stays in the hold family: the club blocked it, the
+          members did not reject it.</td></tr>
+        <tr><td>Hold released</td><td class="t-note">Bars resolve to a solid <code>#9BE222</code>
+          plate, tick badge, <code>VETO OVERRULED</code>, resume time and remaining clock.</td></tr>
+        <tr><td>Confirm, not consented</td><td class="t-note"><code>Place veto</code> disabled at
+          <code>opacity:.45</code> with <code>not-allowed</code> until the consent box is
+          ticked.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions suppressed. The hatch is
+          <strong>static by design</strong> — an animated barber-pole would read as "in progress",
+          which is the opposite of held.</td></tr>
+        <tr><td>Contrast floor</td><td class="t-note">Audited against the contract's table.
+          <code>--dim</code> survives only on tracked uppercase micro-labels
+          (<code>.caption</code>, <code>.eyebrow</code>, the read-back keys, the running-clock label
+          and the bullet dots). No value and no body copy sits in it. Both filled plates take
+          <code>--acid-ink</code>, never white.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Token block</b> — copied verbatim from <code>merits.html</code>; no value
+          changed.</li>
+        <li><b>Card shell</b> — <code>268&nbsp;px</code> / <code>16&nbsp;px</code> padding /
+          <code>--r-card</code> / <code>inset 0 1px 0</code> hairline, byline row, title, body,
+          meta row and gauge panel, all from <code>idea-card.html</code>.</li>
+        <li><b>Ring gauge</b> — <code>r27</code> in a <code>64</code> box at
+          <code>7&nbsp;px</code> stroke, rotated <code>-90deg</code>, from
+          <code>idea-card.html</code>.</li>
+        <li><b>Countdown glyph and readout</b> — the stopwatch icon and
+          <code>13.5/600</code> tabular time from <code>idea-card.html</code>.</li>
+        <li><b>Section label, eyebrow, icon button, row rules</b> — <code>18/600/-.015em</code>,
+          <code>10.5/700/.14em</code>, <code>--surface</code> circle, <code>1px
+          --line-soft</code>, all from <code>merits.html</code>.</li>
+        <li><b>Portraits</b> — four of the eighteen from <code>_assets/avatars.css</code>, inlined
+          as data URIs.</li>
+        <li><b>Vocabulary and behaviour</b> — <code>VETO HOLD</code>, <code>Idea to Reject the
+          Veto</code>, <code>Participation Deposit</code>, <code>MIN LEFT</code>, the accept /
+          appeal pair, and the deposit-refund rule, from
+          <code>lib/pages/veto/veto_hold.dart</code>, <code>confirm_page.dart</code> and
+          <code>en.json → vetoPage.*</code>.</li>
+        <li><b>The <code>&oslash;</code> verdict glyph</b> — the vetoed badge on
+          <code>WR-20</code>.</li>
+        <li><b>Club crest plate</b> — the canonical plate settled in
+          <code>club-selection.html</code>, at the <code>40&nbsp;px</code> size, in its
+          code fallback form.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The hold treatment</b> — accent bars at <code>135deg</code>,
+          <code>rgba(155,226,34,.11)</code>, <code>5&nbsp;px</code> on /
+          <code>6&nbsp;px</code> off, over <code>--sunken</code> with a
+          <code>rgba(155,226,34,.30)</code> ring. Derived entirely from <code>#9BE222</code>; no
+          new hue enters the palette. This replaces amber <code>#DFAA11</code>, which the live
+          build also uses to celebrate.</li>
+        <li><b>The struck fill</b> — <code>rgba(3,4,1,.62)</code> bars over an acid progress fill,
+          so a held figure is legible as held on a bright plate as well as a dark one.</li>
+        <li><b>The dashed arc</b> — <code>pathLength="100"</code> with an enumerated dash list
+          giving an exact <code>75%</code> dashed sweep. The stroke equivalent of the
+          hatch.</li>
+        <li><b>Held clock ≠ disabled clock</b> — full-contrast white digits on a hatched panel with
+          an accent pause glyph, paired with a plainly-drawn live appeal clock. The live build
+          greys the frozen clock, which reads as broken.</li>
+        <li><b>The category rule</b> — filled plate = decided, hatched plane = held, dashed stroke =
+          stopped. Applied to five states with no exceptions.</li>
+        <li><b>Red reserved for the act</b> — <code>#E2564A</code> appears only on the club-side
+          confirm (the warning strip and <em>Place veto</em>) and on <code>REJECTED</code>. A veto
+          state is never red, because members did not reject the proposal.</li>
+        <li><b>Two-clock layout</b> — stage clock and appeal window side by side. Not in the export;
+          the live build shows only one.</li>
+        <li><b>Reason inside the confirmation</b> — the club cannot place a veto without reading
+          back the exact wording members will see, and the consequence list ends by telling them it
+          will be published under their name.</li>
+        <li><b>Signature row</b> — crest plate, <em>Club Management · Barcelona</em>, publication
+          time. The export carries no attribution on a veto at all, which is the single biggest gap
+          in the current flow: an unsigned veto is unanswerable.</li>
+        <li><b>Hold-released banner</b> — the <code>VETO OVERRULED</code> state implied by the
+          <code>reject_veto_success</code> notification but never designed.</li>
+        <li><b>All member-facing copy</b> — every sentence in the notice, the rationale and the
+          <em>What this means for you</em> card is written for this proposal. The live build has no
+          equivalent.</li>
+        <li><b>Red hover tint</b> — <code>#E86A5F</code> on <em>Place veto</em>, derived from
+          <code>#E2564A</code> exactly as <code>#A8EC33</code> is derived from <code>#9BE222</code>
+          in <code>merits.html</code> and <code>idea-card.html</code>.</li>
+        <li><b>Frame chrome</b> — the <code>52&nbsp;px</code> top bar, and the
+          <code>375&nbsp;px</code> labelled frames, which are documentation only.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Is the bar to overturn a veto 80% Support?</h3>
+      <p><code>targetPercentageRejectVeto</code> is server configuration, so the real number is not
+        in the checkout. We have used <span class="flag">80%</span> throughout, quoted in the notice,
+        the steps, the trust copy and the confirm dialog. It appears in member-facing copy in four
+        places, so it needs to be right before build.</p></li>
+
+    <li><h3>How long is the appeal window?</h3>
+      <p>Also server config — <code>ideaStageAppealVeto</code> and
+        <code>votingStageAppealVeto</code>. We have shown <span class="flag">30:00</span>, counting
+        down live, beside a stage clock frozen at <span class="flag">41:12</span>. If the real
+        window is measured in hours rather than minutes the two-clock pairing still works, but the
+        <code>MM:SS</code> format and the <code>24&nbsp;px</code> digit size will
+        change.</p></li>
+
+    <li><h3>Should a veto be signed by a named person?</h3>
+      <p>We attribute it to <span class="flag">Club Management · Barcelona</span>, matching the live
+        strings. Our view is that a named officer would make the power far more accountable and the
+        signature row is already built to take a portrait instead of a crest. This is a governance
+        decision, not a design one.</p></li>
+
+    <li><h3>Do we keep the phrase "Idea to Reject the Veto"?</h3>
+      <p>It is the live build's term and the mechanic's real name, so we keep it in body copy. But
+        as a button label it is opaque, so the primary action reads
+        <span class="flag">Appeal the veto</span>. Confirm you are happy with the two coexisting —
+        one as the product noun, one as the verb.</p></li>
+
+    <li><h3>Is the Participation Deposit really not charged on a veto?</h3>
+      <p><code>en.json</code> says <em>"This will be free when the Proposal is Vetoed, Cancelled or
+        Ruled Out"</em>, so step 1 tells the member their deposit is
+        <span class="flag">not charged</span> if they accept. If that is wrong it is the single most
+        damaging sentence on the screen.</p></li>
+
+    <li><h3>Can a veto ever be placed on a completed vote?</h3>
+      <p>We have built the mid-stage case the code describes: the clock pauses, the count holds, and
+        both resume on release. We have written the copy to say <em>where the vote stood</em> rather
+        than <em>the result</em>, which is accurate for a paused count. If management can also veto
+        a <em>published</em> result, that is a different screen and different copy, and we would
+        need to design it.</p></li>
+
+    <li><h3>Is the hatch reserved for veto alone?</h3>
+      <p>We would like to lock it to <em>held</em> and nothing else — not loading, not disabled, not
+        pending, not scheduled. Its force comes from meaning exactly one thing. If Alerts or Actions
+        need a "paused" state, they should use this same treatment; if they need "waiting", they
+        should not.</p></li>
+  </ol>
+</section>

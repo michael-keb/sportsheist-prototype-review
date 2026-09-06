@@ -1,0 +1,742 @@
+[
+  {
+    "name": "When a load fails",
+    "journeys": [
+      {
+        "id": "sys-fail-war-room",
+        "name": "The War Room cannot reach the server",
+        "who": "Any member",
+        "why": "The worst failure in the app. Today a member whose request died is told, in the club's own words, that nothing is running — so they close the app believing their club is idle.",
+        "steps": [
+          { "screen": "war-room/0", "note": "The hub as it should look: four rails — Ideas, Voting, Results and Actions — each with something in it." },
+          { "screen": "war-room/1", "note": "The loading skeleton. One quirk is reproduced deliberately: the shipped shimmer draws three rails and the loaded screen has four, so Actions appears out of nowhere when the data lands." },
+          { "screen": "war-room/2", "note": "This is what a failed load looks like today. The failure state exists in the code and is raised twice, but nothing anywhere tests for it, so the hub falls through to its empty layout and states — in four of the app's own headings — that the club has no ideas, no voting, no results and no actions." },
+          { "screen": "war-room/3", "note": "The proposal: a red tile, one sentence saying what went wrong, and a Try again that replaces all four rails. A failure is a thing that happened, not a space that is unfilled." }
+        ]
+      },
+      {
+        "id": "sys-fail-empty-or-broken",
+        "name": "Two screens a member cannot tell apart",
+        "who": "Any member",
+        "why": "The clearest single argument for the error work. These two screens mean opposite things and are currently identical.",
+        "steps": [
+          { "screen": "war-room/2", "note": "A club on day one. Genuinely nothing running, and the member should wait." },
+          { "screen": "war-room/2", "note": "The same screen again — but this time it is a club mid-season whose request just failed. The member should pull to refresh, and nothing on screen tells them so." },
+          { "screen": "war-room/3", "note": "With the proposed failure state, the two are never confused again." }
+        ]
+      },
+      {
+        "id": "sys-fail-alerts",
+        "name": "The alerts feed fails to load",
+        "who": "Any member",
+        "why": "The same defect as the War Room, in a second place: a failure dressed up as good news.",
+        "steps": [
+          { "screen": "alerts/0", "note": "The feed as it should look: ten alerts across four days, four of them unread." },
+          { "screen": "alerts/1", "note": "Loading. The proposed skeleton sits at the real row geometry so nothing jumps when the data arrives; the shipped one is a light-theme grey shimmer running on a dark screen." },
+          { "screen": "alerts/2", "note": "Nothing to report — a genuinely empty inbox." },
+          { "screen": "alerts/2", "note": "And this is also what a failed load shows today. The build does branch on failure, and renders the same box and the same hardcoded English line, 'No message added yet'. The only recovery is an unadvertised pull-to-refresh." },
+          { "screen": "alerts/3", "note": "The proposal: a red tile, a reason, and a retry that shows a spinner on its own label while it works." }
+        ]
+      },
+      {
+        "id": "sys-fail-profile",
+        "name": "The profile fails to load — the one surface that was fixed",
+        "who": "Any member",
+        "why": "Proof the fix is cheap and works. Profile is the only screen in the app where a failed load already says so and offers a way out.",
+        "steps": [
+          { "screen": "profile/0", "note": "The profile, loaded." },
+          { "screen": "profile/2", "note": "Loading. A dark skeleton across the whole body, replacing a light-theme one." },
+          { "screen": "profile/3", "note": "The load fails and the member is told so, with a Try again that re-runs the request. The app genuinely does this now — this frame is built with the app's own copy. Every other surface in this group is still waiting for it." }
+        ]
+      },
+      {
+        "id": "sys-fail-idea-detail",
+        "name": "An idea's detail screen half-loads",
+        "who": "Any member",
+        "why": "A more honest answer than all-or-nothing: keep what arrived, name what did not.",
+        "steps": [
+          { "screen": "ideas-list/0", "note": "The member picks an idea off the list." },
+          { "screen": "idea-detail/0", "note": "The idea as it should look: who posted it, the clock, and how close it is to the likes it needs." },
+          { "screen": "idea-detail/9", "note": "The load fails. Rather than a blank page, the screen keeps the parts that succeeded, names the part that did not, and offers one retry — and the clock keeps running, because the deadline does not care that a request failed." }
+        ]
+      },
+      {
+        "id": "sys-fail-proposal-detail",
+        "name": "A proposal fails to load while the member is mid-vote",
+        "who": "Any member with a ballot open",
+        "why": "The highest-stakes failure. The member's first question is whether their vote survived, and the screen has to answer it before anything else.",
+        "steps": [
+          { "screen": "voting-list/0", "note": "Everything currently open to a vote." },
+          { "screen": "proposal-detail/0", "note": "The proposal, before voting." },
+          { "screen": "proposal-detail/9", "note": "Couldn't load. The screen fans three requests out at once and treats any one of them failing as a whole-page failure, so the copy says so plainly, states that the member's vote is unaffected, and carries an error code and timestamp support can quote back." }
+        ]
+      },
+      {
+        "id": "sys-fail-lists-shimmer",
+        "name": "The two lists that can only shimmer",
+        "who": "Any member",
+        "why": "Ideas and Voting are the two most-visited lists in the product, and neither has any answer to a failed request.",
+        "steps": [
+          { "screen": "ideas-list/0", "note": "The Ideas list, loaded." },
+          { "screen": "ideas-list/3", "note": "Loading. If the request never comes back, this is where the member stays." },
+          { "screen": "voting-list/3", "note": "The Voting list has exactly the same gap." },
+          { "screen": "states", "note": "The kit's answer: a request-failed panel with a heading, a plain-language reason, and one action — Send it again." }
+        ]
+      },
+      {
+        "id": "sys-fail-media",
+        "name": "A photo will not load",
+        "who": "Any member in a locker room",
+        "why": "The image viewer ships with no loading state and no failure state at all — a slow photo shows nothing, and a dead one shows nothing forever.",
+        "steps": [
+          { "screen": "media/0", "note": "A photo, open in the viewer." },
+          { "screen": "media/2", "note": "Loading, drawn at the photo's exact footprint so the frame does not jump when it arrives." },
+          { "screen": "media/3", "note": "It never arrives. The proposed state says what happened in plain words, adds that nothing has been saved to the phone, and puts the filename and the HTTP code in a chip support can read back. Both this and the loading state are new." }
+        ]
+      },
+      {
+        "id": "sys-fail-clubs-catalogue",
+        "name": "The club catalogue will not load mid-flow",
+        "who": "A member adding a club",
+        "why": "A failure scoped to the step that broke, rather than a full-screen takeover that throws away everything already entered.",
+        "steps": [
+          { "screen": "clubs/0", "note": "The member's clubs." },
+          { "screen": "clubs/3", "note": "Add a club. The catalogue of crests comes from the server." },
+          { "screen": "clubs/4", "note": "It fails. The error renders inside the step that failed, with two recovery actions, and the steps after it stay visibly locked rather than vanishing." },
+          { "screen": "clubs/11", "note": "For contrast, what actually ships: a sheet saying to log in on desktop, whose only button pops the sheet. No request is made and no club is added." }
+        ]
+      },
+      {
+        "id": "sys-fail-cold-start",
+        "name": "The app cannot start",
+        "who": "Any member",
+        "why": "Today a dropped connection is presented to the member as having been signed out, which is both wrong and alarming.",
+        "steps": [
+          { "screen": "launch/0", "note": "Splash. The mark keeps moving; there is deliberately no progress bar, because the wait cannot be estimated honestly and a bar that stalls at 90% is worse than one that never appears." },
+          { "screen": "launch/1", "note": "The check fails. Today the splash routes to the introduction flow after a one-second delay whether the failure was real or the member genuinely signed out, so the two are indistinguishable. The proposed screen insists the member is still signed in, uses a red tile because a server fault is a fault, and carries a reference code that turns an unhelpful message into a support ticket." },
+          { "screen": "states", "note": "Being offline is treated differently — a neutral tile rather than a red one, because it is a condition and not a fault, and no button at all, because pressing one would not restore a connection." }
+        ]
+      },
+      {
+        "id": "sys-fail-vote-not-sent",
+        "name": "A vote does not send",
+        "who": "A member casting a ballot",
+        "why": "The one action in the product a member must never be left guessing about.",
+        "steps": [
+          { "screen": "proposal-detail/0", "note": "The proposal, before voting." },
+          { "screen": "proposal-detail/1", "note": "Casting the ballot." },
+          { "screen": "dialogs", "note": "The request dies. The kit's reconciled version of the app's most-used error dialog — 'Couldn't cast your vote' — says what happened and what to do next. In six of its shipped call sites the body is a raw server string of unknown length and unknown language." },
+          { "screen": "states", "note": "And the full-screen version, for when the whole surface is gone rather than one action." }
+        ]
+      },
+      {
+        "id": "sys-fail-message-not-sent",
+        "name": "A chat message does not send",
+        "who": "A member in a locker room",
+        "why": "A per-item failure rather than a per-screen one: only the message that failed changes, and it keeps its text at full contrast.",
+        "steps": [
+          { "screen": "chat", "note": "The text log in a live room." },
+          { "screen": "chat", "note": "One bubble takes a red hairline and a warning glyph reading 'Not sent · no connection', then Delete and Retry. The message text stays full-contrast white — a failure should be loud, not disabled." },
+          { "screen": "states", "note": "The same principle in the kit: an offline banner over stale content, so what already loaded stays readable." }
+        ]
+      },
+      {
+        "id": "sys-fail-wallet",
+        "name": "Buying credits, with no failure surface to land on",
+        "who": "Any member",
+        "why": "A gap worth naming out loud: there is no purchase error screen anywhere in the live build to reuse, so nothing is drawn here yet.",
+        "steps": [
+          { "screen": "wallet/0", "note": "The credit balance." },
+          { "screen": "wallet/3", "note": "Buy credits. This is where a declined card or a dead payment request has to land, and there is nothing here for it." },
+          { "screen": "clubs/9", "note": "The nearest thing that exists anywhere in the build — a payment-declined state drawn for club registration. A decision is needed on whether the wallet reuses it." }
+        ]
+      },
+      {
+        "id": "sys-fail-sweep",
+        "name": "The same failure, on every surface at once",
+        "who": "Reviewer",
+        "why": "One pass showing the proposed error treatment applied consistently, so the language can be judged as a whole rather than one screen at a time.",
+        "steps": [
+          { "screen": "states", "note": "The kit: six error states, each with a heading, one line of explanation, and an action only where an action would actually help." },
+          { "screen": "war-room/3", "note": "The hub." },
+          { "screen": "profile/3", "note": "The profile — the one the app already has." },
+          { "screen": "alerts/3", "note": "The alerts feed." },
+          { "screen": "idea-detail/9", "note": "An idea, partially loaded." },
+          { "screen": "proposal-detail/9", "note": "A proposal, with a reference code." },
+          { "screen": "media/3", "note": "A photo." },
+          { "screen": "clubs/4", "note": "A single step inside a longer flow." },
+          { "screen": "launch/1", "note": "And the app itself, at cold start." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "A brand-new member, with nothing anywhere",
+    "journeys": [
+      {
+        "id": "sys-empty-day-one",
+        "name": "Day one: every rail is empty",
+        "who": "A member who joined this morning",
+        "why": "The first impression of the product. Today it is a black panel shouting NO PROPOSALS AT THE MOMENT, with no explanation and nothing to do.",
+        "steps": [
+          { "screen": "war-room/2", "note": "The hub with all four rails empty. Every heading is the app's own string; the second line under each — saying what fills the rail — is new." },
+          { "screen": "states", "note": "The welcome state, and the only empty state in the kit that gets a hero headline and a second action, because it is the only one that has to teach the product." },
+          { "screen": "idea-card/1", "note": "The Ideas rail with nothing in it, and one thing to do about it." },
+          { "screen": "voting-card/2", "note": "The Voting rail." },
+          { "screen": "results-actions/3", "note": "And Results, which the member cannot fill themselves — so it states when results appear instead of offering a button that would do nothing." }
+        ]
+      },
+      {
+        "id": "sys-empty-alerts",
+        "name": "An inbox with nothing in it",
+        "who": "A new member",
+        "why": "The empty inbox has to read as unmistakably good news, precisely because a failure currently borrows the same screen.",
+        "steps": [
+          { "screen": "alerts/2", "note": "Nothing to report. The unread pill reads 'All caught up', and Mark all read and search are dropped because there is nothing to act on." },
+          { "screen": "states", "note": "The kit version, plus a line naming what will bring the first alert in: an idea going to a vote, the club deciding, a locker room opening." },
+          { "screen": "account-settings/3", "note": "The one action offered — choose what you're alerted about. Per-category muting exists nowhere in the build or the design file; it is a proposal." }
+        ]
+      },
+      {
+        "id": "sys-empty-profile-guest",
+        "name": "A guest who has not picked a club",
+        "who": "A signed-up member with no club",
+        "why": "Having no club used to be treated as a failure in code. It is now its own state, and it needs its own screen.",
+        "steps": [
+          { "screen": "profile/4", "note": "Guest pill, no photo, an explained empty club section, every figure at zero. Not an error — an account that has not started yet." },
+          { "screen": "clubs/1", "note": "Your clubs, empty. This is the only place the price and the three-per-league rule appear before the fee screen." },
+          { "screen": "club-selection/0", "note": "And the way out of it." }
+        ]
+      },
+      {
+        "id": "sys-empty-rooms",
+        "name": "No locker rooms, and nothing scheduled",
+        "who": "A member on a quiet week",
+        "why": "Two different empties on one tab, and one of them is the case where a button would be dishonest.",
+        "steps": [
+          { "screen": "backchat", "note": "The room list: Live, Upcoming and Fan Stadium. Browsing and scheduling rooms is real code; the room you actually join is not." },
+          { "screen": "all-locker-rooms", "note": "Browsing everything, with nothing in session." },
+          { "screen": "states", "note": "Two states: 'No rooms open right now', which offers to alert the member, and 'Nothing scheduled yet', which carries a promise — 'We'll alert you when it's up' — in place of a button, because nothing the member does moves it forward." }
+        ]
+      },
+      {
+        "id": "sys-empty-wallet",
+        "name": "A wallet with no history",
+        "who": "A new member",
+        "why": "The second of only two empty states in the kit that state an outcome instead of offering an action.",
+        "steps": [
+          { "screen": "wallet/0", "note": "The credit balance on a new account." },
+          { "screen": "wallet/1", "note": "Transaction history, with nothing in it." },
+          { "screen": "states", "note": "'No transactions yet' — merits move when you post, vote or back a winning ballot, and the line reads 'Starts with your first vote' rather than pretending there is a button." }
+        ]
+      },
+      {
+        "id": "sys-empty-social",
+        "name": "No one linked, and nothing said",
+        "who": "A new member",
+        "why": "Two social surfaces at zero. The comments one matters because the shipped build prints the count and the empty line one under the other.",
+        "steps": [
+          { "screen": "linked-member/0", "note": "No one linked yet. Linked members share a season ticket or a household so their votes can be cast together." },
+          { "screen": "comments", "note": "An empty discussion: 'No one has made the case yet'. The live build renders 'Last comments (0)' and 'No comments yet' directly under each other — the count stated twice." },
+          { "screen": "states", "note": "Both drawn from the same panel, so an empty screen never looks like a broken one." }
+        ]
+      },
+      {
+        "id": "sys-empty-recognition",
+        "name": "A member with no merits and no titles",
+        "who": "A new member",
+        "why": "Recognition is the surface with the least behind it, and the empty case has not been drawn at all yet.",
+        "steps": [
+          { "screen": "merits", "note": "The Merits tab. It sits in the navigation bar of every frame in the file, and there is no Merits screen and no merits code in the shipped app — the whole surface is a proposal." },
+          { "screen": "merit-detail", "note": "The ledger, badges and the award moment. An empty ledger for a brand-new member is on the not-built list, alongside loading and error states for all four of these screens." },
+          { "screen": "hall-of-fame/5", "note": "Achievements, with no titles won." },
+          { "screen": "hall-of-fame/7", "note": "And a season the club has not played yet." }
+        ]
+      },
+      {
+        "id": "sys-empty-vs-filtered",
+        "name": "Filtered to nothing is not the same as empty",
+        "who": "Any member",
+        "why": "A distinction the shipped app does not make anywhere. A member who filters a busy list to zero must not conclude their club has gone quiet.",
+        "steps": [
+          { "screen": "filters-pickers/3", "note": "Two filters on: fourteen results narrowed to two." },
+          { "screen": "filters-pickers/4", "note": "One filter too many, and nothing matches. The screen names the two filters that collide, says how many results are actually there, and tells the member which one to drop. In the build there is no zero branch at all — a filter that matches nothing leaves an empty scroll area under the chips." },
+          { "screen": "results-actions/3", "note": "Against the genuinely empty version of the same list, which reads completely differently. The build uses one string for both cases." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "An alert arrives",
+    "journeys": [
+      {
+        "id": "sys-alert-idea-promoted",
+        "name": "Your idea cleared the threshold",
+        "who": "A member who posted an idea",
+        "why": "The best news in the product, and the moment an alert has to carry a member somewhere.",
+        "steps": [
+          { "screen": "alerts/0", "note": "'Your Idea went to a vote' — it cleared the like threshold, the deposit is refunded and 70 merits are earned. Note the emphasis rule: the object being acted on is always white and heavier than the sentence around it." },
+          { "screen": "idea-detail/0", "note": "Following the alert to the idea itself. In the shipped app, tapping a row only marks it read — it does not navigate anywhere, and there is no per-row action at all." },
+          { "screen": "proposal-detail/0", "note": "And on to the proposal it has become, now open for a vote." }
+        ]
+      },
+      {
+        "id": "sys-alert-vote-closing",
+        "name": "Voting closes in two hours and you have not voted",
+        "who": "A member with an uncast ballot",
+        "why": "The alert most likely to change an outcome — and one of only two rows on this feed with no matching alert type in the shipped app.",
+        "steps": [
+          { "screen": "alerts/0", "note": "'Voting closes in 2 hr' — six votes short of quorum, ballot not cast. This alert type is a proposal; nothing in the build sends it today." },
+          { "screen": "proposal-detail/0", "note": "The inline 'Vote here' pill takes the member straight to the ballot." },
+          { "screen": "proposal-detail/1", "note": "Casting it." },
+          { "screen": "proposal-detail/2", "note": "Voted. The chart stays locked so a member cannot be swayed by the running count." }
+        ]
+      },
+      {
+        "id": "sys-alert-result",
+        "name": "A result is published and becomes an instruction",
+        "who": "Any member",
+        "why": "Closes the loop the product exists for: a vote becomes a position the club has to answer.",
+        "steps": [
+          { "screen": "alerts/0", "note": "'Result published' — approved on 81% of the vote and now an Official Members' Position." },
+          { "screen": "results-actions/2", "note": "The result, recorded, with the count attached." },
+          { "screen": "action-detail", "note": "And the action it obliges the club to take." }
+        ]
+      },
+      {
+        "id": "sys-alert-room-reminder",
+        "name": "A locker room you set a reminder for is starting",
+        "who": "A member with a reminder set",
+        "why": "The reminder dialog has ten references across two screens in the shipped app and had never been drawn until this pass — and its close button is broken.",
+        "steps": [
+          { "screen": "locker-room/1", "note": "Before you join. This is where the reminder is set." },
+          { "screen": "dialogs", "note": "'Set a reminder for this room?', its counterpart 'Remove this reminder?', and the confirmation. All three are new drawings of a dialog the app already ships — one whose close cross evaluates its handler and throws the result away, so pressing it never runs the caller's code. Removing a reminder is drawn in accent rather than red, because it is reversible from the bell." },
+          { "screen": "alerts/0", "note": "Fifteen minutes out, the alert arrives. Like the vote warning, this alert type is a proposal — there is no shipped type behind it." },
+          { "screen": "locker-room/0", "note": "'Open room' takes the member in." }
+        ]
+      },
+      {
+        "id": "sys-alert-veto",
+        "name": "The manager vetoes a proposal",
+        "who": "Any member",
+        "why": "The one path where the club can overrule the membership, and where members can overrule back.",
+        "steps": [
+          { "screen": "alerts/0", "note": "'The manager's veto was upheld' — the vote to overturn fell short and the proposal is closed. Further down the same feed, the opposite outcome a month earlier: members overturned a veto on 88%." },
+          { "screen": "proposal-detail/4", "note": "A proposal sitting under veto hold." },
+          { "screen": "veto", "note": "The veto surface itself: why it was blocked, and what happens next." }
+        ]
+      },
+      {
+        "id": "sys-alert-lapsed",
+        "name": "Your idea lapsed and your deposit is gone",
+        "who": "A member who posted an idea",
+        "why": "The only case in the product where a member loses something. The alert has to be unambiguous.",
+        "steps": [
+          { "screen": "alerts/0", "note": "'Your Idea lapsed' — it did not reach the like threshold in time and the deposit is forfeited. This row deliberately carries no action pill, because there is nothing to do." },
+          { "screen": "idea-detail/7", "note": "The idea, lapsed. Compare with the row two above it on the feed, where the club withdrew an idea and the deposit came back in full." },
+          { "screen": "wallet/1", "note": "And the entry in the ledger, so the member can see the money side agrees." }
+        ]
+      },
+      {
+        "id": "sys-alert-turn-them-on",
+        "name": "Turning alerts on, and turning one kind off",
+        "who": "A new member",
+        "why": "The whole feed depends on a per-category settings screen that exists nowhere in the shipped build or the design file.",
+        "steps": [
+          { "screen": "launch/4", "note": "Notification priming at first run — asked in the app's own words before the system prompt, so a 'no' is not permanent." },
+          { "screen": "dialogs", "note": "The inline banner version, for a member who declined the first time and is now missing something they care about. It informs without taking the screen away." },
+          { "screen": "alerts/0", "note": "The feed, with the settings disc in the control bar. That disc was an inert glyph on a button with no handler until this pass." },
+          { "screen": "account-settings/3", "note": "Choosing what to be alerted about, category by category." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Photos: choosing, sending, viewing",
+    "journeys": [
+      {
+        "id": "sys-photo-pick",
+        "name": "Adding a profile picture",
+        "who": "A member finishing sign-up",
+        "why": "One widget handles every image upload in the app, and its picker sheet has never been screenshotted, specified or designed.",
+        "steps": [
+          { "screen": "upload/0", "note": "The field. An empty avatar disc with a dashed rim, and a photo grid reading 0 of 6." },
+          { "screen": "upload/1", "note": "The source sheet, rebuilt on the standard shell. What ships is a bare list in an eight-pixel margin with no title, no grabber and no safe-area inset, so its last row finishes inside the home-indicator gesture zone." },
+          { "screen": "upload/3", "note": "Confirm before sending: the count, the total size and a preview of each file. Today the confirm step is only reached on a multi-pick — choosing a single photo, or taking one with the camera, uploads it immediately with no preview and no chance to back out." },
+          { "screen": "upload/4", "note": "Uploading, with a per-photo percentage and a batch count." },
+          { "screen": "upload/8", "note": "Done, with the file size, the time and an Undo. Note the Remove control: today there is no way at all to clear a profile picture from this screen." }
+        ]
+      },
+      {
+        "id": "sys-photo-rejected",
+        "name": "A file that is too big and one we cannot read",
+        "who": "Any member uploading",
+        "why": "The upload path has no size, type or dimension validation of any kind. A member can pick a 40-megapixel photo straight off a new phone and the app will stream the original bytes at full size to the server.",
+        "steps": [
+          { "screen": "upload/1", "note": "Choosing several photos from the library." },
+          { "screen": "upload/6", "note": "Two are refused: one over the size ceiling, one in a format we cannot read. Each is named with its measured size against the limit, and nothing has been sent yet. There is no compression and no cropper either, so a landscape photo becomes a circle by centre-crop — which cuts heads off." },
+          { "screen": "upload/3", "note": "The two that passed carry on. This whole screen is a proposal: there is no validation in the code to rebrand, and the size and format limits quoted are borrowed from the identity-check vendor as the most defensible starting numbers." }
+        ]
+      },
+      {
+        "id": "sys-photo-upload-fails",
+        "name": "An upload fails and nobody is told",
+        "who": "Any member uploading",
+        "why": "The most quietly damaging defect in the upload path. A failed upload returns nothing and is skipped — no error, no toast, no retry. The photo is simply not there.",
+        "steps": [
+          { "screen": "upload/3", "note": "Four photos confirmed for a locker room." },
+          { "screen": "upload/4", "note": "Uploading. What ships is one indefinite snackbar in Vietnamese covering the whole batch — no count, no percentage and no way to stop — with thumbnails appearing one at a time and no placeholder." },
+          { "screen": "upload/5", "note": "One of the four dies. Only the failed tile changes: a red rim, a retry glyph, and a help line saying the other three are safe. Today the member gets none of this and is left with three photos where they chose four." }
+        ]
+      },
+      {
+        "id": "sys-photo-camera-denied",
+        "name": "The camera permission prompt",
+        "who": "Any member taking a photo",
+        "why": "There is no in-app explanation, no denied state and no route to Settings anywhere in the upload path. The system prompt simply appears.",
+        "steps": [
+          { "screen": "upload/1", "note": "Take a photo, promoted to the first row of the sheet." },
+          { "screen": "upload/2", "note": "A pre-prompt in the app's own words: the camera is used only when the button is pressed, never in the background, and it does not touch the library unless the member picks from it. If they say no, the row stays in the sheet and reads that camera access is off." },
+          { "screen": "child-account/10", "note": "The same pattern where it matters most — an identity check on a child's account." }
+        ]
+      },
+      {
+        "id": "sys-photo-view",
+        "name": "Opening a photo from a locker room",
+        "who": "Any member",
+        "why": "Both viewer surfaces were built once, early, and never reviewed. What ships is a purple app bar sitting on a grey field.",
+        "steps": [
+          { "screen": "media/4", "note": "The gallery: a counter pill, page dots and the caption under the photo. The shipped version tucks its index counter behind the notch." },
+          { "screen": "media/0", "note": "A single photo, with attribution in the bar. The shipped app bar title is the empty string, and its back control reads 'go back' in Vietnamese — the wrong verb, since a viewer is dismissed rather than navigated away from." },
+          { "screen": "media/1", "note": "Pinch and zoom. The zoom read-out replaces the attribution and an inner ring marks the pan boundary. Both the pinch gesture and drag-down-to-dismiss are already real in code." }
+        ]
+      },
+      {
+        "id": "sys-photo-save",
+        "name": "Saving a photo to the camera roll",
+        "who": "Any member",
+        "why": "Three defects on one control: it saves the wrong file after paging, it cannot report progress, and it says nothing at all when the save is refused.",
+        "steps": [
+          { "screen": "media/4", "note": "Paged through to photo four of seven." },
+          { "screen": "media/5", "note": "The save-and-share sheet. Today there is a plain text link in the corner that writes straight to the camera roll with no hit target of its own and no confirmation — and after paging it saves the wrong photo. Share is new: there is no share surface anywhere in the app's code." },
+          { "screen": "media/6", "note": "Saving, with a byte count, a percentage and a Stop; then saved; then refused. The code shows an indefinite snackbar with no byte count and no way to stop, and when the save is refused it checks the result and then shows nothing at all." }
+        ]
+      },
+      {
+        "id": "sys-photo-caption",
+        "name": "Captioning a photo",
+        "who": "The member who posted it",
+        "why": "A real feature nobody has documented — and the rules about who may edit a caption are stated nowhere in the code.",
+        "steps": [
+          { "screen": "media/4", "note": "The gallery, with an Edit caption pill on a photo the member posted." },
+          { "screen": "media/7", "note": "The caption form, on the standard dialog shell with a character counter. In practice captions are editable while composing and frozen afterwards, but nothing in the code says so — this needs a decision." },
+          { "screen": "media/4", "note": "Back to the gallery with the caption in place, and the attribution moved onto the caption line." }
+        ]
+      },
+      {
+        "id": "sys-photo-ground",
+        "name": "What colour a photo sits on",
+        "who": "Reviewer",
+        "why": "A one-line code fix with a visible effect on every photograph in the app.",
+        "steps": [
+          { "screen": "media/8", "note": "The same photo on three grounds. What ships is a mid grey measuring 1.50:1 against black, because the colour constant it comes from is named 'black' and does not resolve to black. It is clearly visible, and it flattens every dark photograph in the app." },
+          { "screen": "media/0", "note": "The proposal: pure black, so the photo is the only thing on screen." },
+          { "screen": "foundations", "note": "And where that sits against the rest of the palette — four surfaces, one accent, one semantic red, and no other colour." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Filling things in",
+    "journeys": [
+      {
+        "id": "sys-form-kit",
+        "name": "The field kit, end to end",
+        "who": "Reviewer",
+        "why": "No form control in the product is designed in the new brand. Sign-off here unblocks every form there is.",
+        "steps": [
+          { "screen": "forms", "note": "Ten controls in five states each: text, password, textarea, select, date, phone, search, toggle, checkbox and radio, plus a two-up row and a footer. Four things this fixes: the shipped app uses four different label conventions across eight screens, ships its primary button at six different heights, renders country flags from the platform emoji font, and puts the accent on the toggle knob so 'off' renders lighter than 'on'." },
+          { "screen": "foundations", "note": "The same controls at token level, marked sampled or proposed. Six exist in the export; eight — including the text field, the select, the toggle and the checkbox — do not, and nothing in the export shows a disabled or focused control at all." }
+        ]
+      },
+      {
+        "id": "sys-form-validation",
+        "name": "A field fails validation",
+        "who": "Any member filling a form",
+        "why": "Error copy has to say what is wrong and what to do — and sometimes the honest answer is that the server did not tell us.",
+        "steps": [
+          { "screen": "forms", "note": "Inline validation: a red border, a wash ring and a leading glyph, always with a written message. Never colour alone — the red used here only just misses the contrast floor, which is exactly why every error carries its own icon and its own sentence." },
+          { "screen": "auth/1", "note": "Logging in with the wrong details. The API returns one undifferentiated failure, so both fields take the error ring and the message says so outright — one of these two is wrong, and we can't say which. The primary stays enabled, because the next action is to try again." },
+          { "screen": "onboarding/1", "note": "And on a longer form, where the date-of-birth field drives an age gate and has to explain itself before it refuses." }
+        ]
+      },
+      {
+        "id": "sys-form-cannot-submit",
+        "name": "A form that will not let you post until it is valid",
+        "who": "A member posting an idea",
+        "why": "The most consequential form in the product — it costs a deposit — so it has to be impossible to get wrong.",
+        "steps": [
+          { "screen": "idea-gate", "note": "The gate states what posting costs and what the rules are, before a single field is shown." },
+          { "screen": "create-idea/0", "note": "Compose. Title, body and category, with the category deciding which threshold the idea must clear. Note the 'Draft it with the assistant' block — that is a proposal; there is no AI anywhere in the app." },
+          { "screen": "create-idea/1", "note": "Compliance and timing. The club's house rules are checked here and the form cannot proceed until they pass." },
+          { "screen": "create-idea/2", "note": "The deposit is locked, in a dialog that carries form controls — a shell the app needs and does not have." },
+          { "screen": "create-idea/4", "note": "And what a submit failure looks like on the way out." }
+        ]
+      },
+      {
+        "id": "sys-form-date-picker",
+        "name": "Picking a date",
+        "who": "Any member filtering or scheduling",
+        "why": "The date layer is the single most broken piece of the shipped app's form work: it opens the stock light calendar over a dark screen, in a language the app does not support.",
+        "steps": [
+          { "screen": "filters-pickers/6", "note": "The single date picker, rebuilt on the app's own surfaces, with the answer restated in words above the grid because '12' on its own is not a date. Days that cannot be chosen are struck through rather than hidden, and Next month is disabled at the far edge rather than removed." },
+          { "screen": "filters-pickers/7", "note": "A date range with both ends on one surface and the span stated in days. The build stacks a dialog inside a dialog — two read-only fields, each opening its own calendar — and dismissing it fires three stacked pops, one for each dialog it believes is open." },
+          { "screen": "sheets", "note": "The same date and time pickers as sheets. Note that no range selection and no time surface exist in the build at all; both are proposals." }
+        ]
+      },
+      {
+        "id": "sys-form-sort",
+        "name": "Sorting a list",
+        "who": "Any member",
+        "why": "The sort sheets on Results and Actions are inert: every row has an empty handler. The sheet can be scrolled and admired, and it cannot sort.",
+        "steps": [
+          { "screen": "filters-pickers/0", "note": "Sorting results: most recent, most urgent, most popular, each with a line saying what it actually orders by. The identical sheets on Ideas and Voting do pass a real handler; these two do not." },
+          { "screen": "filters-pickers/1", "note": "The same three options on Actions, where 'most urgent' means closest to kick-off rather than nearest to a deadline. In the build this same sheet renders at a different row height from the Results one, for no reason other than a hardcoded value at the call site." },
+          { "screen": "sheets", "note": "The shell underneath both: single-select radios that apply and dismiss on tap, so there is no Apply button — and radios rather than the square checkboxes the export drew for a single-choice list." }
+        ]
+      },
+      {
+        "id": "sys-form-filter",
+        "name": "Filtering a list down, and back out",
+        "who": "Any member",
+        "why": "The filter control in the shipped app is a lie: it draws a filter glyph and opens a sort list. There is no filter sheet anywhere in the build.",
+        "steps": [
+          { "screen": "filters-pickers/2", "note": "A real filter sheet, grouped by kind, verdict and ownership, with a count and a Clear all." },
+          { "screen": "filters-pickers/3", "note": "Filters on. Three signals at once — a tick in the chip, a ring and count on the trigger, and a summary line reading '2 filters on · 2 of 14' — so a member always knows how much they are hiding. Today the only signal is one chip turning green." },
+          { "screen": "filters-pickers/4", "note": "Nothing matches, with the colliding filters named. Filters also half-survive leaving the screen in the build: come back and you get green chips over unfiltered results." },
+          { "screen": "wallet/2", "note": "The same pattern on a different surface — filtering the transaction ledger." }
+        ]
+      },
+      {
+        "id": "sys-form-explainer",
+        "name": "Explaining what the categories mean",
+        "who": "Any member",
+        "why": "Filters are useless if the member does not know what the words mean — and today all four explainer buttons in the app show the same placeholder text.",
+        "steps": [
+          { "screen": "filters-pickers/5", "note": "The explainer: what a Decision is, what happens when one is vetoed or ruled out, and when a deposit is forfeited. In the build the trigger is a 16-pixel circle nested inside another button, and every one of its four call sites passes the same lorem ipsum." },
+          { "screen": "results-actions/1", "note": "The verdict states the explainer describes, side by side." },
+          { "screen": "results-actions/0", "note": "And the list they appear in." }
+        ]
+      },
+      {
+        "id": "sys-form-multiselect",
+        "name": "Picking several things at once",
+        "who": "A member setting up their account",
+        "why": "The multi-select widget is fully built in the app and used nowhere — and the way it handles the last item is an error dialog for a state the button should have prevented.",
+        "steps": [
+          { "screen": "upload/7", "note": "The multi-select sheet: a count pill, Clear all, a sticky search and a full-width Apply. Today, deselecting the last item throws an error dialog rather than simply disabling Apply." },
+          { "screen": "forms", "note": "The checkbox and radio behind it at token level — both proposed, neither in the export." },
+          { "screen": "sheets", "note": "And the decision this raises across the product: when a sheet is right and when a dropdown is. The Hall of Fame currently answers both ways on one screen — season opens a raw system menu that covers its own trigger, category opens a custom sheet, and nothing tells a member which is which." }
+        ]
+      },
+      {
+        "id": "sys-form-schedule-room",
+        "name": "Scheduling a locker room",
+        "who": "A club manager",
+        "why": "The one place in the product where a date picker, a time picker and a long form all have to work together.",
+        "steps": [
+          { "screen": "locker-room-editor", "note": "Scheduling a room: title, date, start time, and who can join." },
+          { "screen": "sheets", "note": "The date and time sheets it opens, both on the shared shell. An open question rides on this one: the time picker offers quarter-hours, and a room that starts at 8:37 would need every minute." },
+          { "screen": "all-locker-rooms", "note": "The room now sitting in the upcoming list." },
+          { "screen": "dialogs", "note": "And what deleting it looks like — a destructive confirmation with the room named inside the sentence." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Being interrupted",
+    "journeys": [
+      {
+        "id": "sys-dlg-shell",
+        "name": "One dialog shell replacing three",
+        "who": "Reviewer",
+        "why": "The app has three different modal shells across four screens plus an untouched system alert, and nineteen presenter methods behind them — five of which have no caller worth keeping.",
+        "steps": [
+          { "screen": "dialogs", "note": "One shell in eleven specimens. Every variant carries a dismiss control in the top-right corner; the shell it replaces had no way out except the primary action, and five different affirmative words across four dialogs, three shouted in caps and two still in Vietnamese." },
+          { "screen": "dialogs", "note": "The hard problem: the palette has two hues, so warning cannot be amber. It is built from the same red as error and separated from it by wash and ring alone, with the words in the title carrying the rest." },
+          { "screen": "upload/3", "note": "The shell doing ordinary work — confirming four photos into a locker room, with the count and the total size in the body." },
+          { "screen": "foundations", "note": "Why the constraint exists: one accent, one semantic red, and nothing else." }
+        ]
+      },
+      {
+        "id": "sys-dlg-destructive",
+        "name": "A destructive confirmation",
+        "who": "Any member",
+        "why": "Deleting something has to look different from doing something, without a third colour to do it with.",
+        "steps": [
+          { "screen": "dialogs", "note": "'Delete this idea?' — a filled red primary, which is the only filled red permitted anywhere in the system and is reserved for irreversibly destroying something the member owns. The secondary names the safe outcome — 'Keep it' — rather than saying Cancel." },
+          { "screen": "sheets", "note": "The sheet counterpart, for surfaces where a sheet is already open. Opening it moves focus to the panel rather than to an action, so a destructive button is never primed under the return key." },
+          { "screen": "media/5", "note": "And the placement rule: a destructive row goes last in an action sheet, separated from everything above it." }
+        ]
+      },
+      {
+        "id": "sys-dlg-server-error",
+        "name": "The error a member sees most often",
+        "who": "Any member",
+        "why": "The two most-referenced dialogs in the app were not in the kit at all. One shows the member the words 'INTERNAL SERVER'; the other closes itself after five seconds.",
+        "steps": [
+          { "screen": "dialogs", "note": "The 5xx error — referenced 27 times — rebuilt to say something a member can act on, with a reference code for support. What it replaces prints the literal string 'INTERNAL SERVER' in display type over a raster image, with nothing support can search on." },
+          { "screen": "dialogs", "note": "The general error, referenced 30 times and the most reachable dialog in the app. Today it auto-pops after five seconds — under the reading time of its own body, so an error can vanish mid-sentence — and its one control is not a button at all but a strip of tinted text reading 'Exit' in Vietnamese. Nothing in this kit auto-dismisses." },
+          { "screen": "states", "note": "The full-screen equivalent, for a whole surface rather than one action. The app's current version shows the member the raw permission-denied body returned by the server." }
+        ]
+      },
+      {
+        "id": "sys-dlg-loader",
+        "name": "Waiting for something",
+        "who": "Any member",
+        "why": "The shipped loader gives up after three seconds whether or not the request finished, leaving the member on an unchanged screen with no spinner, no error and no result.",
+        "steps": [
+          { "screen": "dialogs", "note": "One loader, and an in-button busy state for when only one control is working. The app has two loaders that are character-for-character identical except for which animation they play, and their colour defaults disagree — one is Material blue, the other pure black, and neither is a brand colour. They also share a single flag, so a second loader opened over a first leaves one dialog stranded on screen." },
+          { "screen": "states", "note": "The kit's position: four loading states, none of them timed. A wait either resolves or turns into a named error — it never quietly stops." },
+          { "screen": "launch/0", "note": "Including first load, which commits to an error state rather than an indefinite wait, and refuses a fake progress bar that would stall at 90%." }
+        ]
+      },
+      {
+        "id": "sys-dlg-form-inside",
+        "name": "A dialog that asks for something",
+        "who": "Any member",
+        "why": "A shell the app needs and does not have — its current version is a bare alert with zero padding and two flat text buttons.",
+        "steps": [
+          { "screen": "dialogs", "note": "The dialog shell carrying form controls, with the field at 16px so phones do not zoom on focus." },
+          { "screen": "media/7", "note": "In use: adding a caption, with a counter and a primary that changes from the question to the action. This is the presenter's only live call site in the whole app, and the audit had it filed as an image download form." },
+          { "screen": "create-idea/2", "note": "And in use where it costs something — the deposit dialog." }
+        ]
+      },
+      {
+        "id": "sys-dlg-dead-edit",
+        "name": "A confirmation for an action that does not exist",
+        "who": "A parent managing a child account",
+        "why": "A live bug the prototype should show a corrected answer to, rather than reproduce.",
+        "steps": [
+          { "screen": "child-account/17", "note": "The child-account list as shipped, ending in a line telling the member to go to the desktop site." },
+          { "screen": "child-account/18", "note": "Tapping Edit opens 'ARE YOU SURE? / All changes will be lost.' Neither button is given a handler, so both fall back to closing the dialog. It warns about changes that cannot be made, guarding an action that does not exist." },
+          { "screen": "child-account/14", "note": "What the member was trying to reach — their child's account, editable." }
+        ]
+      },
+      {
+        "id": "sys-sheet-shell",
+        "name": "One bottom-sheet shell, seven jobs",
+        "who": "Reviewer",
+        "why": "Sheets carry sort, filter, option-picking, dates, times, actions and confirmations. In the build they ship at three hardcoded heights, each styled at the call site.",
+        "steps": [
+          { "screen": "sheets", "note": "The shell defined once — one height rule, rounded top corners, a grabber, a tracked title on a hairline, 48px rows — then the seven jobs it does. Focus trap, Escape and drag-to-dismiss do not exist in the build at all." },
+          { "screen": "hall-of-fame/2", "note": "Why it matters: the shipped award-category sheet has square top corners, no drag handle, rows darker than the panel they sit on, and a last row that finishes inside the home-indicator gesture zone." },
+          { "screen": "media/5", "note": "The same shell as an action sheet on a photo." },
+          { "screen": "upload/1", "note": "And as a source picker on an upload field." }
+        ]
+      },
+      {
+        "id": "sys-dlg-quiet",
+        "name": "Telling a member something without stopping them",
+        "who": "Any member",
+        "why": "The counterweight to the rest of this group: most things do not deserve a modal, and the app currently uses one where a toast belongs.",
+        "steps": [
+          { "screen": "dialogs", "note": "The toast, landing in a dock above the tab bar. What it replaces is the only full-bleed square-cornered element in the app — a flat green bar about 90pt tall, with no icon and no action, overlapping the floating tab bar." },
+          { "screen": "dialogs", "note": "The inline banner: the same information as a dialog, without taking the screen away." },
+          { "screen": "states", "note": "The offline and stale-data banners, which sit over content that already loaded so the member can keep reading it. The offline one has no button, because pressing one would not restore a connection." },
+          { "screen": "alerts/0", "note": "And the quietest signal of all — a marker on a row saying only that something is unread." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "The system underneath",
+    "journeys": [
+      {
+        "id": "sys-found-palette",
+        "name": "The palette, and why there is no third colour",
+        "who": "Reviewer",
+        "why": "Every decision in this library follows from four surfaces, one accent and one red. Worth ten minutes before judging anything else.",
+        "steps": [
+          { "screen": "foundations", "note": "Four surfaces with measured luminance, the accent and its washes, and the single semantic red. Also the honest bits: red on the card surface misses the accessibility floor by a hair, and the muted text token fails on every surface — which is why no state in this library is ever signalled by colour alone." },
+          { "screen": "foundations", "note": "The type scale at true size, the spacing and radius values, and the 44px control height." },
+          { "screen": "states", "note": "And the same tokens doing work: every empty, loading and error state in the product built from that one set." }
+        ]
+      },
+      {
+        "id": "sys-states-one-language",
+        "name": "One skeleton language across every surface",
+        "who": "Reviewer",
+        "why": "The shipped skeletons are a light-theme grey shimmer running on a dark screen, everywhere. Fixing it once fixes it in twenty places.",
+        "steps": [
+          { "screen": "states", "note": "The bone, the card, the row and the single sheen — plus the reduced-motion rule that stops the pulse dead rather than fading it out." },
+          { "screen": "war-room/1", "note": "On the hub." },
+          { "screen": "profile/2", "note": "On the profile." },
+          { "screen": "clubs/2", "note": "On the clubs list, at exact card height so nothing reflows when the data lands." },
+          { "screen": "hall-of-fame/4", "note": "And on the Hall of Fame — which has a loading state drawn and no failure state, which is what the first group of this catalogue is about." }
+        ]
+      },
+      {
+        "id": "sys-desktop",
+        "name": "The same club on a desktop screen",
+        "who": "A member on a laptop",
+        "why": "A desktop layout was designed, unlike most of this library — so this is a reproduction rather than an invention, and it is where the club's own staff will spend their time.",
+        "steps": [
+          { "screen": "desktop-shell/0", "note": "The rail expanded, with the wordmark, the five destinations and a content grid capped so lines stay readable on a wide monitor." },
+          { "screen": "desktop-shell/1", "note": "Narrower, and the rail collapses to icons. Columns and navigation follow two independent rules — columns respond to the content area, navigation to the viewport — so a detail panel opening does not restyle the whole page." },
+          { "screen": "desktop-shell/2", "note": "A proposal opened in a right-hand panel rather than a new page. It is the real screen, not a preview: the member can vote from it without losing their place in the grid." },
+          { "screen": "proposal-detail/1", "note": "The same ballot on a phone, for comparison." },
+          { "screen": "war-room/0", "note": "And below the narrow breakpoint the rail disappears entirely and the bottom tab bar takes over — the mobile screen the rest of this catalogue walks through." }
+        ]
+      },
+      {
+        "id": "sys-matches",
+        "name": "The Matches tab, which is currently empty",
+        "who": "Any member",
+        "why": "Matches has a real icon and a real label in the bottom navigation and opens onto nothing. Both frames here are entirely new.",
+        "steps": [
+          { "screen": "matches/0", "note": "The fixture list. In the shipped app this tab renders an empty container — the icon and the label are wired in, and the screen behind them is blank. There is no fixture model, service or data source anywhere in the code." },
+          { "screen": "matches/1", "note": "A finished match. Note the Pending state in this set: a finished match with no result returned is the honest state for something the API has not settled." },
+          { "screen": "war-room/0", "note": "Back to the hub. Because Matches is not one of the five tabs, both frames are built as pushed screens with a back control rather than as tab destinations." }
+        ]
+      },
+      {
+        "id": "sys-recognition",
+        "name": "Three recognition surfaces, and what is behind them",
+        "who": "Reviewer",
+        "why": "The largest block of work in the prototype with the least code behind it. It should be reviewed knowing that.",
+        "steps": [
+          { "screen": "merits", "note": "The Merits standing. There is no merits code of any kind in the app — the tab is in the navigation of every frame and there is nothing behind it. It also exposes a naming problem: the build calls this currency Credits, Participation Credits, Participation Deposit and a legacy BOND, the API returns Reputation Points, and the navigation says Merits. One name has to win." },
+          { "screen": "merit-detail", "note": "The ledger, the badge collection and the award moment. The shipped award modal has one button, no share and no way out other than that button — and it is painted in the same amber the app uses to show a proposal being vetoed, so today a celebration and a block are the same colour." },
+          { "screen": "hall-of-fame/0", "note": "The Hall of Fame. There is no route and no page for it anywhere in the app; the only trace in the whole codebase is a comment recording that it was removed from the profile menu." },
+          { "screen": "hall-of-fame/3", "note": "An award announced. All three surfaces are good proposals, and none is a rebrand of a working screen." }
+        ]
+      },
+      {
+        "id": "sys-comments",
+        "name": "The discussion under a proposal",
+        "who": "Any member",
+        "why": "Almost every element here needs a field the shipped data model does not have. Worth pricing before it is agreed.",
+        "steps": [
+          { "screen": "idea-detail/6", "note": "Discussion on an idea, in context." },
+          { "screen": "comments", "note": "The thread in full: agree and disagree as ink rather than fill, one level of replies, a club or official marker, and a composer that grows. The shipped comment model has five fields — author, proposal, text and two timestamps — with no id, no parent, no counts and no moderation flags. Every one of those has to be added for this screen to exist." },
+          { "screen": "comments", "note": "Moderation: hidden for everyone, hidden for the author, a deleted tombstone, and a flagged comment with its counts frozen pending review. No moderation of any kind exists in the build." },
+          { "screen": "dialogs", "note": "And the confirmation that removing a comment goes through." }
+        ]
+      },
+      {
+        "id": "sys-tabs",
+        "name": "The five destinations, and what is behind each",
+        "who": "Reviewer",
+        "why": "A fast orientation lap, and the honest summary: of the five tabs in the navigation bar, two are rebrands of working screens and three are largely proposals.",
+        "steps": [
+          { "screen": "war-room/0", "note": "War Room — real, and the most complete surface in the app." },
+          { "screen": "merits", "note": "Merits — nothing behind it at all." },
+          { "screen": "backchat", "note": "Backchat — browsing, searching and scheduling rooms is real; the room you join is not, and there is no audio or realtime stack in the codebase to build it on." },
+          { "screen": "alerts/0", "note": "Alerts — the list and mark-as-read are real; the screen layout, the day grouping, the row actions and the settings are proposals." },
+          { "screen": "profile/0", "note": "Profile — real, and the one surface where a failed load already has a proper answer." }
+        ]
+      }
+    ]
+  }
+]

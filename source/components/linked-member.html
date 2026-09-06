@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en" data-component="linked-member">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Linked member (under 18)</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — LINKED MEMBER (under-18) FLOW
+   Four frames: linked members list · details + age gate ·
+   consent · third-party identity-check hand-off.
+
+   Rebuild of CA-17 / CA-06 / CA-13 / CA-14–15 in the dark-mode
+   brand language. Token block copied verbatim from merits.html;
+   colours, geometry and type scale sampled from
+   War Room-Dark Mode.svg and Backchat-Dark Mode.svg.
+   Portraits lifted from _assets/avatars.css.
+
+   Deliberate corrections to the shipped flow, all documented in
+   Screen-Specs/06-profile/05-child-account/:
+     · the list row now carries age, date of birth, relationship,
+       verification state and a member reference, so two records
+       with the same name are no longer identical (CA-17)
+     · the date of birth is age-gated with a derived-age readout
+       (CA-06 accepted 02/06/2002 with CONTINUE enabled)
+     · a consent step exists at all: what is collected, who
+       verifies it, how long it is kept, one required checkbox,
+       links to the terms and the privacy policy (no consent
+       control appears on any of the seventeen screens)
+     · the third party is named before the jump, and the return
+       journey is stated (CA-13 names no third party; the vendor
+       host first surfaces in an iOS camera prompt on CA-14)
+     · one field anatomy and one control height — 56 px — against
+       three field anatomies and seven control heights as built
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls                 */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* hero */
+  --hero-a:        #0D3617;
+  --hero-b:        #17481C;
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* the contract's one semantic red — downward / destructive only */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.12);
+
+  /* the single control height for every field, select and button */
+  --control:       56px;
+
+  /* photography — four portraits from _assets/avatars.css */
+  --av-04:url(data:image/jpeg;base64,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);
+  --av-05:url(data:image/jpeg;base64,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);
+  --av-07:url(data:image/jpeg;base64,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);
+  --av-13:url(data:image/jpeg;base64,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);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- frame note (review commentary, not the screen) ---------- */
+.cap{margin:0 var(--gutter) 14px;padding-top:34px}
+.cap__note{
+  display:block;
+  font-size:11.5px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--dim);
+}
+
+/* ---------- app bar + screen title ---------- */
+.bar{display:flex;align-items:center;gap:11px;margin:0 var(--gutter) 12px}
+.bar__eyebrow{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);
+}
+.title{
+  margin:0 var(--gutter) 14px;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.lede{margin:0 var(--gutter) 16px;font-size:13px;color:var(--muted)}
+.lede b{color:var(--text);font-weight:600}
+
+/* ---------- shared bits ---------- */
+.label{margin:22px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.eyebrow{
+  margin:0 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:18px;height:18px}
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  height:32px;padding:0 14px;border-radius:var(--r-pill);
+  background:var(--acid-wash);
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;
+}
+.status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.avatar{
+  border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+.section{
+  margin:0 var(--gutter);padding:12px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);
+}
+.section__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.section__bar .spacer{flex:1}
+
+/* ---------- step rail ---------- */
+.steps{display:flex;gap:8px;margin:0 var(--gutter) 20px;padding:0;list-style:none}
+.steps li{flex:1;min-width:0}
+.step__bar{display:block;height:4px;border-radius:var(--r-pill);background:var(--surface)}
+.steps li[data-state="done"] .step__bar,
+.steps li[data-state="now"]  .step__bar{background:var(--acid)}
+.step__name{
+  display:block;margin-top:8px;
+  font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.steps li[data-state="now"] .step__name{color:var(--acid)}
+.steps li[data-state="done"] .step__name{color:var(--muted)}
+
+/* ---------- state pills on a row ---------- */
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  height:26px;padding:0 10px;border-radius:var(--r-pill);
+  background:rgba(255,255,255,.06);color:var(--muted);
+  font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  white-space:nowrap;
+}
+.pill svg{width:12px;height:12px}
+.pill--ok{background:var(--acid-wash);color:var(--acid)}
+.pill--bad{background:var(--red-wash);color:var(--red)}
+
+/* ============================================================
+   FRAME 1 — LINKED MEMBERS LIST
+   ============================================================ */
+.board{list-style:none;margin:0;padding:0;border-radius:var(--r-panel);background:var(--surface);overflow:hidden}
+.mrow{
+  display:flex;align-items:flex-start;gap:11px;
+  padding:11px 12px;border-top:1px solid var(--line-soft);
+  cursor:pointer;
+}
+.mrow:first-child{border-top:0}
+.mrow:hover{background:rgba(255,255,255,.02)}
+.mrow--act{box-shadow:inset 3px 0 0 var(--acid)}
+.mrow--bad{box-shadow:inset 3px 0 0 var(--red)}
+.mrow__avatar{
+  width:46px;height:46px;
+  box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--ring,rgba(255,255,255,.14));
+}
+.mrow__id{flex:1;min-width:0}
+.mrow__top{display:flex;align-items:center;gap:8px}
+.mrow__name{
+  flex:1;min-width:0;font-size:15px;font-weight:600;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.mrow__chev{width:16px;height:16px;flex:0 0 auto;color:var(--dim)}
+.mrow__facts{
+  margin:3px 0 0;font-size:11.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.mrow__facts span{white-space:nowrap}
+.mrow__state{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
+.mrow__ref{
+  margin-left:auto;font-size:10.5px;font-weight:600;letter-spacing:.06em;
+  color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.mrow__notice{
+  display:flex;align-items:flex-start;gap:6px;margin-top:7px;
+  font-size:11.5px;line-height:1.35;color:var(--acid);
+}
+.mrow__notice svg{width:13px;height:13px;flex:0 0 auto;margin-top:1px}
+.mrow__notice--bad{color:var(--red)}
+.board__foot{
+  padding:10px 12px;border-top:1px solid var(--line-soft);
+  font-size:11.5px;color:var(--dim);
+}
+
+/* ============================================================
+   NOTE PANELS  (used by frames 1–4)
+   ============================================================ */
+.note{
+  margin:0 var(--gutter) 14px;padding:14px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+}
+.note--wash{background:var(--acid-wash);border-color:rgba(155,226,34,.22)}
+.note__head{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.note__head svg{width:19px;height:19px;flex:0 0 auto;color:var(--acid)}
+.note__head h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.note p{margin:0;font-size:13px;line-height:1.5;color:var(--muted)}
+.note p + p{margin-top:9px}
+.note p b{color:var(--text);font-weight:600}
+
+.nlist{list-style:none;margin:10px 0 0;padding:0}
+.nlist li{display:flex;gap:11px;padding:11px 0;border-top:1px solid var(--line-soft)}
+.nlist li:first-child{border-top:0;padding-top:2px}
+.ni__icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;flex:0 0 auto;border-radius:50%;
+  background:var(--sunken);color:var(--acid);
+}
+.ni__icon svg{width:15px;height:15px}
+.ni__body{flex:1;min-width:0}
+.ni__t{display:block;font-size:13px;font-weight:600;letter-spacing:-.005em}
+.ni__d{display:block;margin-top:3px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.ni__d b{color:var(--text);font-weight:600}
+
+/* numbered plan (frame 4) */
+.plan{list-style:none;margin:10px 0 0;padding:0;counter-reset:s}
+.plan li{display:flex;gap:11px;padding:11px 0;border-top:1px solid var(--line-soft);counter-increment:s}
+.plan li:first-child{border-top:0;padding-top:2px}
+.plan li::before{
+  content:counter(s);
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;flex:0 0 auto;border-radius:50%;
+  background:var(--acid);color:var(--acid-ink);
+  font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;
+}
+.plan li[data-state="return"]::before{
+  background:var(--sunken);color:var(--acid);box-shadow:inset 0 0 0 1.5px var(--acid)
+}
+
+/* legal links */
+.link-row{
+  display:flex;align-items:center;gap:11px;width:100%;
+  padding:12px 0;border:0;border-top:1px solid var(--line-soft);
+  background:transparent;color:var(--text);font:inherit;font-size:13px;font-weight:600;
+  text-align:left;cursor:pointer;text-decoration:none;
+}
+.nlist .link-row{padding:12px 0}
+.nlist li .link-row{border-top:0}
+.link-row span{flex:1;min-width:0}
+.link-row small{display:block;margin-top:3px;font-size:11.5px;font-weight:400;color:var(--dim)}
+.link-row svg{width:15px;height:15px;flex:0 0 auto;color:var(--muted)}
+.link-row:hover{color:var(--acid)}
+.link-row:hover svg{color:var(--acid)}
+
+/* ============================================================
+   ONE FIELD ANATOMY — label above, 56 px box, --sunken, 1 px --line
+   ============================================================ */
+.field{display:block;margin:0 var(--gutter) 16px}
+.field__label{
+  display:block;margin:0 0 7px;font-size:12.5px;font-weight:500;color:var(--muted);
+}
+.field__box{
+  display:flex;align-items:center;gap:10px;
+  height:var(--control);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);
+  transition:border-color .18s var(--ease);
+}
+.field__box:focus-within{border-color:rgba(155,226,34,.55)}
+.field__box svg{width:19px;height:19px;flex:0 0 auto;color:var(--muted)}
+.field input,.field select{
+  flex:1;min-width:0;height:100%;
+  border:0;background:transparent;color:var(--text);
+  font:inherit;font-size:15px;font-weight:500;
+}
+.field input:focus,.field select:focus{outline:none}
+.field input::placeholder{color:var(--dim)}
+.field select{appearance:none;-webkit-appearance:none;cursor:pointer}
+
+/* Branded select menu — the OS popup is the one piece of system chrome the
+   native <select> can't restyle, so the select becomes a hidden state holder
+   and this popover does the showing. Same panel recipe as the library date
+   picker: surface, 1px line, r-panel, the 18/44 shadow. */
+.field__box{position:relative}
+.field select.select--bh{
+  position:absolute;width:1px;height:1px;opacity:0;
+  pointer-events:none;overflow:hidden;
+}
+.field button.select-face{
+  flex:1;min-width:0;height:100%;display:flex;align-items:center;
+  border:0;background:transparent;color:var(--text);
+  font:inherit;font-size:15px;font-weight:500;padding:0;margin:0;outline:none;
+  cursor:pointer;text-align:left;
+}
+.field button.select-face > span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field__box svg{transition:transform .16s var(--ease),color .16s var(--ease)}
+.field__box.is-open{border-color:rgba(155,226,34,.55)}
+.field__box.is-open svg{transform:rotate(180deg);color:var(--text)}
+.dd{
+  position:absolute;top:calc(100% + 8px);left:0;z-index:80;
+  min-width:100%;width:max-content;max-width:276px;
+  max-height:288px;overflow:auto;padding:6px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-panel);
+  box-shadow:0 18px 44px rgba(0,0,0,.55);
+}
+.dd[hidden]{display:none}
+.dd__opt{
+  display:flex;align-items:center;gap:10px;width:100%;min-height:44px;
+  padding:5px 10px;border:0;border-radius:8px;background:none;color:var(--text);
+  font:inherit;font-size:15px;line-height:1.3;text-align:left;cursor:pointer;
+}
+.dd__opt:hover{background:var(--sunken)}
+.dd__opt:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.dd__opt[aria-selected="true"]{font-weight:650}
+.dd__t{flex:1;min-width:0}
+.dd__tick{visibility:hidden;flex:0 0 auto;width:17px;height:17px;color:var(--acid)}
+.dd__opt[aria-selected="true"] .dd__tick{visibility:visible}
+.field__hint{margin:8px 0 0;font-size:11.5px;line-height:1.45;color:var(--muted)}
+.field__hint b{color:var(--text);font-weight:600}
+.field[data-invalid="1"] .field__box{border-color:rgba(226,86,74,.55)}
+
+/* date of birth — three parts in one box */
+.dob{gap:0}
+.dob input{
+  flex:0 0 auto;text-align:center;font-variant-numeric:tabular-nums;
+  font-size:17px;font-weight:600;letter-spacing:.02em;
+}
+.dob input[data-part="d"],.dob input[data-part="m"]{width:38px}
+.dob input[data-part="y"]{width:60px}
+.dob__sep{color:var(--muted);font-size:17px;padding:0 2px}
+.dob__cal{margin-left:auto}
+
+/* derived-age readout */
+.gauge{
+  display:flex;align-items:flex-start;gap:13px;
+  margin:12px 0 0;padding:13px;
+  border-radius:var(--r-panel);background:var(--sunken);
+}
+.gauge__age{
+  flex:0 0 74px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:6px 4px;border-radius:10px;background:rgba(255,255,255,.04);
+}
+.gauge__age b{
+  font-size:26px;font-weight:800;letter-spacing:-.035em;line-height:1.05;
+  font-variant-numeric:tabular-nums;
+}
+.gauge__age span{
+  margin-top:2px;font-size:9.5px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim);
+}
+.gauge__msg{flex:1;min-width:0}
+.gauge__msg strong{
+  display:flex;align-items:flex-start;gap:7px;
+  font-size:13px;font-weight:600;line-height:1.35;
+}
+.gauge__msg strong svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px}
+.gauge__msg p{margin:6px 0 0;font-size:12px;line-height:1.45;color:var(--muted)}
+.gauge[data-state="ok"]   .gauge__age b,
+.gauge[data-state="ok"]   .gauge__msg strong{color:var(--acid)}
+.gauge[data-state="bad"]  .gauge__age b,
+.gauge[data-state="bad"]  .gauge__msg strong{color:var(--red)}
+.gauge[data-state="idle"] .gauge__age b{color:var(--dim)}
+.gauge[data-state="idle"] .gauge__msg strong{color:var(--muted)}
+
+/* ============================================================
+   CONSENT CHECKBOX
+   ============================================================ */
+.check{
+  position:relative;display:flex;align-items:flex-start;gap:12px;
+  margin:0 var(--gutter) 12px;padding:14px;min-height:var(--control);
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--surface);
+  cursor:pointer;
+}
+.check__input{position:absolute;opacity:0;width:22px;height:22px;margin:0}
+.check__box{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;flex:0 0 auto;margin-top:1px;border-radius:6px;
+  background:var(--sunken);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.28);
+  transition:background .18s var(--ease),box-shadow .18s var(--ease);
+}
+.check__box svg{width:14px;height:14px;color:var(--acid-ink);opacity:0;transition:opacity .12s var(--ease)}
+.check__input:checked + .check__box{background:var(--acid);box-shadow:inset 0 0 0 1.5px var(--acid)}
+.check__input:checked + .check__box svg{opacity:1}
+.check__input:focus-visible + .check__box{box-shadow:inset 0 0 0 1.5px var(--acid),0 0 0 3px var(--acid-wash)}
+.check__text{flex:1;min-width:0;font-size:13px;line-height:1.5}
+.check__text b{font-weight:600}
+.check[data-checked="1"]{border-color:rgba(155,226,34,.28)}
+.consent-log{
+  margin:0 var(--gutter) 18px;font-size:11.5px;line-height:1.45;color:var(--muted);
+}
+
+/* ============================================================
+   BUTTONS — one height, two recipes
+   ============================================================ */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  width:calc(100% - var(--gutter)*2);margin:0 var(--gutter) 10px;
+  height:var(--control);padding:0 18px;
+  border:0;border-radius:var(--r-panel);
+  font:inherit;font-size:15px;font-weight:700;letter-spacing:-.005em;cursor:pointer;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.btn svg{width:18px;height:18px;flex:0 0 auto}
+.btn--go{background:var(--acid);color:var(--acid-ink)}
+.btn--go:hover{background:#A8EC33}
+.btn--go:disabled{background:var(--surface);color:var(--dim);cursor:not-allowed}
+.btn--ghost{
+  background:transparent;box-shadow:inset 0 0 0 1px var(--line);
+  color:var(--text);font-weight:600;
+}
+.btn--ghost:hover{background:rgba(255,255,255,.03)}
+.btn-note{
+  margin:2px var(--gutter) 0;font-size:11.5px;line-height:1.45;color:var(--muted);
+  text-align:center;
+}
+.btn-note--left{text-align:left}
+
+/* ============================================================
+   FRAME 4 — HAND-OFF STRIP
+   ============================================================ */
+.handoff{display:flex;align-items:stretch;gap:9px;margin:0 var(--gutter) 16px}
+.party{
+  flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:5px;
+  padding:14px 12px;border-radius:var(--r-panel);background:var(--sunken);text-align:center;
+}
+/* the external party reads as outside the app: dashed edge, no fill */
+.party--ext{background:transparent;border:1.5px dashed rgba(255,255,255,.16)}
+.party__name{font-size:13.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
+.party__host{font-size:10.5px;font-weight:500;line-height:1.3;color:var(--dim);word-break:break-word}
+.handoff__arrow{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  width:26px;color:var(--acid);
+}
+.handoff__arrow svg{width:20px;height:20px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Date picker — canonical, _assets/date-picker.md. The calendar glyph was decorative. */
+.dob{position:relative}
+.dob__cal{flex:0 0 auto;display:grid;place-items:center;width:28px;height:28px;padding:0;
+  border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;position:relative}
+.dob__cal svg{width:19px;height:19px}
+.dob__cal:hover{color:var(--text);background:var(--sunken)}
+.dob__cal:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.dp{position:absolute;top:calc(100% + 8px);right:0;z-index:80;width:276px;padding:12px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);
+  box-shadow:0 18px 44px rgba(0,0,0,.55)}
+.dp[hidden]{display:none}
+.dp__bar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dp__mon{flex:1;text-align:center;font-size:13.5px;font-weight:650;color:var(--text)}
+.dp__nav{width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:8px;
+  background:var(--sunken);color:var(--text);cursor:pointer}
+.dp__nav:hover{background:#181D25}
+.dp__nav:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.dp__nav svg{width:15px;height:15px}
+.dp__dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.dp__dow span{text-align:center;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--dim)}
+.dp__grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px}
+.dp__d{height:32px;border:0;border-radius:8px;background:none;color:var(--text);
+  font:inherit;font-size:13px;cursor:pointer}
+.dp__d:hover{background:var(--sunken)}
+.dp__d:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.dp__d[aria-selected="true"]{background:var(--acid);color:var(--acid-ink);font-weight:700}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+<!-- ============================================================
+     FRAME 1 — LINKED MEMBERS LIST
+     ============================================================ -->
+<section class="frame" id="f1" data-title="Linked members" aria-label="Frame 1 — Linked members list">
+  <p class="cap"><span class="cap__note">Every row carries the four things the shipped row omits: age, date of birth,
+      your relationship to them, and where the identity check has got to. The two Nguyen records are
+      different people and now read as different people.</span>
+  </p>
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Profile</span>
+  </div>
+
+  <h1 class="title">Linked members</h1>
+
+  <p class="lede">Accounts you hold for someone under 18. <b>Nobody under 18 can join SportsHeist on
+    their own</b> — you link the account, you approve the identity check, and it stays your
+    responsibility until they turn 18.</p>
+
+  <div class="note note--wash">
+    <div class="note__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l7 3v6c0 4-3 6.6-7 8-4-1.4-7-4-7-8V6l7-3Z"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+      <h3>You are the registered guardian</h3>
+    </div>
+    <p>Until each member turns 18 you approve their identity check, their club registration and
+      anything they spend. They can read and post in Backchat under their display name; their age and
+      date of birth are never shown to other fans.</p>
+  </div>
+
+  <section class="section" aria-label="Linked members">
+    <div class="section__bar">
+      <span class="status-pill">4 linked · 2 need you</span>
+      <span class="spacer"></span>
+      <button class="icon-btn" type="button" aria-label="Search linked members">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+      </button>
+      <button class="icon-btn" type="button" aria-label="Add a linked member">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+
+    <ul class="board">
+      <!-- awaiting the check the guardian has to start -->
+      <li class="mrow mrow--act" style="--ring:rgba(255,255,255,.14)">
+        <div class="avatar mrow__avatar" style="background-image:var(--av-13)" role="img" aria-label="Thanh Nguyen, born 2010"></div>
+        <div class="mrow__id">
+          <div class="mrow__top">
+            <span class="mrow__name">Thanh Nguyen</span>
+            <svg class="mrow__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+          </div>
+          <p class="mrow__facts"><span>15 years old</span> · <span>born 2 Sep 2010</span> · <span>Son</span></p>
+          <div class="mrow__state">
+            <span class="pill">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+              ID check due
+            </span>
+            <span class="mrow__ref">SH·5120</span>
+          </div>
+          <p class="mrow__notice">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8.5v4M12 16v.1"/><circle cx="12" cy="12" r="8.5"/></svg>
+            Needs you: the account can read Backchat but can't post or register with a club until the
+            check is done.
+          </p>
+        </div>
+      </li>
+
+      <!-- same name, different person, failed check -->
+      <li class="mrow mrow--bad" style="--ring:rgba(226,86,74,.45)">
+        <div class="avatar mrow__avatar" style="background-image:var(--av-04)" role="img" aria-label="Thanh Nguyen, born 2009"></div>
+        <div class="mrow__id">
+          <div class="mrow__top">
+            <span class="mrow__name">Thanh Nguyen</span>
+            <svg class="mrow__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+          </div>
+          <p class="mrow__facts"><span>17 years old</span> · <span>born 18 Jan 2009</span> · <span>Ward</span></p>
+          <div class="mrow__state">
+            <span class="pill pill--bad">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+              ID check failed
+            </span>
+            <span class="mrow__ref">SH·5121</span>
+          </div>
+          <p class="mrow__notice mrow__notice--bad">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 3.4 19.4h17.2L12 4.6Z"/><path d="M12 10v3.6M12 16.6v.1"/></svg>
+            The document photo was unreadable. You can try once more with a different document.
+          </p>
+        </div>
+      </li>
+
+      <!-- verified, about to age out of the guardian link -->
+      <li class="mrow" style="--ring:rgba(155,226,34,.55)">
+        <div class="avatar mrow__avatar" style="background-image:var(--av-05)" role="img" aria-label="Milo Okafor"></div>
+        <div class="mrow__id">
+          <div class="mrow__top">
+            <span class="mrow__name">Milo Okafor</span>
+            <svg class="mrow__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+          </div>
+          <p class="mrow__facts"><span>17 years old</span> · <span>born 4 Aug 2008</span> · <span>Grandson</span></p>
+          <div class="mrow__state">
+            <span class="pill pill--ok">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>
+              ID verified
+            </span>
+            <span class="mrow__ref">SH·3308</span>
+          </div>
+          <p class="mrow__notice">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+            Turns 18 in 5 days, on 4 Aug. The account becomes his and your controls end that day.
+          </p>
+        </div>
+      </li>
+
+      <!-- verified, nothing outstanding -->
+      <li class="mrow" style="--ring:rgba(155,226,34,.55)">
+        <div class="avatar mrow__avatar" style="background-image:var(--av-07)" role="img" aria-label="Kai Whitfield"></div>
+        <div class="mrow__id">
+          <div class="mrow__top">
+            <span class="mrow__name">Kai Whitfield</span>
+            <svg class="mrow__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+          </div>
+          <p class="mrow__facts"><span>16 years old</span> · <span>born 14 Nov 2009</span> · <span>Son</span></p>
+          <div class="mrow__state">
+            <span class="pill pill--ok">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>
+              ID verified
+            </span>
+            <span class="mrow__ref">SH·4471</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="board__foot">Anything needing you is listed first. Ages and states as at 30 July 2026.</li>
+    </ul>
+  </section>
+
+  <p class="label">Add someone</p>
+  <button class="btn btn--ghost" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8.5v7M8.5 12h7"/></svg>
+    Add a linked member
+  </button>
+  <p class="btn-note btn-note--left">You'll need their date of birth and a passport, driving licence
+    or national ID card in their name. Takes about five minutes.</p>
+</section>
+
+
+<!-- ============================================================
+     FRAME 2 — DETAILS + AGE GATE
+     ============================================================ -->
+<section class="frame" id="f2" data-title="Their details" aria-label="Frame 2 — Add member details">
+  <p class="cap"><span class="cap__note">Pre-filled with 02/06/2002 — the date the shipped form accepted with
+      CONTINUE enabled. Here it is rejected, with the reason and the consequence stated. Correct it to
+      02/09/2010 to see the pass state.</span>
+  </p>
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to linked members">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Add a linked member</span>
+  </div>
+
+  <h1 class="title">Their details</h1>
+
+  <ol class="steps">
+    <li data-state="now"><span class="step__bar"></span><span class="step__name">Details</span></li>
+    <li data-state="next"><span class="step__bar"></span><span class="step__name">Consent</span></li>
+    <li data-state="next"><span class="step__bar"></span><span class="step__name">ID check</span></li>
+  </ol>
+
+  <p class="lede">Give their name exactly as it appears on the document you'll use for the identity
+    check. You're filling this in as their parent or legal guardian.</p>
+
+  <label class="field" for="lm-first">
+    <span class="field__label">First name</span>
+    <span class="field__box">
+      <input id="lm-first" type="text" value="Thanh" autocomplete="off" spellcheck="false">
+    </span>
+  </label>
+
+  <label class="field" for="lm-last">
+    <span class="field__label">Last name</span>
+    <span class="field__box">
+      <input id="lm-last" type="text" value="Nguyen" autocomplete="off" spellcheck="false">
+    </span>
+  </label>
+
+  <div class="field" id="lm-dobfield" data-invalid="1">
+    <span class="field__label" id="lm-doblabel">Date of birth</span>
+    <div class="field__box dob" role="group" aria-labelledby="lm-doblabel">
+      <input data-part="d" type="text" inputmode="numeric" maxlength="2" value="02" aria-label="Day" placeholder="DD">
+      <span class="dob__sep" aria-hidden="true">/</span>
+      <input data-part="m" type="text" inputmode="numeric" maxlength="2" value="06" aria-label="Month" placeholder="MM">
+      <span class="dob__sep" aria-hidden="true">/</span>
+      <input data-part="y" type="text" inputmode="numeric" maxlength="4" value="2002" aria-label="Year" placeholder="YYYY">
+      <svg class="dob__cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.5V6M16 3.5V6M3.5 10h17"/>
+      </svg>
+    </div>
+
+    <div class="gauge" id="lm-gauge" data-state="bad" aria-live="polite">
+      <div class="gauge__age"><b id="lm-age">24</b><span id="lm-ageunit">years</span></div>
+      <div class="gauge__msg">
+        <strong id="lm-msg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 3.4 19.4h17.2L12 4.6Z"/><path d="M12 10v3.6M12 16.6v.1"/></svg>
+          <span>18 or over — a linked account can't be used</span>
+        </strong>
+        <p id="lm-detail">Anyone 18 or over holds their own SportsHeist membership and their own vote.
+          If 2 June 2002 is a typing mistake, correct it. If it's right, ask them to sign up on their
+          own account instead.</p>
+      </div>
+    </div>
+
+    <p class="field__hint">Day, month, year. Must fall between <b>31 July 2008</b> and
+      <b>30 July 2021</b> — that's ages 5 to 17 today. You can't change this later without sending us
+      evidence, because it decides what the account is allowed to do.</p>
+  </div>
+
+  <div class="field">
+    <label class="field__label" for="lm-rel">Your relationship to them</label>
+    <span class="field__box">
+      <select id="lm-rel">
+        <option value="son" selected>Son</option>
+        <option value="daughter">Daughter</option>
+        <option value="child">Child (another way)</option>
+        <option value="grandchild">Grandchild</option>
+        <option value="sibling">Brother or sister</option>
+        <option value="ward">Ward — I'm their legal guardian</option>
+      </select>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 10 6 6 6-6"/></svg>
+    </span>
+    <p class="field__hint">Only a parent or legal guardian can link an account. We may ask you to
+      evidence this before the membership is issued.</p>
+  </div>
+
+  <div class="note">
+    <div class="note__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.5V6M16 3.5V6M3.5 10h17"/>
+      </svg>
+      <h3>Why the date of birth matters</h3>
+    </div>
+    <ul class="nlist">
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">Under 13 — reading only</span>
+          <span class="ni__d">They can follow their club and see Merits, but they can't post in
+            Backchat or send direct messages.</span>
+        </span>
+      </li>
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4-3 6.6-7 8-4-1.4-7-4-7-8V6l7-3Z"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">13 to 17 — you approve</span>
+          <span class="ni__d">They can post under their display name. Club registration, spending and
+            any change to the account come to you first.</span>
+        </span>
+      </li>
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h9M9.5 8.5 13 12l-3.5 3.5"/><path d="M14 4.5h4A2 2 0 0 1 20 6.5v11a2 2 0 0 1-2 2h-4"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">On their 18th birthday — it's theirs</span>
+          <span class="ni__d">The account transfers to them with its Merits intact, and your controls
+            end. We email you both a fortnight beforehand.</span>
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <button class="btn btn--go" type="button" id="lm-continue" disabled>Continue to consent</button>
+  <p class="btn-note" id="lm-blocked">Correct the date of birth to continue.</p>
+</section>
+
+
+<!-- ============================================================
+     FRAME 3 — CONSENT
+     ============================================================ -->
+<section class="frame" id="f3" data-title="Your consent" aria-label="Frame 3 — Consent">
+  <p class="cap"><span class="cap__note">There is no consent step in the shipped flow at all: no checkbox, no legal
+      link, no privacy or retention copy on any of the seventeen screens. This is the step that was
+      missing. Shown with the date of birth corrected to 2 September 2010.</span>
+  </p>
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to their details">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Add a linked member</span>
+  </div>
+
+  <h1 class="title">Your consent</h1>
+
+  <ol class="steps">
+    <li data-state="done"><span class="step__bar"></span><span class="step__name">Details</span></li>
+    <li data-state="now"><span class="step__bar"></span><span class="step__name">Consent</span></li>
+    <li data-state="next"><span class="step__bar"></span><span class="step__name">ID check</span></li>
+  </ol>
+
+  <p class="lede">You're linking <b data-bind="fullname">Thanh Nguyen</b>, aged
+    <b data-bind="age">15</b>, to your membership. You're consenting on their behalf, so read what
+    this involves before you agree.</p>
+
+  <div class="note">
+    <div class="note__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="14" rx="2.6"/><circle cx="8.6" cy="11" r="2.1"/><path d="M13.5 10h4M13.5 14h4M5.4 16.4c.9-1.5 5-1.5 5.9 0"/>
+      </svg>
+      <h3>What we collect</h3>
+    </div>
+    <ul class="nlist">
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">From you, now</span>
+          <span class="ni__d">Their first and last name, their date of birth, and your relationship to
+            them.</span>
+        </span>
+      </li>
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2h6.8L17 8h3v11H4V8Z"/><circle cx="12" cy="13" r="3.2"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">For the identity check</span>
+          <span class="ni__d">A photo of one identity document in their name, and a selfie of
+            <b data-bind="fname">Thanh</b> taken on this phone at the same time. Nothing is uploaded
+            from your camera roll.</span>
+        </span>
+      </li>
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">What we never ask for</span>
+          <span class="ni__d">Their school, their home address, or a payment card in their name.
+            Spending runs through your card only.</span>
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <div class="note__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l7 3v6c0 4-3 6.6-7 8-4-1.4-7-4-7-8V6l7-3Z"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+      <h3>Who checks it</h3>
+    </div>
+    <p><b>GBG</b> is the identity-verification provider SportsHeist uses. The check runs on GBG's own
+      secure page at <b>identify.idscan.cloud</b>, which opens inside this app. GBG sees the document
+      and the selfie and returns a pass or a fail. It does not see the rest of your SportsHeist
+      account, your password or your payment details.</p>
+  </div>
+
+  <div class="note">
+    <div class="note__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>
+      </svg>
+      <h3>How long it's kept</h3>
+    </div>
+    <ul class="nlist">
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">The document photo and the selfie — 30 days</span>
+          <span class="ni__d">Held by GBG, then deleted. SportsHeist never receives the
+            images.</span>
+        </span>
+      </li>
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3.5h11v17l-5.5-3-5.5 3v-17Z"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">The result — 7 years</span>
+          <span class="ni__d">Pass or fail, the date, and the type of document. We have to be able to
+            show that every member was age-checked before a membership was issued.</span>
+        </span>
+      </li>
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">Name, date of birth and relationship — while the account is linked</span>
+          <span class="ni__d">Deleted 90 days after you remove the account, or 90 days after
+            <b data-bind="fname">Thanh</b> turns 18 and takes it over.</span>
+        </span>
+      </li>
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M6.7 6.9C4.6 8.2 3 10 2 12c1.7 3.3 5.3 6 10 6 1.5 0 3-.3 4.3-.8M9.9 5.2A9.7 9.7 0 0 1 12 5c4.7 0 8.3 2.7 10 7-.6 1.2-1.4 2.3-2.3 3.2"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">Never shown to other fans</span>
+          <span class="ni__d">Their age, date of birth and your relationship stay between you, them
+            and us. Backchat and Merits show a display name only.</span>
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <div class="note__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 3.5h7l4 4v13H7z"/><path d="M13.5 3.5V8H18"/><path d="M9.5 12.5h5M9.5 16h5"/>
+      </svg>
+      <h3>Read before you agree</h3>
+    </div>
+    <ul class="nlist">
+      <li><a class="link-row" href="#">
+        <span>Membership Terms
+          <small>Section 4 covers linked members and the transfer at 18</small></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </a></li>
+      <li><a class="link-row" href="#">
+        <span>Privacy Policy
+          <small>What we hold, why, and how to ask for it back or erased</small></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </a></li>
+      <li><a class="link-row" href="#">
+        <span>Children's data and age checks
+          <small>GBG's role, the 30-day deletion, and how to complain</small></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </a></li>
+    </ul>
+  </div>
+
+  <label class="check" id="lm-consentrow">
+    <input class="check__input" type="checkbox" id="lm-consent">
+    <span class="check__box" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+    </span>
+    <span class="check__text">I'm <b data-bind="fname">Thanh</b>'s parent or legal guardian. I've
+      explained this check to them, and I consent to SportsHeist and GBG collecting and verifying
+      their identity documents as described above.</span>
+  </label>
+
+  <p class="consent-log">Your name, today's date and the wording of this consent are recorded against
+    the account. You can withdraw it at any time from the member's row in Linked members — that closes
+    the account.</p>
+
+  <button class="btn btn--go" type="button" id="lm-agree" disabled>Agree and continue</button>
+  <button class="btn btn--ghost" type="button">Cancel — don't create this account</button>
+</section>
+
+
+<!-- ============================================================
+     FRAME 4 — IDENTITY CHECK HAND-OFF
+     ============================================================ -->
+<section class="frame" id="f4" data-title="Identity check" aria-label="Frame 4 — Identity check hand-off">
+  <p class="cap"><span class="cap__note">The third party is named, hosted and pictured before the jump, the camera
+      prompt is pre-explained so <em>identify.idscan.cloud</em> isn't a surprise, the accepted
+      documents and file limits are stated app-side, and the way back is spelled out. There is also a
+      way to decline.</span>
+  </p>
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to consent">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Add a linked member</span>
+  </div>
+
+  <h1 class="title">Identity check</h1>
+
+  <ol class="steps">
+    <li data-state="done"><span class="step__bar"></span><span class="step__name">Details</span></li>
+    <li data-state="done"><span class="step__bar"></span><span class="step__name">Consent</span></li>
+    <li data-state="now"><span class="step__bar"></span><span class="step__name">ID check</span></li>
+  </ol>
+
+  <p class="lede">SportsHeist has a one-fan, one-membership rule, so every member's identity is checked
+    before a membership is issued. <b>This next part is run by another company</b>, and you'll finish
+    it in about two minutes.</p>
+
+  <div class="handoff">
+    <div class="party">
+      <span class="party__name">SportsHeist</span>
+      <span class="party__host">This app · you are here</span>
+    </div>
+    <div class="handoff__arrow" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13.5 6.5 20 12l-6.5 5.5"/></svg>
+    </div>
+    <div class="party party--ext">
+      <span class="party__name">GBG</span>
+      <span class="party__host">identify.idscan.cloud</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <div class="note__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l7 3v6c0 4-3 6.6-7 8-4-1.4-7-4-7-8V6l7-3Z"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+      <h3>GBG runs the check, not us</h3>
+    </div>
+    <p>GBG is our identity-verification provider. Its page opens inside SportsHeist and carries both
+      names. GBG receives the document photo and the selfie; we receive only the result. If you'd
+      rather not use GBG, don't continue — <b data-bind="fname">Thanh</b>'s account stays as a
+      reading-only linked account and you can still follow a club.</p>
+  </div>
+
+  <div class="note">
+    <div class="note__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 8h3l1.6-2h6.8L17 8h3v11H4V8Z"/><circle cx="12" cy="13" r="3.2"/>
+      </svg>
+      <h3>Three steps, then straight back</h3>
+    </div>
+    <ol class="plan">
+      <li>
+        <span class="ni__body">
+          <span class="ni__t">Photograph the document</span>
+          <span class="ni__d">Passport, driving licence or national ID card, in
+            <b data-bind="fname">Thanh</b>'s name. JPG, PNG or PDF, up to 7.5 MB.</span>
+        </span>
+      </li>
+      <li>
+        <span class="ni__body">
+          <span class="ni__t">Take <b data-bind="fname">Thanh</b>'s selfie</span>
+          <span class="ni__d">On this phone, straight after the document, with them present. GBG
+            compares the two.</span>
+        </span>
+      </li>
+      <li data-state="return">
+        <span class="ni__body">
+          <span class="ni__t">You land back here</span>
+          <span class="ni__d">GBG returns you to SportsHeist and we show the result on this screen.
+            Most come back in under a minute; if a person has to review it, we email you within one
+            working day.</span>
+        </span>
+      </li>
+    </ol>
+  </div>
+
+  <div class="note">
+    <div class="note__head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5"/><path d="M12 8.5v4M12 16v.1"/>
+      </svg>
+      <h3>What to expect on GBG's page</h3>
+    </div>
+    <ul class="nlist">
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2h6.8L17 8h3v11H4V8Z"/><circle cx="12" cy="13" r="3.2"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">A camera prompt naming identify.idscan.cloud</span>
+          <span class="ni__d">That address <b>is</b> GBG — it's the right prompt to allow. Without the
+            camera the check can't run.</span>
+        </span>
+      </li>
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v9M8.5 9.5 12 13l3.5-3.5"/><path d="M5 15v3.5h14V15"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">Stopping part-way loses nothing</span>
+          <span class="ni__d">Close the page and the check stays open. Pick it up from
+            <b data-bind="fname">Thanh</b>'s row in Linked members whenever you're ready.</span>
+        </span>
+      </li>
+      <li>
+        <span class="ni__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </span>
+        <span class="ni__body">
+          <span class="ni__t">If it doesn't pass</span>
+          <span class="ni__d">We tell you why on this screen and you can try once more with a
+            different document. No membership fee is taken until a check passes.</span>
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <button class="btn btn--go" type="button">
+    Continue to GBG
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+  </button>
+  <button class="btn btn--ghost" type="button">Not now — save and go back</button>
+  <p class="btn-note">You stay inside the SportsHeist app. GBG never sees your password or your
+    payment details.</p>
+</section>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* Fixed reference date so the derived ages in this mock stay stable.
+     The list in frame 1 states the same date on its footer row. */
+  var TODAY = new Date(2026, 6, 30);
+  var MIN_AGE = 5, MAX_AGE = 17;          /* linked accounts are for ages 5–17 */
+  var MONTHS = ['January','February','March','April','May','June','July',
+                'August','September','October','November','December'];
+
+  var field    = document.getElementById('lm-dobfield');
+  var gauge    = document.getElementById('lm-gauge');
+  var ageEl    = document.getElementById('lm-age');
+  var unitEl   = document.getElementById('lm-ageunit');
+  var msgEl    = document.getElementById('lm-msg').querySelector('span');
+  var iconEl   = document.getElementById('lm-msg').querySelector('svg');
+  var detailEl = document.getElementById('lm-detail');
+  var contBtn  = document.getElementById('lm-continue');
+  var blocked  = document.getElementById('lm-blocked');
+  var first    = document.getElementById('lm-first');
+  var last     = document.getElementById('lm-last');
+  var rel      = document.getElementById('lm-rel');
+  var parts    = [].slice.call(field.querySelectorAll('input'));
+
+  var WARN = '<path d="M12 4.6 3.4 19.4h17.2L12 4.6Z"/><path d="M12 10v3.6M12 16.6v.1"/>';
+  var TICK = '<path d="m5 13 4 4L19 7"/>';
+  var DOTS = '<circle cx="12" cy="12" r="8.5"/><path d="M12 8.5v4M12 16v.1"/>';
+
+  function fmt(d){ return d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
+
+  function ageOn(dob, on){
+    var a = on.getFullYear() - dob.getFullYear();
+    var m = on.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && on.getDate() < dob.getDate())) a--;
+    return a;
+  }
+
+  function read(){
+    var v = {};
+    parts.forEach(function(i){ v[i.getAttribute('data-part')] = i.value.trim(); });
+    if (!v.d || !v.m || !v.y || v.y.length < 4) return {state:'idle'};
+    var d = +v.d, m = +v.m, y = +v.y;
+    if (!(d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1900)) return {state:'invalid'};
+    var dt = new Date(y, m - 1, d);
+    if (dt.getDate() !== d || dt.getMonth() !== m - 1 || dt.getFullYear() !== y) return {state:'invalid'};
+    if (dt > TODAY) return {state:'future', dob:dt};
+    var age = ageOn(dt, TODAY);
+    if (age > MAX_AGE) return {state:'adult', dob:dt, age:age};
+    if (age < MIN_AGE) return {state:'young', dob:dt, age:age};
+    return {state:'ok', dob:dt, age:age};
+  }
+
+  function paint(){
+    var r = read(), ok = r.state === 'ok';
+
+    if (r.state === 'idle'){
+      gauge.setAttribute('data-state','idle');
+      ageEl.textContent = '—'; unitEl.textContent = 'years';
+      iconEl.innerHTML = DOTS;
+      msgEl.textContent = 'Enter all three parts of the date';
+      detailEl.textContent = 'We work the age out for you and tell you straight away whether a linked '
+        + 'account is the right kind of account.';
+    } else if (r.state === 'invalid'){
+      gauge.setAttribute('data-state','bad');
+      ageEl.textContent = '—'; unitEl.textContent = 'years';
+      iconEl.innerHTML = WARN;
+      msgEl.textContent = "That isn't a real date";
+      detailEl.textContent = 'Check the day and month. 31 February and 00/00 can’t be a birthday.';
+    } else if (r.state === 'future'){
+      gauge.setAttribute('data-state','bad');
+      ageEl.textContent = '—'; unitEl.textContent = 'years';
+      iconEl.innerHTML = WARN;
+      msgEl.textContent = "That date hasn't happened yet";
+      detailEl.textContent = fmt(r.dob) + ' is in the future. Enter the date they were born.';
+    } else if (r.state === 'adult'){
+      gauge.setAttribute('data-state','bad');
+      ageEl.textContent = r.age; unitEl.textContent = 'years';
+      iconEl.innerHTML = WARN;
+      msgEl.textContent = '18 or over — a linked account can’t be used';
+      detailEl.innerHTML = 'Anyone 18 or over holds their own SportsHeist membership and their own '
+        + 'vote. If <b>' + fmt(r.dob) + '</b> is a typing mistake, correct it. If it’s right, ask '
+        + 'them to sign up on their own account instead.';
+    } else if (r.state === 'young'){
+      gauge.setAttribute('data-state','bad');
+      ageEl.textContent = r.age; unitEl.textContent = r.age === 1 ? 'year' : 'years';
+      iconEl.innerHTML = WARN;
+      msgEl.textContent = 'Too young for a linked account';
+      detailEl.textContent = 'Linked accounts start at age ' + MIN_AGE + '. Come back to this on their '
+        + MIN_AGE + 'th birthday.';
+    } else {
+      var at18 = new Date(r.dob.getFullYear() + 18, r.dob.getMonth(), r.dob.getDate());
+      gauge.setAttribute('data-state','ok');
+      ageEl.textContent = r.age; unitEl.textContent = 'years';
+      iconEl.innerHTML = TICK;
+      msgEl.textContent = 'Under 18 — a linked account is right';
+      detailEl.innerHTML = 'Born <b>' + fmt(r.dob) + '</b>. '
+        + (r.age < 13
+            ? 'Under 13, so the account can read Backchat but not post in it. '
+            : 'Aged 13 or over, so they can post under a display name with you approving the rest. ')
+        + 'Your controls end on their 18th birthday, <b>' + fmt(at18) + '</b>.';
+    }
+
+    field.setAttribute('data-invalid', ok ? '0' : '1');
+
+    var ready = ok && first.value.trim() && last.value.trim() && rel.value;
+    contBtn.disabled = !ready;
+    blocked.textContent = ok
+      ? (ready ? 'Next: what we collect, who checks it and how long we keep it.'
+               : 'Fill in their name to continue.')
+      : (r.state === 'idle' ? 'Enter their date of birth to continue.'
+                            : 'Correct the date of birth to continue.');
+
+    /* keep the later frames reading as one flow */
+    if (ok){
+      var fn = first.value.trim() || 'They';
+      document.querySelectorAll('[data-bind="age"]').forEach(function(n){ n.textContent = r.age; });
+      document.querySelectorAll('[data-bind="fname"]').forEach(function(n){ n.textContent = fn; });
+      document.querySelectorAll('[data-bind="fullname"]').forEach(function(n){
+        n.textContent = (fn + ' ' + last.value.trim()).trim();
+      });
+    }
+  }
+
+  parts.forEach(function(i){
+    i.addEventListener('input', function(){
+      i.value = i.value.replace(/[^0-9]/g,'');
+      var max = i.getAttribute('maxlength');
+      if (i.value.length >= max){
+        var next = parts[parts.indexOf(i) + 1];
+        if (next && !next.value) next.focus();
+      }
+      paint();
+    });
+    i.addEventListener('blur', function(){
+      var p = i.getAttribute('data-part');
+      if ((p === 'd' || p === 'm') && i.value.length === 1) i.value = '0' + i.value;
+      paint();
+    });
+  });
+  [first, last, rel].forEach(function(el){
+    el.addEventListener('input', paint);
+    el.addEventListener('change', paint);
+  });
+  paint();
+
+  /* consent gate */
+  var box   = document.getElementById('lm-consent');
+  var crow  = document.getElementById('lm-consentrow');
+  var agree = document.getElementById('lm-agree');
+  box.addEventListener('change', function(){
+    crow.setAttribute('data-checked', box.checked ? '1' : '0');
+    agree.disabled = !box.checked;
+  });
+
+  /* ---------- the select: branded menu over a hidden native holder ----------
+     The OS option popup is the one piece of system chrome a <select> can't
+     restyle, so the select stays in the DOM as the state holder — the age
+     gate reads #lm-rel as before — and a button + listbox popover does the
+     showing. Same rules as the library date picker: Escape closes,
+     away-click closes, arrows move, choosing fires input + change. */
+  [].slice.call(document.querySelectorAll('.field__box > select')).forEach(function(sel){
+    if (sel.disabled) return;
+    var boxEl = sel.closest('.field__box');
+    if (!boxEl) return;
+    sel.classList.add('select--bh');
+    sel.tabIndex = -1;
+    sel.setAttribute('aria-hidden','true');
+
+    var TICK = '<svg class="dd__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>';
+    var lbl = sel.id ? document.querySelector('label[for="' + sel.id + '"]') : null;
+    if (lbl && !lbl.id) lbl.id = sel.id + '-lbl';
+
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'select-face';
+    if (sel.id) btn.id = sel.id + '-face';
+    btn.setAttribute('aria-haspopup','listbox');
+    btn.setAttribute('aria-expanded','false');
+    if (lbl && btn.id) btn.setAttribute('aria-labelledby', lbl.id + ' ' + btn.id);
+    btn.appendChild(document.createElement('span'));
+    var face = btn.firstChild;
+    sel.parentNode.insertBefore(btn, sel.nextSibling);
+
+    var dd = document.createElement('div');
+    dd.className = 'dd'; dd.hidden = true;
+    dd.setAttribute('role','listbox');
+    if (lbl) dd.setAttribute('aria-labelledby', lbl.id);
+    boxEl.appendChild(dd);
+
+    function paintFace(){
+      var o = sel.options[sel.selectedIndex];
+      face.textContent = o ? o.textContent : '';
+    }
+    function build(){
+      dd.innerHTML = '';
+      [].slice.call(sel.options).forEach(function(o, i){
+        if (o.value === '' && o.hasAttribute('value')) return;
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'dd__opt';
+        b.setAttribute('role','option');
+        b.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
+        if (o.disabled) b.disabled = true;
+        var t = document.createElement('span'); t.className = 'dd__t';
+        t.textContent = o.textContent;
+        b.appendChild(t); b.insertAdjacentHTML('beforeend', TICK);
+        b.addEventListener('click', function(){
+          sel.selectedIndex = i;
+          paintFace();
+          sel.dispatchEvent(new Event('input',  {bubbles:true}));
+          sel.dispatchEvent(new Event('change', {bubbles:true}));
+          shut(); btn.focus();
+        });
+        dd.appendChild(b);
+      });
+    }
+    function opts(){ return [].slice.call(dd.querySelectorAll('.dd__opt:not([disabled])')); }
+    function show(){
+      build(); dd.hidden = false; boxEl.classList.add('is-open');
+      btn.setAttribute('aria-expanded','true');
+      var cur = dd.querySelector('[aria-selected="true"]:not([disabled])') || opts()[0];
+      if (cur){ cur.focus(); cur.scrollIntoView({block:'nearest'}); }
+      document.addEventListener('mousedown', away, true);
+      document.addEventListener('keydown', keys, true);
+    }
+    function shut(){
+      dd.hidden = true; boxEl.classList.remove('is-open');
+      btn.setAttribute('aria-expanded','false');
+      document.removeEventListener('mousedown', away, true);
+      document.removeEventListener('keydown', keys, true);
+    }
+    function away(e){ if (!boxEl.contains(e.target)) shut(); }
+    function keys(e){
+      if (e.key === 'Escape'){ shut(); btn.focus(); return; }
+      if (e.key === 'Tab'){ shut(); return; }
+      var os = opts(), i = os.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+        e.preventDefault();
+        var n = e.key === 'ArrowDown' ? Math.min(i + 1, os.length - 1) : Math.max(i - 1, 0);
+        if (os[n]){ os[n].focus(); os[n].scrollIntoView({block:'nearest'}); }
+      } else if (e.key === 'Home' && os[0]){
+        e.preventDefault(); os[0].focus();
+      } else if (e.key === 'End' && os.length){
+        e.preventDefault(); os[os.length - 1].focus();
+      }
+    }
+    btn.addEventListener('click', function(){ dd.hidden ? show() : shut(); });
+    btn.addEventListener('keydown', function(e){
+      if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && dd.hidden){ e.preventDefault(); show(); }
+    });
+    sel.addEventListener('focus', function(){ btn.focus(); });
+    sel.addEventListener('input',  paintFace);
+    sel.addEventListener('change', paintFace);
+    paintFace();
+  });
+})();
+
+/* ---- date picker (canonical — _assets/date-picker.md) ----
+   Two field shapes exist in this library: a three-input .dob group, and a single
+   button showing a formatted value. Both had a calendar glyph that did nothing. */
+function initDatePickers(root){
+  var MON=['January','February','March','April','May','June','July',
+           'August','September','October','November','December'];
+  var TRIG='.dob__cal, .f__box[aria-label^="Date"]';   /* .f__box is a GENERIC field box — Gender, Country and Province use it too.
+       Matching it bare attached a calendar to every field on the screen. */
+  root.querySelectorAll(TRIG).forEach(function(btn){
+    if(btn.__dp) return; btn.__dp=true;
+    if(btn.tagName!=='BUTTON'){                       // upgrade a decorative svg
+      var b=document.createElement('button');
+      b.type='button'; b.className='dob__cal';
+      b.setAttribute('aria-label','Choose a date');
+      b.setAttribute('aria-haspopup','dialog'); b.setAttribute('aria-expanded','false');
+      b.innerHTML=btn.outerHTML; btn.replaceWith(b); btn=b; btn.__dp=true;
+    }
+    var field=btn.closest('.dob')||btn.parentElement;
+    field.style.position='relative';
+    var D=field.querySelector('[data-part="d"]'),
+        M=field.querySelector('[data-part="m"]'),
+        Y=field.querySelector('[data-part="y"]'),
+        VAL=btn.querySelector('.f__val');
+    var pop=document.createElement('div');
+    pop.className='dp'; pop.hidden=true; pop.setAttribute('role','dialog');
+    pop.setAttribute('aria-label','Choose a date');
+    pop.innerHTML='<div class="dp__bar">'+
+      '<button class="dp__nav" type="button" data-go="-1" aria-label="Previous month">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>'+
+      '<div class="dp__mon" aria-live="polite"></div>'+
+      '<button class="dp__nav" type="button" data-go="1" aria-label="Next month">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>'+
+      '</div><div class="dp__dow"><span>M</span><span>T</span><span>W</span><span>T</span>'+
+      '<span>F</span><span>S</span><span>S</span></div><div class="dp__grid"></div>';
+    field.appendChild(pop);
+    var grid=pop.querySelector('.dp__grid'), label=pop.querySelector('.dp__mon');
+    function seed(){
+      if(D){var d=+D.value,m=+M.value,y=+Y.value;
+            if(d>0&&m>0&&y>1000) return new Date(y,m-1,d);}
+      if(VAL){var p=(VAL.textContent||'').split('/');
+              if(p.length===3) return new Date(+p[2],+p[1]-1,+p[0]);}
+      return new Date(2010,8,2);
+    }
+    var view=seed(), sel=seed();
+    function draw(){
+      label.textContent=MON[view.getMonth()]+' '+view.getFullYear();
+      grid.innerHTML='';
+      var lead=(new Date(view.getFullYear(),view.getMonth(),1).getDay()+6)%7;
+      var days=new Date(view.getFullYear(),view.getMonth()+1,0).getDate();
+      for(var i=0;i<lead;i++) grid.appendChild(document.createElement('span'));
+      for(var n=1;n<=days;n++){(function(n){
+        var b=document.createElement('button');
+        b.type='button'; b.className='dp__d'; b.textContent=n;
+        if(sel&&sel.getDate()===n&&sel.getMonth()===view.getMonth()&&
+           sel.getFullYear()===view.getFullYear()) b.setAttribute('aria-selected','true');
+        b.addEventListener('click',function(){
+          sel=new Date(view.getFullYear(),view.getMonth(),n);
+          var dd=String(n).padStart(2,'0'), mm=String(view.getMonth()+1).padStart(2,'0'),
+              yy=String(view.getFullYear());
+          if(D){D.value=dd;M.value=mm;Y.value=yy;
+                [D,M,Y].forEach(function(i){i.dispatchEvent(new Event('input',{bubbles:true}))});}
+          if(VAL){VAL.textContent=dd+'/'+mm+'/'+yy;
+                  btn.setAttribute('aria-label','Date of birth, '+dd+'/'+mm+'/'+yy);}
+          close(); btn.focus();
+        });
+        grid.appendChild(b);})(n);}
+    }
+    function open(){view=seed();sel=seed();draw();pop.hidden=false;
+      btn.setAttribute('aria-expanded','true');
+      document.addEventListener('mousedown',away,true);
+      document.addEventListener('keydown',esc,true);}
+    function close(){pop.hidden=true;btn.setAttribute('aria-expanded','false');
+      document.removeEventListener('mousedown',away,true);
+      document.removeEventListener('keydown',esc,true);}
+    function away(e){if(!field.contains(e.target))close()}
+    function esc(e){if(e.key==='Escape'){close();btn.focus()}}
+    btn.addEventListener('click',function(e){e.preventDefault();pop.hidden?open():close()});
+    pop.addEventListener('click',function(e){
+      var nav=e.target.closest('[data-go]'); if(!nav) return;
+      view=new Date(view.getFullYear(),view.getMonth()+ +nav.dataset.go,1); draw();
+    });
+  });
+}
+initDatePickers(document);
+
+</script>
+</body>
+</html>

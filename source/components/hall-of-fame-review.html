@@ -1,0 +1,2043 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Hall of Fame · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; /* bordered section container */ --surface: #1C2129; /* cards, controls */ --sunken: #13171E; /* inner panels, dark pills */ --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); --acid-line: rgba(155,226,34,.30); /* derived: selected-row rim, sheets.html */ /* semantic red — the only other colour in the contract */ --red: #E2564A; --red-wash: rgba(226,86,74,.12); /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; /* sheet shell — sheets.html, unchanged */ --r-sheet: 18px; --sheet-max: 560px; --sheet-vh: 88vh; --grab-w: 40px; --grab-h: 4px; --h-field: 52px; /* control height, forms.html */ --h-row: 48px; /* dialog shell — dialogs.html, unchanged */ --dlg-max: 344px; --dlg-inset: 20px; --dlg-pad: 20px; /* skeleton — states.html, unchanged */ --bone: rgba(255,255,255,.055); --sheen: rgba(255,255,255,.06); /* club crest plate — club-selection.html, unchanged */ --plate: rgba(255,255,255,.94); --plate-edge: rgba(0,0,0,.13); --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* photography — eight portraits from _assets/avatars.css. The live default avatar is watermarked marketing key-art; see the notes. */ --av-01:url(data:image/jpeg;base64,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); --av-02:url(data:image/jpeg;base64,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); --av-03:url(data:image/jpeg;base64,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); --av-04:url(data:image/jpeg;base64,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); --av-05:url(data:image/jpeg;base64,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); --av-07:url(data:image/jpeg;base64,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); --av-09:url(data:image/jpeg;base64,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); --av-11:url(data:image/jpeg;base64,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);}
+@keyframes shim{to{transform:translateX(100%)}}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+.mk .frame__pad{height:72px}
+.mk .bar{display:flex;align-items:center;gap:11px;margin:34px var(--gutter) 14px}
+.mk .bar__eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);}
+.mk .bar .spacer{flex:1}
+.mk .title{margin:0 var(--gutter) 10px; font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1; text-transform:uppercase;}
+.mk .lede{margin:0 var(--gutter) 16px;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .lede b{color:var(--text);font-weight:600}
+.mk .label{margin:22px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .head{display:flex;align-items:center;gap:8px;margin:22px var(--gutter) 10px}
+.mk .head h2{flex:1;margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .cap{display:flex;gap:9px;margin:14px var(--gutter) 0;font-size:11.5px;line-height:1.45;color:var(--dim)}
+.mk .cap svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:var(--dim)}
+.mk .cap b{color:var(--text);font-weight:600}
+.mk code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted)}
+.mk .icon-btn{position:relative; display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease);}
+.mk .icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn svg{width:18px;height:18px}
+.mk .icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .pill-btn{display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 18px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:13px;font-weight:600;cursor:pointer; transition:background .18s var(--ease);}
+.mk .pill-btn:hover{background:#222833}
+.mk .pill-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .pill-btn--acid:hover{background:#A8EC33}
+.mk .pill-btn--sm{height:34px;padding:0 13px;font-size:12.5px}
+.mk .pill-btn svg{width:15px;height:15px;flex:0 0 auto}
+.mk .pill-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .btn{flex:1 1 0;min-width:0; display:inline-flex;align-items:center;justify-content:center;gap:8px; height:46px;padding:0 14px;border:0;border-radius:var(--r-pill); font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em; cursor:pointer;white-space:nowrap;transition:background .18s var(--ease);}
+.mk .btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .btn--acid:hover{background:#A8EC33}
+.mk .btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .btn--ghost:hover{background:#181D25}
+.mk .btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .status-pill{display:inline-flex;align-items:center;gap:7px; height:32px;padding:0 14px;border-radius:var(--r-pill); background:var(--acid-wash); font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--acid);white-space:nowrap;}
+.mk .status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mk .tag{display:inline-flex;align-items:center;height:26px;padding:0 10px; border-radius:var(--r-pill);background:var(--sunken); font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase; color:var(--muted);white-space:nowrap;}
+.mk .eyebrow{margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .avatar{border-radius:50%;flex:0 0 auto; background-color:#20262F;background-size:cover;background-position:center 22%;}
+.mk .section{margin:0 var(--gutter);padding:12px; border:1px solid var(--line);border-radius:var(--r-card); background:var(--section);}
+.mk .section + .section{margin-top:10px}
+.mk .section__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.mk .section__bar .spacer{flex:1}
+.mk .section__body{margin:0;font-size:13px;color:var(--muted)}
+.mk .section__body b{color:var(--text);font-weight:600}
+.mk .plate{--plate-size:40px; display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto; width:var(--plate-size);height:var(--plate-size); padding:calc(var(--plate-size) * .125); border-radius:calc(var(--plate-size) * .28); background:var(--plate); box-shadow:inset 0 0 0 1px var(--plate-edge); overflow:hidden; font-size:calc(var(--plate-size) * .30); font-weight:800;letter-spacing:-.03em;line-height:1; color:var(--acid-ink);text-transform:uppercase; -webkit-user-select:none;user-select:none;}
+.mk .plate--sm{--plate-size:28px}
+.mk .hof{display:flex;flex-direction:column;gap:12px;margin:0 var(--gutter)}
+.mk .hof__f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.mk .hof__row{display:flex;gap:10px}
+.mk .hof__f--half{flex:0 0 auto;width:calc(50% - 5px)}
+.mk .hof__f--rest{flex:1;min-width:0;justify-content:flex-end}
+.mk .hof__l{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);}
+.mk .hof__hint{margin:0;font-size:11.5px;line-height:1.35;color:var(--dim);padding-bottom:16px}
+.mk .anchored{position:relative}
+.mk .sel{display:flex;align-items:center;gap:10px;width:100%;height:var(--h-field);padding:0 14px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--surface);color:var(--text); font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer; transition:border-color .16s var(--ease);}
+.mk .sel:hover{border-color:rgba(255,255,255,.14)}
+.mk .sel[aria-expanded="true"]{border-color:var(--acid)}
+.mk .sel__v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk .sel svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted);transition:transform .18s var(--ease)}
+.mk .sel[aria-expanded="true"] svg{transform:rotate(180deg);color:var(--acid)}
+.mk .sel:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .menu{position:absolute;left:0;top:calc(100% + 6px);z-index:6; min-width:100%;max-height:200px;overflow-y:auto;padding:6px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.55); scrollbar-width:none;}
+.mk .menu::-webkit-scrollbar{width:0;height:0}
+.mk .menu__i{display:flex;align-items:center;gap:9px;width:100%;height:42px;padding:0 10px; border:0;border-radius:9px;background:transparent;color:var(--text); font:inherit;font-size:13.5px;font-weight:500;text-align:left;cursor:pointer; font-variant-numeric:tabular-nums;transition:background .14s var(--ease);}
+.mk .menu__i:hover{background:rgba(255,255,255,.06)}
+.mk .menu__i[aria-selected="true"]{background:var(--acid-wash);color:var(--acid);font-weight:600}
+.mk .menu__i svg{width:16px;height:16px;margin-left:auto;opacity:0;color:var(--acid)}
+.mk .menu__i[aria-selected="true"] svg{opacity:1}
+.mk .menu__i:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.mk .hof.is-open .hof__inert{opacity:.35;pointer-events:none;transition:opacity .18s var(--ease)}
+.mk .podium{display:grid;grid-template-columns:1fr 1.14fr 1fr;align-items:end;gap:8px; padding:18px 10px 16px;overflow:hidden; border-radius:var(--r-panel);background:var(--surface);}
+.mk .plinth{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
+.mk .plinth__badge{position:relative;margin-bottom:8px}
+.mk .plinth__avatar{width:52px;height:52px; box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--ring,rgba(255,255,255,.20));}
+.mk .plinth--first .plinth__avatar{width:64px;height:64px}
+.mk .plinth__open{display:block;width:52px;height:52px}
+.mk .plinth__rank{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%); min-width:21px;height:21px;padding:0 6px;border-radius:var(--r-pill); display:flex;align-items:center;justify-content:center; font-size:11px;font-weight:800;font-variant-numeric:tabular-nums; background:var(--rchip,#2A303A);color:var(--rchip-ink,#FFF); box-shadow:0 0 0 2px var(--surface);}
+.mk .plinth__name{margin:5px 0 2px;max-width:100%;font-size:12.5px;font-weight:600;line-height:1.2; white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mk .plinth__score{font-size:12.5px;font-weight:700;color:var(--acid);font-variant-numeric:tabular-nums}
+.mk .plinth--open .plinth__name{color:var(--dim);font-weight:500}
+.mk .plinth--open .plinth__score{color:var(--dim);font-weight:600}
+.mk .pmeta{display:flex;align-items:center;gap:11px;margin-top:10px;padding:11px 12px; border-radius:var(--r-panel);background:var(--sunken);}
+.mk .pmeta__id{flex:1;min-width:0}
+.mk .pmeta__id b{display:block;font-size:12.5px;font-weight:600;letter-spacing:-.005em}
+.mk .pmeta__id span{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+.mk .pmeta__t{flex:0 0 auto;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .board{list-style:none;margin:0;padding:0;border-radius:var(--r-panel);background:var(--surface);overflow:hidden}
+.mk .row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.mk .row:first-child{border-top:0}
+.mk .row--you{background:var(--acid-wash);box-shadow:inset 3px 0 0 var(--acid)}
+.mk .row__n{flex:0 0 20px;text-align:center;font-size:12px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums}
+.mk .row--you .row__n{color:var(--acid)}
+.mk .row__avatar{width:34px;height:34px}
+.mk .row__id{flex:1;min-width:0}
+.mk .row__name{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk .row__sub{display:block;margin-top:2px;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk .row__v{flex:0 0 auto;text-align:right;font-size:13.5px;font-weight:700;color:var(--acid); font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.mk .row__v small{display:block;margin-top:1px;font-size:9.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim)}
+.mk .row__ic{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto; width:34px;height:34px;border-radius:var(--r-panel); background:var(--acid-wash);color:var(--acid);}
+.mk .row__ic svg{width:17px;height:17px}
+.mk .more{display:flex;justify-content:center;margin:12px 0 0}
+.mk .note{display:flex;align-items:flex-start;gap:11px; margin:10px var(--gutter) 0;padding:13px 14px; border-radius:var(--r-card);background:var(--surface);}
+.mk .note svg{width:19px;height:19px;color:var(--acid);flex:0 0 auto;margin-top:1px}
+.mk .note p{margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .note p b{color:var(--text);font-weight:600}
+.mk .taxrow{display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 14px}
+.mk .tax{flex:1;display:flex;gap:4px;height:46px;padding:4px; border-radius:var(--r-pill);background:var(--sunken);}
+.mk .tax__half{flex:1 1 0;min-width:0; display:flex;align-items:center;justify-content:center; height:38px;border-radius:var(--r-pill);background:transparent; transition:background .18s var(--ease);}
+.mk .tax__half[data-on="true"]{background:var(--acid)}
+.mk .tax__btn{flex:1 1 auto;min-width:0;height:38px;padding:0 6px; border:0;border-radius:var(--r-pill);background:transparent;color:var(--muted); font:inherit;font-size:13.5px;font-weight:600;letter-spacing:-.005em; white-space:nowrap;cursor:pointer;transition:color .18s var(--ease);}
+.mk .tax__btn:hover{color:var(--text)}
+.mk .tax__half[data-on="true"] .tax__btn{color:var(--acid-ink);font-weight:700}
+.mk .tax__btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .empty{margin:0 var(--gutter);padding:24px 20px 22px; border:1px solid var(--line);border-radius:var(--r-card);background:var(--section); display:flex;flex-direction:column;align-items:center;text-align:center;}
+.mk .empty h3{margin:14px 0 0;font-size:17px;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+.mk .empty p{margin:7px auto 0;max-width:31ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mk .empty p b{color:var(--text);font-weight:600}
+.mk .empty .pill-btn{margin-top:16px}
+.mk .wait{display:inline-flex;align-items:center;gap:7px;margin-top:16px; padding:8px 13px;border-radius:var(--r-pill);background:var(--sunken); font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);}
+.mk .wait svg{width:13px;height:13px;flex:0 0 auto}
+.mk .ill{display:block;width:132px;height:88px;margin:0 auto}
+.mk .standing{display:flex;gap:12px;margin:0 var(--gutter);padding:16px; border-radius:var(--r-card);background:var(--surface);}
+.mk .standing__main{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.mk .standing__t{margin:0;font-size:22px;font-weight:800;letter-spacing:-.025em;line-height:1.05;text-transform:uppercase}
+.mk .standing__s{margin:7px 0 0;font-size:12px;color:var(--muted)}
+.mk .standing__s b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.mk .standing__score{flex:0 0 92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px; padding:12px 8px;border-radius:var(--r-panel);background:var(--sunken);}
+.mk .standing__score b{font-size:22px;font-weight:700;letter-spacing:-.025em;color:var(--acid);font-variant-numeric:tabular-nums}
+.mk .standing__score span{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);text-align:center}
+.mk .prog{margin:0 0 12px;padding:13px;border-radius:var(--r-panel);background:var(--surface)}
+.mk .prog__row{display:flex;align-items:baseline;gap:8px;margin:0 0 9px}
+.mk .prog__row b{flex:1;font-size:13px;font-weight:600}
+.mk .prog__row span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk .prog__bar{display:block;height:8px;border-radius:var(--r-pill);background:var(--sunken);overflow:hidden}
+.mk .prog__fill{display:block;height:100%;border-radius:var(--r-pill);background:var(--acid)}
+.mk .tier{list-style:none;margin:0;padding:0;border-radius:var(--r-panel);background:var(--surface);overflow:hidden}
+.mk .tier li{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.mk .tier li:first-child{border-top:0}
+.mk .tier li[aria-current="true"]{background:var(--acid-wash);box-shadow:inset 3px 0 0 var(--acid)}
+.mk .tier__d{flex:0 0 auto;width:9px;height:9px;border-radius:50%; box-shadow:inset 0 0 0 1.6px var(--dim);}
+.mk .tier li[aria-current="true"] .tier__d{background:var(--acid);box-shadow:none}
+.mk .tier__id{flex:1;min-width:0}
+.mk .tier__n{display:block;font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.mk .tier li[aria-current="true"] .tier__n{color:var(--acid)}
+.mk .tier__s{display:block;margin-top:2px;font-size:11.5px;color:var(--dim)}
+.mk .tier__v{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums}
+.mk .tier li[aria-current="true"] .tier__v{color:var(--acid)}
+.mk .bone{position:relative;overflow:hidden;background:var(--bone);border-radius:5px;flex:0 0 auto}
+.mk .bone--pill{border-radius:var(--r-pill)}
+.mk .bone--circ{border-radius:50%}
+.mk .bone::after{content:"";position:absolute;inset:0; background:linear-gradient(100deg,transparent 18%,var(--sheen) 50%,transparent 82%); transform:translateX(-100%); animation:shim 1.5s linear infinite;}
+.mk .skel-fields{display:flex;flex-direction:column;gap:12px;margin:0 var(--gutter)}
+.mk .skel-fields .bone{height:var(--h-field);border-radius:var(--r-panel)}
+.mk .skel-pod{display:grid;grid-template-columns:1fr 1.14fr 1fr;align-items:end;gap:8px; padding:18px 10px 16px;border-radius:var(--r-panel);background:var(--surface);}
+.mk .skel-pod > div{display:flex;flex-direction:column;align-items:center;gap:7px}
+.mk .skel-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.mk .skel-row:first-child{border-top:0}
+.mk .skel-row__id{flex:1;min-width:0}
+.mk .dock{margin-top:20px}
+.mk .dock .sheet{max-height:none}
+.mk .dimmed{opacity:.34;filter:saturate(.55);pointer-events:none}
+.mk .sheet{position:relative;z-index:1; display:flex;flex-direction:column; width:100%;max-height:min(var(--sheet-vh),var(--sheet-max)); border:1px solid var(--line);border-bottom:0; border-radius:var(--r-sheet) var(--r-sheet) 0 0; background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%); box-shadow:0 -20px 50px rgba(0,0,0,.6); overflow:hidden;}
+.mk .sheet__grab{flex:0 0 auto;display:flex;align-items:center;justify-content:center; height:26px;width:100%;}
+.mk .sheet__grab::before{content:"";width:var(--grab-w);height:var(--grab-h);border-radius:var(--r-pill); background:rgba(255,255,255,.18);}
+.mk .sheet__head{flex:0 0 auto;display:flex;align-items:center;gap:9px; padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);}
+.mk .sheet__title{margin:0;flex:1;min-width:0; font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text);}
+.mk .sheet__x{flex:0 0 auto;position:relative; display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;margin-right:-4px; border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted);}
+.mk .sheet__x::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.mk .sheet__x svg{width:16px;height:16px}
+.mk .sheet__body{flex:1 1 auto;min-height:0;padding:12px var(--gutter)}
+.mk .sheet__lede{margin:0 0 12px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .sheet__body--last{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+.mk .opt{display:flex;align-items:center;gap:12px;width:100%; min-height:var(--h-row);padding:11px 14px; border:1px solid var(--line);border-radius:var(--r-panel); background-color:var(--sunken);background-image:none; color:var(--text);font:inherit;font-size:13.5px;font-weight:500; text-align:left;}
+.mk .opt + .opt{margin-top:8px}
+.mk .opt__text{flex:1;min-width:0}
+.mk .opt__text small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.mk .opt[aria-checked="true"]{background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash)); border-color:var(--acid-line);color:var(--acid);font-weight:600;}
+.mk .opt[aria-checked="true"] .opt__text small{color:rgba(155,226,34,.72)}
+.mk .radio{position:relative;flex:0 0 auto;width:20px;height:20px;border-radius:50%; background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);}
+.mk .radio svg{position:absolute;inset:0;width:20px;height:20px;opacity:0;color:var(--acid)}
+.mk .opt[aria-checked="true"] .radio{box-shadow:inset 0 0 0 1.7px var(--acid);background:transparent}
+.mk .opt[aria-checked="true"] .radio svg{opacity:1}
+.mk .stagedlg{position:relative;overflow:hidden;isolation:isolate; margin:34px var(--gutter) 0;padding:26px 0;min-height:544px; border-radius:var(--r-card); display:flex;align-items:center;justify-content:center;}
+.mk .stagedlg__back{position:absolute;inset:0;padding:14px 0;filter:blur(9px);pointer-events:none}
+.mk .stagedlg__scrim{position:absolute;inset:0;background:rgba(3,4,1,.72)}
+.mk .dlg{position:relative;z-index:2; width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max); margin:0 auto;padding:var(--dlg-pad); border-radius:var(--r-card);background:var(--surface); border:1px solid var(--line); box-shadow:0 24px 60px rgba(0,0,0,.55);}
+.mk .dlg__close{position:absolute;top:12px;right:12px; display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;border-radius:50%; background:var(--sunken);border:1px solid var(--line-soft);color:var(--muted); cursor:pointer;transition:color .18s var(--ease),background .18s var(--ease);}
+.mk .dlg__close svg{width:15px;height:15px}
+.mk .dlg__close:hover{color:var(--text);background:#1A1F27}
+.mk .dlg__close:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .dlg__title{margin:14px 0 0;padding-right:26px; font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.2;}
+.mk .dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .dlg__body b{color:var(--text);font-weight:600}
+.mk .dlg__facts{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+.mk .act{display:flex;gap:10px;margin-top:18px}
+.mk .tile{display:inline-flex;align-items:center;justify-content:center; width:44px;height:44px;border-radius:var(--r-panel);flex:0 0 auto;}
+.mk .tile svg{width:22px;height:22px}
+.mk .tile--acid{background:var(--acid-wash);color:var(--acid)}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important;animation:none!important}
+  .mk .bone::after{display:none}
+  .mk .bone{background:rgba(255,255,255,.08)}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Hall of Fame</h1>
+    <p class="dek">The two recognition routes reached from Profile: the <b>Hall of Fame</b> roll of award
+winners, and the tabbed <b>Achievements</b> screen. Nine screens — six rebuilt from the capture set,
+three that have never been drawn at all.</p>
+    <div class="meta">
+      <span><b>Component</b> hall-of-fame</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 9</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">Hall of Fame<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Season dropdown<span class="side__tag">02</span></a></li>
+      <li><a class="side__item" href="#scr-3">Award category sheet<span class="side__tag">03</span></a></li>
+      <li><a class="side__item" href="#scr-4">Award announced<span class="side__tag">04</span></a></li>
+      <li><a class="side__item" href="#scr-5">Hall of Fame loading<span class="side__tag">05</span></a></li>
+      <li><a class="side__item" href="#scr-6">Achievements · no titles<span class="side__tag">06</span></a></li>
+      <li><a class="side__item" href="#scr-7">Achievements · titles won<span class="side__tag">07</span></a></li>
+      <li><a class="side__item" href="#scr-8">Achievements · no season<span class="side__tag">08</span></a></li>
+      <li><a class="side__item" href="#scr-9">Achievements · leader standing<span class="side__tag">09</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><span class="side__item" aria-current="page">Hall of Fame<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">Two routes nobody can reach today</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">9 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>Hall of Fame</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+
+  <h1 class="title">Hall of Fame</h1>
+  <p class="lede">Every <b>Member of the Match</b>, Week and Season awarded at Barcelona. The
+    podium is who leads the season you are looking at; the roll beneath it is every award, most
+    recent first.</p>
+
+  <div class="hof" id="hof1">
+    <div class="hof__row">
+      <div class="hof__f hof__f--half">
+        <span class="hof__l" id="sl1">Season</span>
+        <div class="anchored">
+          <button class="sel" type="button" id="seasonBtn1" aria-labelledby="sl1" aria-expanded="false" aria-haspopup="listbox">
+            <span class="sel__v">2025/26</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+          </button>
+          <div class="menu" id="seasonMenu1" role="listbox" aria-label="Season" hidden>
+            <button class="menu__i" type="button" role="option" aria-selected="true">2025/26
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+            <button class="menu__i" type="button" role="option" aria-selected="false">2024/25
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+            <button class="menu__i" type="button" role="option" aria-selected="false">2023/24
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="hof__f hof__f--rest hof__inert">
+        <p class="hof__hint">Awards are ranked inside one season.</p>
+      </div>
+    </div>
+
+    <div class="hof__f hof__inert">
+      <span class="hof__l" id="al1">Award</span>
+      <button class="sel" type="button" aria-labelledby="al1" aria-haspopup="dialog">
+        <span class="sel__v">Member of the Match</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <h2 class="label">This season</h2>
+  <section class="section">
+    <div class="section__bar">
+      <span class="status-pill">6 awarded · 2 holders</span>
+      <span class="spacer"></span>
+      <button class="icon-btn" type="button" aria-label="Share the Hall of Fame">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></svg>
+      </button>
+    </div>
+
+    <div class="podium">
+      <div class="plinth" style="--ring:rgba(255,255,255,.45);--rchip:#C9CFD8;--rchip-ink:#0B0E06">
+        <div class="plinth__badge">
+          <div class="avatar plinth__avatar" style="background-image:var(--av-02)" role="img" aria-label="capitan_7"></div>
+          <span class="plinth__rank">2</span>
+        </div>
+        <span class="plinth__name">capitan_7</span>
+        <span class="plinth__score">2 awards</span>
+      </div>
+
+      <div class="plinth plinth--first" style="--ring:#9BE222;--rchip:#9BE222;--rchip-ink:#0B0E06">
+        <div class="plinth__badge">
+          <div class="avatar plinth__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></div>
+          <span class="plinth__rank">1</span>
+        </div>
+        <span class="plinth__name">You</span>
+        <span class="plinth__score">4 awards</span>
+      </div>
+
+      <div class="plinth plinth--open">
+        <div class="plinth__badge">
+          <svg class="plinth__open" viewBox="0 0 56 56" fill="none" aria-hidden="true">
+            <circle cx="28" cy="28" r="26.1" stroke="#9BE222" stroke-opacity=".34" stroke-width="1.8" stroke-dasharray="5 5"/>
+          </svg>
+          <span class="plinth__rank">3</span>
+        </div>
+        <span class="plinth__name">Vacant</span>
+        <span class="plinth__score">&mdash;</span>
+      </div>
+    </div>
+
+    <div class="pmeta">
+      <span class="plate plate--sm" aria-hidden="true">INT</span>
+      <span class="pmeta__id">
+        <b>Barcelona v Inter Milan</b>
+        <span>Member of the Match &middot; Sun 28 Dec 2025</span>
+      </span>
+      <span class="pmeta__t">Latest</span>
+    </div>
+  </section>
+
+  <div class="head">
+    <h2>Roll of honour</h2>
+    <span class="tag">Newest first</span>
+  </div>
+  <section class="section">
+    <ol class="board">
+      <li class="row row--you">
+        <span class="avatar row__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></span>
+        <span class="row__id">
+          <span class="row__name">You &middot; dylan_n</span>
+          <span class="row__sub">v Inter Milan &middot; Sun 28 Dec</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+      <li class="row">
+        <span class="avatar row__avatar" style="background-image:var(--av-02)" role="img" aria-label="capitan_7"></span>
+        <span class="row__id">
+          <span class="row__name">capitan_7</span>
+          <span class="row__sub">v Sevilla &middot; Sat 20 Dec</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+      <li class="row row--you">
+        <span class="avatar row__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></span>
+        <span class="row__id">
+          <span class="row__name">You &middot; dylan_n</span>
+          <span class="row__sub">v Girona &middot; Sun 7 Dec</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+      <li class="row">
+        <span class="avatar row__avatar" style="background-image:var(--av-02)" role="img" aria-label="capitan_7"></span>
+        <span class="row__id">
+          <span class="row__name">capitan_7</span>
+          <span class="row__sub">v Real Betis &middot; Sat 29 Nov</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+      <li class="row row--you">
+        <span class="avatar row__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></span>
+        <span class="row__id">
+          <span class="row__name">You &middot; dylan_n</span>
+          <span class="row__sub">v Ajax &middot; Wed 26 Nov</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+      <li class="row row--you">
+        <span class="avatar row__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></span>
+        <span class="row__id">
+          <span class="row__name">You &middot; dylan_n</span>
+          <span class="row__sub">v Real Madrid &middot; Sun 9 Nov</span>
+        </span>
+        <span class="row__v">250<small>merits</small></span>
+      </li>
+    </ol>
+    <div class="more"><button class="pill-btn" type="button">Load earlier awards</button></div>
+  </section>
+
+  <div class="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+    <p>Member of the Match goes to the member whose War Room votes best matched the result. It is
+      worth <b>250 merits</b>, a prize, and a place here.</p>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>There is <b>no Hall of Fame in the code</b> — no page, no route, no widget, no model.
+    The Profile row draws a chevron and its tap handler is a bare <code>break</code>
+    (<code>profile_body.dart:375&ndash;376</code>), so today the row does nothing at all. This is the
+    first build of the screen.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Season dropdown</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="bar">
+    <span class="icon-btn" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </span>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+
+  <h1 class="title">Hall of Fame</h1>
+
+  <div class="hof is-open" id="hof2">
+    <div class="hof__row">
+      <div class="hof__f hof__f--half">
+        <span class="hof__l" id="sl2">Season</span>
+        <div class="anchored">
+          <button class="sel" type="button" id="seasonBtn2" aria-labelledby="sl2" aria-expanded="true" aria-haspopup="listbox">
+            <span class="sel__v">2025/26</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+          </button>
+          <div class="menu" id="seasonMenu2" role="listbox" aria-label="Season">
+            <button class="menu__i" type="button" role="option" aria-selected="true">2025/26
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+            <button class="menu__i" type="button" role="option" aria-selected="false">2024/25
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+            <button class="menu__i" type="button" role="option" aria-selected="false">2023/24
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="hof__f hof__f--rest hof__inert">
+        <p class="hof__hint">Awards are ranked inside one season.</p>
+      </div>
+    </div>
+
+    <div class="hof__f hof__inert">
+      <span class="hof__l" id="al2">Award</span>
+      <button class="sel" type="button" aria-labelledby="al2" aria-haspopup="dialog">
+        <span class="sel__v">Member of the Match</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <h2 class="label">This season</h2>
+  <section class="section">
+    <div class="podium">
+      <div class="plinth" style="--ring:rgba(255,255,255,.45);--rchip:#C9CFD8;--rchip-ink:#0B0E06">
+        <div class="plinth__badge">
+          <div class="avatar plinth__avatar" style="background-image:var(--av-02)" role="img" aria-label="capitan_7"></div>
+          <span class="plinth__rank">2</span>
+        </div>
+        <span class="plinth__name">capitan_7</span>
+        <span class="plinth__score">2 awards</span>
+      </div>
+      <div class="plinth plinth--first" style="--ring:#9BE222;--rchip:#9BE222;--rchip-ink:#0B0E06">
+        <div class="plinth__badge">
+          <div class="avatar plinth__avatar" style="background-image:var(--av-01)" role="img" aria-label="You, dylan_n"></div>
+          <span class="plinth__rank">1</span>
+        </div>
+        <span class="plinth__name">You</span>
+        <span class="plinth__score">4 awards</span>
+      </div>
+      <div class="plinth plinth--open">
+        <div class="plinth__badge">
+          <svg class="plinth__open" viewBox="0 0 56 56" fill="none" aria-hidden="true">
+            <circle cx="28" cy="28" r="26.1" stroke="#9BE222" stroke-opacity=".34" stroke-width="1.8" stroke-dasharray="5 5"/>
+          </svg>
+          <span class="plinth__rank">3</span>
+        </div>
+        <span class="plinth__name">Vacant</span>
+        <span class="plinth__score">&mdash;</span>
+      </div>
+    </div>
+  </section>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>Live &mdash; tap <b>2025/26</b>. The menu's left edge is flush with its trigger and its top
+    edge sits <b>6 px below</b> the trigger's bottom edge, so the trigger stays readable and the menu
+    plainly belongs to it. The Award field underneath dims to <b>35% and goes inert</b>, so it reads
+    as unavailable rather than half-covered and still tappable. On <code>HF-02</code> the shipped
+    menu sits <b>6 pt above</b> its own trigger's top edge and <b>4 pt right</b> of its left edge, so
+    it covers the control that opened it, and the Category field it lands on stays live.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-3">
+        <figcaption class="scr__cap"><span class="scr__n">03</span>Award category sheet</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="dimmed" aria-hidden="true">
+    <div class="bar">
+      <span class="icon-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </span>
+      <span class="bar__eyebrow">Profile</span>
+      <span class="spacer"></span>
+    </div>
+    <h1 class="title">Hall of Fame</h1>
+    <div class="hof">
+      <div class="hof__row">
+        <div class="hof__f hof__f--half">
+          <span class="hof__l">Season</span>
+          <span class="sel"><span class="sel__v">2025/26</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+          </span>
+        </div>
+        <div class="hof__f hof__f--rest"><p class="hof__hint">Awards are ranked inside one season.</p></div>
+      </div>
+      <div class="hof__f">
+        <span class="hof__l">Award</span>
+        <span class="sel" style="border-color:var(--acid)"><span class="sel__v">Member of the Match</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg);color:var(--acid)"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </span>
+      </div>
+    </div>
+    <h2 class="label">This season</h2>
+    <div class="section">
+      <div class="podium">
+        <div class="plinth" style="--ring:rgba(255,255,255,.45);--rchip:#C9CFD8;--rchip-ink:#0B0E06">
+          <div class="plinth__badge">
+            <div class="avatar plinth__avatar" style="background-image:var(--av-02)"></div>
+            <span class="plinth__rank">2</span>
+          </div>
+          <span class="plinth__name">capitan_7</span>
+          <span class="plinth__score">2 awards</span>
+        </div>
+        <div class="plinth plinth--first" style="--ring:#9BE222;--rchip:#9BE222;--rchip-ink:#0B0E06">
+          <div class="plinth__badge">
+            <div class="avatar plinth__avatar" style="background-image:var(--av-01)"></div>
+            <span class="plinth__rank">1</span>
+          </div>
+          <span class="plinth__name">You</span>
+          <span class="plinth__score">4 awards</span>
+        </div>
+        <div class="plinth plinth--open">
+          <div class="plinth__badge">
+            <svg class="plinth__open" viewBox="0 0 56 56" fill="none">
+              <circle cx="28" cy="28" r="26.1" stroke="#9BE222" stroke-opacity=".34" stroke-width="1.8" stroke-dasharray="5 5"/>
+            </svg>
+            <span class="plinth__rank">3</span>
+          </div>
+          <span class="plinth__name">Vacant</span>
+          <span class="plinth__score">&mdash;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dock">
+    <section class="sheet" aria-label="Award category">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Award</h3>
+        <span class="sheet__x" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </span>
+      </div>
+      <div class="sheet__body sheet__body--last" role="radiogroup" aria-label="Award category">
+        <p class="sheet__lede">Hall of Fame shows one award at a time. Pick which.</p>
+        <div class="opt" role="radio" aria-checked="true">
+          <span class="opt__text">Member of the Match<small>Awarded every fixture &middot; 250 merits</small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+        <div class="opt" role="radio" aria-checked="false">
+          <span class="opt__text">Member of the Week<small>Awarded every Monday &middot; 400 merits</small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+        <div class="opt" role="radio" aria-checked="false">
+          <span class="opt__text">Member of the Season<small>Awarded at the season close &middot; 1,000 merits</small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>The sheet shell from <code>sheets.html</code>, unchanged: <b>18 px top corners</b>, a
+    grabber, and a body that pads its own safe-area inset. <code>HF-03</code> has square top
+    corners, no grabber, and its last row finishes <b>28 pt from the screen edge inside the home
+    gesture zone</b>. The three award names, and the fact that they are the only three, come from
+    <code>enum.dart:191&ndash;192</code>.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-4">
+        <figcaption class="scr__cap"><span class="scr__n">04</span>Award announced</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="stagedlg">
+    <div class="stagedlg__back" aria-hidden="true">
+      <div class="bar">
+        <span class="icon-btn"></span>
+        <span class="bar__eyebrow">Profile</span>
+        <span class="spacer"></span>
+      </div>
+      <h1 class="title">Hall of Fame</h1>
+      <div class="hof">
+        <div class="hof__row">
+          <div class="hof__f hof__f--half">
+            <span class="hof__l">Season</span>
+            <span class="sel"><span class="sel__v">2025/26</span></span>
+          </div>
+          <div class="hof__f hof__f--rest"><p class="hof__hint">Awards are ranked inside one season.</p></div>
+        </div>
+        <div class="hof__f">
+          <span class="hof__l">Award</span>
+          <span class="sel"><span class="sel__v">Member of the Match</span></span>
+        </div>
+      </div>
+      <h2 class="label">This season</h2>
+      <div class="section">
+        <div class="podium">
+          <div class="plinth" style="--ring:rgba(255,255,255,.45)">
+            <div class="plinth__badge"><div class="avatar plinth__avatar" style="background-image:var(--av-02)"></div></div>
+            <span class="plinth__name">capitan_7</span><span class="plinth__score">2 awards</span>
+          </div>
+          <div class="plinth plinth--first" style="--ring:#9BE222">
+            <div class="plinth__badge"><div class="avatar plinth__avatar" style="background-image:var(--av-01)"></div></div>
+            <span class="plinth__name">You</span><span class="plinth__score">4 awards</span>
+          </div>
+          <div class="plinth plinth--open">
+            <div class="plinth__badge">
+              <svg class="plinth__open" viewBox="0 0 56 56" fill="none">
+                <circle cx="28" cy="28" r="26.1" stroke="#9BE222" stroke-opacity=".34" stroke-width="1.8" stroke-dasharray="5 5"/>
+              </svg>
+            </div>
+            <span class="plinth__name">Vacant</span><span class="plinth__score">&mdash;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stagedlg__scrim" aria-hidden="true"></div>
+
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="hof-dlg-t">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+      <span class="tile tile--acid" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+      </span>
+      <h3 class="dlg__title" id="hof-dlg-t">You&rsquo;re Member of the Match</h3>
+      <p class="dlg__body">Barcelona v Inter Milan, Sun 28 Dec. You polled highest of
+        <b>1,284</b> Barcelona members in the War Room, so you keep the award until the next
+        fixture and you are on the Hall of Fame for good.</p>
+      <div class="dlg__facts">
+        <span class="status-pill">+250 merits</span>
+        <span class="tag">Prize to come</span>
+      </div>
+      <div class="act">
+        <button class="btn btn--acid" type="button">Hall of Fame</button>
+        <button class="btn btn--ghost" type="button">Not now</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>Three fixes to <code>HF-01</code>. It draws <b>no dismiss control of any kind</b> &mdash;
+    no ✕, no &ldquo;Later&rdquo;, no drag handle, no stated tap-out; the only way off the screen is
+    the CTA. Its <code>CONGRATULATIONS!</code> and <code>MEMBER OF THE MATCH</code> lines are the
+    <b>same size, weight and colour</b>, then the first 28 characters of body copy repeat them a
+    third time. And its crown ornament is flat <code>#DFAA11</code>, which is
+    <code>CColor.colorVeto</code> &mdash; the amber the app paints a <em>blocked</em> proposal
+    with.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-5">
+        <figcaption class="scr__cap"><span class="scr__n">05</span>Hall of Fame loading</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="bar">
+    <span class="icon-btn" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </span>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Hall of Fame</h1>
+
+  <div class="skel-fields" aria-hidden="true">
+    <div class="hof__row" style="gap:10px">
+      <span class="bone" style="width:calc(50% - 5px)"></span>
+    </div>
+    <span class="bone"></span>
+  </div>
+
+  <h2 class="label" aria-hidden="true"><span class="bone" style="display:inline-block;width:104px;height:16px"></span></h2>
+  <section class="section" aria-busy="true" aria-label="Loading the Hall of Fame">
+    <div class="skel-pod">
+      <div>
+        <span class="bone bone--circ" style="width:52px;height:52px"></span>
+        <span class="bone" style="width:56px;height:10px"></span>
+        <span class="bone" style="width:40px;height:10px"></span>
+      </div>
+      <div>
+        <span class="bone bone--circ" style="width:64px;height:64px"></span>
+        <span class="bone" style="width:66px;height:10px"></span>
+        <span class="bone" style="width:44px;height:10px"></span>
+      </div>
+      <div>
+        <span class="bone bone--circ" style="width:52px;height:52px"></span>
+        <span class="bone" style="width:56px;height:10px"></span>
+        <span class="bone" style="width:40px;height:10px"></span>
+      </div>
+    </div>
+    <div class="board" style="margin-top:10px">
+      <div class="skel-row">
+        <span class="bone bone--circ" style="width:34px;height:34px"></span>
+        <span class="skel-row__id"><span class="bone" style="display:block;width:58%;height:11px"></span><span class="bone" style="display:block;width:42%;height:9px;margin-top:6px"></span></span>
+        <span class="bone" style="width:34px;height:13px"></span>
+      </div>
+      <div class="skel-row">
+        <span class="bone bone--circ" style="width:34px;height:34px"></span>
+        <span class="skel-row__id"><span class="bone" style="display:block;width:44%;height:11px"></span><span class="bone" style="display:block;width:52%;height:9px;margin-top:6px"></span></span>
+        <span class="bone" style="width:34px;height:13px"></span>
+      </div>
+      <div class="skel-row">
+        <span class="bone bone--circ" style="width:34px;height:34px"></span>
+        <span class="skel-row__id"><span class="bone" style="display:block;width:60%;height:11px"></span><span class="bone" style="display:block;width:38%;height:9px;margin-top:6px"></span></span>
+        <span class="bone" style="width:34px;height:13px"></span>
+      </div>
+      <div class="skel-row">
+        <span class="bone bone--circ" style="width:34px;height:34px"></span>
+        <span class="skel-row__id"><span class="bone" style="display:block;width:50%;height:11px"></span><span class="bone" style="display:block;width:46%;height:9px;margin-top:6px"></span></span>
+        <span class="bone" style="width:34px;height:13px"></span>
+      </div>
+    </div>
+  </section>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>Bones from <code>states.html</code> at the exact geometry of the loaded frame, so nothing
+    reflows when the data lands. No spinner: the app's default is a
+    <code>#2196F3</code> Material spinner, which is not a brand colour.
+    <code>achievement_screen.dart:110</code> already defines a grey-300/grey-100
+    <code>buildShimmerEffect()</code> &mdash; <b>and never calls it</b>.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-6">
+        <figcaption class="scr__cap"><span class="scr__n">06</span>Achievements · no titles</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Achievements</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Achievements">
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Playoff titles</button>
+      </span>
+      <span class="tax__half" data-on="false">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Leader status</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="empty">
+    <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+      <path d="M2 72 L28 36 L54 72 Z" fill="#1C2129"/>
+      <path d="M78 72 L106 30 L132 72 Z" fill="#1C2129" opacity=".7"/>
+      <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M40 72 L66 26 L92 72 Z" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+    </svg>
+    <h3>No playoff titles yet</h3>
+    <p>Barcelona have not won a competition since you joined in September. A title lands here for
+      every member who was voting when it was decided &mdash; you do not have to do anything to
+      claim it.</p>
+    <span class="wait">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+      Next final &middot; 24 May
+    </span>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>The captured screen keeps a gold-framed plaque, two laurel sprigs and a watermarked
+    roundel on screen whether there is anything to show or not &mdash; <b>382 pt of card carrying
+    two lines of text</b>, with 284 pt of bare canvas under it. Here the empty state <em>is</em> the
+    panel. The live copy reads <code>You haven't earned any playoff titles yet. Participate more to
+    earn achievements!</code> &mdash; which asks the member to do something that will not change the
+    outcome.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-7">
+        <figcaption class="scr__cap"><span class="scr__n">07</span>Achievements · titles won</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Achievements</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Achievements">
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Playoff titles</button>
+      </span>
+      <span class="tax__half" data-on="false">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Leader status</button>
+      </span>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="section__bar">
+      <span class="status-pill">3 titles</span>
+      <span class="spacer"></span>
+      <span class="tag">Barcelona</span>
+    </div>
+    <ol class="board">
+      <li class="row">
+        <span class="row__ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">La Liga</span>
+          <span class="row__sub">Won 15 May 2025</span>
+        </span>
+        <span class="row__v">2024/25<small>season</small></span>
+      </li>
+      <li class="row">
+        <span class="row__ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Copa del Rey</span>
+          <span class="row__sub">Won 26 Apr 2025</span>
+        </span>
+        <span class="row__v">2024/25<small>season</small></span>
+      </li>
+      <li class="row">
+        <span class="row__ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">La Liga</span>
+          <span class="row__sub">Won 14 May 2023</span>
+        </span>
+        <span class="row__v">2022/23<small>season</small></span>
+      </li>
+    </ol>
+  </section>
+
+  <div class="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 19 8 9l4 6 3-4.5L22 19H2Z"/></svg>
+    <p>A title is <b>the club's, shared with you</b> because you were a voting member when it was
+      decided &mdash; you cast <b>46 votes</b> in 2024/25. It carries no merits and cannot be
+      lost.</p>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>Entirely new</b> &mdash; nothing in the capture set shows this tab with data, and
+    nothing in <code>lib/</code> defines a playoff title. The word <code>playoff</code> appears in
+    the codebase only as an email toggle (<code>enum.dart:193&ndash;194</code>,
+    <code>'Game/Playoff Emails'</code>); there is no playoff model, list or endpoint. The
+    competitions and dates are Barcelona's own results; <b>the idea that a member shares the
+    club's title, and the vote count beside it, are our proposal</b> &mdash; see the notes.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-8">
+        <figcaption class="scr__cap"><span class="scr__n">08</span>Achievements · no season</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Achievements</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Achievements">
+      <span class="tax__half" data-on="false">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Playoff titles</button>
+      </span>
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Leader status</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="empty">
+    <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+      <path d="M2 72 L28 40 L54 72 Z" fill="#1C2129"/>
+      <path d="M82 72 L108 36 L132 72 Z" fill="#1C2129" opacity=".7"/>
+      <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M44 72 L58 48 L74 48 L88 72 Z" fill="rgba(155,226,34,.18)"/>
+      <path d="M44 72 L58 48 M74 48 L88 72 M58 48H74" stroke="#9BE222" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M58 48 L66 30 L74 48" stroke="#9BE222" stroke-width="1.8" stroke-dasharray="5 5" stroke-linejoin="round"/>
+    </svg>
+    <h3>No season open at Barcelona</h3>
+    <p>Leader status is worked out inside one season. Barcelona's next season opens on
+      <b>8 August</b> &mdash; until then your <b>2025/26</b> standing is the one that counts, and it
+      stays on your Hall of Fame.</p>
+    <button class="pill-btn" type="button">See 2025/26 standing</button>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>Two fixes to <code>AC-02</code>. Its segmented control paints <b>Playoff titles</b> as the
+    active segment while the card below renders Leader Status content, so the control and the
+    content point at different tabs &mdash; here the highlight follows the content. And its message
+    is <code>No current season found for the default club.</code>, a lookup outcome shown as user
+    copy; the words &ldquo;found&rdquo; and &ldquo;the default club&rdquo; appear nowhere else in the
+    product, and that exact string is <b>not in the codebase at all</b>. There is also no action on
+    the live screen of any kind.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-9">
+        <figcaption class="scr__cap"><span class="scr__n">09</span>Achievements · leader standing</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">Profile</span>
+    <span class="spacer"></span>
+  </div>
+  <h1 class="title">Achievements</h1>
+
+  <div class="taxrow">
+    <div class="tax" role="tablist" aria-label="Achievements">
+      <span class="tax__half" data-on="false">
+        <button class="tax__btn" type="button" role="tab" aria-selected="false">Playoff titles</button>
+      </span>
+      <span class="tax__half" data-on="true">
+        <button class="tax__btn" type="button" role="tab" aria-selected="true">Leader status</button>
+      </span>
+    </div>
+  </div>
+
+  <section class="standing" aria-label="Your leader status">
+    <div class="standing__main">
+      <p class="eyebrow">Barcelona &middot; 2025/26</p>
+      <h2 class="standing__t">Emerging<br>influencer</h2>
+      <p class="standing__s"><b>2,180</b> of your <b>2,480</b> merits were earned by reputation
+        rather than by turning up.</p>
+    </div>
+    <div class="standing__score">
+      <b>88%</b><span>Reputation share</span>
+    </div>
+  </section>
+
+  <div class="head"><h2>The ladder</h2></div>
+  <section class="section">
+    <div class="prog">
+      <p class="prog__row"><b>7 points to Leading influencer</b><span>88% &rarr; 95%</span></p>
+      <span class="prog__bar"><span class="prog__fill" style="width:88%"></span></span>
+    </div>
+    <ol class="tier">
+      <li>
+        <span class="tier__d" aria-hidden="true"></span>
+        <span class="tier__id">
+          <span class="tier__n">Member</span>
+          <span class="tier__s">Everyone starts here</span>
+        </span>
+        <span class="tier__v">under 75%</span>
+      </li>
+      <li>
+        <span class="tier__d" aria-hidden="true"></span>
+        <span class="tier__id">
+          <span class="tier__n">Early influencer</span>
+          <span class="tier__s">Passed 20 Oct 2025</span>
+        </span>
+        <span class="tier__v">75&ndash;85%</span>
+      </li>
+      <li aria-current="true">
+        <span class="tier__d" aria-hidden="true"></span>
+        <span class="tier__id">
+          <span class="tier__n">Emerging influencer</span>
+          <span class="tier__s">Where you are now</span>
+        </span>
+        <span class="tier__v">85&ndash;95%</span>
+      </li>
+      <li>
+        <span class="tier__d" aria-hidden="true"></span>
+        <span class="tier__id">
+          <span class="tier__n">Leading influencer</span>
+          <span class="tier__s">Top tier &middot; 31 members at Barcelona</span>
+        </span>
+        <span class="tier__v">over 95%</span>
+      </li>
+    </ol>
+  </section>
+
+  <div class="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 19 8 9l4 6 3-4.5L22 19H2Z"/></svg>
+    <p>Status is a <b>share</b>, not a total, so it can go down: earn merits by voting on everything
+      and your reputation share falls even though your merit count rises.</p>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>New screen, real content.</b> The four tier names and the three thresholds are read
+    straight out of <code>getLeaderShipStatus()</code>
+    (<code>profile_body.dart:402&ndash;420</code>) and <code>en.json:83&ndash;89</code>
+    &mdash; <code>MEMBER</code>, <code>EARLY INFLUENCER</code>, <code>EMERGING INFLUENCER</code>,
+    <code>LEADING INFLUENCER</code>, on <code>reputationPoint / totalPoint</code>. Nothing renders
+    them as a ladder today; they appear once, as a single word in the Profile header. Note the
+    function compares with <code>&lt;</code> on <em>both</em> sides of every band, so a member
+    sitting exactly on <code>0.95</code>, <code>0.85</code> or <code>0.75</code> falls all the way
+    through to <code>MEMBER</code>.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</div></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section class="since-fixed">
+  <p class="rv-eyebrow">Since this was written — 31 July 2026</p>
+  <h2>Three of the defects below have been fixed in the app</h2>
+  <p>These notes argue from the code as it stood when the screens were drawn. Some of that code has
+  since changed, because these findings were acted on. The screens are still the right proposal —
+  but do not read the following as outstanding faults.</p>
+  <ul>
+    <li><b>Achievements is no longer reached through a commented-out push.</b> The row was removed from <code>profileRows</code> in <code>profile_body.dart</code> instead, so the screen is deliberately absent rather than accidentally unreachable. The question of whether it ships is still open.</li>
+    <li><b>The leader-status band boundaries are fixed.</b> The comparisons are now inclusive (<code>&gt;=</code>), so exactly <code>0.95</code>, <code>0.85</code> or <code>0.75</code> resolves to the right tier.</li>
+  </ul>
+  <p>Everything else in this file was re-checked against the code on the same date and still holds.</p>
+</section>
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Two routes nobody can reach today</h2>
+
+  <p>Both of these screens are in the design record and neither works in the shipped app. Profile →
+  <b>Hall of fame</b> draws a chevron, implying it goes somewhere, and its tap handler is a bare
+  <code>break</code> — <code>profile_body.dart:375–376</code>. Profile → <b>Achievements</b> has its
+  navigation commented out, <code>profile_body.dart:391–393</code>, so the screen that <em>does</em>
+  exist in the code is unreachable. There is no Hall of Fame anywhere in <code>lib/</code>: no page,
+  no route, no widget, no model. This is the first build of it.</p>
+
+  <p>What the code does have is an <code>achievement_screen.dart</code> that looks nothing like the
+  capture. It is a <b>white</b> screen (<code>backgroundColor: CColor.white</code>, line
+  <code>34</code>) with no tabs, no gold frame, no laurels and no empty state, whose list is
+  <code>itemCount: 4</code> repeating one hard-coded row — <code>MOST VALUED FAN OF THE MATCH</code>
+  / <code>Feb 16, 2024</code> — four times, with no cubit and no API call. The captured dark screens
+  and the code are two different products.</p>
+
+  <p>Everything the captures put on screen is <b>gold</b>, and none of the golds is a brand colour.
+  <code>#D4AF37</code> (the plaque frame and roundel ring) and <code>#B28401</code> (the laurels) do
+  not appear anywhere in the codebase — we grepped. <code>#DFAA11</code> (the award pill, the podium
+  ring, the winning score, the crown) is real, and it is <code>CColor.colorVeto</code>: the amber the
+  app paints a <em>blocked</em> proposal with. So today a celebration and a veto are the same colour.
+  The new palette has no gold and no metallics, so rank here is carried by <b>a numeral, ring opacity
+  and scale</b> — the podium construction already shipping on the Merits tab.</p>
+
+  <p>Nothing on this page is a new idiom. The Season dropdown and the Award sheet are the corrected
+  Hall of Fame pair already specified in <code>sheets.html</code>. The announcement is
+  <code>dialogs.html</code>'s dialog shell. The empty panels, the "nothing to do yet" line and the
+  loading bones are <code>states.html</code>'s. The segmented control is
+  <code>filters-pickers.html</code>'s. The opponent crest sits on
+  <code>club-selection.html</code>'s plate.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <p>Nine screens, one device each. <b>1</b> Hall of Fame · <b>2</b> Season dropdown · <b>3</b> Award
+    sheet · <b>4</b> Award announced · <b>5</b> loading · <b>6</b> Achievements, no titles ·
+    <b>7</b> titles won · <b>8</b> no season · <b>9</b> leader standing. The Region column says which
+    screen a row belongs to. All nine are pushed routes, so they carry a back arrow and no tab bar.</p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Grouped by screen. Order matches the reading order within each screen. Values as
+        built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>All screens</td><td>Top bar</td><td class="t-note"><code>38px</code>
+          <code>#1C2129</code> back disc with an <code>::after</code> expansion to a
+          <code>44px</code> hit area, then the tracked route label <code>PROFILE</code> at
+          <code>10.5/700/.14em</code> <code>#5B606B</code>. Set at
+          <code>margin:34px 16px 14px</code> so it clears the review device's <code>26px</code>
+          island. Measured: all nine frames start at exactly <code>34px</code>.</td></tr>
+        <tr><td>All screens</td><td>Screen title</td><td class="t-note"><code>34/800/-.025em</code>
+          uppercase, at the gutter. The live header is a <code>113pt</code> flat
+          <code>#20083D</code> band with a <code>~30pt</code> centred Bebas title that does not
+          collapse, shrink or shadow on scroll, and reads <code>ACHIEVEMENTS</code> in
+          <em>both</em> Achievements tabs.</td></tr>
+        <tr><td>1 · Hall of Fame</td><td>Filter pair</td><td class="t-note">Two
+          <code>52px</code> controls at <code>12px</code> radius on <code>#1C2129</code>, each with
+          its own tracked label. <b>Season</b> is half width and opens a dropdown; <b>Award</b> is
+          full width and opens a sheet. The shipped pair is <code>47pt</code> and <code>51pt</code>
+          — two sibling controls at different heights — headed by the single word
+          <code>CATEGORIES</code> above a Season control, opening a sheet titled
+          <code>CATEGORY</code>.</td></tr>
+        <tr><td>1 · Hall of Fame</td><td>Podium</td><td class="t-note"><code>merits.html</code>'s
+          plinth grid, <code>1fr 1.14fr 1fr</code>, <code>12px</code> radius on
+          <code>#1C2129</code>. Rank 1 <code>64px</code> avatar with a <code>#9BE222</code> ring and
+          an accent numeral plate; rank 2 <code>52px</code> with a
+          <code>rgba(255,255,255,.45)</code> ring. <b>No metal, no plinth steps, no wreath</b> —
+          diameter, ring opacity and the numeral carry rank.</td></tr>
+        <tr><td>1 · Hall of Fame</td><td>Vacant slot</td><td class="t-note">A <code>52px</code>
+          circle drawn as a <code>1.8</code> accent hairline on a <code>5 5</code> dash, labelled
+          <b>Vacant</b> with an em dash for the score. That dash pattern is
+          <code>states.html</code>'s existing rule for <em>something that should exist and does not
+          yet</em>. The shipped slot is an empty <code>1pt #554B78</code> outline labelled
+          <code>0 points</code>, which reads as a member who scored zero.</td></tr>
+        <tr><td>1 · Hall of Fame</td><td>Latest-award strip</td><td class="t-note"><code>#13171E</code>
+          panel: the opponent crest on a <code>28px</code> plate
+          (<code>rgba(255,255,255,.94)</code> ground, <code>rgba(0,0,0,.13)</code> inner hairline,
+          <code>28%</code> radius, <code>1/8</code> padding), the fixture at
+          <code>12.5/600</code>, and the award plus a dated line beneath.</td></tr>
+        <tr><td>1 · Hall of Fame</td><td>Roll of honour</td><td class="t-note">A headed section —
+          <code>ROLL OF HONOUR</code> with a <code>NEWEST FIRST</code> tag — over the
+          <code>merits.html</code> row: <code>34px</code> avatar, name at <code>13.5/600</code>,
+          opponent and date at <code>11.5</code> <code>#99A0AE</code>, value
+          <code>13.5/700</code> accent tabular. The current member is the accent-wash row with a
+          <code>3px</code> accent left edge. The live row appends the literal string
+          <code>(ME)</code> to the member's own name.</td></tr>
+        <tr><td>2 · Dropdown</td><td>Season menu</td><td class="t-note">Anchored
+          <code>absolute</code>, left edge flush with its trigger, top edge <code>6px</code>
+          <em>below</em> the trigger's bottom edge. <code>#1C2129</code>, <code>12px</code> radius,
+          <code>0 14 34 rgba(0,0,0,.55)</code>. Selected row is the accent wash with a tick. Live —
+          tap it, arrow through it, Esc out of it.</td></tr>
+        <tr><td>2 · Dropdown</td><td>Inert group</td><td class="t-note">While the menu is open the
+          Award field drops to <code>35%</code> opacity and
+          <code>pointer-events:none</code>.</td></tr>
+        <tr><td>3 · Award sheet</td><td>Sheet shell</td><td class="t-note"><code>sheets.html</code>
+          unchanged: <code>18px</code> top corners, a <code>40 × 4</code> grabber in a
+          <code>26px</code> strip, <code>#1C2129 → #13171E</code> at <code>180deg</code>, a
+          <code>11/700/.14em</code> caps title, and a body that pads its own
+          <code>env(safe-area-inset-bottom)</code>.</td></tr>
+        <tr><td>3 · Award sheet</td><td>Option rows</td><td class="t-note"><code>48px</code>
+          minimum on <code>#13171E</code> at <code>12px</code> radius; selected is the accent wash
+          with a <code>rgba(155,226,34,.30)</code> rim, an accent label and a filled radio. Each row
+          carries what the award is and what it is worth. The shipped rows are
+          <code>#000000</code> — <em>darker than the sheet they sit on</em> — and identical between
+          selected and unselected apart from label colour, weight and a stretched tick.</td></tr>
+        <tr><td>4 · Announced</td><td>Backdrop</td><td class="t-note">The Hall of Fame behind
+          <code>blur(9px)</code> plus a <code>rgba(3,4,1,.72)</code> scrim — the
+          <code>dialogs.html</code> scrim value. The live modal's blur is the one thing about it
+          worth keeping.</td></tr>
+        <tr><td>4 · Announced</td><td>Dialog</td><td class="t-note"><code>dialogs.html</code>'s
+          shell: <code>#1C2129</code>, 1 px <code>rgba(255,255,255,.075)</code>,
+          <code>16px</code> radius, <code>20px</code> padding, <code>344px</code> cap, a
+          <code>44px</code> accent-wash icon tile, an <code>18/600</code> title, then two
+          <code>46px</code> actions and a <code>30px</code> ✕. The live card is
+          <code>#21093E</code> with no border and no shadow, and separates from its backdrop only by
+          blur.</td></tr>
+        <tr><td>4 · Announced</td><td>Copy and value</td><td class="t-note">One title, one paragraph
+          of why, then <code>+250 MERITS</code> as a status pill beside a
+          <code>PRIZE TO COME</code> tag. The live modal sets
+          <code>CONGRATULATIONS!</code> and <code>MEMBER OF THE MATCH</code> at the same
+          <code>~34pt</code>, same weight and same colour, then repeats both in the first 28
+          characters of body copy.</td></tr>
+        <tr><td>5 · Loading</td><td>Bones</td><td class="t-note"><code>states.html</code>'s
+          <code>rgba(255,255,255,.055)</code> bones with one <code>1.5s</code>
+          <code>rgba(255,255,255,.06)</code> sweep, at the exact geometry of the loaded frame so
+          nothing reflows. No spinner — the app default is a <code>#2196F3</code> Material
+          spinner.</td></tr>
+        <tr><td>6–9 · Achievements</td><td>Segmented control</td><td class="t-note">
+          <code>filters-pickers.html</code>'s <code>.tax</code>: <code>46px</code> pill track on
+          <code>#13171E</code> with <code>4px</code> padding, the selected half a
+          <code>38px</code> <code>#9BE222</code> plate carrying <code>#0B0E06</code> at
+          <code>13.5/700</code>. The shipped control is a <code>37pt</code> <code>#2F0C5A</code>
+          track with a <code>#6B4EFF</code> rectangle that has two rounded and two square corners;
+          <code>#6B4EFF</code> is not a token in <code>lib/</code>.</td></tr>
+        <tr><td>6, 8 · Empty</td><td>Empty panel</td><td class="t-note"><code>states.html</code>
+          unchanged: <code>#080A0C</code> fill, 1 px <code>rgba(255,255,255,.075)</code>,
+          <code>16px</code> radius, a <code>132 × 88</code> peak illustration, a
+          <code>17/600</code> headline and a <code>12.5</code> <code>#99A0AE</code> paragraph on a
+          <code>31ch</code> measure. Frame 6 closes on the <code>.wait</code> line — the pill that
+          replaces an action where there genuinely is none. Frame 8 has a real action.</td></tr>
+        <tr><td>6, 8 · Empty</td><td>Illustration rule</td><td class="t-note">Three marks only:
+          <code>#1C2129</code> fill for context, accent wash plus a <code>1.8</code> accent stroke
+          for something that exists, and a <code>1.8</code> accent stroke on a <code>5 5</code>
+          dash for something that should exist and does not. One ground line at
+          <code>y72</code>.</td></tr>
+        <tr><td>7 · Titles won</td><td>Title rows</td><td class="t-note">A
+          <code>34px</code> accent-wash icon tile at <code>12px</code> radius, the competition at
+          <code>13.5/600</code>, the date it was decided at <code>11.5</code>, and the season in the
+          value column with a tracked <code>SEASON</code> caption.</td></tr>
+        <tr><td>9 · Leader standing</td><td>Standing card</td><td class="t-note"><code>#1C2129</code>
+          card, <code>16px</code> radius and padding. Tier name at <code>22/800</code> uppercase,
+          the two figures behind it in plain words, and the share itself in a
+          <code>#13171E</code> panel at <code>22/700</code> accent tabular.</td></tr>
+        <tr><td>9 · Leader standing</td><td>Tier ladder</td><td class="t-note">Four rows, each a
+          <code>9px</code> dot, the tier name at <code>12/700/.09em</code> caps and the band on the
+          right. The current tier is the accent-wash row with a <code>3px</code> accent left edge
+          and a filled dot. A <code>13px</code> panel above it carries an <code>8px</code> accent
+          bar to the next tier.</td></tr>
+        <tr><td>All screens</td><td>Colour audit</td><td class="t-note">Every value is a contract
+          token, a shade already used on the Merits tab (<code>#20262F</code>,
+          <code>#222833</code>, <code>#2A303A</code>, <code>#C9CFD8</code>), a
+          <code>sheets.html</code> derivation (<code>rgba(155,226,34,.30)</code>), or the crest
+          plate's two fixed values. <b>No gold, no metal, no third hue, and the semantic red never
+          appears</b> — nothing on these screens goes down.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Podium — filled</td><td class="t-note">Avatar at <code>64px</code> (rank 1) or
+          <code>52px</code>, ringed at <code>#9BE222</code> or
+          <code>rgba(255,255,255,.45)</code>, with a numeral plate. Score is an award
+          <em>count</em>, not a points figure.</td></tr>
+        <tr><td>Podium — vacant</td><td class="t-note"><code>1.8</code> accent hairline on a
+          <code>5 5</code> dash, the numeral kept, labelled <b>Vacant</b>, score an em dash. Shown
+          in frames 1–4 because only two members hold the award this season.</td></tr>
+        <tr><td>Roll — the member</td><td class="t-note">Accent wash with an inset
+          <code>3px</code> accent left edge, and the name reads <code>You · dylan_n</code>. Never
+          the string <code>(ME)</code>.</td></tr>
+        <tr><td>Season dropdown</td><td class="t-note">Closed in frames 1 and 3–5, open in frame 2.
+          Live in both 1 and 2: click the trigger, arrow between rows, Esc or a click outside to
+          close, and selection writes back to the field.</td></tr>
+        <tr><td>Award sheet</td><td class="t-note">Single-select. Selection applies on tap and
+          closes, which is what <code>filter.dart:76</code> already does. Note that re-tapping the
+          <em>active</em> row in that implementation clears the filter and closes anyway.</td></tr>
+        <tr><td>Loading</td><td class="t-note">Frame 5. Bones at the loaded geometry.
+          <code>prefers-reduced-motion</code> stops the sweep and lifts every bone to
+          <code>rgba(255,255,255,.08)</code> so the skeleton is still legible when it is
+          still.</td></tr>
+        <tr><td>Achievements — tab</td><td class="t-note">Frames 6–7 are the Playoff titles tab,
+          8–9 the Leader status tab. The highlight always follows the content; on
+          <code>AC-02</code> it does not.</td></tr>
+        <tr><td>Titles — none / some</td><td class="t-note">Frame 6 is the captured empty. Frame 7
+          is <b>new</b> — no capture in the set shows this tab with data.</td></tr>
+        <tr><td>Standing — none / some</td><td class="t-note">Frame 8 is the captured empty. Frame 9
+          is <b>new</b>. No leader-status row, tier chip or rank artwork appears anywhere in the
+          capture set.</td></tr>
+        <tr><td>Standing — going down</td><td class="t-note">Status is a share, not a total, so it
+          can fall while the merit count rises. Called out in the note on frame 9 rather than
+          drawn, because the semantic red is for figures that move down and no figure on these
+          screens does.</td></tr>
+        <tr><td>Not built</td><td class="t-note">Hall of Fame with an empty roll; a podium with all
+          three slots filled; the Member of the Week and Member of the Season rolls; error states
+          for all nine screens; and the Achievements loading skeleton (the Hall of Fame one stands
+          in for it — same bones, same rules).</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file and the library</h3>
+      <ul>
+        <li><b>Token block</b> — <code>merits.html</code> verbatim. Not one value invented.</li>
+        <li><b>Podium and plinth</b> — the Merits-tab construction, re-pointed at award counts:
+          grid, ring shadows, numeral plate, name and score.</li>
+        <li><b>Row, board, section container, status pill, tag, icon button, pill button,
+          note card</b> — all from <code>merits.html</code> / <code>merit-detail.html</code>.</li>
+        <li><b>Season dropdown and Award sheet</b> — the corrected Hall of Fame pair, already
+          specified and built as a specimen in <code>sheets.html</code>, including its three award
+          names and their sub-copy.</li>
+        <li><b>Sheet shell and option row</b> — <code>sheets.html</code>.</li>
+        <li><b>Dialog shell, icon tile, action row, scrim</b> — <code>dialogs.html</code>.</li>
+        <li><b>Empty panel, "nothing to do yet" pill, peak illustration, skeleton bones</b> —
+          <code>states.html</code>.</li>
+        <li><b>Segmented control</b> — <code>filters-pickers.html</code>'s two-half
+          <code>.tax</code>.</li>
+        <li><b>Club crest plate</b> — <code>club-selection.html</code>, at the <code>28px</code>
+          dense size with the short-code fallback.</li>
+        <li><b>Award names</b> — <code>Member of the Match / Week / Season</code>, the only place
+          the award family is named in code (<code>enum.dart:191–192</code>).</li>
+        <li><b>The four leader tiers and their thresholds</b> — read straight out of
+          <code>getLeaderShipStatus()</code>, <code>profile_body.dart:402–420</code>, with the
+          strings from <code>en.json:83–89</code>.</li>
+        <li><b>Blurred backdrop</b> — the one thing worth keeping from <code>HF-01</code> and
+          <code>HF-03</code>.</li>
+        <li><b>Portraits</b> — <code>_assets/avatars.css</code>.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The Hall of Fame screen itself</b> — nothing in <code>lib/</code> renders one.</li>
+        <li><b>Rank without metal</b> — a numeral plate plus ring opacity replaces the single gold
+          ring, and there is no silver or bronze anywhere. The captures have no rank numerals at
+          all.</li>
+        <li><b>The vacant slot</b> — a dashed accent hairline labelled <b>Vacant</b>, instead of an
+          empty grey circle labelled <code>0 points</code>.</li>
+        <li><b>A heading between the podium and the list</b> — <code>ROLL OF HONOUR</code>. The
+          captures put <code>~57pt</code> of bare canvas there with no heading, divider or label,
+          and nothing on screen explains why the podium reads <code>908 points</code> while the
+          first list row reads <code>910</code>.</li>
+        <li><b>Per-field labels</b> — <code>SEASON</code> and <code>AWARD</code>, replacing one
+          plural heading over a pair of unlabelled controls.</li>
+        <li><b>Dates that resolve</b> — every date carries a weekday, and the season sits in the
+          field directly above. No date anywhere in the capture set carries a year, on a surface
+          whose primary filter <em>is</em> the season.</li>
+        <li><b>A dismiss control on the announcement</b> — a ✕ and a <b>Not now</b>. The live modal
+          draws no ✕, no "Later", no drag handle and no stated tap-out.</li>
+        <li><b>Loading</b> — frame 5. No loading state is captured for any of these screens, and
+          the shimmer the code already defines is never called.</li>
+        <li><b>Achievements populated — both tabs</b> — frames 7 and 9. Nothing in the capture set
+          shows either tab with data.</li>
+        <li><b>The tier ladder</b> — the four influence tiers drawn as a ladder with the band each
+          one sits in and the distance to the next. The names and thresholds are the code's; the
+          ladder, the bar and the explanation are ours.</li>
+        <li><b>Empty-state copy that is not a lookup error</b> — replacing
+          <code>No current season found for the default club.</code></li>
+        <li><b>One currency word</b> — <b>merits</b>, matching <code>merit-detail.html</code>. The
+          live product calls the same figure <code>points</code>,
+          <code>Reputation Points</code> and <code>credit transactions</code>, and the API calls the
+          award <code>member_honored</code> while the UI calls it Member of the Match.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li><h3>Does the Hall of Fame survive as its own destination?</h3>
+      <p><code>merit-detail.html</code> assumed one badge collection replaces the Achievements tabs
+      and that Hall of Fame survives only as the <em>Who holds it</em> section on a badge. This
+      component is built on the opposite assumption —
+      <span class="flag">Hall of Fame stays a separate route from Profile, and Achievements keeps its
+      two tabs</span> — because both are documented screens. The two builds cannot both ship as they
+      stand. Rule on one of three: keep all three surfaces, fold Achievements into the badge
+      collection and keep Hall of Fame, or fold everything into badges. This is the decision that
+      changes the most.</p></li>
+
+    <li><h3>What is a playoff title, and is it even yours?</h3>
+      <p>Nothing defines this. The word <code>playoff</code> appears in the codebase only as an
+      email-notification toggle — <code>'Game/Playoff Emails'</code>,
+      <code>enum.dart:193–194</code> — and there is no playoff model, list or endpoint. We built the
+      most defensible reading: <span class="flag">a title is the club's, shared with every member who
+      was voting when it was decided, worth no merits and never lost</span>. If a playoff title is
+      instead something the <em>member</em> wins, frame 7 is wrong and the tab needs
+      specifying from scratch.</p></li>
+
+    <li><h3>Is "Leader status" the influence ladder, or something else?</h3>
+      <p>The tab is captured as <code>Leader status</code> and the code's concept is spelled
+      <code>leader ship</code> — <code>getLeaderShipStatus()</code> at
+      <code>profile_body.dart:402–420</code>, returning <code>MEMBER</code>,
+      <code>EARLY INFLUENCER</code>, <code>EMERGING INFLUENCER</code>,
+      <code>LEADING INFLUENCER</code> from the ratio <code>reputationPoint / totalPoint</code>. We
+      have assumed <span class="flag">they are the same thing and built the tab as that ladder</span>,
+      which is the only way to fill it with real content. Two things follow. First, the label:
+      "Leader status" does not say it is about influence, and the tier names are the more
+      interesting words — we would rename the tab <b>Influence</b>. Second, a defect worth fixing
+      before it ships: that function compares with <code>&lt;</code> on <em>both</em> sides of every
+      band, so a member sitting exactly on <code>0.95</code>, <code>0.85</code> or
+      <code>0.75</code> falls all the way through to <code>MEMBER</code>.</p></li>
+
+    <li><h3>What does the podium actually rank?</h3>
+      <p>The captured podium shows one holder at <code>908 points</code> with two slots labelled
+      <code>0 points</code>, above a list whose first row reads <code>910 points</code>, and nothing
+      on screen relates the two. We have assumed <span class="flag">the podium is the top three
+      members by awards won in the selected season, and the roll beneath it is every individual
+      award, newest first</span>. That is what makes the vacant slot meaningful and the two figures
+      agree. If the podium is instead the single current holder, it should not be a three-slot
+      podium at all.</p></li>
+
+    <li><h3>What is an award worth, and is a season a split year?</h3>
+      <p>Placeholders: <span class="flag">Member of the Match 250 merits, Week 400, Season
+      1,000</span>. The live modal says <code>35 Reputation Points</code> for Member of the Match,
+      against podium scores in the <code>908</code>–<code>910</code> range, so the two numbers on the
+      live screens are not on the same scale. Separately, we have rendered seasons as
+      <span class="flag"><code>2025/26</code></span>, matching <code>sheets.html</code>. The
+      captured dropdown reads <code>Season 2025</code> and no date on any of these screens carries a
+      year, so we cannot tell whether a season is a calendar year or a split year. Confirm the
+      values, the word for the currency, and the season identifier.</p></li>
+
+    <li><h3>Should this announcement and the badge award be one moment?</h3>
+      <p><code>merit-detail.html</code> frame 4 already announces <b>Member of the Match</b> as a
+      badge earned. Frame 4 here announces the same event as an award with points, a prize and a
+      Hall of Fame place. In the live app they are the same thing happening once. We have assumed
+      <span class="flag">one announcement, and this dialog is it</span> — a dialog rather than a
+      celebration screen, because it is presented over the list it leads to. If you want the fuller
+      celebration, the badge moment in <code>merit-detail.html</code> is the one to keep and this
+      frame comes out.</p></li>
+
+    <li><h3>Two bugs to confirm, not design questions.</h3>
+      <p>First, <code>enum.dart:111</code> and <code>enum.dart:117</code> are byte-identical, so
+      <code>ProfileSettingEnums.club</code> resolves to the <em>Hall of Fame</em> label — both the
+      Club row and the Hall of Fame row would read <code>HALL OF FAME</code>. (The enum is currently
+      dead code, so nothing renders it, but the Profile menu is built from the same strings.)
+      Second, both routes are unreachable:
+      <code>profile_body.dart:375–376</code> is a bare <code>break</code> and
+      <code>:391–393</code> is a commented-out <code>pushNamed</code>. Neither is a rebrand
+      decision, but nothing on these nine screens can be tested until they are fixed.</p></li>
+
+    <li><h3>The default avatar is still a blocker.</h3>
+      <p>Repeating it because this feature is where it does the most damage. The current default
+      avatar is watermarked marketing key-art: the circular crop cuts the burned-in wordmark to
+      <code>SPORTSHEI</code>, and a red <code>…WED BY 1.00 PIXELS</code> watermark plus a
+      yellow-and-black hazard bar are plainly legible at the <code>90pt</code> podium size. The
+      same image renders <b>five times on one Hall of Fame screen</b>. Every portrait here comes
+      from <code>_assets/avatars.css</code> instead, but a licensed default-avatar asset is needed
+      before any of this ships.</p></li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  /* ============================================================
+     SEASON DROPDOWN — three short single-line values that change
+     one field in place. Anchored under its own trigger; while it
+     is open the rest of the filter group goes inert.
+     ============================================================ */
+  function wire(groupId, btnId, menuId){
+    var group = document.getElementById(groupId);
+    var btn   = document.getElementById(btnId);
+    var menu  = document.getElementById(menuId);
+    if (!group || !btn || !menu) return;
+
+    var items = Array.prototype.slice.call(menu.querySelectorAll('.menu__i'));
+
+    function open(){
+      menu.hidden = false;
+      group.classList.add('is-open');
+      btn.setAttribute('aria-expanded','true');
+    }
+    function close(focus){
+      menu.hidden = true;
+      group.classList.remove('is-open');
+      btn.setAttribute('aria-expanded','false');
+      if (focus) btn.focus();
+    }
+    function isOpen(){ return !menu.hidden; }
+
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (isOpen()) close(false); else { open(); (items[0] || btn).focus(); }
+    });
+
+    items.forEach(function(it, i){
+      it.addEventListener('click', function(){
+        items.forEach(function(x){ x.setAttribute('aria-selected', x === it ? 'true' : 'false'); });
+        btn.querySelector('.sel__v').textContent = it.textContent.trim();
+        close(true);
+      });
+      it.addEventListener('keydown', function(e){
+        if (e.key === 'ArrowDown'){ e.preventDefault(); (items[i+1] || items[0]).focus(); }
+        if (e.key === 'ArrowUp'){ e.preventDefault(); (items[i-1] || items[items.length-1]).focus(); }
+      });
+    });
+
+    menu.addEventListener('click', function(e){ e.stopPropagation(); });
+
+    document.addEventListener('click', function(){ if (isOpen()) close(false); });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && isOpen()) close(true);
+    });
+  }
+
+  wire('hof1','seasonBtn1','seasonMenu1');
+  wire('hof2','seasonBtn2','seasonMenu2');
+})();
+</script>

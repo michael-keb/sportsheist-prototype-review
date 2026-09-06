@@ -1,0 +1,400 @@
+<p class="dek">What a member sees once a vote is over. The screen lists every settled proposal with its
+outcome, then the same cards again in an Actions framing that says what happens next. At its centre is
+one small component — the verdict bar — that has to carry seven different endings.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Seven endings, two colours</h2>
+  <p>
+    A proposal can finish in more ways than the product currently admits. It can be approved or
+    rejected by the members. It can be struck out by club management. It can turn out to be
+    unexecutable. It can run out of time short of the like threshold, or be cancelled because the
+    match ended. And while a veto is being appealed it is paused — decided by nobody yet.
+  </p>
+  <p>
+    None of that is designed in the Figma file. This screen proposes it, and the whole proposal rests
+    on one component: a <code>56&nbsp;px</code> bar carrying a badge, a word and a line of figures.
+    Every ending uses that same bar. What changes between them is the tone, and there are still only
+    two colours: accent and semantic red. The third and fourth tones are not colours at all — a
+    <em>hold</em> is drawn as the accent interrupted, static bars struck at <code>135°</code>, and an
+    ending that is simply over and quiet gets no hue.
+  </p>
+  <p>
+    That hatch is not ours: it was settled on the veto screens and this file copies its construction
+    verbatim, down to the <code>5&nbsp;px</code> on / <code>6&nbsp;px</code> off spacing. It appears
+    exactly once here, on <code>Veto hold</code>, and it is deliberately withheld from everything
+    else — nothing loading, disabled, pending or scheduled gets it. Its force comes from meaning one
+    thing: <em>nothing is decided yet</em>. Lapsed and Cancelled keep the quiet, hueless treatment,
+    because those are finished — held is loud, finished is quiet.
+  </p>
+  <p>
+    The live War Room already has the right instinct here — its verdict bar is the one place in the
+    app where a state is carried by an icon <em>and</em> a word <em>and</em> a colour, rather than
+    colour alone. That principle is the only thing we kept. What we did not keep is the execution: the
+    same positive outcome is currently drawn in four different greens —
+    <code>#1AA553</code> in the token file, <code>#22C55E</code> on the Results card,
+    <code>#1DBF5B</code> on the Actions card and <code>#99D0AB</code> on the chart — and it is called
+    <code>APPROVED</code> on one screen and <code>PUBLISH IT!</code> on the next. Here there is one
+    accent green, one red, and one word per ending.
+  </p>
+  <p>
+    The other half of the screen is the result detail: a counting-round chart and a tally, for
+    proposals settled by elimination rather than a single yes-or-no. The live version of that chart is
+    a pure <code>#000000</code> panel with an empty plot area, a <code>0–50</code> axis and no
+    threshold drawn at all; this one sits on the contract's surfaces, has a real
+    <code>0/50/100</code> axis, marks the threshold it had to clear, and emphasises the outcome. It
+    draws its outcome line on scroll and holds; everything else is static.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <p>Four screens, each on its own phone above. <b>01 Results list</b> is the Results tab: hero, the
+    <code>New idea</code> action, taxonomy and filters, then the feed — settled results and carried
+    actions are the same feed in the same shell, so they are one screen. <b>02 Verdict states</b> is the
+    reference screen that puts all seven verdict bars side by side. <b>03 Result detail</b> is the count
+    and tally a member opens from a card. <b>04 Empty state</b> is the tab with nothing settled yet.
+    Screens 02–04 carry their own header and back control; the tab bar is shown on all four.</p>
+  <div class="tablewrap">
+    <table>
+      <caption>Grouped by screen and region. Order matches the reading order within each screen. Values
+        as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Hero</td><td>Banner</td>
+          <td class="t-note"><code>138&nbsp;px</code>, <code>R16</code>, field gradient at 112deg
+            <code>#0D3617</code> → <code>#17481C</code> at 58% → <code>#0C3416</code>. Three white
+            triangles at <code>3.0%</code>, <code>2.4%</code> and <code>2.6%</code> in the field;
+            three accent peaks bottom-right at <code>54%&nbsp;×&nbsp;38%</code>; the knockout athlete
+            <code>124&nbsp;px</code> tall at <code>opacity&nbsp;.95</code>, layered
+            <em>in front of</em> the peaks. Same construction as Backchat and War&nbsp;Room.</td>
+        </tr>
+        <tr>
+          <td>Hero</td><td>Title</td>
+          <td class="t-note"><code>Results</code> at 34/800, uppercase, tracking
+            <code>-.025em</code>. Title only, no strapline.</td>
+        </tr>
+        <tr>
+          <td>Chrome</td><td>Primary action</td>
+          <td class="t-note">Full-width accent pill, <code>52&nbsp;px</code>, ink
+            <code>#0B0E06</code>, label 15/600, with a <code>2.4</code>-stroke plus glyph.</td>
+        </tr>
+        <tr>
+          <td>Chrome</td><td>Taxonomy control</td>
+          <td class="t-note">Segmented track <code>46&nbsp;px</code> tall on <code>#13171E</code>
+            with <code>4&nbsp;px</code> inner padding, holding two <code>38&nbsp;px</code> pills.
+            <code>Decisions</code> / <code>Positions</code>. Active segment is an accent fill with
+            <code>#0B0E06</code> ink at 13.5/700. A <code>38&nbsp;px</code> circular help button sits
+            outside the track.</td>
+        </tr>
+        <tr>
+          <td>Chrome</td><td>Filter row</td>
+          <td class="t-note">Horizontally scrolling, scrollbar hidden. A <code>34&nbsp;px</code> sort
+            button, then five chips at <code>34&nbsp;px</code> in
+            11/700/<code>.14em</code>-class tracking (<code>.11em</code>) uppercase. Unselected:
+            <code>#1C2129</code> fill, <code>#99A0AE</code> label. Selected:
+            <code>rgba(155,226,34,.12)</code> fill, accent label.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Shell</td>
+          <td class="t-note">Full-width version of the idea card — <code>16&nbsp;px</code> padding,
+            <code>R16</code>, fill <code>#1C2129</code>, with a 1&nbsp;px inset highlight at white 6%
+            along the top edge. <code>12&nbsp;px</code> between cards.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Author row</td>
+          <td class="t-note">One or two <code>22&nbsp;px</code> portraits overlapped
+            <code>9&nbsp;px</code> with a 1.5&nbsp;px ring in the card fill, then the byline at
+            12.5&nbsp;px in <code>#99A0AE</code>, truncating.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Title and body</td>
+          <td class="t-note">Title 17/600, line-height 1.2, tracking <code>-.015em</code>, sentence
+            case. Body 13/400 at 1.35 in <code>#99A0AE</code>. On an Action card the body is dropped
+            — the next step replaces it.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Meta row</td>
+          <td class="t-note">Left: a 13&nbsp;px clock glyph and the settlement time at 11.5&nbsp;px in
+            <code>#5B606B</code>, tabular. Right: the category chip — <code>On-field</code>,
+            <code>Off-field</code>, <code>Management</code> — at <code>22&nbsp;px</code>, R pill,
+            <code>#13171E</code>, 10/700/<code>.12em</code> uppercase.</td>
+        </tr>
+        <tr>
+          <td>Component</td><td>Verdict bar</td>
+          <td class="t-note">The state component. <code>min-height&nbsp;56&nbsp;px</code>, padding
+            <code>11&nbsp;px&nbsp;13&nbsp;px</code>, <code>R12</code>. A <code>28&nbsp;px</code>
+            circular badge holding a 16&nbsp;px glyph, then the verdict word at
+            13.5/700/<code>.07em</code> uppercase and a sub-line at 11.5&nbsp;px in
+            <code>#99A0AE</code>, tabular.</td>
+        </tr>
+        <tr>
+          <td>Component</td><td>Tone — passed</td>
+          <td class="t-note"><code>rgba(155,226,34,.12)</code> fill with an inset 1&nbsp;px ring at
+            <code>rgba(155,226,34,.22)</code>; badge is a solid accent disc with
+            <code>#0B0E06</code> glyph; word in accent.</td>
+        </tr>
+        <tr>
+          <td>Component</td><td>Tone — blocked</td>
+          <td class="t-note"><code>rgba(226,86,74,.12)</code> fill, inset ring
+            <code>rgba(226,86,74,.24)</code>; badge is a solid <code>#E2564A</code> disc with
+            <code>#0B0E06</code> glyph — never white ink on red; word in <code>#E2564A</code>.</td>
+        </tr>
+        <tr>
+          <td>Component</td><td>Tone — held</td>
+          <td class="t-note">The canonical paused mark, copied from the veto screens rather than
+            reinvented. <code>#13171E</code> fill carrying static accent bars struck at
+            <code>135°</code> — <code>rgba(155,226,34,.11)</code>, <code>5&nbsp;px</code> on /
+            <code>6&nbsp;px</code> off — with an inset 1&nbsp;px ring at
+            <code>rgba(155,226,34,.30)</code>; badge is <code>rgba(155,226,34,.13)</code> holding the
+            <code>⊘</code> glyph in accent; word in accent. The countdown inside the sub-line stays
+            full-contrast white at 700 weight: a held clock that goes grey reads as disabled, which is
+            the wrong idea. Never animated — a moving barber-pole would read as <em>in progress</em>,
+            the opposite of held.</td>
+        </tr>
+        <tr>
+          <td>Component</td><td>Tone — inert</td>
+          <td class="t-note">No hue at all. <code>#13171E</code> fill, inset 1&nbsp;px
+            <code>rgba(255,255,255,.075)</code>; badge is <code>#1C2129</code> with the same hairline
+            and a white glyph; word in white. Used only where the ending is over and quiet — Lapsed
+            and Cancelled. Never for a hold.</td>
+        </tr>
+        <tr>
+          <td>Component</td><td>Detail scale</td>
+          <td class="t-note">One size step up for the result-detail page:
+            <code>min-height&nbsp;70&nbsp;px</code>, padding
+            <code>14&nbsp;px&nbsp;16&nbsp;px</code>, badge <code>34&nbsp;px</code>, glyph
+            19&nbsp;px, word 16&nbsp;px at <code>.05em</code>, sub-line 12.5&nbsp;px.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Next step (Actions)</td>
+          <td class="t-note"><code>R12</code> panel on <code>#13171E</code>, padding
+            <code>12/13&nbsp;px</code>. Eyebrow, then the instruction at 13.5/600, then an owner or
+            consequence line at 11.5&nbsp;px in <code>#5B606B</code> with a 13&nbsp;px glyph.</td>
+        </tr>
+        <tr>
+          <td>Card</td><td>Action button</td>
+          <td class="t-note">Full-width <code>44&nbsp;px</code> pill on <code>#13171E</code>, white
+            label 13.5/600, trailing 13&nbsp;px external-link arrow. Focus ring is a 2&nbsp;px accent
+            outline at <code>3&nbsp;px</code> offset.</td>
+        </tr>
+        <tr>
+          <td>Screen 02</td><td>Verdict state inventory</td>
+          <td class="t-note">Its own screen, with a back control and the title
+            <code>Verdict states</code>: a section container holding all seven bars in order, each labelled with the
+            status name as the build emits it — <code>approved</code>, <code>rejected</code>,
+            <code>vetoed</code>, <code>rule_outed</code>, <code>veto</code>, <code>lapsed</code>,
+            <code>cancelled</code> — at 10.5&nbsp;px in <code>#5B606B</code>. The header pill reads
+            <code>7 states · 2 hues</code>: seven endings, four tones, still only two colours, because
+            the held tone is a mark rather than a hue.</td>
+        </tr>
+        <tr>
+          <td>Detail</td><td>Round chart</td>
+          <td class="t-note"><code>300&nbsp;×&nbsp;156</code> viewBox. Gridlines at 100 and 50, axis
+            at 0, all in <code>rgba(255,255,255,.045)</code>. Threshold marker is a
+            <code>3&nbsp;3</code>-dashed accent line at 70% labelled
+            <code>70% TO PASS</code> in 8.5/700/<code>.12em</code>. Five eliminated series in white at
+            <code>17%</code>–<code>36%</code> opacity, each ending in a small cross. The outcome line
+            is accent at <code>2.4</code> stroke; the runner-up is white at
+            <code>36%</code>. End cap is a <code>3.6&nbsp;px</code> accent dot ringed
+            <code>2.4&nbsp;px</code> in the panel fill.</td>
+        </tr>
+        <tr>
+          <td>Detail</td><td>Tally</td>
+          <td class="t-note">Six rows at <code>10/14&nbsp;px</code> padding on
+            <code>rgba(255,255,255,.045)</code> borders. Each carries an
+            <code>18&nbsp;×&nbsp;2.5&nbsp;px</code> swatch matching its line opacity — the outcome
+            swatch is <code>3&nbsp;px</code> and accent — the option name at 13&nbsp;px, and either a
+            final share or the round it went out in. Winning figure 14/700 accent; the rest 13/600 in
+            <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Empty</td><td>Nothing settled</td>
+          <td class="t-note"><code>150&nbsp;px</code> minimum, section fill
+            <code>#080A0C</code> with its 1&nbsp;px hairline, <code>R16</code>. A
+            <code>44&nbsp;px</code> accent glyph at <code>1.5</code> stroke and
+            <code>85%</code> opacity, then <code>Nothing settled yet</code> at 15/600 over a
+            13.5&nbsp;px line in <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Chrome</td><td>Tab bar</td>
+          <td class="t-note">Floating pill, <code>58&nbsp;px</code>, <code>10&nbsp;px</code> inner
+            padding, five tabs. Active tab is an accent pill with icon <em>and</em> label; the rest
+            are outline icons only. Sits outside the scrolling area.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <p>The seven verdict readings are gathered on one screen (02) so they can be compared; in the product
+    each one belongs to a single card in the results list (01). <b>Result vs Action</b> is also within
+    that one list. <b>Empty list</b> is its own screen (04), and the chart states belong to result
+    detail (03).</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Approved</td><td class="t-note">Accent tone, tick badge, <code>84% support · 70% needed · 1,079 votes</code>.</td></tr>
+        <tr><td>Rejected</td><td class="t-note">Red tone, cross badge, the same three figures. Red always arrives with a glyph and a word, never on its own.</td></tr>
+        <tr><td>Vetoed</td><td class="t-note">Red tone, but a <em>ringed</em> diagonal strike rather than a bare cross — the badge distinguishes a management block from a member rejection at the same tone. Red, not the hold hatch, because the sub-line says <code>appeal closed</code>: this veto is concluded, not paused. A veto that is still appealable is the separate <code>Veto hold</code> state below.</td></tr>
+        <tr><td>Ruled out</td><td class="t-note">Red tone, ringed minus badge. The vote passed but the instruction could not be carried out. The sub-line names the blocker and states that the deposit is <em>already returned</em> — it came back when the idea became a Proposal, so no verdict after that point can take it.</td></tr>
+        <tr><td>Veto hold</td><td class="t-note">The held tone: static accent bars at <code>135°</code> over <code>#13171E</code>, an <code>rgba(155,226,34,.30)</code> ring and the <code>⊘</code> glyph in accent. A live countdown — <code>00:22:00</code> ticking down in tabular figures, kept full-contrast white — makes it the only bar with a running clock. This replaces the hueless pause badge this file first shipped; the hatch is the settled treatment and this is the single place it is spent.</td></tr>
+        <tr><td>Lapsed</td><td class="t-note">Inert tone, hourglass badge, <code>61 of 120 likes · never reached the vote · deposit forfeited</code>. Stays hueless: an idea that ran out of time is over, not held. This is the one ending on the screen where the member loses the deposit, so the bar says so.</td></tr>
+        <tr><td>Cancelled</td><td class="t-note">Inert tone, return-arrow badge, refund figure in the sub-line. Also stays hueless — a withdrawn fixture is finished, and the deposit came back.</td></tr>
+        <tr><td>Result vs Action</td><td class="t-note">Same card, same verdict bar. The Action variant drops the body copy and gains the next-step panel; the button label changes from <code>View details</code> to <code>Open action</code>.</td></tr>
+        <tr><td>Taxonomy switch</td><td class="t-note">Single-select. Moving between <code>Decisions</code> and <code>Positions</code> changes the list, not the card.</td></tr>
+        <tr><td>Filters</td><td class="t-note">Single-select chips. Selected chip goes to the accent wash; the rest stay on <code>#1C2129</code>.</td></tr>
+        <tr><td>Chart drawing</td><td class="t-note">The outcome line animates from zero over <code>1.15&nbsp;s</code> when the panel is 30% on screen, then holds. The percentage labels fade in at <code>0.8&nbsp;s</code>. Suppressed under <code>prefers-reduced-motion</code>.</td></tr>
+        <tr><td>Empty list</td><td class="t-note">Screen 04: the <code>Results</code> header, then one bordered panel in place of the whole feed. No skeleton rows.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Hero banner</b> — field gradient, triangle field, peak motif, prop-in-front layering</li>
+        <li><b>Card shell</b> — the idea-card geometry, run full width instead of <code>268&nbsp;px</code></li>
+        <li><b>Author row</b> — portrait stacking, overlap and ring weight</li>
+        <li><b>Section container</b> — the bordered <code>#080A0C</code> wrapper with its 1&nbsp;px hairline</li>
+        <li><b>Status pill</b> — the <code>LIVE NOW</code> treatment, reused for settlement dates</li>
+        <li><b>Icon button</b> — <code>38&nbsp;px</code> circle, white 1.9-stroke glyph</li>
+        <li><b>Tab bar</b> — built from the four active-state frames</li>
+        <li><b>Photography</b> — all six portraits taken from the exports</li>
+        <li><b>Type scale, radii, surfaces</b> — sampled, not approximated</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The verdict bar</b> — no result component exists in the Figma at all; this is the whole proposal</li>
+        <li><b>Four tones, seven states, two colours</b> — accent for passed, red for blocked, the <code>135°</code> accent hatch for held, no hue for finished-and-quiet. The hatch is not new here: it is copied from <code>veto.html</code>, which settled it</li>
+        <li><b>Distinguishing badges</b> — cross, ringed strike and ringed minus separate rejected, vetoed and ruled-out inside one red tone</li>
+        <li><b>Detail scale</b> — one size step for the result page, so the same component reads at two sizes</li>
+        <li><b>One word per ending</b> — the live build renders the same status as <code>APPROVED</code> on Results and <code>PUBLISH IT!</code> on Actions, and ships a never-rendered fourth string, <code>Let's do it!</code></li>
+        <li><b>One green</b> — <code>#9BE222</code>, against the four the live build uses for the same outcome</li>
+        <li><b>Publish it demoted from verdict to instruction</b> — it now appears only in the Action card's next-step panel, where an imperative belongs; the verdict above it reads <code>Approved</code></li>
+        <li><b>A red wash</b> — <code>rgba(226,86,74,.12)</code> and ring <code>rgba(226,86,74,.24)</code>, derived from the contract's semantic red at the same opacities as the accent wash. Not a new hue</li>
+        <li><b>An evidence line in every bar</b> — the share, the threshold and the vote count. Live cards carry the outcome word and no figures at all, and no date</li>
+        <li><b>Taxonomy segmented control</b> — <code>Decisions</code> / <code>Positions</code>, with its help button moved <em>outside</em> the track. The live control puts a label and a <code>?</code> inside one <code>185&nbsp;pt</code> half with no separation, so a tap is a coin toss</li>
+        <li><b>Category chips, spelled out</b> — On-field, Off-field, Position, Management, Decision. Deliberately colourless, so accent stays reserved for state; and full-length, fixing the live chip that truncates its own taxonomy to <code>Manage…</code></li>
+        <li><b>Actions framing</b> — the next-step panel, its owner line and its consequence line</li>
+        <li><b>Counting-round chart</b> — elimination lines, threshold marker, animated outcome, on <code>#1C2129</code> rather than the live pure <code>#000000</code></li>
+        <li><b>Emphasis by weight and opacity, not hue</b> — replacing the live six-colour legend (violet, blue, teal, brown, maroon, olive), three of whose dots sit within a shade of the card fill</li>
+        <li><b>Round tally</b> — swatch weights matched to the chart so the two read as one figure. <code>Final share</code> replaces the heading <code>Count events</code>; <code>Out&nbsp;·&nbsp;C4</code> replaces <code>Eliminated C4</code>; and the club-added option is labelled as such rather than styled identically to a member's</li>
+        <li><b>One tap target per card</b> — a single full-width <code>View details</code> pill, against the three-to-four identical <code>VIEW DETAILS</code> strings a live viewport carries</li>
+        <li><b>Two radii, not seven</b> — <code>R16</code> for cards and containers, <code>R12</code> for inner panels and verdict bars, plus the pill. The live Results list uses seven values in one viewport</li>
+        <li><b>An explainer that wraps</b> — one sentence under the chart defining what a round is. The live explainer is clamped to a single line and breaks mid-word at <code>countin…</code></li>
+        <li><b>Empty state</b> — no empty result frame exists</li>
+        <li><b>No webfont link</b> — the review host blocks external requests, so this file ships on the system stack only</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Are these the seven endings, and are they named right?</h3>
+      <p>The bar is built against the status values the live build emits, including
+      <code>rule_outed</code>, which reads as a bug in a string table rather than a product state. We
+      have shown it as <span class="flag">Ruled out</span>. If there are only four real endings this
+      component gets simpler; if there are nine, we need the other two before build.</p>
+    </li>
+    <li>
+      <h3>Settled: a hold is the accent interrupted, not a hueless bar.</h3>
+      <p>This screen originally drew a veto hold as an <em>inert</em> bar — no hue, a pause badge —
+      while the veto screens drew it as the accent struck through with static <code>135°</code> bars.
+      Both were defensible and they could not both ship. The hatch won, and this file now uses it:
+      same tokens, same <code>5&nbsp;px</code>&nbsp;/&nbsp;<code>6&nbsp;px</code> rhythm, same
+      <code>rgba(155,226,34,.30)</code> ring, same <code>⊘</code>. Nothing else on the screen gets it —
+      Lapsed and Cancelled stay hueless, because they are over. <b>What we still need from you:</b>
+      confirm that a held proposal should keep appearing in the <em>Results</em> list at all, rather
+      than staying in Voting until the appeal resolves. It currently sits in Results with a running
+      clock, which is the one bar in the list that is not yet a result.</p>
+    </li>
+    <li>
+      <h3>What is the currency called, and is a forfeited deposit real?</h3>
+      <p>Three bars here talk about money. The live build uses four names for one thing —
+      <code>Credits</code>, <code>Participation Credits</code>, <code>Participation Deposit</code> and a
+      legacy <code>BOND</code> — and the string table still ships an unsubstituted
+      <code>[x] PARTICIPATION CREDITS</code>. This screen now uses <span class="flag">Credits</span> as
+      the noun and <em>deposit</em> in lower case for what happens to them, which is
+      <code>wallet.html</code>'s resolution rather than a fourth opinion. It also uses the wallet's
+      figure: the deposit is <span class="flag">25</span> Credits, not the <code>250</code> this file
+      first showed. <b>The 25 is invented</b> — no pricing exists anywhere in the repo — so it needs a
+      product decision, and it is written up at length in the Create idea notes.</p>
+      <p><b>The forfeiture conflict is settled.</b> This screen used to show <code>Ruled out</code>
+      taking the deposit while the wallet said a deposit always comes back. Neither was right. The live
+      string table decides it: the deposit is <em>refunded only when the Idea becomes a Proposal</em>
+      (<code>ideaPage.agreement</code>), it <em>is forfeited</em> when the Idea lapses
+      (<code>notification.idea_lapsed</code>), and once it is a Proposal the member is charged nothing
+      further — <code>This will be free when the Proposal is Vetoed, Cancelled or Ruled Out</code>.
+      So there is exactly one way to lose the deposit: the idea lapses. <code>Ruled out</code> now reads
+      <code>deposit already returned</code>, the Actions next-step line reads
+      <code>Deposit returned · 25 Credits</code>, and <code>Lapsed</code> carries
+      <code>deposit forfeited</code>. Wallet and Create idea now say the same thing. Confirm the rule
+      and it is consistent everywhere.</p>
+    </li>
+    <li>
+      <h3>Two taxonomies overlap on one card. Which one survives?</h3>
+      <p>The segmented control splits the list into <code>Decisions</code> and
+      <code>Positions</code>, while the chip on the card says <code>On-field</code>,
+      <code>Off-field</code> or <code>Management</code> — and two cards in the list carry
+      <code>Position</code> and <code>Decision</code> as chips instead. That is two classification
+      systems in the same component. We need to know whether type and subject are separate axes, or
+      whether one of them should go.</p>
+    </li>
+    <li>
+      <h3>Is the threshold always 70%?</h3>
+      <p>The chart draws <span class="flag">a single 70% threshold</span>, taken from the live detail
+      screen's <code>Threshold 70%</code> line. But the club config carries four separate values —
+      one each for positions, on-field decisions, off-field decisions and rejecting a veto. If the bar
+      moves by proposal type then the dashed marker and the <code>70% needed</code> figure in every
+      verdict bar both have to read from config, and the chart needs to survive a threshold near
+      <code>50%</code>, where the marker would land on a gridline.</p>
+    </li>
+    <li>
+      <h3>Two status branches never fire in the current build — confirm what the bar will be handed.</h3>
+      <p>This is a build note rather than a design question, but it decides whether any of the seven
+      states can be seen. <code>func.dart::findStatusAction</code> matches
+      <code>case "rule_outed&nbsp;"</code> <em>with a trailing space</em>, while the enum emits
+      <code>rule_outed</code> without one — so that branch is dead and every status that is not
+      <code>let_do_it</code> or <code>let_push_it</code> falls through to the default and renders as
+      <code>Ruled out</code> in the danger colour. <code>findTypeAction</code> carries the same trailing
+      space on <code>case "on_field_decisions&nbsp;"</code>, so on-field items fall through to the wrong
+      type label too. In practice an approved, lapsed or cancelled action is currently shown to members
+      as ruled out, in red. We have built all seven states against the correct unspaced values; the two
+      <code>switch</code> cases need the spaces removed before this component can show anything but
+      one state.</p>
+      <p>Two smaller ones while we are in there. Both <code>en.json</code> and <code>vi.json</code>
+      ship <code>has bene forfeited</code> — for <em>been</em> — on the lapsed-idea message; the copy
+      used here reads <code>deposit forfeited</code>. And the taxonomy tooltip still
+      contains <code>Lorem ipsum</code> for both segments, so the help button beside the segmented
+      control has no real copy to open with.</p>
+    </li>
+    <li>
+      <h3>Is the count really an elimination?</h3>
+      <p>The detail chart asserts five counting rounds with the lowest option dropped and its votes
+      redistributed, and shows an option called <code>Reject all options</code> that the club added.
+      That is the most defensible reading of a multi-option proposal, but it is an assumption about
+      the vote engine, not something we found. If the count is a single plurality, the chart should be
+      one bar per option and the tally loses its round column.</p>
+    </li>
+  </ol>
+</section>

@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en" data-component="idea-card">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Idea Card</title>
+
+<style>
+/* ============================================================
+   SPORTSHEIST — IDEA CARD
+   Tokens sampled directly from War Room-Dark Mode.svg (Figma export)
+   ============================================================ */
+:root{
+  /* surfaces */
+  --sh-bg:            #030401;   /* screen canvas                     */
+  --sh-surface:       #1C2129;   /* card                              */
+  --sh-sunken:        #13171E;   /* inner panel · dark pill · controls */
+  --sh-hairline:      rgba(255,255,255,.06);
+
+  /* accent */
+  --sh-accent:        #9BE222;   /* acid green                        */
+  --sh-accent-ink:    #0B0E06;   /* text/icon on accent               */
+  --sh-accent-dim:    #689524;
+  --sh-accent-track:  #2E3F1F;
+
+  /* text */
+  --sh-text:          #FFFFFF;
+  --sh-text-muted:    #99A0AE;
+  --sh-text-dim:      #5B606B;
+
+  /* misc */
+  --sh-ring-track:    #3D424B;
+
+  /* geometry */
+  --sh-card-w:        268px;
+  --sh-card-pad:      16px;
+  --sh-r-card:        16px;
+  --sh-r-panel:       12px;
+  --sh-r-pill:        999px;
+
+  /* motion */
+  --sh-ease:          cubic-bezier(.16,1,.3,1);
+
+  --av-c7: url(data:image/jpeg;base64,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);
+  --av-fp: url(data:image/jpeg;base64,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);
+  --av-sm: url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAGwAAAQUBAQAAAAAAAAAAAAAABAECAwUGAAf/xAAvEAACAQMDAgYBBAEFAAAAAAABAgMABBEFEiExQQYTIlFhcTIHFIGRIxVCscHR/8QAGAEAAwEBAAAAAAAAAAAAAAAAAQIDAAT/xAAdEQADAQEBAQEBAQAAAAAAAAAAARECAyESMVEE/9oADAMBAAIRAxEAPwDD3QjdwVIIWhJXbGB5h+hirJLTy3LFi3xSyyqgwAMjrUaJCkZJnPELH7pUsLqXkRYHuaLlv3BIiRmI74oTzb66O1SQtMqaDTZsn5yIPjNKluC3JyPqk/btHJiV8Af2alMuBwAqD+SaaDJf0UxW+cGMn3wcV0lpalMqHHxu5oWS9A45X6HFDPcMTkMTRg3hPJYZjMkMm8DqD1FC7dtPS4ZG3IxVu/zS7XuZP8aeruBRFZGKVTg0pTaxB7UoXJ4oALPRoFmu8EA5HQ0VqUMUOdsYVvcUFaObWRGORxxSXMr3MzHJIpX+mvhYx3ks1q8jHA7YqOO/SG32pGGc9zUBk8u0WLHWuVo0TCJuY0DIljkM4Jf0g9TT3uUt4wsY57UKZGAwQAfaoPylyT0opBJJQCTJK3yfmhQk1/cLBbock8AV1xIZCfYdq13gDRmnZ7104J2oT8Udv5VKc8/WoAW/gDU5kDyFVz7miB+nl0BuMgwOvNeopBsjA3c1DPCCOduT/dc73o61xx/DxXV9BudLlww3KemKg0q6a0vdwXduUqQe/Fel65pRnVj+YA+8V5xd2xs73BGNpz9iqc9/XjIduXx6vwlj02a5sZb84CgmhY1wN1FG6m/ZNbq22NmyRQ6Rs52gU5zHFpJJBjmtDYaOHsGlkYBse9A2VmsC+bLUdzc3Fy+2FiiD2NYA+5hVyq5xgU1IVVSUb+aS8zHOwxUKSTAekenuay9HGkSIC0nQ9h/7UIPpJ7ntU0z7xkgsT0zQ7tgEZ4Ht3NOjET8HGa3WjWMz6XHH/rE1qqpkLHxj+qxen2jX1/FAB+bVt5P09aVUeO6lGTnlunxUujVhfllxuBOnTapaXixtqLXkJOMs2TRutX98GWG1JEhGATRej+G10/YskplbdlcnlfgfH3T9ehmN8VSPy5QnoLcgnHB4qD/TqS8hSQ6Dq/7Zrq61aXf1K54H8VjtdZpLsO2CuSA4GN/zVtqb+JIZJIDcmWIgEjaP+RVJqcly0MazqoKjOQKthe05+jXzICqdy/XNS28xRiRjFDxYbcvuKZM+30LVWvTkYXcX0kx2I3HxUkDvGuCetQWtsxG7BJNFG3lAyy8UrCTxsjykuMgmjXa1EW7YMAYJqpEcm7KY64ye1TNBJJgnLYPGemfqlhkwC4mZ33EbRgKo9hQ7njGePf3p1w4Mjc8A0MzljVQlv4bkC6uj9NvSvZNP1JRANx6CvEdGcpfqa9O0u7jjjR5iNo9+lcvWrVO3/O08RlhqniyDTLiPzAPNkfaqbc4HuaqZ/FMOpX7bJViMABKk5Bz8dqJ1PxB4cacGZo3mxtLKucfzWcub3wxLOGt1l8zIHCkLj/ulSpXTnpdXV+jQ+c1uHaQ7srycduvxWC1u+/dXJwhRemCeavdT1SJ42aJlVf8AaCx4rHyyGSQsSTVeWfazn77UiJLZgsqluhPNEvbo0wK9KEt2Cybm6Yq1SF7mHcowKszkCLW4ggAU4NdPqCT3KIo2oDyaCSzG/uae8AUZ20jQ1JJ32tgcYPSmvf8Ak2ztnLldq0xyWPJ5oG55crnpWSEQLhpDnrXFQvepSAo9TY+O9QtjPHSqBJ7GQR3SN81t7aUXFsI5MlcYx715+CQQR2q+0vXTbYWZcgd6j0y36i/HaXjLS58+yiMR0uKWAnIfyef7qmkRLi5BW3Fqq8nYSK0B8WQlMbaz17qYupXYjaD2HelwmX6bUlGX92jx+Up3YPLVW9TSyNubjpSCrpQ49OslhUs1a+ztduken8iKz2mRea8carlnbrXp1poEMVkhZjuxQf6KZ6HSljtQ7rziqi5TMjKBgZrb3Vq0dthTkAVlpYFaZskA5pNFcwplj6u64HvVSxG95G6Fjj5qznn/AMRUHrVVcZzjOFA4psE5CIsWJ4wKacHpXE8YpOv1TgOGM9aMihDqKCq609Elg4YEjtml04h8KsGkt2VM9BQTcGr+7hQWpORnFUcwCuQDnFLh0bahFSikrh1qhIvtGcRTxyEAbSK9Is9SMtuo9J44rzFXRLdGRhkjnFWdnqs8MYCysBSUZG2vrrdb7MAccmsvL6pWxzzQs2tMqYeZ2+KBfWzkeXGTSusNSKy73Rt6iRz0oN8liT1qy1GdbmGGTbg5OR71XE4J7k1TP4IMArj0rvYU4jiiYjpynFN704CsYcXdvyYn7NNzSkV2KxhOtdnmlGTwP7pygE4FYw+LOcjj7q8067tGVVuR5fbcBkVS4xip4W2qE9+tZqhRrDDp5wFCyk9AvJNDyWiA+izdPlkIq1/TW4z4ilVgCwtm2k9jlc16okjPw4Uj2IzUNajhfPL6Vp//2Q==);
+  --av-tt: url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAGwAAAgMBAQEAAAAAAAAAAAAABQYCAwQBBwD/xAAzEAACAQMDAgUDAwQBBQAAAAABAgMABBEFEiExQQYTIlFhFHGBkaGxFSMzQlIyU2PB8P/EABgBAAMBAQAAAAAAAAAAAAAAAAIDBAEA/8QAHxEAAgICAwEBAQAAAAAAAAAAAAECEQMhEiIxQWFx/9oADAMBAAIRAxEAPwDzKOeRnwq5J70b8PtHPq9vBqEjmB2wwAwT+laILK3iCllA9iavhFpFKk7pvSNwWVTyy55A/FC2ckEtR0200/VXjsoysLruVCTx7nnoM1y11WPR4JfSkjuAoQ8Y9vxWHxRr1jc6lC+lRSxIqYkZ12bz2GPj3+aEPcPcrknmgUbWxjnT6m6Ji9wXyEBJbge9Zpi8gZuuTjPvUVkIjw1SSV3UQpCzn4FFQF2aBvREGBtrSoYMo9+lVrFCCY7icggZwo3Y+5zxV0eoWUcip5Ej/wDk3jP6e1A7DS3s3RKoILdKNWbwqu1QDmgEWoWNzL5JLwlsBXfG3d9+1aHuDZyCN1KuvvSuLGtpBa99aCPPGeaG3Kk2ruI8lO/2olbqk6ec8g5FQvLciyZYzkN1xWJUjrsE213FMikgVZHcx/UhomCkd6qitGjDqqAA9Oazw6XcTSHD4x2FHoDYIuXke0WNgQVqiCVoouCc56Gi9zDI3oaI5z196HajbSQgIExkU9CSjU54pPLZSM96zQttPB4rPJBKoyRUopOMVpgXgih8rzbhm2c4C8fnNSm1QLamKzjESHG89Sw96Hzyf2URiWyoIUGq7eGWeRYgMF2AwegoQkduL1podiZBZvVniswnZXPOD2p0tfClqEHml5SBzk4rW/g7TZkHDRN2IbNBzQ1Y5MRYrtw2Gcbe+eabNGnjvovpJWTbtLRlusfHJB9vehus+DLmyUy2z+enU8YNCdPvJLTcvqV87euMfFY6ktBJOL7Ic5YvIQwMzbk6jJr4XcyQHLFQOgNfW9z9bpkN+xPnwkRS7iCHHOD96lczxXSB8hQB0obsxxpmQ3LyjAlIb4rlnLdpKWViffNDRKjTNtOFB4o/pxin2LGRk9aySaR0WmwZDeXMoztDECqk1F3nIuofV0HtWLT9TUYOcjpRqWKxu4vMZtrAZ44p4nYsalcKtwwAAB4wO1ZUjDruVhmrdSt2aQtENyjvWzw/pIu3aSWKSVFO0Ro+zcepJODgAVraStnRg5y4ossNJlvH8wqcHhOPanDT/DtvaxLcXQAI5APaiGixWpACJhEXAHt8ftWy9CS8MePalOVqyiMKdMXb3U7lX22clqmOkch9T1dpWum5m+nurR4Xx1yCpPwa+uNAtHkMyIm7OcFM81PTNK8uUEDCqe/NKbKFEKTJG8ZIbnHSvP8AXdOFvqoKBUW5O3kcA5otryX0WrAwedtXkNCeV/HeimnwxX1lFf3LJO0DnZIV27srxke4xWK1tGSpqmBZLddOsFtA7s0jb5CeAMDAGPyazvbTCJniJkU9cDOKu1yWZrlpXB9R4JqOl3j/AOKMAhuvHSnJasklK5A76OXZuBNarB7uLaI1O7NMVlYI5JkUFM9fejI0q0ljUxAKw6EULyfgUcV+M8ctGx16DpijcLSNGMk5NBPM8lw6jK55FF7e4NyNyYAAp9CLfhabeWI7B6t44FGfDVu8cd1aOWieVlKsPbvj9qAATvcK3mlcGmDRpDcaxa27EPvfn7YyaGStUHjlxkmhk0porK2NuCCQ555y3U5Oa5JI80hAOPih+qPBptwqJkbwWPOfirIb+IlSDkn2pDTorTTbYSVWK4A7UM/qeoWt2U+kjW3UcnOZGP29qovJ76WXfG4WFTgIXKhvk4rNJb7wzzWboxA/vQvnGDn/AOyKwak2HLWeDV4fq/JeMPxhxgjHerbizFppkKRgDezvj9B/6NYrS9FxAETDOpCekYB6EEffNW3d4v1flB90cY2D5I6n9c1sF2FZX1oXtRS4EgmlO5E/1xWOxlJvS8a4B7Gm6WKC5tWQoCSKCQ2yQXI2R8qe9NuiWthWG6PpBTZxyKJW7M/IbFD5L2N4AssLJ2zjiuR3UaAbCWPb3pVDk6PLZrOVJNmc5ojZpJbDDDC1x5BMpccY71nnundAuaqJDbPqKjhVBpg8DwtcawbonKwRMx+CeB/JpNjUO4GGOewGa9R8PaR/QfDrmRcXVzh5QeqjHpX8fyaGTpBwVsA+LmeQieMFihOcdhQ7TNXiUqkijBI785ovqXrUjrkc5pRvLGSImSEZX2HUUqLTVMomnF2h1vIxJbGS3mXDDqW6Vi09dUORNKJIewIyf1pQh1C4QbS7YBycmi2neIb477eEeZJMcLx0rHja8NjmGSG+FkJ5o1DMhO05/wBzwP0rlovnWqFXHmd6XdQvXQx2sBJEH+Rj/s/c/ua7Y38nnjD4NHCNITknchtNndSRHZceWwHaskr/AEUCiX1yZ5ap6fqfns0Mhwexqc1lKgLv/cjP7VzM/gR0q7tLmPExUDvk1bqOn24USWzhT2xQL6OMqWQsAewqm5stUlMf00uxE7e9BVB8rQmxmWRfJiiZ3bsozW2PS1Cb7uTbt/0Q5J+M9v3rZPqsESmGNREMcpEn8nvQqe6aZmZQUz7HrVAgb/B/9AimMkQk/qKk7BOwO0e6YwD/ADTBd3DyQMCclq8oV2VhIrFXU5DA8g+9O2g+IE1OMW9ywS7HvwJPkfPxSskX6h+KS8ZfdxFwcUMmg9JUrTFPFtANY7i3/wBgM1PZYti2ujQzzBmAyTyCOKhq5t7TUZbGyiSGOJVjY49TNjLc/nH4pls7XfdRLtwGcD96B+INEZdWvNsqieOVjIjcBsnIZT8jPB7g803G7eyfOqXUCysYlwh3Futct5AkoMnGK0xaVdTMCE2e2eh/NbbKC2mkEdwoVgdpz70+yOi6xukMwcZwOtNdpcfUxbA4AIpVurI2Vx5af9J5GO4ozBayw+TJAd0bDr7ULDVlry/SztEecd8UStF+oi4bBrHcF2tmZIg7dG+Ko028bDQN6XxlTQ/Avp56HyfkfuK+zzjvWcZA9PVeR9qs3hkDr+lOFFmea+BKkMMgjkEdRUc4Ofep4HWuOHHw94jW9CWGoMBMeIpv+58H5/mmU2uVCmvKCMfb+KcvD3i0C3Ntqrk+VjbOBk7emW+3HPzSJ4/qKseX4xhFqyyqV4280I8TaeXeO7R+QNkp6cE8HPw380xRvHNEssTrJGwyrKcgilPxnq6hV06FgWOGlI7Y5ApcE7GZGuOxdguJtOuGeLaQeHRhkN7Gtomt9RcNuEEzYBI4XPuR2/FDEcSxqGPqHGaqbMbVTRHY5XEU81mqzIVu7bG4f8h7j3B61r0S+wz20owGGUz2oL4b1dmf6Gf14UmFieVxyV+x6496sN9HZahJHI4/5xH3HtQfgX6MEno3NHn18OKWpzeWd5uKnKNuU9mFMlveQXcAkVhtkFQZreddk+D5RxmuNez/2Q==);
+
+  --sh-font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+             "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--sh-bg);
+  color:var(--sh-text);
+  font-family:var(--sh-font);
+  font-size:14px;
+  line-height:1.4;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* ---------- page frame (context only, not part of the component) ---- */
+.sh-stage{max-width:420px;margin:0 auto;padding:28px 0 56px}
+
+/* ---------- section header --------------------------------------- */
+.sh-section-head{
+  position:relative;                 /* anchors the filter popover */
+  display:flex;align-items:center;gap:8px;
+  padding:0 16px 14px;
+}
+.sh-section-title{
+  flex:1;margin:0;
+  font-size:19px;font-weight:700;letter-spacing:-.01em;color:var(--sh-text);
+}
+.sh-iconbtn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;flex:0 0 auto;
+  border:0;border-radius:var(--sh-r-pill);
+  background:var(--sh-sunken);color:var(--sh-text-muted);
+  cursor:pointer;transition:background .18s var(--sh-ease);
+}
+.sh-iconbtn:hover{background:#1A1F27}
+.sh-iconbtn:focus-visible{outline:2px solid var(--sh-accent);outline-offset:2px}
+.sh-iconbtn--accent{background:var(--sh-accent);color:var(--sh-accent-ink)}
+.sh-iconbtn--accent:hover{background:#A8EC33}
+.sh-iconbtn[aria-pressed="true"]{background:var(--sh-accent);color:var(--sh-accent-ink)}
+/* nothing to filter — the control must read as inert, not merely act inert */
+.sh-iconbtn[disabled]{
+  background:var(--sh-sunken);color:var(--sh-text-dim);cursor:default;opacity:.55;
+}
+.sh-iconbtn[disabled]:hover{background:var(--sh-sunken)}
+.sh-textbtn{
+  display:inline-flex;align-items:center;gap:5px;
+  height:34px;padding:0 13px;
+  border:0;border-radius:var(--sh-r-pill);
+  background:var(--sh-sunken);color:var(--sh-text);
+  font:inherit;font-size:12.5px;font-weight:500;
+  cursor:pointer;transition:background .18s var(--sh-ease);
+}
+.sh-textbtn:hover{background:#1A1F27}
+
+/* ---------- screen frame (documentation chrome, not the product) -- */
+.frame{
+  width:375px;max-width:100%;margin:0 auto;
+  border:1px solid var(--sh-line);border-radius:22px;
+  background:var(--sh-bg);overflow:hidden;
+}
+.frame + .frame{margin-top:26px}
+
+/* ---------- carousel --------------------------------------------- */
+.sh-rail{
+  display:flex;gap:12px;
+  padding:0 16px 6px;
+  scroll-padding-left:16px;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;-ms-overflow-style:none;
+  -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
+}
+.sh-rail::-webkit-scrollbar{display:none}
+
+/* ============================================================
+   COMPONENT — .sh-idea-card
+   ============================================================ */
+.sh-idea-card{
+  flex:0 0 auto;
+  scroll-snap-align:start;
+  width:var(--sh-card-w);
+  padding:var(--sh-card-pad);
+  border-radius:var(--sh-r-card);
+  background:var(--sh-surface);
+  display:flex;flex-direction:column;
+  box-shadow:inset 0 1px 0 var(--sh-hairline);
+}
+
+/* -- author row ---------------------------------------------------- */
+.sh-idea-card__author{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.sh-avatars{display:flex;flex:0 0 auto}
+.sh-avatars > .sh-avatar + .sh-avatar{margin-left:-9px}
+.sh-avatar{
+  width:22px;height:22px;border-radius:50%;
+  border:1.5px solid var(--sh-surface);
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+.sh-idea-card__byline{
+  min-width:0;
+  font-size:12.5px;color:var(--sh-text-muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* -- title + body -------------------------------------------------- */
+.sh-idea-card__title{
+  margin:0 0 8px;
+  font-size:17px;font-weight:600;line-height:1.2;letter-spacing:-.015em;
+  color:var(--sh-text);
+}
+.sh-idea-card__body{margin:0 0 7px;font-size:13px;line-height:1.35;color:var(--sh-text-muted)}
+.sh-idea-card__body:last-of-type{margin-bottom:0}
+
+/* -- meta row ------------------------------------------------------ */
+.sh-idea-card__meta{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin:14px 0 10px;
+}
+.sh-timer{display:inline-flex;align-items:center;gap:6px;color:var(--sh-text)}
+.sh-timer svg{width:14px;height:14px;flex:0 0 auto;color:var(--sh-text)}
+.sh-timer time{
+  font-size:13.5px;font-weight:600;letter-spacing:.01em;
+  font-variant-numeric:tabular-nums;
+}
+.sh-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--sh-accent);white-space:nowrap;
+}
+.sh-tag::before{
+  content:"";width:5px;height:5px;border-radius:50%;
+  background:currentColor;flex:0 0 auto;
+}
+
+/* -- gauge panel --------------------------------------------------- */
+.sh-gauge{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;
+  border-radius:var(--sh-r-panel);
+  background:var(--sh-sunken);
+}
+.sh-gauge__label{font-size:13.5px;font-weight:600;line-height:1.25;color:var(--sh-text)}
+/* the count behind the proportion — the ring alone cannot say how far a
+   single Like moved the idea, and the threshold moves with membership */
+.sh-gauge__count{
+  display:block;margin-top:5px;
+  font-size:11.5px;font-weight:500;color:var(--sh-text-muted);
+  font-variant-numeric:tabular-nums;
+}
+.sh-gauge__ring{position:relative;width:64px;height:64px;flex:0 0 auto}
+.sh-gauge__ring svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+.sh-gauge__track{fill:none;stroke:var(--sh-ring-track);stroke-width:7}
+.sh-gauge__fill{
+  fill:none;stroke:var(--sh-accent);stroke-width:7;stroke-linecap:round;
+  stroke-dasharray:var(--c);
+  stroke-dashoffset:var(--c);
+  transition:stroke-dashoffset 1.1s var(--sh-ease);
+}
+.sh-idea-card.is-drawn .sh-gauge__fill{
+  stroke-dashoffset:calc(var(--c) * (1 - var(--pct)));
+}
+.sh-gauge__value{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14.5px;font-weight:600;letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;pointer-events:none;
+}
+
+/* -- action -------------------------------------------------------- */
+.sh-like{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;height:52px;margin-top:10px;
+  border:0;border-radius:var(--sh-r-pill);
+  background:var(--sh-accent);color:var(--sh-accent-ink);
+  font:inherit;font-size:15px;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;
+  transition:background .18s var(--sh-ease), transform .12s var(--sh-ease);
+}
+.sh-like svg{width:19px;height:19px;flex:0 0 auto}
+.sh-like:hover{background:#A8EC33}
+.sh-like:active{transform:translateY(1px)}
+.sh-like:focus-visible{outline:2px solid var(--sh-accent);outline-offset:3px}
+
+.sh-like[aria-pressed="true"]{
+  background:var(--sh-sunken);color:var(--sh-accent);
+}
+.sh-like[aria-pressed="true"]:hover{background:#1A1F27}
+
+/* an idea whose clock has run out no longer takes Likes. It is settled, so
+   the control has to READ settled: no pointer, no hover, no press. */
+.sh-like[disabled]{
+  background:var(--sh-sunken);color:var(--sh-text-dim);
+  cursor:default;box-shadow:inset 0 0 0 1px var(--sh-hairline);
+}
+.sh-like[disabled]:hover{background:var(--sh-sunken)}
+.sh-like[disabled]:active{transform:none}
+
+/* the two thumb glyphs swap on state */
+.sh-like__icon--outline{display:block}
+.sh-like__icon--solid{display:none}
+.sh-like[aria-pressed="true"] .sh-like__icon--outline{display:none}
+.sh-like[aria-pressed="true"] .sh-like__icon--solid{display:block}
+
+/* -- filter popover ------------------------------------------------ */
+.sh-pop{
+  position:absolute;top:38px;right:16px;z-index:80;width:196px;padding:6px;
+  border-radius:var(--sh-r-panel);
+  background:var(--sh-surface);border:1px solid rgba(255,255,255,.075);
+  box-shadow:0 18px 44px rgba(0,0,0,.55);
+}
+.sh-pop[hidden]{display:none}
+.sh-pop__k{
+  margin:4px 8px 6px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--sh-text-dim);
+}
+.sh-pop__o{
+  display:flex;align-items:center;gap:8px;width:100%;height:38px;padding:0 9px;
+  border:0;border-radius:8px;background:transparent;color:var(--sh-text);
+  font:inherit;font-size:13px;text-align:left;cursor:pointer;
+}
+.sh-pop__o:hover{background:var(--sh-sunken)}
+.sh-pop__o:focus-visible{outline:2px solid var(--sh-accent);outline-offset:-2px}
+.sh-pop__o[aria-checked="true"]{color:var(--sh-accent);font-weight:600}
+.sh-pop__tick{width:15px;height:15px;flex:0 0 auto;opacity:0;color:var(--sh-accent)}
+.sh-pop__o[aria-checked="true"] .sh-pop__tick{opacity:1}
+
+/* nothing left in the rail once a filter is applied */
+.sh-railnote{
+  flex:0 0 auto;width:var(--sh-card-w);
+  display:flex;align-items:center;justify-content:center;
+  min-height:120px;padding:16px;border-radius:var(--sh-r-card);
+  background:var(--sh-surface);color:var(--sh-text-muted);
+  font-size:13px;text-align:center;
+}
+.sh-railnote[hidden]{display:none}
+
+/* -- empty state --------------------------------------------------- */
+.sh-idea-card--empty{
+  align-items:center;justify-content:center;text-align:center;
+  min-height:250px;gap:16px;
+}
+.sh-idea-card--empty p{margin:0;font-size:13.5px;color:var(--sh-text-muted)}
+.sh-idea-card--empty svg{width:52px;height:52px;color:var(--sh-accent);opacity:.9}
+
+
+@media (prefers-reduced-motion: reduce){
+  .sh-gauge__fill{transition:none}
+  .sh-like{transition:none}
+}
+</style>
+</head>
+<body>
+
+<main class="sh-stage">
+
+<!-- ============================================================
+     SCREEN 1 — THE IDEAS RAIL
+     ============================================================ -->
+<section class="frame" data-title="Ideas rail">
+
+  <!-- ===== context: section header ===== -->
+  <div class="sh-section-head">
+    <h1 class="sh-section-title">Ideas</h1>
+
+    <button class="sh-iconbtn sh-iconbtn--accent" type="button" aria-label="New idea">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" width="17" height="17">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+    </button>
+
+    <button class="sh-iconbtn" type="button" aria-label="Filter ideas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" width="17" height="17">
+        <path d="M4 7h16M6.5 12h11M10 17h4"/>
+      </svg>
+    </button>
+
+    <button class="sh-textbtn" type="button">
+      View all
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13">
+        <path d="M7 17 17 7M9 7h8v8"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ===== the component ===== -->
+  <div class="sh-rail">
+
+    <!-- ---- card 1 · unliked, 50% ---- -->
+    <article class="sh-idea-card" data-pct="50" data-kind="decision" data-likes="60" data-need="120">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-tt)" role="img" aria-label="taythaytu"></span>
+        </span>
+        <span class="sh-idea-card__byline">by taythaytu</span>
+      </div>
+
+      <h2 class="sh-idea-card__title">First-Team Manager</h2>
+      <p class="sh-idea-card__body">Members pick the next first-team manager from the club’s official shortlist.</p>
+      <p class="sh-idea-card__body">The hire only counts if this vote clears the 80% yes bar.</p>
+
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT1H9M12S" data-countdown="4152">01:09:12</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+
+      <div class="sh-gauge">
+        <span class="sh-gauge__label"><span class="sh-gauge__pct">50% of<br>required likes</span><span class="sh-gauge__count">60 of 120 likes</span></span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill"  cx="32" cy="32" r="27" style="--c:169.6;--pct:.5"/>
+          </svg>
+          <span class="sh-gauge__value">50%</span>
+        </span>
+      </div>
+
+      <button class="sh-like" type="button" aria-pressed="false">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">Like</span>
+      </button>
+    </article>
+
+    <!-- ---- card 2 · liked, 75% ---- -->
+    <article class="sh-idea-card" data-pct="75" data-kind="decision" data-likes="90" data-need="120" data-closed>
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+          <span class="sh-avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+        </span>
+        <span class="sh-idea-card__byline">by capitan_7 &amp; scout_mode</span>
+      </div>
+
+      <h2 class="sh-idea-card__title">Girona Loan Window</h2>
+      <p class="sh-idea-card__body">Lease four academy graduates to Girona for consistent first-team.</p>
+      <p class="sh-idea-card__body">Recall windows stay open for January and emergencies.</p>
+
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT0S" data-countdown="0">00:00:00</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+
+      <div class="sh-gauge">
+        <span class="sh-gauge__label"><span class="sh-gauge__pct">75% of<br>required likes</span><span class="sh-gauge__count">90 of 120 likes</span></span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill"  cx="32" cy="32" r="27" style="--c:169.6;--pct:.75"/>
+          </svg>
+          <span class="sh-gauge__value">75%</span>
+        </span>
+      </div>
+
+      <!-- this idea's clock has run out, so Likes are closed. A settled card
+           must not accept another Like — the control is genuinely disabled. -->
+      <button class="sh-like" type="button" aria-pressed="true" disabled
+              aria-label="Liked. Likes are closed — this idea's clock has run out.">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">Likes closed</span>
+      </button>
+    </article>
+
+    <!-- ---- card 3 · position variant ---- -->
+    <article class="sh-idea-card" data-pct="32" data-kind="position" data-likes="38" data-need="120">
+      <div class="sh-idea-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-fp)" role="img" aria-label="fan_pulse"></span>
+        </span>
+        <span class="sh-idea-card__byline">by fan_pulse</span>
+      </div>
+
+      <h2 class="sh-idea-card__title">Safe standing pilot</h2>
+      <p class="sh-idea-card__body">Trial licensed safe-standing rails in one north-stand block next season.</p>
+      <p class="sh-idea-card__body">Safety and stadium teams already signed off the rollout plan.</p>
+
+      <div class="sh-idea-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT33M12S" data-countdown="1992">00:33:12</time>
+        </span>
+        <span class="sh-tag">Position</span>
+      </div>
+
+      <div class="sh-gauge">
+        <span class="sh-gauge__label"><span class="sh-gauge__pct">32% of<br>required likes</span><span class="sh-gauge__count">38 of 120 likes</span></span>
+        <span class="sh-gauge__ring">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="sh-gauge__track" cx="32" cy="32" r="27"/>
+            <circle class="sh-gauge__fill"  cx="32" cy="32" r="27" style="--c:169.6;--pct:.32"/>
+          </svg>
+          <span class="sh-gauge__value">32%</span>
+        </span>
+      </div>
+
+      <button class="sh-like" type="button" aria-pressed="false">
+        <svg class="sh-like__icon--outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/>
+          <path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/>
+        </svg>
+        <svg class="sh-like__icon--solid" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/>
+          <path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/>
+        </svg>
+        <span class="sh-like__label">Like</span>
+      </button>
+    </article>
+
+    <p class="sh-railnote" role="status" hidden>No open ideas of that type right now.</p>
+  </div>
+
+  <div style="height:28px" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     SCREEN 2 — NO OPEN IDEAS
+     ============================================================ -->
+<section class="frame" data-title="Empty state">
+
+  <div class="sh-section-head">
+    <h1 class="sh-section-title">Ideas</h1>
+
+    <button class="sh-iconbtn sh-iconbtn--accent" type="button" aria-label="New idea">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" width="17" height="17">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+    </button>
+
+    <!-- there is nothing in the rail to filter, so the control is disabled
+         rather than left looking tappable and doing nothing -->
+    <button class="sh-iconbtn" type="button" aria-label="Filter ideas — nothing to filter" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" width="17" height="17">
+        <path d="M4 7h16M6.5 12h11M10 17h4"/>
+      </svg>
+    </button>
+
+    <button class="sh-textbtn" type="button">
+      View all
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13">
+        <path d="M7 17 17 7M9 7h8v8"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="sh-rail">
+    <article class="sh-idea-card sh-idea-card--empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 2h10M7 22h10M7 2v3.5a5 5 0 0 0 2.6 4.4L11 11l-1.4.9A5 5 0 0 0 7 16.5V22M17 2v3.5a5 5 0 0 1-2.6 4.4L13 11l1.4.9a5 5 0 0 1 2.6 4.4V22"/>
+      </svg>
+      <p>Waiting for Ideas</p>
+    </article>
+  </div>
+
+  <div style="height:28px" aria-hidden="true"></div>
+</section>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* draw the gauges once the cards are on screen */
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.sh-idea-card'));
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('is-drawn'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.25 });
+    cards.forEach(function (c) { io.observe(c); });
+  } else {
+    cards.forEach(function (c) { c.classList.add('is-drawn'); });
+  }
+
+  /* ---- Like ⇄ Liked, with the gauge and the count moving with it ----
+     The ring, the percentage, the two-line label and the count all read off
+     one number: data-likes. A Like is +1 against data-need. */
+  function paint(card) {
+    var likes = parseInt(card.dataset.likes, 10) || 0;
+    var need  = parseInt(card.dataset.need, 10)  || 1;
+    var pct   = Math.min(100, Math.round(likes / need * 100));
+    var fill  = card.querySelector('.sh-gauge__fill');
+    var val   = card.querySelector('.sh-gauge__value');
+    var lab   = card.querySelector('.sh-gauge__pct');
+    var cnt   = card.querySelector('.sh-gauge__count');
+    if (fill) { fill.style.setProperty('--pct', String(pct / 100)); }
+    if (val)  { val.textContent = pct + '%'; }
+    if (lab)  { lab.innerHTML = pct + '% of<br>required likes'; }
+    if (cnt)  { cnt.textContent = likes + ' of ' + need + ' likes'; }
+    card.dataset.pct = String(pct);
+  }
+
+  cards.forEach(function (card) {
+    var btn = card.querySelector('.sh-like');
+    if (!btn || btn.disabled) return;                 /* closed cards do not take Likes */
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') === 'true';
+      btn.setAttribute('aria-pressed', String(!on));
+      btn.querySelector('.sh-like__label').textContent = on ? 'Like' : 'Liked';
+      card.dataset.likes = String((parseInt(card.dataset.likes, 10) || 0) + (on ? -1 : 1));
+      paint(card);
+    });
+  });
+
+  /* ---- filter the rail by idea type ---------------------------------
+     One popover per section header, scoped to its own frame: this file
+     carries two headers and document-level wiring would only reach the
+     first. */
+  var TYPES = [
+    { v: 'all',      t: 'All ideas' },
+    { v: 'decision', t: 'Decisions' },
+    { v: 'position', t: 'Positions' }
+  ];
+  var TICK = '<svg class="sh-pop__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+             'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+             '<path d="M4.5 12.5l5 5 10-11"/></svg>';
+
+  Array.prototype.forEach.call(document.querySelectorAll('.frame'), function (frame) {
+    var head = frame.querySelector('.sh-section-head');
+    var btn  = head && head.querySelector('[aria-label^="Filter ideas"]');
+    var rail = frame.querySelector('.sh-rail');
+    if (!btn || btn.disabled || !rail) return;
+
+    var railCards = Array.prototype.slice.call(rail.querySelectorAll('.sh-idea-card'));
+    var note      = rail.querySelector('.sh-railnote');
+    var current   = 'all';
+
+    var pop = document.createElement('div');
+    pop.className = 'sh-pop';
+    pop.hidden = true;
+    pop.setAttribute('role', 'dialog');
+    pop.setAttribute('aria-label', 'Filter ideas');
+    pop.innerHTML = '<p class="sh-pop__k">Show</p>' + TYPES.map(function (o) {
+      return '<button class="sh-pop__o" type="button" role="radio" data-v="' + o.v + '" ' +
+             'aria-checked="' + (o.v === 'all') + '">' + TICK + '<span>' + o.t + '</span></button>';
+    }).join('');
+    head.appendChild(pop);
+
+    btn.setAttribute('aria-haspopup', 'dialog');
+    btn.setAttribute('aria-expanded', 'false');
+
+    function apply(v) {
+      current = v;
+      var shown = 0;
+      railCards.forEach(function (c) {
+        var hit = (v === 'all') || (c.dataset.kind === v);
+        c.hidden = !hit;
+        if (hit) shown++;
+      });
+      if (note) note.hidden = shown > 0;
+      btn.setAttribute('aria-pressed', String(v !== 'all'));
+      pop.querySelectorAll('.sh-pop__o').forEach(function (o) {
+        o.setAttribute('aria-checked', String(o.dataset.v === v));
+      });
+    }
+
+    function open() {
+      pop.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      document.addEventListener('mousedown', away, true);
+      document.addEventListener('keydown', esc, true);
+      var first = pop.querySelector('.sh-pop__o[aria-checked="true"]') || pop.querySelector('.sh-pop__o');
+      if (first) first.focus();
+    }
+    function close(refocus) {
+      pop.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('mousedown', away, true);
+      document.removeEventListener('keydown', esc, true);
+      if (refocus) btn.focus();
+    }
+    function away(e) { if (!head.contains(e.target)) close(false); }
+    function esc(e)  { if (e.key === 'Escape') { e.stopPropagation(); close(true); } }
+
+    btn.addEventListener('click', function () { pop.hidden ? open() : close(true); });
+    pop.addEventListener('click', function (e) {
+      var o = e.target.closest('.sh-pop__o'); if (!o) return;
+      apply(o.dataset.v);
+      close(true);
+    });
+
+    apply(current);
+  });
+
+  /* countdowns */
+  function pad(n) { return String(n).padStart(2, '0'); }
+  var clocks = Array.prototype.slice.call(document.querySelectorAll('[data-countdown]'))
+    .map(function (el) { return { el: el, left: parseInt(el.dataset.countdown, 10) || 0 }; });
+
+  if (clocks.some(function (c) { return c.left > 0; })) {
+    setInterval(function () {
+      clocks.forEach(function (c) {
+        if (c.left <= 0) return;
+        c.left -= 1;
+        var h = Math.floor(c.left / 3600),
+            m = Math.floor((c.left % 3600) / 60),
+            s = c.left % 60;
+        c.el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+        c.el.setAttribute('datetime', 'PT' + h + 'H' + m + 'M' + s + 'S');
+      });
+    }, 1000);
+  }
+})();
+</script>
+</body>
+</html>

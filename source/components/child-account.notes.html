@@ -1,0 +1,347 @@
+<p class="dek">The whole child-account area, in two groups. <strong>Frames 01–17 are a proposal</strong>
+— the hub, the seven-step flow for adding a child, the stored record in three states, and the two-step
+route for closing an account. <strong>Frames 18 and 19 are the app today</strong>: a list and a dead
+dialog, which is the entire feature in code. Every screen here is used by the <em>parent</em> — the
+child never sees any of them. It is the largest uncovered area in the product and the only one whose
+subject is a minor.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Two screens ship. Seventeen do not.</h2>
+
+  <p><strong>Read this paragraph before you click anything.</strong> Frames <b>18</b> and <b>19</b>,
+    at the end, are the child-account feature as it exists in the app right now: a list of names, each
+    row labelled <em>EDIT</em>, a line telling you to finish on a desktop browser, and a confirmation
+    dialog wired to nothing. That is all of it — one file,
+    <code>lib/pages/profile/child_account/child_account_screen.dart</code>, 193 lines. <b>Frames 01–17
+    are a design proposal.</b> No screen in that flow exists in code, no route reaches it, and no API
+    supports it. A parent cannot add or verify a child account in the app today, and nothing in frames
+    01–17 should be demonstrated as though they can. The two shipped frames are marked
+    <b>SHIPPED</b> in their caption and carry a banner saying so on the frame itself.</p>
+
+  <p>Every screen here is one a parent or legal guardian uses to act on behalf of someone under 18.
+    They give us the child's name and date of birth, they set up how the child signs in, they choose the
+    club, they pay the fee, and they consent to a third party photographing the child's passport. The
+    child appears throughout as a subject and never as a user.</p>
+
+  <p>Which makes the single biggest finding worth stating first: <strong>the shipped flow has no consent
+    step at all.</strong> Across all seventeen captured screens there is no consent checkbox, no legal
+    link, no privacy statement, no retention period and no accepted-document list. The one screen that
+    looks like consent, <code>CA-13</code>, asks <em>"Do you agree to an ID check for your child to keep
+    Sports Heist fair?"</em> and then renders <strong>one affirmative button and no way to say no</strong>.
+    It names no third party either — the vendor's hostname <code>identify.idscan.cloud</code> first
+    reaches the parent inside an iOS camera prompt on the screen after. Frame 10 is the screen that was
+    missing, and frames 11 and 12 are the hand-off done in the open.</p>
+
+  <p>The second finding is that <strong>the age gate does not exist</strong>. <code>CA-06</code> — the
+    only screen in a minors-only flow that collects a date of birth — accepted <code>02/06/2002</code>,
+    twenty-four years before the capture, with <code>CONTINUE</code> enabled and no message. The picker
+    behind it (<code>date.dart:109–116</code>) has exactly two bounds available and both default to
+    <code>null</code>; its strictest setting only means "not in the future". Frame 03 opens pre-filled
+    with that same date, rejected, with the reason and the consequence on screen. Correct it to
+    <code>02/09/2010</code> and it passes.</p>
+
+  <p>The third is about the password. <code>CA-09</code> has the <em>parent</em> set the child's
+    password — <em>"Only you can control this password"</em> — and then <code>CA-01</code>,
+    <code>CA-04</code> and <code>CA-16</code> render nine mask glyphs in a field with no change control,
+    which reads as a stored secret somebody could retrieve. Frame 06 makes sending the child a
+    set-your-own link the default, and no screen in this component ever renders a password field for
+    the record. The row reads <em>Last changed</em> with a <em>Reset</em> action instead.</p>
+
+  <p><strong>What ships instead is frames 18 and 19.</strong>
+    <code>lib/pages/profile/child_account/child_account_screen.dart</code> is 193 lines and is the only
+    file under <code>child_account/</code>, routed at <code>routes.dart:256</code>. It renders a
+    <b>white</b> screen (<code>backgroundColor: CColor.white</code>, line 38 — the light screen in a
+    dark app) with a Bebas Neue header reading <code>CHILD'S ACCOUNT</code>, a body heading reading
+    <code>CREATE CHILD ACCOUNT</code> that creates nothing, a list of children's names in caps each with
+    the word <code>EDIT</code> under it, and a plain-text line reading <em>"To add a child account,
+    please proceed to Sports Heist on Desktop"</em> (line 108, key <code>go to web to add</code>) — a
+    <code>Text</code>, not a link, so tapping it does nothing. There is no avatar, no add control, no
+    edit form, no search and no empty state. Tapping a row opens the frame-19 dialog reading
+    <em>ARE YOU SURE? / All changes will be lost.</em> whose Yes and No buttons
+    <strong>both just dismiss it</strong> — no handler is passed (lines 87–99, defaults at
+    <code>dialogs.dart:993–1024</code>) — on a screen with nothing editable to lose. Meanwhile
+    <code>assets/translations/vi.json</code> lines 84–140 hold <strong>fifty-seven lines of
+    English-language child-account strings</strong> that <code>en.json</code> does not have —
+    <code>SET UP PASSWORD</code>, <code>EMAIL ADDRESS VERIFICATION</code>, <code>CLUB MEMBERSHIP ID</code>,
+    <code>PARENT CONTROL</code>, <code>RESET AUTO TOP-UP</code>, <code>AGREE</code> — every one of them
+    with zero references in any <code>.dart</code> file. The Vietnamese translation file is where this
+    feature was specified. Treat these frames as a design for something that has to be built, not a
+    restyle of something that ships.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Frame by frame, in flow order</h2>
+
+  <p>Frames 01–17 are ordered the way a parent moves, not the way the specs are numbered. Every frame
+    opens with a caption carrying its spec ID and what changed, then <code>34px</code> of clearance for
+    the device island, then the app bar. Frames 18 and 19 sit last and are a different kind of thing:
+    they carry a <b>SHIPPED</b> tag in place of a spec ID and reproduce current behaviour rather than
+    proposing anything.</p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Frame order, spec origin, and what each one is doing. Values as built.</caption>
+      <thead><tr><th scope="col">#</th><th scope="col">Frame</th><th scope="col">Spec</th><th scope="col">What it does, and what changed</th></tr></thead>
+      <tbody>
+        <tr><td>01</td><td>Accounts you manage</td><td><code>CA-17</code></td><td class="t-note">The hub. Rows carry a <code>46px</code> avatar, name, <b>age · date of birth · relationship</b>, a state pill and a <code>SH·nnnn</code> reference; anything needing the parent sorts first. As built the row carried an avatar, an uppercase name and a chevron and <b>nothing else</b>, so two records called <code>THANH NGUYEN</code> rendered identically. The add control is a real button; the shipped screen sent you to a desktop browser.</td></tr>
+        <tr><td>02</td><td>Guest or member</td><td><code>CA-05</code></td><td class="t-note">Two benefit cards, <code>--section</code> and <code>--surface</code>, the member card ringed <code>rgba(155,226,34,.30)</code>. The <code>PREMIUM</code> badge now carries the <code>$20</code> it shipped without, the guest card states what it excludes, and the under-18 sentence stopped addressing the child on a screen only a parent can reach.</td></tr>
+        <tr><td>03</td><td>Their details</td><td><code>CA-06</code></td><td class="t-note">Name, date of birth with a derived-age readout, relationship, email, display name, country/region as a <code>two-up</code>. Pre-filled with <code>02/06/2002</code> in its rejected state. Mobile number, gender and street address are <b>no longer collected</b>.</td></tr>
+        <tr><td>04</td><td>Where the code goes</td><td><code>CA-07</code></td><td class="t-note">One channel tile at <code>--h-field</code> minimum, showing the destination address, plus a disabled SMS tile that says why. As built: <em>"Select where to receive…"</em> above a single option, with the address never shown.</td></tr>
+        <tr><td>05</td><td>Enter the code</td><td><code>CA-08</code></td><td class="t-note"><b>Six</b> <code>56px</code> cells, not the captured five — <code>otp_verification.dart:50</code> sets <code>length: 6</code>. Adds expiry, attempts remaining, a resend cooldown and a support path, none of which the shipped screen had.</td></tr>
+        <tr><td>06</td><td>Set their password</td><td><code>CA-09</code></td><td class="t-note">Two choices: send the child a link (default) or set one now. Four rules against the shipped three. States plainly that nobody can read the password back.</td></tr>
+        <tr><td>07</td><td>Choose their club</td><td><code>CA-10</code></td><td class="t-note">Four dependent selects at <code>--h-field</code>, a locked season row, the club crest on the <code>28px</code> plate. The three-club-per-league limit is promoted out of <code>~14pt</code> body copy into a washed panel with the count.</td></tr>
+        <tr><td>08</td><td>Club membership ID</td><td><code>CA-11</code></td><td class="t-note">One dialog shell over a dimmed host, <code>--dlg-max 340px</code>, <code>64px</code> crest plate in the header, a <code>--h-field</code> input and a stated format. As built the dialog reserved no error slot between field and buttons.</td></tr>
+        <tr><td>09</td><td>Fee and payment</td><td><code>CA-12</code></td><td class="t-note"><code>$20</code> in <code>--acid</code> at <code>32px/800</code>, the card on file, two switches, a washed banner. The two switches are named once each — the shipped screen wrote the same two terms four ways and stacked <code>Enable Auto Renewal</code> directly above <code>Enable auto-renewal to…</code>. Accent sits on the switch <b>track</b>, never the knob.</td></tr>
+        <tr><td>10</td><td>Consent to the ID check</td><td><code>CA-13</code></td><td class="t-note">What is collected, who checks it, how long it is kept, three policy links, one required checkbox, a consent log line, and a <b>decline</b> button. None of this exists on any of the seventeen screens.</td></tr>
+        <tr><td>11</td><td>Allow the camera</td><td><code>CA-14</code></td><td class="t-note">The OS prompt explained before it is raised, naming <code>identify.idscan.cloud</code> in the words iOS is about to use, plus what happens if the camera is refused.</td></tr>
+        <tr><td>12</td><td>Upload their ID</td><td><code>CA-15</code></td><td class="t-note">GBG's page, inside our header band. Drawn behind a <code>1.5px</code> dashed edge with a host strip and an <code>EXTERNAL</code> tag, because it is the only honest way to show a surface we do not control. Vendor stepper, dropzone and limits are labelled as the vendor's.</td></tr>
+        <tr><td>13</td><td>Waiting on their email</td><td><code>CA-01</code></td><td class="t-note">The record before verification. The alert panel now carries the address, the send time, how long ago and the expiry — the shipped panel had none of the four. Partner clubs gets a state panel instead of the empty region its own help copy pointed at.</td></tr>
+        <tr><td>14</td><td>Verified, no club yet</td><td><code>CA-04</code></td><td class="t-note">The same record verified. As built, removing the panel produced <code>235pt</code> of empty canvas above a pinned button and the word <em>verified</em> appeared nowhere. Here the freed space carries the upgrade path.</td></tr>
+        <tr><td>15</td><td>Their account</td><td><code>CA-16</code></td><td class="t-note">A registered member. Two club cards — registered and following — with the <code>40px</code> crest plate. Adds identity state, consent date, renewal date and amount, and the turning-18 notice. Names what <code>GUEST</code> and <code>Remove</code> meant.</td></tr>
+        <tr><td>16</td><td>Confirm you're closing it</td><td><code>CA-02</code></td><td class="t-note">Four consequences with figures, one required checkbox, then <code>Keep it</code> ‖ <code>Close account</code> in <code>#E2564A</code> with <code>--acid-ink</code>. Adds a data statement and two softer alternatives. The words <em>permanent</em>, <em>cannot be undone</em> and <em>forever</em> appear nowhere in the shipped copy.</td></tr>
+        <tr><td>17</td><td>Account closed</td><td><code>CA-03</code></td><td class="t-note">Outcome panel, then a today / 90 days / until 2033 timeline and an erasure request. Replaces <code>OKAY</code> — the set's only non-verb control label — with two real next steps.</td></tr>
+        <tr><td>18</td><td>Shipped today — the list</td><td><b>SHIPPED</b></td><td class="t-note"><b>Current behaviour, not a proposal.</b> <code>child_account_screen.dart:36</code>, routed at <code>routes.dart:256</code>, reached from the Profile menu (<code>profile_body.dart:516–517</code>). Centred Bebas header <code>CHILD'S ACCOUNT</code>, body heading <code>CREATE CHILD ACCOUNT</code>, a row per child carrying <b>only</b> the uppercased first and last name plus the label <code>EDIT</code> and a thin chevron, then the line <em>To add a child account, please proceed to Sports Heist on Desktop</em>. Nothing else is on the screen. Two <code>THANH NGUYEN</code> rows are drawn because two records with the same name genuinely render identically.</td></tr>
+        <tr><td>19</td><td>Shipped today — the Edit dialog</td><td><b>SHIPPED</b></td><td class="t-note"><b>Current behaviour, not a proposal.</b> <code>child_account_screen.dart:88</code> → <code>UDialog().customSimpleDialog</code> (<code>dialogs.dart:906</code>). <code>ARE YOU SURE?</code> over <em>All changes will be lost.</em> with <code>NO</code> and <code>YES</code>. Neither <code>btnOkOnPress</code> nor <code>btnCancelOnPress</code> is passed, so both fall back to <code>() =&gt; context.pop()</code> (<code>dialogs.dart:993–1024</code>). <b>It does nothing.</b> Shell is <code>dialogs.html</code> unchanged over the frame-18 host at <code>opacity:.42</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <caption>The construction that repeats across the seventeen proposal frames.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Every frame</td><td>Caption</td><td class="t-note">Spec ID in a <code>--neutral-wash</code> tag plus review commentary at <code>11.5px</code> <code>--dim</code>. Carries <code>padding-top:34px</code>, which is the contract's device-island clearance.</td></tr>
+        <tr><td>Every frame</td><td>App bar</td><td class="t-note"><code>38px</code> circular back button on <code>--surface</code>, <code>1.9</code> stroke, with an <code>::after</code> expansion to a <code>44px</code> hit area. Eyebrow at <code>10.5px/700/.14em</code> uppercase <code>--dim</code>.</td></tr>
+        <tr><td>Add flow</td><td>Stepper</td><td class="t-note">Seven <code>3px</code> bars on <code>--sunken</code>, done <code>100%</code> accent, current <code>45%</code>. Bars are <code>onboarding.html</code> unchanged; the labels are replaced by one caption line — seven tracked labels cannot fit a <code>375px</code> measure. Frames 13–17 carry no stepper: they are not part of the flow.</td></tr>
+        <tr><td>Titles</td><td>Screen title</td><td class="t-note"><code>34px/800/-.025em</code> uppercase, dropping to <code>28px</code> where a name or a long phrase sits in it.</td></tr>
+        <tr><td>Fields</td><td>Control shell</td><td class="t-note"><code>forms.html</code> verbatim: label above at <code>12.5px/600</code> white, box <code>--h-field 52px</code>, <code>--r-panel</code>, <code>--surface</code>, <code>1px --line</code>, value <code>16px</code>. Focus is accent border plus a <code>3px --acid-wash</code> ring; error swaps to <code>#E2564A</code> and always pairs with an icon and a message.</td></tr>
+        <tr><td>Fields</td><td>Two-up row</td><td class="t-note"><code>grid-template-rows:subgrid</code>, <code>minmax(0,1fr)</code> columns, <code>12px</code> gap. Removes the <code>3pt</code> label drift and <code>6pt</code> height delta <code>CA-06</code> measured between its date and gender controls.</td></tr>
+        <tr><td>Clubs</td><td>Crest plate</td><td class="t-note"><code>rgba(255,255,255,.94)</code> plate, <code>rgba(0,0,0,.13)</code> inner hairline, radius <code>size × .28</code>, padding <code>size × .125</code>, at <code>28 / 40 / 64px</code>. Every crest here is the documented <b>code fallback</b> (<code>FCB</code>, <code>RMA</code>) because no crest artwork ships in <code>_assets</code>.</td></tr>
+        <tr><td>Modals</td><td>Dialog over host</td><td class="t-note"><code>upload.html</code> staging: <code>684px</code> stage, host at <code>opacity:.42</code>, <code>rgba(3,4,1,.72)</code> scrim with a <code>10px</code> blur, dialog <code>--dlg-max 340px</code> with <code>46px</code> pill buttons.</td></tr>
+        <tr><td>Vendor</td><td>External panel</td><td class="t-note"><code>1.5px</code> dashed <code>rgba(255,255,255,.20)</code>, no fill, host strip on <code>--sunken</code>, <code>EXTERNAL</code> tag. The dashed-and-unfilled treatment is the same mark the hand-off strip uses for the external party.</td></tr>
+        <tr><td>Buttons</td><td>Actions</td><td class="t-note"><code>--h-field 52px</code>, <code>--r-panel</code>. Accent fill with <code>--acid-ink</code>; ghost is transparent with an inset <code>1px --line</code>; destructive is <code>#E2564A</code> with <code>--acid-ink</code>, never white.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Frames 18–19 only. What the shipped screens are made of, and what we did with it.</caption>
+      <thead><tr><th scope="col">As built</th><th scope="col">Value in the code</th><th scope="col">In frames 18–19</th></tr></thead>
+      <tbody>
+        <tr><td>Screen ground</td><td class="t-note"><code>#FFFFFF</code> — <code>Scaffold backgroundColor: CColor.white</code>, <code>child_account_screen.dart:38</code>. A <b>light</b> screen inside an otherwise dark app, and the only child-account screen a member can reach.</td><td class="t-note"><code>--bg</code>, like every other frame. Recorded here rather than drawn: the contract allows two hues plus <code>#E2564A</code>, and a white ground would introduce a third.</td></tr>
+        <tr><td>Header</td><td class="t-note"><code>HeaderPage</code> with a centred title, back button left. <code>CHILD'S ACCOUNT</code> at <code>22px</code> Bebas Neue <code>w400</code> black (<code>CStyle.title2W400Bebas</code>).</td><td class="t-note"><code>.appbar</code> from <code>dialogs.html</code>, which is the library's centred-title bar. Bebas Neue is not embedded — the contract forbids webfonts — so the setting is approximated by the system stack.</td></tr>
+        <tr><td>Body heading</td><td class="t-note"><code>CREATE CHILD ACCOUNT</code> at <code>28px</code> Bebas Neue <code>w400</code> (<code>CStyle.title1W400Bebas</code>), <code>:56</code>. It is a heading, not a control — nothing on the screen creates anything.</td><td class="t-note"><code>.title title--sm</code>, <code>28px/800</code> uppercase.</td></tr>
+        <tr><td>Row</td><td class="t-note"><code>BodyProfileItem</code>: white fill, <code>1px #DFDFDF</code> (<code>CColor.borderButton</code>) at radius <code>2</code> (<code>CRadius.superSSmall</code>), <code>16pt</code> padding. Title is <code>firstName + lastName</code> forced uppercase (<code>:102</code>); content is the key <code>userProfile.edit</code> = <code>EDIT</code> (<code>:103</code>) in <code>CColor.primary</code>; trailing <code>arrow-right-thin.svg</code> at <code>12 × 20</code> in <code>#8D899C</code>.</td><td class="t-note"><code>.shiprow</code> — <code>--surface</code>, <code>1px --line</code>, <code>--r-panel</code>, <code>16px</code> padding. <code>EDIT</code> is rendered in <code>--acid</code> because the shipped label is rendered in the app's own primary; it is the misleading affordance being documented, not endorsed.</td></tr>
+        <tr><td>Desktop line</td><td class="t-note"><code>To add a child account, please proceed to Sports Heist on Desktop</code> — key <code>childAccount.go to web to add</code>, rendered at <code>:111</code> as <code>14px w400</code> in <code>CColor.primary</code> <code>#542BE2</code>. It is a <code>Text</code>. There is no gesture handler, no <code>launchUrl</code>, no URL anywhere on the screen.</td><td class="t-note"><code>.shipline</code>, <code>14px</code> in <code>--acid</code>. Verbatim, including <b>Sports Heist</b> as two words — the app's own <code>en.json</code> writes the product name that way here.</td></tr>
+        <tr><td>Dialog</td><td class="t-note">White <code>AlertDialog</code>, radius <code>5</code> (<code>CRadius.basic</code>), <code>16pt</code> inset, with <code>assets/images/dialog_back_ground.png</code> — a <code>343 × 274</code> pale-lavender torn-paper band — stacked behind the title. <code>ARE YOU SURE?</code> at <code>36px</code> Bebas (<code>larTitle0W400Bebas</code>), body at <code>17px w400</code>. <code>NO</code> is <code>#EDE9FA</code> with <code>#542BE2</code> ink; <code>YES</code> is <code>#542BE2</code> with white ink at <code>56pt</code>.</td><td class="t-note"><code>dialogs.html</code> shell unchanged: <code>--dlg-max 340px</code>, <code>--r-card</code>, <code>rgba(3,4,1,.72)</code> scrim at <code>10px</code> blur, <code>46px</code> pill actions. <code>NO</code> is <code>.btn--ghost</code>, <code>YES</code> is <code>.btn--go</code>. The lavender band is recorded, not drawn.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Live in this file where marked; the rest are specified, not drawn.</caption>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Date of birth — five outcomes</td><td class="t-note"><b>Live.</b> Idle, not-a-real-date, in the future, 18 or over, under 5, and a pass. Each drives the derived-age readout, the field border, the Continue button and the line beneath it. Reference date is fixed at <code>30 July 2026</code> so the ages on screen stay stable.</td></tr>
+        <tr><td>Account state on a row</td><td class="t-note"><b>Live, four rows.</b> Email not verified (accent inset bar), ID check failed (<code>#E2564A</code> inset bar, red ring), member and registered, guest with no club. State never rests on colour: every pill carries an icon and a word, and every needs-you row carries a sentence.</td></tr>
+        <tr><td>Two records, same name</td><td class="t-note"><b>Live.</b> The two <em>Thanh Nguyen</em> rows differ by age, date of birth, relationship, reference and state. This is the <code>CA-17</code> defect it exists to answer.</td></tr>
+        <tr><td>Sign-in choice</td><td class="t-note"><b>Live.</b> Choosing <em>Set one now</em> reveals the password pair and the rule list; the default choice keeps them hidden.</td></tr>
+        <tr><td>Consent, and the delete confirmation</td><td class="t-note"><b>Live.</b> Both primary actions are disabled until the checkbox is ticked; the checkbox row takes an accent border once checked.</td></tr>
+        <tr><td>Switches</td><td class="t-note"><b>Live.</b> Accent on the track, knob white in both states. Off is the darkest thing in the row. <code>CA-12</code> shipped the stock Material 3 control, the only light-coloured control in the set.</td></tr>
+        <tr><td>Empty partner clubs</td><td class="t-note"><b>Live, two variants.</b> Frame 13 blocks it ("verify the email first", action disabled); frame 14 offers it. As built, the club region rendered <b>nothing</b> in both editor states, under help copy that referred to content "below".</td></tr>
+        <tr><td>Loading the hub</td><td class="t-note">Not drawn. The shipped skeleton is <code>Colors.grey.shade300</code> / <code>grey.shade100</code> over three <code>70pt</code> <code>#FAFAFA</code> cards at radius <code>5</code> — light-theme values, and the wrong geometry for a <code>78pt</code> / <code>R12</code> row. It needs rebuilding against <code>states.html</code>.</td></tr>
+        <tr><td>Hub fails to load</td><td class="t-note">Not drawn — and <b>re-checked on this pass: the finding still holds.</b> <code>child_account_screen.dart:73</code> shows content only on <code>ProfileStatus.success</code> and everything else falls through to <code>buildShimmerEffect()</code> at <code>:122</code>, while the cubit emits <code>fails</code> on both the non-200 branch and the catch (<code>profile.dart:43</code>, <code>:48</code>). <b>Any API failure shimmers indefinitely, and there is no empty state.</b> The fix that landed elsewhere did <b>not</b> reach this screen: <code>profile_body.dart:68</code> now branches <code>ProfileStatus.fails</code> to a real <code>buildErrorState()</code> (<code>:447</code>, whose own comment records the same defect) with an icon, a message and a retry — but that is the Profile tab, a different widget. Child accounts still has the old shape. Porting <code>buildErrorState()</code> is a few lines.</td></tr>
+        <tr><td>Empty hub</td><td class="t-note">Not drawn. A parent with no children currently sees an empty list and the desktop-referral line — frame 18 with the four rows removed. Needs the <code>states.html</code> welcome variant.</td></tr>
+        <tr><td>Frames 18–19 themselves</td><td class="t-note">One state each. The shipped screen has exactly one: the success list. It has no empty, no error, no loading (beyond the skeleton), no per-row state and no selected state, which is why two frames cover the whole feature.</td></tr>
+        <tr><td>Camera refused</td><td class="t-note">Specified in frame 11's warning banner: the check <b>pauses</b> rather than fails, the row keeps its due state with a "turn the camera on" action, and no fee is taken. No app-side alternative or error surface exists in the captured set.</td></tr>
+        <tr><td>Check fails · selfie step · back-side capture</td><td class="t-note">Not drawn — they are GBG's screens, and no capture, copy or consent text for them exists. Frame 12 states the return journey and the one retry; the vendor screens themselves need obtaining from GBG.</td></tr>
+        <tr><td>Payment declined · no card on file</td><td class="t-note">Not drawn. Neither was captured, and no payment code exists to describe. Both need designing before build.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused, unchanged</h3>
+      <ul>
+        <li><b>Token block</b> — copied verbatim from <code>merits.html</code>. No new hue: two colours plus <code>#E2564A</code>.</li>
+        <li><b>Field system</b> — <code>forms.html</code>: one label convention, one <code>52px</code> shell, the <code>subgrid</code> two-up, the phone-field divider and the track-accent switch.</li>
+        <li><b>Dialog shell and scrim</b> — <code>dialogs.html</code>: <code>340px</code> card, <code>46px</code> pill action row, <code>rgba(3,4,1,.72)</code> at <code>10px</code> blur.</li>
+        <li><b>Dialog-over-host staging</b> — <code>upload.html</code>: <code>.stg</code> / <code>.host</code> / <code>.ovl</code>, the permission illustration, and the inline warning banner.</li>
+        <li><b>State panel and illustration rules</b> — <code>states.html</code>: <code>--section</code> panel, and the three drawing rules (solid fill = context, accent wash + <code>1.8</code> stroke = exists, <code>5-5</code> dash = should exist and doesn't).</li>
+        <li><b>Stepper bars</b> — <code>onboarding.html</code>, geometry and done/now logic untouched.</li>
+        <li><b>Crest plate</b> — <code>club-selection.html</code>, at three of its three sizes, using its documented code fallback.</li>
+        <li><b>Row, age gate, consent panel and hand-off strip</b> — <code>linked-member.html</code>, carried forward rather than re-argued.</li>
+        <li><b>Portraits</b> — <code>--av-04</code>, <code>--av-05</code>, <code>--av-07</code>, <code>--av-13</code> from <code>_assets/avatars.css</code>.</li>
+        <li><b>Frames 18–19 add nothing.</b> They are a reproduction of <code>child_account_screen.dart</code>: its order, its structure and its strings, taken from the source and <code>en.json</code>. Frame 19 uses the <code>dialogs.html</code> shell unchanged; frame 18 adds one row class and one paragraph class and no new token.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>A consent screen</b> — what is collected, who checks it, how long it is kept, three policy links, one required checkbox, a consent log line and a decline path. Nothing equivalent exists on any of the seventeen screens.</li>
+        <li><b>The age gate</b> — a <code>5–17</code> range with a derived-age readout and five failure messages, on the one screen that collects a date of birth.</li>
+        <li><b>Row facts</b> — age, date of birth, relationship, state and reference, so two identically named records read as two people.</li>
+        <li><b>Stepper caption</b> — <code>Step n of 7</code> plus the step's name, replacing seven labels that cannot fit the measure. This is an extension to <code>onboarding.html</code>, not a second progress idiom.</li>
+        <li><b>The external panel</b> — dashed edge, host strip, <code>EXTERNAL</code> tag. New because nothing in the library had to render a surface we do not own.</li>
+        <li><b>The record list</b> (<code>.rec</code>) — key/value rows with a per-row action, replacing four editable-looking fields that had no Save control. <b>No password row.</b></li>
+        <li><b>Club cards with two states</b> — registered and following-only — plus renewal date, amount and remaining club places.</li>
+        <li><b>Deletion consequences</b> — four of them with figures, a 90-day / 2033 data statement, a required checkbox, and two softer alternatives (suspend, stop the renewal).</li>
+        <li><b>The turning-18 notice</b> — stated on the row, on the record and in the retention copy.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Against <code>linked-member.html</code>, which covers four of these screens.</caption>
+      <thead><tr><th scope="col"><code>linked-member.html</code> frame</th><th scope="col">Here</th><th scope="col">Relationship</th></tr></thead>
+      <tbody>
+        <tr><td>Linked members</td><td>Frame 01 · <em>Accounts you manage</em></td><td class="t-note"><b>Supersedes.</b> Same row construction and the same duplicate-name demonstration, extended with a guest state, a member-and-registered state, and a real add control.</td></tr>
+        <tr><td>Their details</td><td>Frame 03 · <em>Their details</em></td><td class="t-note"><b>Supersedes.</b> Same age gate, same derived-age readout, same five outcomes. Extended to the eight fields <code>CA-06</code> actually collects, and it now says which two we stopped collecting and why.</td></tr>
+        <tr><td>Your consent</td><td>Frame 10 · <em>Consent to the ID check</em></td><td class="t-note"><b>Supersedes and relocates.</b> Same collection / provider / retention / links / checkbox structure. Moved to where the flow puts it — <code>CA-13</code> sits <b>after</b> the fee screen, not before the details. The wording now reflects that the fee has already been agreed.</td></tr>
+        <tr><td>Identity check</td><td>Frames 11–12 · <em>Allow the camera</em>, <em>Upload their ID</em></td><td class="t-note"><b>Extends.</b> The single hand-off frame becomes two, because <code>CA-14</code> and <code>CA-15</code> are two states of the same vendor surface. The OS prompt gets its own frame; the vendor page is drawn as a vendor page.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><strong>Our recommendation: retire <code>linked-member.html</code> into this component.</strong> It
+    was a four-screen probe of the hardest parts of this area and it did its job — the age gate, the
+    consent panel and the row anatomy all came from it and all survive here unchanged. But it is now a
+    strict subset of a component that covers the same ground plus thirteen more screens, and keeping it
+    means maintaining two entry points and, worse, two vocabularies: it calls the object a <em>linked
+    member</em>, while the manifest, the specs, the code and <code>en.json</code> all call it a
+    <em>child account</em>. Two names for one thing in one library is the exact defect this rebrand keeps
+    correcting elsewhere. It should not be kept as the profile-tree entry point either: the entry point
+    is frame 01 here, which is the same screen with more on it. We have not touched
+    <code>linked-member.html</code> — the decision is yours. Frames 18–19 strengthen the case rather
+    than weakening it: the screen that is actually wired into the profile tree today is frame 18, and it
+    now lives in this component too, so both the shipped state and the proposed one sit in one place.</p>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li><h3>Are frames 18–19 marked clearly enough?</h3>
+      <p>They carry a <span class="flag">SHIPPED tag in the caption and a banner on the frame</span>, and
+      they sit last so the proposal reads as a flow first. That is our judgement, and it is the only
+      thing standing between a client and the belief that a parent can add and verify a child account in
+      the app today. If this component is going to be demonstrated live, say so and we will move the two
+      shipped frames to the <b>front</b> instead, so nobody reaches the proposal without passing them.</p></li>
+
+    <li><h3>Should the shipped frames be drawn in the shipped chrome?</h3>
+      <p>We drew them in <span class="flag">the dark rebrand language, with the shipped values recorded
+      in the anatomy table</span> rather than reproducing the white screen, the Bebas Neue titles and the
+      <code>#542BE2</code> purple literally. The reason is the contract: two hues plus <code>#E2564A</code>,
+      no webfonts, no third ground. The cost is that the single most jarring fact about the shipped
+      screen — that it is a <b>light</b> screen in a dark app (<code>child_account_screen.dart:38</code>) —
+      is a sentence in the notes rather than something you can see. If you would rather see it, we can add
+      a screenshot-style plate; it should not be a live frame.</p></li>
+
+    <li><h3>Retire <code>linked-member.html</code>?</h3>
+      <p>Our recommendation, set out above, is <span class="flag">retire it into this component</span>
+      and settle on <b>child account</b> as the name of the object across the library. If you want to
+      keep <em>linked member</em> as the product term instead, say so and we will rename all seventeen
+      frames — but one of the two has to go.</p></li>
+
+    <li><h3>What is the youngest age a child account can be?</h3>
+      <p>There is no age logic anywhere in the app to derive this from. We have gated
+      <span class="flag">5 to 17</span>, with reading-only behaviour under 13 and posting from 13.
+      That is a defensible default, not a decision we can make: it is a legal question about the
+      jurisdictions you operate in, and it changes what the ID check can even be asked to prove for a
+      younger child who holds no document.</p></li>
+
+    <li><h3>Confirm the retention periods, then let us hard-code them.</h3>
+      <p>Frame 10 states <span class="flag">30 days</span> for the document photo and selfie at GBG,
+      <span class="flag">7 years</span> for the pass/fail result, and <span class="flag">90 days</span>
+      after closure for name and date of birth. Every one of those is our estimate — no retention rule
+      exists anywhere in the codebase, and no privacy copy exists to check them against. They are the
+      most legally load-bearing numbers in the component and they need to come from your DPO, not from
+      us.</p></li>
+
+    <li><h3>Who is allowed to open the child's inbox?</h3>
+      <p><code>CA-08</code>'s copy says the code goes to <em>"your child's email"</em> and the parent is
+      the one entering it, so the shipped design either assumes the parent has the child's mailbox or
+      assumes the child reads the code out. We have <span class="flag">made the parent's own address an
+      offered alternative</span> on frame 04 and said out loud that someone has to open the inbox. Is a
+      child-owned mailbox a requirement, or should the parent's address be the default?</p></li>
+
+    <li><h3>Does the parent ever set the child's password?</h3>
+      <p>We made <span class="flag">sending the child a set-your-own link</span> the default and kept
+      parent-set as the secondary option for younger children, with a forced change at first sign-in.
+      This matters because the shipped record screens displayed a masked password with no change
+      control, which is either a display of something retrievable or a lie about what's stored. Confirm
+      that no screen should ever render a password field for a child account.</p></li>
+
+    <li><h3>Consent before the fee, or after it?</h3>
+      <p><code>CA-13</code> sits after <code>CA-12</code>, so the parent agrees a <code>$20</code> annual
+      fee <b>before</b> being told what an identity check involves. We have kept the shipped order and
+      made the fee screen state that nothing is charged until the check passes — but the honest sequence
+      is consent first. Do you want them swapped?</p></li>
+
+    <li><h3>Is the GBG hand-off still the plan?</h3>
+      <p>There is no identity-verification integration in this snapshot at all: no
+      <code>webview_flutter</code>, no <code>flutter_inappwebview</code>, zero matches for
+      <code>idscan</code> anywhere in the repository, and the single occurrence of <code>GBG</code> is a
+      comment at <code>upload.dart:44</code> borrowing its <code>7.5 MB</code> figure. Frames 11 and 12
+      are drawn on the assumption that <span class="flag">GBG in an embedded web view</span> is the
+      intended design, because that is what the captures show. If the vendor or the mechanism has
+      changed, those two frames change with it.</p></li>
+
+    <li><h3>The vendor page needs work we cannot do.</h3>
+      <p>GBG's page addresses the reader as the document holder throughout — <em>your</em> Identity
+      Document — on a page photographing a 15-year-old, and it renders the SportsHeist lockup clipped to
+      the single word <code>Heist</code>. It also reproduces our own copy, including the ungrammatical
+      <em>"This prevent fraud"</em>, which needs fixing on our side first. Who owns raising the
+      addressee wording, the client-logo asset and the retention statement with GBG?</p></li>
+
+    <li><h3>Confirm the fee mechanics.</h3>
+      <p>We have stated <span class="flag">$20 a year per club</span>, <span class="flag">charged when
+      the check passes</span>, <span class="flag">not refunded if the account closes mid-season</span>,
+      and <span class="flag">the club place not returned</span>. The first two come from <code>CA-12</code>;
+      the last two are ours, and they are the sentences a parent will hold you to. There is no payment
+      code in the app to check them against — no Stripe SDK, no charge call, no card capture — so all of
+      it is copy waiting on a commercial decision.</p></li>
+
+    <li><h3>What does a guest actually lose?</h3>
+      <p><code>CA-12</code> offers <em>Continue as guest</em> and says nothing about what the guest path
+      excludes. We have written it as <span class="flag">no club registration, no vote, no Participation
+      Credits, following still allowed</span>. Confirm, particularly the vote — it is the thing the
+      whole membership rests on.</p></li>
+
+    <li><h3>Three defects to fix regardless of this design.</h3>
+      <p>The first two are drawn, in frames 18 and 19. <b>One:</b> tapping a child row opens <em>ARE YOU
+      SURE? / All changes will be lost.</em> with no handler attached, so both buttons dismiss and the row
+      does nothing (<code>child_account_screen.dart:87–99</code>, defaults at <code>dialogs.dart:993–1024</code>) —
+      and the rows are labelled <em>EDIT</em> (<code>:103</code>). <b>Two:</b> any API failure shimmers
+      indefinitely, because content renders only on <code>success</code> and everything else falls through to
+      the skeleton (<code>:73</code>, <code>:122</code>, <code>profile.dart:43</code>, <code>:48</code>).
+      We re-checked this on the current snapshot and <b>it still holds</b>: the error branch that landed in
+      <code>profile_body.dart:68</code> / <code>:447</code> fixed the Profile tab and did not reach this
+      screen. Porting that <code>buildErrorState()</code> across is the whole fix.
+      <b>Three:</b> a child's <code>emailVerifyToken</code> is held on the client model and re-emitted by
+      <code>toJson()</code> (<code>models/src/user.dart:28–29</code>, <code>:97–98</code>,
+      <code>:262–263</code>) — a minor's verification token should not be round-tripping through the
+      client. Separately, and outside this component's scope: a plaintext Auth0 client secret sits in
+      <code>.env.production:10</code> and both env files are declared as bundled assets at
+      <code>pubspec.yaml:109–110</code>, so it ships inside the binary. Treat it as compromised and
+      rotate it.</p></li>
+  </ol>
+</section>

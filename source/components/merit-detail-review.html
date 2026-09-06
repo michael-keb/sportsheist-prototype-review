@@ -1,0 +1,1799 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Merit detail · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; /* bordered section container */ --surface: #1C2129; /* cards, controls, tab bar */ --sunken: #13171E; /* inner panels, dark pills */ --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); /* hero */ --hero-a: #0D3617; --hero-b: #17481C; /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* photography — six portraits from _assets/avatars.css */ --av-01:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAGwAAAgMBAQEAAAAAAAAAAAAABQYCAwQBBwD/xAAzEAACAQMDAgUDAwQBBQAAAAABAgMABBEFEiExQQYTIlFhFHGBkaGxFSMzQlIyU2PB8P/EABgBAAMBAQAAAAAAAAAAAAAAAAIDBAEA/8QAHxEAAgICAwEBAQAAAAAAAAAAAAECEQMhEiIxQWFx/9oADAMBAAIRAxEAPwDzKOeRnwq5J70b8PtHPq9vBqEjmB2wwAwT+laILK3iCllA9iavhFpFKk7pvSNwWVTyy55A/FC2ckEtR0200/VXjsoysLruVCTx7nnoM1y11WPR4JfSkjuAoQ8Y9vxWHxRr1jc6lC+lRSxIqYkZ12bz2GPj3+aEPcPcrknmgUbWxjnT6m6Ji9wXyEBJbge9Zpi8gZuuTjPvUVkIjw1SSV3UQpCzn4FFQF2aBvREGBtrSoYMo9+lVrFCCY7icggZwo3Y+5zxV0eoWUcip5Ej/wDk3jP6e1A7DS3s3RKoILdKNWbwqu1QDmgEWoWNzL5JLwlsBXfG3d9+1aHuDZyCN1KuvvSuLGtpBa99aCPPGeaG3Kk2ruI8lO/2olbqk6ec8g5FQvLciyZYzkN1xWJUjrsE213FMikgVZHcx/UhomCkd6qitGjDqqAA9Oazw6XcTSHD4x2FHoDYIuXke0WNgQVqiCVoouCc56Gi9zDI3oaI5z196HajbSQgIExkU9CSjU54pPLZSM96zQttPB4rPJBKoyRUopOMVpgXgih8rzbhm2c4C8fnNSm1QLamKzjESHG89Sw96Hzyf2URiWyoIUGq7eGWeRYgMF2AwegoQkduL1podiZBZvVniswnZXPOD2p0tfClqEHml5SBzk4rW/g7TZkHDRN2IbNBzQ1Y5MRYrtw2Gcbe+eabNGnjvovpJWTbtLRlusfHJB9vehus+DLmyUy2z+enU8YNCdPvJLTcvqV87euMfFY6ktBJOL7Ic5YvIQwMzbk6jJr4XcyQHLFQOgNfW9z9bpkN+xPnwkRS7iCHHOD96lczxXSB8hQB0obsxxpmQ3LyjAlIb4rlnLdpKWViffNDRKjTNtOFB4o/pxin2LGRk9aySaR0WmwZDeXMoztDECqk1F3nIuofV0HtWLT9TUYOcjpRqWKxu4vMZtrAZ44p4nYsalcKtwwAAB4wO1ZUjDruVhmrdSt2aQtENyjvWzw/pIu3aSWKSVFO0Ro+zcepJODgAVraStnRg5y4ossNJlvH8wqcHhOPanDT/DtvaxLcXQAI5APaiGixWpACJhEXAHt8ftWy9CS8MePalOVqyiMKdMXb3U7lX22clqmOkch9T1dpWum5m+nurR4Xx1yCpPwa+uNAtHkMyIm7OcFM81PTNK8uUEDCqe/NKbKFEKTJG8ZIbnHSvP8AXdOFvqoKBUW5O3kcA5otryX0WrAwedtXkNCeV/HeimnwxX1lFf3LJO0DnZIV27srxke4xWK1tGSpqmBZLddOsFtA7s0jb5CeAMDAGPyazvbTCJniJkU9cDOKu1yWZrlpXB9R4JqOl3j/AOKMAhuvHSnJasklK5A76OXZuBNarB7uLaI1O7NMVlYI5JkUFM9fejI0q0ljUxAKw6EULyfgUcV+M8ctGx16DpijcLSNGMk5NBPM8lw6jK55FF7e4NyNyYAAp9CLfhabeWI7B6t44FGfDVu8cd1aOWieVlKsPbvj9qAATvcK3mlcGmDRpDcaxa27EPvfn7YyaGStUHjlxkmhk0porK2NuCCQ555y3U5Oa5JI80hAOPih+qPBptwqJkbwWPOfirIb+IlSDkn2pDTorTTbYSVWK4A7UM/qeoWt2U+kjW3UcnOZGP29qovJ76WXfG4WFTgIXKhvk4rNJb7wzzWboxA/vQvnGDn/AOyKwak2HLWeDV4fq/JeMPxhxgjHerbizFppkKRgDezvj9B/6NYrS9FxAETDOpCekYB6EEffNW3d4v1flB90cY2D5I6n9c1sF2FZX1oXtRS4EgmlO5E/1xWOxlJvS8a4B7Gm6WKC5tWQoCSKCQ2yQXI2R8qe9NuiWthWG6PpBTZxyKJW7M/IbFD5L2N4AssLJ2zjiuR3UaAbCWPb3pVDk6PLZrOVJNmc5ojZpJbDDDC1x5BMpccY71nnundAuaqJDbPqKjhVBpg8DwtcawbonKwRMx+CeB/JpNjUO4GGOewGa9R8PaR/QfDrmRcXVzh5QeqjHpX8fyaGTpBwVsA+LmeQieMFihOcdhQ7TNXiUqkijBI785ovqXrUjrkc5pRvLGSImSEZX2HUUqLTVMomnF2h1vIxJbGS3mXDDqW6Vi09dUORNKJIewIyf1pQh1C4QbS7YBycmi2neIb477eEeZJMcLx0rHja8NjmGSG+FkJ5o1DMhO05/wBzwP0rlovnWqFXHmd6XdQvXQx2sBJEH+Rj/s/c/ua7Y38nnjD4NHCNITknchtNndSRHZceWwHaskr/AEUCiX1yZ5ap6fqfns0Mhwexqc1lKgLv/cjP7VzM/gR0q7tLmPExUDvk1bqOn24USWzhT2xQL6OMqWQsAewqm5stUlMf00uxE7e9BVB8rQmxmWRfJiiZ3bsozW2PS1Cb7uTbt/0Q5J+M9v3rZPqsESmGNREMcpEn8nvQqe6aZmZQUz7HrVAgb/B/9AimMkQk/qKk7BOwO0e6YwD/ADTBd3DyQMCclq8oV2VhIrFXU5DA8g+9O2g+IE1OMW9ywS7HvwJPkfPxSskX6h+KS8ZfdxFwcUMmg9JUrTFPFtANY7i3/wBgM1PZYti2ujQzzBmAyTyCOKhq5t7TUZbGyiSGOJVjY49TNjLc/nH4pls7XfdRLtwGcD96B+INEZdWvNsqieOVjIjcBsnIZT8jPB7g803G7eyfOqXUCysYlwh3Futct5AkoMnGK0xaVdTMCE2e2eh/NbbKC2mkEdwoVgdpz70+yOi6xukMwcZwOtNdpcfUxbA4AIpVurI2Vx5af9J5GO4ozBayw+TJAd0bDr7ULDVlry/SztEecd8UStF+oi4bBrHcF2tmZIg7dG+Ko028bDQN6XxlTQ/Avp56HyfkfuK+zzjvWcZA9PVeR9qs3hkDr+lOFFmea+BKkMMgjkEdRUc4Ofep4HWuOHHw94jW9CWGoMBMeIpv+58H5/mmU2uVCmvKCMfb+KcvD3i0C3Ntqrk+VjbOBk7emW+3HPzSJ4/qKseX4xhFqyyqV4280I8TaeXeO7R+QNkp6cE8HPw380xRvHNEssTrJGwyrKcgilPxnq6hV06FgWOGlI7Y5ApcE7GZGuOxdguJtOuGeLaQeHRhkN7Gtomt9RcNuEEzYBI4XPuR2/FDEcSxqGPqHGaqbMbVTRHY5XEU81mqzIVu7bG4f8h7j3B61r0S+wz20owGGUz2oL4b1dmf6Gf14UmFieVxyV+x6496sN9HZahJHI4/5xH3HtQfgX6MEno3NHn18OKWpzeWd5uKnKNuU9mFMlveQXcAkVhtkFQZreddk+D5RxmuNez/2Q==); --av-02:url(data:image/jpeg;base64,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); --av-03:url(data:image/jpeg;base64,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); --av-04:url(data:image/jpeg;base64,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); --av-05:url(data:image/jpeg;base64,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); --av-06:url(data:image/jpeg;base64,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);}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+.mk .label{margin:22px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .head{display:flex;align-items:center;gap:8px;margin:22px var(--gutter) 10px}
+.mk .head h2{flex:1;margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .pill-btn{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:12.5px;font-weight:500;cursor:pointer; transition:background .18s var(--ease);}
+.mk .pill-btn:hover{background:#222833}
+.mk .icon-btn{display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease);}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn svg{width:17px;height:17px}
+.mk .status-pill{display:inline-flex;align-items:center;gap:7px; height:32px;padding:0 14px;border-radius:var(--r-pill); background:var(--acid-wash); font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--acid);white-space:nowrap;}
+.mk .status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mk .avatar{border-radius:50%;flex:0 0 auto; background-color:#20262F;background-size:cover;background-position:center 22%;}
+.mk .eyebrow{margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .tag{display:inline-flex;align-items:center;height:26px;padding:0 10px; border-radius:var(--r-pill);background:var(--sunken); font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase; color:var(--muted);white-space:nowrap;}
+.mk .fr{border-top:1px solid var(--line);margin-top:34px;padding-top:18px}
+.mk .fr:first-of-type{border-top:0;margin-top:0;padding-top:0}
+.mk .hero{position:relative;overflow:hidden; margin:0 var(--gutter); border-radius:var(--r-card); background:linear-gradient(112deg,var(--hero-a) 0%,var(--hero-b) 58%,#0C3416 100%); height:138px; display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between; padding:14px 18px 16px;}
+.mk .hero__field{position:absolute;inset:0;pointer-events:none}
+.mk .hero__range{position:absolute;right:0;bottom:0;width:54%;height:38%;pointer-events:none;z-index:1}
+.mk .hero__back{position:relative;z-index:3; display:inline-flex;align-items:center;justify-content:center; width:36px;height:36px;border:0;border-radius:50%; background:rgba(255,255,255,.12);color:#fff;cursor:pointer; transition:background .18s var(--ease);}
+.mk .hero__back:hover{background:rgba(255,255,255,.2)}
+.mk .hero__back svg{width:18px;height:18px}
+.mk .hero__id{position:relative;z-index:3;max-width:56%}
+.mk .hero__id .eyebrow{margin:0 0 6px;color:rgba(255,255,255,.6)}
+.mk .hero__title{position:relative;z-index:3;margin:0; font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1; text-transform:uppercase;}
+.mk .hero--badge{align-items:flex-start;justify-content:flex-start}
+.mk .hero__bdg.bdg{position:absolute;left:50%;top:50%;transform:translate(-50%,-48%); width:104px;z-index:3;}
+.mk .standing{display:flex;gap:12px; margin:10px var(--gutter) 0;padding:16px; border-radius:var(--r-card);background:var(--surface);}
+.mk .standing__main{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.mk .standing__rank{display:flex;align-items:baseline;gap:7px;margin:0}
+.mk .standing__rank b{font-size:32px;font-weight:800;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+.mk .standing__rank span{font-size:12.5px;color:var(--muted)}
+.mk .delta{display:inline-flex;align-items:center;gap:4px;margin-top:9px;font-size:12px;font-weight:600;color:var(--acid)}
+.mk .delta svg{width:12px;height:12px}
+.mk .standing__score{flex:0 0 96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px; padding:12px 8px;border-radius:var(--r-panel);background:var(--sunken);}
+.mk .standing__score b{font-size:22px;font-weight:700;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.mk .standing__score span{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);text-align:center}
+.mk .section{margin:0 var(--gutter);padding:12px; border:1px solid var(--line);border-radius:var(--r-card); background:var(--section);}
+.mk .section + .section{margin-top:10px}
+.mk .section__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.mk .section__bar .spacer{flex:1}
+.mk .section__body{margin:0;font-size:13px;color:var(--muted)}
+.mk .section__body b{color:var(--text);font-weight:600}
+.mk .grp{display:flex;align-items:baseline;gap:8px; padding:2px 2px 8px;}
+.mk .grp + .board{margin-top:0}
+.mk .grp__t{flex:1;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.mk .grp__v{font-size:12px;font-weight:700;color:var(--acid);font-variant-numeric:tabular-nums}
+.mk .board{list-style:none;margin:0;padding:0;border-radius:var(--r-panel);background:var(--surface);overflow:hidden}
+.mk .board + .grp{margin-top:16px}
+.mk .led{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.mk .led:first-child{border-top:0}
+.mk .led__ic{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto; width:34px;height:34px;border-radius:var(--r-panel); background:var(--sunken);color:var(--muted);}
+.mk .led__ic svg{width:17px;height:17px}
+.mk .led__ic--award{background:var(--acid-wash);color:var(--acid)}
+.mk .led__id{flex:1;min-width:0}
+.mk .led__t{display:block;font-size:13.5px;font-weight:600;line-height:1.25}
+.mk .led__s{display:block;margin-top:2px;font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk .led__v{flex:0 0 auto;font-size:14px;font-weight:700;color:var(--acid); font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.mk .led__v--down{color:#E2564A}
+.mk .more{display:flex;justify-content:center;margin:12px 0 0}
+.mk .bdg{display:block;width:100%;height:auto;overflow:visible}
+.mk .bdg__pan{fill:var(--sunken);stroke:none}
+.mk .bdg__ring{fill:none;stroke:var(--line);stroke-width:1.6;stroke-linejoin:round}
+.mk .bdg__ring2{fill:none;stroke:rgba(255,255,255,.055);stroke-width:1.3;stroke-linejoin:round}
+.mk .bdg__prog{fill:none;stroke:var(--acid);stroke-width:2.8; stroke-linejoin:round;stroke-linecap:butt;}
+.mk .bdg__gly{color:rgba(255,255,255,.28)}
+.mk .bdg.is-earned .bdg__pan{fill:var(--acid-wash)}
+.mk .bdg.is-earned .bdg__gly{color:var(--acid)}
+.mk .bdg.is-earned .bdg__ring{stroke:rgba(155,226,34,.45)}
+.mk .bdg--uncommon.is-earned .bdg__ring{stroke:rgba(155,226,34,.55)}
+.mk .bdg--rare.is-earned .bdg__ring{stroke:rgba(155,226,34,.70)}
+.mk .bdg--rare.is-earned .bdg__ring2{stroke:rgba(155,226,34,.30)}
+.mk .bdg--elite.is-earned .bdg__pan{fill:rgba(155,226,34,.17)}
+.mk .bdg--elite.is-earned .bdg__ring{stroke:rgba(155,226,34,.85)}
+.mk .bdg--elite.is-earned .bdg__ring2{stroke:rgba(155,226,34,.50)}
+.mk .bdg.is-prog .bdg__gly{color:rgba(255,255,255,.30)}
+.mk .bdg.is-locked .bdg__pan{fill:#0E1116}
+.mk .bdg.is-locked .bdg__ring{stroke:var(--line-soft);stroke-dasharray:2.2 2.6}
+.mk .bdg.is-locked .bdg__ring2{stroke:rgba(255,255,255,.035)}
+.mk .bdg.is-locked .bdg__gly{color:rgba(255,255,255,.13)}
+.mk .filt{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none}
+.mk .filt::-webkit-scrollbar{height:0}
+.mk .filt__b{height:32px;padding:0 13px;flex:0 0 auto; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--muted); font:inherit;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer; transition:background .18s var(--ease),color .18s var(--ease);}
+.mk .filt__b[aria-pressed="true"]{background:var(--acid-wash);color:var(--acid)}
+.mk .grid{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:8px; margin:0;padding:0;list-style:none;}
+.mk .grid > li{display:flex}
+.mk .bcell{flex:1; display:flex;flex-direction:column;align-items:center;justify-content:flex-start; text-align:center;gap:2px;height:100%;min-height:126px; padding:12px 6px 11px;border:0;border-radius:var(--r-panel); background:var(--surface);color:var(--text);font:inherit;cursor:pointer; transition:background .18s var(--ease);}
+.mk .bcell:hover{background:#222833}
+.mk .bcell .bdg{width:58px;margin-bottom:7px}
+.mk .bcell__n{font-size:12px;font-weight:600;line-height:1.2}
+.mk .bcell__s{font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.mk .bcell--prog .bcell__s{color:var(--acid);font-weight:600}
+.mk .bcell--locked .bcell__n{color:var(--muted)}
+.mk .legend{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0;padding:0;list-style:none}
+.mk .legend li{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+.mk .legend .bdg{width:44px}
+.mk .legend b{font-size:11px;font-weight:600}
+.mk .legend em{font-style:normal;font-size:10px;color:var(--dim);line-height:1.25}
+.mk .title{margin:16px var(--gutter) 0;font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;text-transform:uppercase}
+.mk .sub{display:flex;align-items:center;gap:8px;margin:10px var(--gutter) 0}
+.mk .sub span{font-size:12.5px;color:var(--muted)}
+.mk .prog{margin-top:12px;padding:13px;border-radius:var(--r-panel);background:var(--surface)}
+.mk .prog__bar{height:8px;border-radius:var(--r-pill);background:var(--sunken);overflow:hidden}
+.mk .prog__fill{display:block;height:100%;border-radius:var(--r-pill);background:var(--acid)}
+.mk .prog__row{display:flex;align-items:baseline;gap:8px;margin:0 0 9px}
+.mk .prog__row b{flex:1;font-size:13.5px;font-weight:600}
+.mk .prog__row span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk .row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid var(--line-soft)}
+.mk .row:first-child{border-top:0}
+.mk .row__avatar{width:34px;height:34px}
+.mk .row__id{flex:1;min-width:0}
+.mk .row__name{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk .row__sub{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+.mk .row__end{flex:0 0 auto;font-size:12px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk .row__end--acid{color:var(--acid)}
+.mk .holders{display:flex;align-items:center;gap:12px;padding:2px 2px 12px}
+.mk .stack{display:flex;flex:0 0 auto}
+.mk .stack .avatar{width:30px;height:30px;box-shadow:0 0 0 2px var(--section)}
+.mk .stack .avatar + .avatar{margin-left:-9px}
+.mk .holders p{margin:0;font-size:12.5px;color:var(--muted)}
+.mk .holders p b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.mk .note{display:flex;align-items:center;gap:11px; margin:10px var(--gutter) 0;padding:13px 14px; border-radius:var(--r-card);background:var(--surface);}
+.mk .note svg{width:19px;height:19px;color:var(--acid);flex:0 0 auto}
+.mk .note p{margin:0;font-size:12.5px;color:var(--muted)}
+.mk .note p b{color:var(--text);font-weight:600}
+.mk .moment{position:relative;overflow:hidden; margin:0 var(--gutter);border-radius:var(--r-card); min-height:540px;display:flex;align-items:center;justify-content:center; padding:20px;background:var(--bg);}
+.mk .moment__back{position:absolute;inset:0;padding:14px;filter:blur(10px);opacity:1;pointer-events:none}
+.mk .moment__back .grid{gap:8px}
+.mk .moment__scrim{position:absolute;inset:0;background:rgba(3,4,1,.55)}
+.mk .moment__replay{position:relative;z-index:4;display:none}
+.mk .moment.is-off .award{display:none}
+.mk .moment.is-off .moment__replay{display:inline-flex}
+.mk .award{position:relative;z-index:3;width:100%; padding:18px 18px 18px;border-radius:var(--r-card); background:var(--surface);border:1px solid var(--line); text-align:center;}
+.mk .award__x{position:absolute;top:10px;right:10px;z-index:5; width:32px;height:32px;background:rgba(255,255,255,.06);}
+.mk .award__x svg{width:15px;height:15px}
+.mk .award__art{position:relative;height:158px;margin:2px 0 16px; display:flex;align-items:flex-end;justify-content:center;overflow:hidden;}
+.mk .award__rays{position:absolute;left:50%;top:42%;width:300px;height:300px;transform:translate(-50%,-50%)}
+.mk .award__peaks{position:absolute;left:50%;bottom:0;width:196px;height:52px;transform:translateX(-50%)}
+.mk .award__bdg{position:relative;z-index:2;width:96px;margin-bottom:26px}
+.mk .award__title{margin:0;font-size:26px;font-weight:800;letter-spacing:-.025em;line-height:1.02;text-transform:uppercase}
+.mk .award__body{margin:9px 4px 0;font-size:13px;color:var(--muted)}
+.mk .award__tags{display:flex;justify-content:center;flex-wrap:wrap;gap:7px;margin-top:14px}
+.mk .award__acts{display:flex;gap:8px;margin-top:16px}
+.mk .btn-acid,.mk .btn-ghost{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px; height:46px;border:0;border-radius:var(--r-pill); font:inherit;font-size:14px;font-weight:700;cursor:pointer; transition:background .18s var(--ease),filter .18s var(--ease);}
+.mk .btn-acid{background:var(--acid);color:var(--acid-ink)}
+.mk .btn-acid:hover{filter:brightness(1.08)}
+.mk .btn-ghost{background:var(--sunken);color:var(--text);font-weight:600}
+.mk .btn-ghost:hover{background:#1A1F27}
+.mk .btn-acid svg,.mk .btn-ghost svg{width:17px;height:17px}
+.mk .award__done{display:none;margin:12px 0 0;font-size:12px;font-weight:600;color:var(--acid);}
+.mk .award.is-shared .award__done{display:block}
+@keyframes mk-card{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes mk-rise{from{opacity:0;transform:translateX(-50%) translateY(26px)}to{opacity:1;transform:translateX(-50%)}}
+@keyframes mk-pop{0%{opacity:0;transform:scale(.72)}60%{transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
+@keyframes mk-spin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes mk-up{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.mk .award--anim{animation:mk-card .5s var(--ease) both}
+.mk .award--anim .award__peaks{animation:mk-rise .8s .05s var(--ease) both}
+.mk .award--anim .award__bdg{animation:mk-pop .66s .2s var(--ease) both}
+.mk .award--anim .award__rays{animation:mk-spin 34s linear infinite}
+.mk .award--anim .eyebrow{animation:mk-up .5s .38s var(--ease) both}
+.mk .award--anim .award__title{animation:mk-up .5s .44s var(--ease) both}
+.mk .award--anim .award__body{animation:mk-up .5s .5s var(--ease) both}
+.mk .award--anim .award__tags{animation:mk-up .5s .56s var(--ease) both}
+.mk .award--anim .award__acts{animation:mk-up .5s .62s var(--ease) both}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important;animation:none!important}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Merit detail</h1>
+    <p class="dek">The gamification surface behind the Merits tab: the ledger that explains where a
+member's merits came from, the badge collection, a single badge in detail, and the moment a badge is
+awarded. Four pushed routes, reached from the Merits standing card.</p>
+    <div class="meta">
+      <span><b>Component</b> merit-detail</span>
+      <span><b>Figma</b> New</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 4</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">Merit history<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Badge collection<span class="side__tag">02</span></a></li>
+      <li><a class="side__item" href="#scr-3">Badge detail<span class="side__tag">03</span></a></li>
+      <li><a class="side__item" href="#scr-4">Award moment<span class="side__tag">04</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><span class="side__item" aria-current="page">Merit detail<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">Four screens behind the Merits tab</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">4 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>Merit history</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <header class="hero">
+    <svg class="hero__field" viewBox="0 0 343 132" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 132 L52 46 L104 132 Z"    fill="#fff" opacity=".030"/>
+      <path d="M92 132 L146 30 L200 132 Z"  fill="#fff" opacity=".024"/>
+      <path d="M196 0 L252 0 L196 84 Z"     fill="#fff" opacity=".026"/>
+    </svg>
+    <svg class="hero__range" viewBox="0 0 226 69" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 69 L40 28 L80 69 Z"     fill="#9BE222"/>
+      <path d="M88 69 L140 6 L192 69 Z"   fill="#9BE222"/>
+      <path d="M184 69 L226 32 L226 69 Z" fill="#9BE222"/>
+    </svg>
+    <button class="hero__back" type="button" aria-label="Back to Merits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="hero__id">
+      <p class="eyebrow">Merits</p>
+      <h1 class="hero__title">History</h1>
+    </div>
+  </header>
+
+  <section class="standing" aria-label="Season summary">
+    <div class="standing__main">
+      <p class="eyebrow">Season 25/26 · Barcelona</p>
+      <p class="standing__rank"><b>2,480</b><span>merits earned</span></p>
+      <span class="delta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        646 this month
+      </span>
+    </div>
+    <div class="standing__score">
+      <b>48</b><span>Entries</span>
+    </div>
+  </section>
+
+  <div class="head">
+    <h2>Ledger</h2>
+    <button class="pill-btn" type="button">All seasons
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </div>
+
+  <section class="section">
+    <div class="section__bar">
+      <span class="status-pill">Season 25/26</span>
+      <span class="spacer"></span>
+      <button class="icon-btn" type="button" aria-label="Search entries">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+      </button>
+      <button class="icon-btn" type="button" aria-label="Filter entries">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg>
+      </button>
+    </div>
+
+    <div class="grp"><span class="grp__t">This week</span><span class="grp__v">+346</span></div>
+    <ol class="board">
+      <li class="led">
+        <span class="led__ic led__ic--award">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Member of the Match</span>
+          <span class="led__s">Barcelona v Inter Milan · 28 Dec</span>
+        </span>
+        <span class="led__v">+250</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Motion carried</span>
+          <span class="led__s">Squad rotation · 26 Dec</span>
+        </span>
+        <span class="led__v">+60</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Votes cast</span>
+          <span class="led__s">4 War Room motions · 25 Dec</span>
+        </span>
+        <span class="led__v">+40</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Replies upvoted</span>
+          <span class="led__s">18 upvotes in Backchat · 24 Dec</span>
+        </span>
+        <span class="led__v">+36</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Vote withdrawn</span>
+          <span class="led__s">Ticket ballot · 23 Dec</span>
+        </span>
+        <span class="led__v led__v--down">−40</span>
+      </li>
+    </ol>
+
+    <div class="grp"><span class="grp__t">Earlier in December</span><span class="grp__v">+300</span></div>
+    <ol class="board">
+      <li class="led">
+        <span class="led__ic led__ic--award">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.6 20 7v10l-8 4.4L4 17V7l8-4.4Z"/><path d="M8.5 15 12 9l3.5 6H8.5Z" fill="currentColor" stroke="none"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Badge earned</span>
+          <span class="led__s">Backchat Regular · 21 Dec</span>
+        </span>
+        <span class="led__v">+100</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 19 8 9l4 6 3-4.5L22 19H2Z"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Seven-day streak</span>
+          <span class="led__s">Voted every day, 14–20 Dec</span>
+        </span>
+        <span class="led__v">+70</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="3.4"/><path d="M4 20a6 6 0 0 1 12 0M18.5 8v6M15.5 11h6"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Member invited</span>
+          <span class="led__s">scout_mode joined · 11 Dec</span>
+        </span>
+        <span class="led__v">+50</span>
+      </li>
+      <li class="led">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 19 6v5c0 4.3-2.9 8-7 9-4.1-1-7-4.7-7-9V6l7-3Z"/><path d="M9 11.5h6"/></svg>
+        </span>
+        <span class="led__id">
+          <span class="led__t">Veto held</span>
+          <span class="led__s">Kit redesign · 8 Dec</span>
+        </span>
+        <span class="led__v">+80</span>
+      </li>
+    </ol>
+
+    <div class="more"><button class="pill-btn" type="button">Load earlier entries</button></div>
+  </section>
+  <div style="height:32px" aria-hidden="true"></div>
+</div><!-- ============================================================
+     SHARED BADGE GEOMETRY
+     Cells: circle → octagon → hexagon → triangle.
+     Facets reduce and sharpen as rarity rises, so the rarest
+     badge is the closest thing to the brand's bare peak.
+     pathLength="100" lets the progress arc be set in percent.
+     ============================================================ -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false"><defs>
+  <!-- cells -->
+  <g id="c-cir"><path pathLength="100" d="M36 9A27 27 0 1 1 36 63A27 27 0 1 1 36 9Z"/></g>
+  <g id="c-oct"><path pathLength="100" d="M36 9 55.09 16.91 63 36 55.09 55.09 36 63 16.91 55.09 9 36 16.91 16.91Z"/></g>
+  <g id="c-hex"><path pathLength="100" d="M36 9 59.38 22.5 59.38 49.5 36 63 12.62 49.5 12.62 22.5Z"/></g>
+  <g id="c-hex-o"><path d="M36 3 64.58 19.5 64.58 52.5 36 69 7.42 52.5 7.42 19.5Z"/></g>
+  <g id="c-tri"><path pathLength="100" d="M36 9 59.38 49.5H12.62Z"/></g>
+  <g id="c-tri-o"><path d="M36 2 65.44 53H6.56Z"/></g>
+
+  <!-- glyphs: peaks, chevrons and one diamond. Peak count = magnitude,
+       height = rank, inversion = opposition, nesting = depth,
+       apex diamond = origin. -->
+  <g id="g-one"><path fill="currentColor" d="M36 26 50 46H22Z"/></g>
+  <g id="g-pair"><path fill="currentColor" d="M20 46 28.5 30 37 46Z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" d="M35 46 43.5 30 52 46Z"/></g>
+  <g id="g-asc"><path fill="currentColor" d="M20 46 25.5 38 31 46Z"/><path fill="currentColor" d="M30 46 36 33 42 46Z"/><path fill="currentColor" d="M41 46 47 27 53 46Z"/></g>
+  <g id="g-three"><path fill="currentColor" d="M20 46 28 34 36 46Z"/><path fill="currentColor" d="M28 46 36 24 44 46Z"/><path fill="currentColor" d="M36 46 44 34 52 46Z"/></g>
+  <g id="g-lift"><path fill="currentColor" d="M19 46 27 36 35 46Z"/><path fill="currentColor" d="M30 46 41 25 52 46Z"/></g>
+  <g id="g-flank"><path fill="currentColor" d="M36 25 45.5 46H26.5Z"/><path fill="currentColor" d="M14 46 20 35 26 46Z"/><path fill="currentColor" d="M46 46 52 35 58 46Z"/></g>
+  <g id="g-chev3"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M22 33 36 24 50 33M22 41 36 32 50 41M22 49 36 40 50 49"/></g>
+  <g id="g-bar"><path fill="currentColor" d="M36 26 50 46H22Z"/><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M23 37H49"/></g>
+  <g id="g-mirror"><path fill="currentColor" d="M36 23 47 34H25Z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" d="M36 49 25 38H47Z"/></g>
+  <g id="g-saw"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M14 46 21 34 28 46 35 34 42 46 49 34 56 46"/></g>
+  <g id="g-range"><path fill="currentColor" d="M16 46 23 34 29 40 36 25 43 40 49 34 56 46Z"/></g>
+  <g id="g-found"><path fill="currentColor" d="M36 30 48 46H24Z"/><path fill="currentColor" d="M36 18.5 40.5 23 36 27.5 31.5 23Z"/></g>
+
+  <!-- the award moment's rays fade out from the badge so the clipped
+       outer ends never read as solid bars -->
+  <radialGradient id="rayfade" gradientUnits="userSpaceOnUse" cx="100" cy="100" r="94">
+    <stop offset="0" stop-color="#9BE222" stop-opacity=".60"/>
+    <stop offset=".5" stop-color="#9BE222" stop-opacity=".20"/>
+    <stop offset="1" stop-color="#9BE222" stop-opacity="0"/>
+  </radialGradient>
+</defs></svg></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Badge collection</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <header class="hero">
+    <svg class="hero__field" viewBox="0 0 343 132" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 132 L52 46 L104 132 Z"    fill="#fff" opacity=".030"/>
+      <path d="M92 132 L146 30 L200 132 Z"  fill="#fff" opacity=".024"/>
+      <path d="M196 0 L252 0 L196 84 Z"     fill="#fff" opacity=".026"/>
+    </svg>
+    <svg class="hero__range" viewBox="0 0 226 69" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 69 L40 28 L80 69 Z"     fill="#9BE222"/>
+      <path d="M88 69 L140 6 L192 69 Z"   fill="#9BE222"/>
+      <path d="M184 69 L226 32 L226 69 Z" fill="#9BE222"/>
+    </svg>
+    <button class="hero__back" type="button" aria-label="Back to Merits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="hero__id">
+      <p class="eyebrow">Merits</p>
+      <h1 class="hero__title">Badges</h1>
+    </div>
+  </header>
+
+  <div class="head">
+    <h2>Collection</h2>
+    <button class="pill-btn" type="button">Season 25/26
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </div>
+
+  <section class="section">
+    <div class="section__bar">
+      <span class="status-pill">6 of 12 earned</span>
+      <span class="spacer"></span>
+      <button class="icon-btn" type="button" aria-label="Sort badges">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+      </button>
+    </div>
+
+    <div class="filt" role="group" aria-label="Filter badges">
+      <button class="filt__b" type="button" aria-pressed="true">All</button>
+      <button class="filt__b" type="button" aria-pressed="false">Earned</button>
+      <button class="filt__b" type="button" aria-pressed="false">In progress</button>
+      <button class="filt__b" type="button" aria-pressed="false">Locked</button>
+    </div>
+
+    <ul class="grid">
+      <li><button class="bcell" type="button">
+        <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-one"/>
+        </svg>
+        <span class="bcell__n">First Vote</span><span class="bcell__s">Earned 2 Sep</span>
+      </button></li>
+
+      <li><button class="bcell" type="button">
+        <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-chev3"/>
+        </svg>
+        <span class="bcell__n">Backchat Regular</span><span class="bcell__s">Earned 21 Dec</span>
+      </button></li>
+
+      <li><button class="bcell" type="button">
+        <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-pair"/>
+        </svg>
+        <span class="bcell__n">Derby Day</span><span class="bcell__s">Earned 14 Oct</span>
+      </button></li>
+
+      <li><button class="bcell bcell--prog" type="button">
+        <svg class="bdg bdg--common is-prog" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/>
+          <use class="bdg__prog" href="#c-cir" style="stroke-dasharray:60 100"/>
+          <use class="bdg__gly" href="#g-flank"/>
+        </svg>
+        <span class="bcell__n">Recruiter</span><span class="bcell__s">3 of 5</span>
+      </button></li>
+
+      <li><button class="bcell" type="button">
+        <svg class="bdg bdg--uncommon is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/><use class="bdg__gly" href="#g-asc"/>
+        </svg>
+        <span class="bcell__n">Streak Keeper</span><span class="bcell__s">Earned 20 Dec</span>
+      </button></li>
+
+      <li><button class="bcell bcell--prog" type="button">
+        <svg class="bdg bdg--uncommon is-prog" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/>
+          <use class="bdg__prog" href="#c-oct" style="stroke-dasharray:20 100"/>
+          <use class="bdg__gly" href="#g-bar"/>
+        </svg>
+        <span class="bcell__n">Top Ten</span><span class="bcell__s">2 to go</span>
+      </button></li>
+
+      <li><button class="bcell bcell--locked" type="button">
+        <svg class="bdg bdg--uncommon is-locked" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/><use class="bdg__gly" href="#g-mirror"/>
+        </svg>
+        <span class="bcell__n">Veto Held</span><span class="bcell__s">Locked</span>
+      </button></li>
+
+      <li><button class="bcell bcell--prog" type="button">
+        <svg class="bdg bdg--rare is-prog" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__ring2" href="#c-hex-o"/>
+          <use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/>
+          <use class="bdg__prog" href="#c-hex" style="stroke-dasharray:70 100"/>
+          <use class="bdg__gly" href="#g-lift"/>
+        </svg>
+        <span class="bcell__n">Kingmaker</span><span class="bcell__s">7 of 10</span>
+      </button></li>
+
+      <li><button class="bcell" type="button">
+        <svg class="bdg bdg--rare is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__ring2" href="#c-hex-o"/>
+          <use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/><use class="bdg__gly" href="#g-three"/>
+        </svg>
+        <span class="bcell__n">Member of the Match</span><span class="bcell__s">Earned 28 Dec</span>
+      </button></li>
+
+      <li><button class="bcell bcell--locked" type="button">
+        <svg class="bdg bdg--rare is-locked" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__ring2" href="#c-hex-o"/>
+          <use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/><use class="bdg__gly" href="#g-saw"/>
+        </svg>
+        <span class="bcell__n">Full Season</span><span class="bcell__s">Locked</span>
+      </button></li>
+
+      <li><button class="bcell" type="button">
+        <svg class="bdg bdg--elite is-earned" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__ring2" href="#c-tri-o"/>
+          <use class="bdg__pan" href="#c-tri"/><use class="bdg__ring" href="#c-tri"/><use class="bdg__gly" href="#g-found"/>
+        </svg>
+        <span class="bcell__n">Founding Member</span><span class="bcell__s">Earned 2 Sep</span>
+      </button></li>
+
+      <li><button class="bcell bcell--locked" type="button">
+        <svg class="bdg bdg--elite is-locked" viewBox="0 0 72 72" aria-hidden="true">
+          <use class="bdg__ring2" href="#c-tri-o"/>
+          <use class="bdg__pan" href="#c-tri"/><use class="bdg__ring" href="#c-tri"/><use class="bdg__gly" href="#g-range"/>
+        </svg>
+        <span class="bcell__n">Hall of Fame</span><span class="bcell__s">Locked</span>
+      </button></li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <p class="eyebrow">How rarity reads</p>
+    <ul class="legend">
+      <li>
+        <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72" aria-hidden="true"><use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/></svg>
+        <b>Common</b><em>Most members</em>
+      </li>
+      <li>
+        <svg class="bdg bdg--uncommon is-earned" viewBox="0 0 72 72" aria-hidden="true"><use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/></svg>
+        <b>Uncommon</b><em>10–40%</em>
+      </li>
+      <li>
+        <svg class="bdg bdg--rare is-earned" viewBox="0 0 72 72" aria-hidden="true"><use class="bdg__ring2" href="#c-hex-o"/><use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/></svg>
+        <b>Rare</b><em>1–10%</em>
+      </li>
+      <li>
+        <svg class="bdg bdg--elite is-earned" viewBox="0 0 72 72" aria-hidden="true"><use class="bdg__ring2" href="#c-tri-o"/><use class="bdg__pan" href="#c-tri"/><use class="bdg__ring" href="#c-tri"/></svg>
+        <b>Elite</b><em>Under 1%</em>
+      </li>
+    </ul>
+    <p class="section__body" style="margin-top:11px">The cell loses facets and sharpens as a badge gets
+      rarer, so the rarest badge is the closest thing to the bare peak in the SportsHeist mark. Rarity is
+      how few members hold a badge — <b>not</b> a ladder you climb.</p>
+  </section>
+  <div style="height:32px" aria-hidden="true"></div>
+</div><!-- ============================================================
+     SHARED BADGE GEOMETRY
+     Cells: circle → octagon → hexagon → triangle.
+     Facets reduce and sharpen as rarity rises, so the rarest
+     badge is the closest thing to the brand's bare peak.
+     pathLength="100" lets the progress arc be set in percent.
+     ============================================================ -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false"><defs>
+  <!-- cells -->
+  <g id="c-cir"><path pathLength="100" d="M36 9A27 27 0 1 1 36 63A27 27 0 1 1 36 9Z"/></g>
+  <g id="c-oct"><path pathLength="100" d="M36 9 55.09 16.91 63 36 55.09 55.09 36 63 16.91 55.09 9 36 16.91 16.91Z"/></g>
+  <g id="c-hex"><path pathLength="100" d="M36 9 59.38 22.5 59.38 49.5 36 63 12.62 49.5 12.62 22.5Z"/></g>
+  <g id="c-hex-o"><path d="M36 3 64.58 19.5 64.58 52.5 36 69 7.42 52.5 7.42 19.5Z"/></g>
+  <g id="c-tri"><path pathLength="100" d="M36 9 59.38 49.5H12.62Z"/></g>
+  <g id="c-tri-o"><path d="M36 2 65.44 53H6.56Z"/></g>
+
+  <!-- glyphs: peaks, chevrons and one diamond. Peak count = magnitude,
+       height = rank, inversion = opposition, nesting = depth,
+       apex diamond = origin. -->
+  <g id="g-one"><path fill="currentColor" d="M36 26 50 46H22Z"/></g>
+  <g id="g-pair"><path fill="currentColor" d="M20 46 28.5 30 37 46Z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" d="M35 46 43.5 30 52 46Z"/></g>
+  <g id="g-asc"><path fill="currentColor" d="M20 46 25.5 38 31 46Z"/><path fill="currentColor" d="M30 46 36 33 42 46Z"/><path fill="currentColor" d="M41 46 47 27 53 46Z"/></g>
+  <g id="g-three"><path fill="currentColor" d="M20 46 28 34 36 46Z"/><path fill="currentColor" d="M28 46 36 24 44 46Z"/><path fill="currentColor" d="M36 46 44 34 52 46Z"/></g>
+  <g id="g-lift"><path fill="currentColor" d="M19 46 27 36 35 46Z"/><path fill="currentColor" d="M30 46 41 25 52 46Z"/></g>
+  <g id="g-flank"><path fill="currentColor" d="M36 25 45.5 46H26.5Z"/><path fill="currentColor" d="M14 46 20 35 26 46Z"/><path fill="currentColor" d="M46 46 52 35 58 46Z"/></g>
+  <g id="g-chev3"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M22 33 36 24 50 33M22 41 36 32 50 41M22 49 36 40 50 49"/></g>
+  <g id="g-bar"><path fill="currentColor" d="M36 26 50 46H22Z"/><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M23 37H49"/></g>
+  <g id="g-mirror"><path fill="currentColor" d="M36 23 47 34H25Z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" d="M36 49 25 38H47Z"/></g>
+  <g id="g-saw"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M14 46 21 34 28 46 35 34 42 46 49 34 56 46"/></g>
+  <g id="g-range"><path fill="currentColor" d="M16 46 23 34 29 40 36 25 43 40 49 34 56 46Z"/></g>
+  <g id="g-found"><path fill="currentColor" d="M36 30 48 46H24Z"/><path fill="currentColor" d="M36 18.5 40.5 23 36 27.5 31.5 23Z"/></g>
+
+  <!-- the award moment's rays fade out from the badge so the clipped
+       outer ends never read as solid bars -->
+  <radialGradient id="rayfade" gradientUnits="userSpaceOnUse" cx="100" cy="100" r="94">
+    <stop offset="0" stop-color="#9BE222" stop-opacity=".60"/>
+    <stop offset=".5" stop-color="#9BE222" stop-opacity=".20"/>
+    <stop offset="1" stop-color="#9BE222" stop-opacity="0"/>
+  </radialGradient>
+</defs></svg></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-3">
+        <figcaption class="scr__cap"><span class="scr__n">03</span>Badge detail</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <header class="hero hero--badge">
+    <svg class="hero__field" viewBox="0 0 343 132" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 132 L52 46 L104 132 Z"    fill="#fff" opacity=".030"/>
+      <path d="M92 132 L146 30 L200 132 Z"  fill="#fff" opacity=".024"/>
+      <path d="M196 0 L252 0 L196 84 Z"     fill="#fff" opacity=".026"/>
+    </svg>
+    <svg class="hero__range" viewBox="0 0 226 69" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 69 L40 28 L80 69 Z"     fill="#9BE222"/>
+      <path d="M88 69 L140 6 L192 69 Z"   fill="#9BE222"/>
+      <path d="M184 69 L226 32 L226 69 Z" fill="#9BE222"/>
+    </svg>
+    <button class="hero__back" type="button" aria-label="Back to badges">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <svg class="bdg bdg--rare is-prog hero__bdg" viewBox="0 0 72 72" role="img" aria-label="Kingmaker, rare, 7 of 10">
+      <use class="bdg__ring2" href="#c-hex-o"/>
+      <use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/>
+      <use class="bdg__prog" href="#c-hex" style="stroke-dasharray:70 100"/>
+      <use class="bdg__gly" href="#g-lift"/>
+    </svg>
+  </header>
+
+  <h1 class="title">Kingmaker</h1>
+  <p class="sub"><span class="tag">Rare</span><span>212 of 6,840 members · 3.1%</span></p>
+
+  <div class="head"><h2>How it&rsquo;s earned</h2></div>
+  <section class="section">
+    <p class="section__body">Back <b>ten War Room motions</b> that go on to carry. Only votes cast before
+      a motion closes count, and a withdrawn vote is removed from the tally.</p>
+    <div class="prog">
+      <p class="prog__row"><b>7 of 10 motions</b><span>3 to go</span></p>
+      <span class="prog__bar"><span class="prog__fill" style="width:70%"></span></span>
+    </div>
+  </section>
+
+  <div class="head">
+    <h2>Motions that carried</h2>
+    <button class="pill-btn" type="button">View all
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="13" height="13"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </button>
+  </div>
+  <section class="section">
+    <ol class="board">
+      <li class="row">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Squad rotation</span>
+          <span class="row__sub">Carried 26 Dec · you voted with 61%</span>
+        </span>
+        <span class="row__end row__end--acid">7</span>
+      </li>
+      <li class="row">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Kit redesign</span>
+          <span class="row__sub">Carried 8 Dec · you voted with 58%</span>
+        </span>
+        <span class="row__end row__end--acid">6</span>
+      </li>
+      <li class="row">
+        <span class="led__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg>
+        </span>
+        <span class="row__id">
+          <span class="row__name">Away ticket ballot</span>
+          <span class="row__sub">Carried 14 Nov · you voted with 72%</span>
+        </span>
+        <span class="row__end row__end--acid">5</span>
+      </li>
+    </ol>
+  </section>
+
+  <div class="head"><h2>Who holds it</h2></div>
+  <section class="section">
+    <div class="holders">
+      <span class="stack" aria-hidden="true">
+        <span class="avatar" style="background-image:var(--av-01)"></span>
+        <span class="avatar" style="background-image:var(--av-02)"></span>
+        <span class="avatar" style="background-image:var(--av-03)"></span>
+        <span class="avatar" style="background-image:var(--av-04)"></span>
+        <span class="avatar" style="background-image:var(--av-05)"></span>
+        <span class="avatar" style="background-image:var(--av-06)"></span>
+      </span>
+      <p><b>212</b> members hold Kingmaker, including <b>4</b> you follow.</p>
+    </div>
+    <ol class="board">
+      <li class="row">
+        <span class="avatar row__avatar" style="background-image:var(--av-01)" role="img" aria-label="capitan_7"></span>
+        <span class="row__id">
+          <span class="row__name">capitan_7</span>
+          <span class="row__sub">Barcelona · first to earn it</span>
+        </span>
+        <span class="row__end">14 Oct</span>
+      </li>
+      <li class="row">
+        <span class="avatar row__avatar" style="background-image:var(--av-02)" role="img" aria-label="scout_mode"></span>
+        <span class="row__id">
+          <span class="row__name">scout_mode</span>
+          <span class="row__sub">Barcelona</span>
+        </span>
+        <span class="row__end">2 Nov</span>
+      </li>
+      <li class="row">
+        <span class="avatar row__avatar" style="background-image:var(--av-03)" role="img" aria-label="taythaytu"></span>
+        <span class="row__id">
+          <span class="row__name">taythaytu</span>
+          <span class="row__sub">Barcelona</span>
+        </span>
+        <span class="row__end">21 Nov</span>
+      </li>
+    </ol>
+  </section>
+
+  <div class="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg>
+    <p><b>+150 merits</b> land in your ledger the moment this unlocks.</p>
+  </div>
+  <div style="height:32px" aria-hidden="true"></div>
+</div><!-- ============================================================
+     SHARED BADGE GEOMETRY
+     Cells: circle → octagon → hexagon → triangle.
+     Facets reduce and sharpen as rarity rises, so the rarest
+     badge is the closest thing to the brand's bare peak.
+     pathLength="100" lets the progress arc be set in percent.
+     ============================================================ -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false"><defs>
+  <!-- cells -->
+  <g id="c-cir"><path pathLength="100" d="M36 9A27 27 0 1 1 36 63A27 27 0 1 1 36 9Z"/></g>
+  <g id="c-oct"><path pathLength="100" d="M36 9 55.09 16.91 63 36 55.09 55.09 36 63 16.91 55.09 9 36 16.91 16.91Z"/></g>
+  <g id="c-hex"><path pathLength="100" d="M36 9 59.38 22.5 59.38 49.5 36 63 12.62 49.5 12.62 22.5Z"/></g>
+  <g id="c-hex-o"><path d="M36 3 64.58 19.5 64.58 52.5 36 69 7.42 52.5 7.42 19.5Z"/></g>
+  <g id="c-tri"><path pathLength="100" d="M36 9 59.38 49.5H12.62Z"/></g>
+  <g id="c-tri-o"><path d="M36 2 65.44 53H6.56Z"/></g>
+
+  <!-- glyphs: peaks, chevrons and one diamond. Peak count = magnitude,
+       height = rank, inversion = opposition, nesting = depth,
+       apex diamond = origin. -->
+  <g id="g-one"><path fill="currentColor" d="M36 26 50 46H22Z"/></g>
+  <g id="g-pair"><path fill="currentColor" d="M20 46 28.5 30 37 46Z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" d="M35 46 43.5 30 52 46Z"/></g>
+  <g id="g-asc"><path fill="currentColor" d="M20 46 25.5 38 31 46Z"/><path fill="currentColor" d="M30 46 36 33 42 46Z"/><path fill="currentColor" d="M41 46 47 27 53 46Z"/></g>
+  <g id="g-three"><path fill="currentColor" d="M20 46 28 34 36 46Z"/><path fill="currentColor" d="M28 46 36 24 44 46Z"/><path fill="currentColor" d="M36 46 44 34 52 46Z"/></g>
+  <g id="g-lift"><path fill="currentColor" d="M19 46 27 36 35 46Z"/><path fill="currentColor" d="M30 46 41 25 52 46Z"/></g>
+  <g id="g-flank"><path fill="currentColor" d="M36 25 45.5 46H26.5Z"/><path fill="currentColor" d="M14 46 20 35 26 46Z"/><path fill="currentColor" d="M46 46 52 35 58 46Z"/></g>
+  <g id="g-chev3"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M22 33 36 24 50 33M22 41 36 32 50 41M22 49 36 40 50 49"/></g>
+  <g id="g-bar"><path fill="currentColor" d="M36 26 50 46H22Z"/><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M23 37H49"/></g>
+  <g id="g-mirror"><path fill="currentColor" d="M36 23 47 34H25Z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" d="M36 49 25 38H47Z"/></g>
+  <g id="g-saw"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M14 46 21 34 28 46 35 34 42 46 49 34 56 46"/></g>
+  <g id="g-range"><path fill="currentColor" d="M16 46 23 34 29 40 36 25 43 40 49 34 56 46Z"/></g>
+  <g id="g-found"><path fill="currentColor" d="M36 30 48 46H24Z"/><path fill="currentColor" d="M36 18.5 40.5 23 36 27.5 31.5 23Z"/></g>
+
+  <!-- the award moment's rays fade out from the badge so the clipped
+       outer ends never read as solid bars -->
+  <radialGradient id="rayfade" gradientUnits="userSpaceOnUse" cx="100" cy="100" r="94">
+    <stop offset="0" stop-color="#9BE222" stop-opacity=".60"/>
+    <stop offset=".5" stop-color="#9BE222" stop-opacity=".20"/>
+    <stop offset="1" stop-color="#9BE222" stop-opacity="0"/>
+  </radialGradient>
+</defs></svg></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-4">
+        <figcaption class="scr__cap"><span class="scr__n">04</span>Award moment</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+  <div class="moment" id="moment">
+    <div class="moment__back" aria-hidden="true">
+      <ul class="grid">
+        <li><span class="bcell">
+          <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-one"/></svg>
+          <span class="bcell__n">First Vote</span><span class="bcell__s">Earned 2 Sep</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-chev3"/></svg>
+          <span class="bcell__n">Backchat Regular</span><span class="bcell__s">Earned 21 Dec</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--common is-earned" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__gly" href="#g-pair"/></svg>
+          <span class="bcell__n">Derby Day</span><span class="bcell__s">Earned 14 Oct</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--uncommon is-earned" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/><use class="bdg__gly" href="#g-asc"/></svg>
+          <span class="bcell__n">Streak Keeper</span><span class="bcell__s">Earned 20 Dec</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--uncommon is-locked" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-oct"/><use class="bdg__ring" href="#c-oct"/><use class="bdg__gly" href="#g-mirror"/></svg>
+          <span class="bcell__n">Veto Held</span><span class="bcell__s">Locked</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--elite is-earned" viewBox="0 0 72 72"><use class="bdg__ring2" href="#c-tri-o"/><use class="bdg__pan" href="#c-tri"/><use class="bdg__ring" href="#c-tri"/><use class="bdg__gly" href="#g-found"/></svg>
+          <span class="bcell__n">Founding Member</span><span class="bcell__s">Earned 2 Sep</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--rare is-locked" viewBox="0 0 72 72"><use class="bdg__ring2" href="#c-hex-o"/><use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/><use class="bdg__gly" href="#g-saw"/></svg>
+          <span class="bcell__n">Full Season</span><span class="bcell__s">Locked</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--common is-prog" viewBox="0 0 72 72"><use class="bdg__pan" href="#c-cir"/><use class="bdg__ring" href="#c-cir"/><use class="bdg__prog" href="#c-cir" style="stroke-dasharray:60 100"/><use class="bdg__gly" href="#g-flank"/></svg>
+          <span class="bcell__n">Recruiter</span><span class="bcell__s">3 of 5</span>
+        </span></li>
+        <li><span class="bcell">
+          <svg class="bdg bdg--elite is-locked" viewBox="0 0 72 72"><use class="bdg__ring2" href="#c-tri-o"/><use class="bdg__pan" href="#c-tri"/><use class="bdg__ring" href="#c-tri"/><use class="bdg__gly" href="#g-range"/></svg>
+          <span class="bcell__n">Hall of Fame</span><span class="bcell__s">Locked</span>
+        </span></li>
+      </ul>
+    </div>
+    <div class="moment__scrim" aria-hidden="true"></div>
+
+    <button class="pill-btn moment__replay" type="button" id="replay">Replay the moment</button>
+
+    <div class="award award--anim" id="award" role="dialog" aria-modal="true" aria-labelledby="award-t">
+      <button class="icon-btn award__x" type="button" id="dismiss" aria-label="Dismiss">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+
+      <div class="award__art" aria-hidden="true">
+        <svg class="award__rays" viewBox="0 0 200 200">
+          <g fill="url(#rayfade)">
+            <path d="M100 100 97 4h6Z" opacity=".95"/>
+            <path d="M100 100 97 4h6Z" opacity=".45" transform="rotate(30 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".80" transform="rotate(60 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".35" transform="rotate(90 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".90" transform="rotate(120 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".40" transform="rotate(150 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".70" transform="rotate(180 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".30" transform="rotate(210 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".85" transform="rotate(240 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".38" transform="rotate(270 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".62" transform="rotate(300 100 100)"/>
+            <path d="M100 100 97 4h6Z" opacity=".44" transform="rotate(330 100 100)"/>
+          </g>
+        </svg>
+        <svg class="award__peaks" viewBox="0 0 226 69" preserveAspectRatio="none">
+          <path d="M0 69 L40 28 L80 69 Z"     fill="#9BE222"/>
+          <path d="M88 69 L140 6 L192 69 Z"   fill="#9BE222"/>
+          <path d="M184 69 L226 32 L226 69 Z" fill="#9BE222"/>
+        </svg>
+        <svg class="bdg bdg--rare is-earned award__bdg" viewBox="0 0 72 72">
+          <use class="bdg__ring2" href="#c-hex-o"/>
+          <use href="#c-hex" fill="#1C2129"/>
+          <use class="bdg__pan" href="#c-hex"/><use class="bdg__ring" href="#c-hex"/><use class="bdg__gly" href="#g-three"/>
+        </svg>
+      </div>
+
+      <p class="eyebrow">Badge earned</p>
+      <h3 class="award__title" id="award-t">Member of the Match</h3>
+      <p class="award__body">Barcelona v Inter Milan. You polled highest of 1,284 members in the War Room.</p>
+
+      <div class="award__tags">
+        <span class="status-pill">+250 merits</span>
+        <span class="tag">Rare · 3.1%</span>
+      </div>
+
+      <div class="award__acts">
+        <button class="btn-acid" type="button" id="share">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></svg>
+          Share
+        </button>
+        <button class="btn-ghost" type="button">View badge</button>
+      </div>
+
+      <p class="award__done">Shared to Backchat</p>
+    </div>
+  </div>
+  <div style="height:32px" aria-hidden="true"></div>
+</div><!-- ============================================================
+     SHARED BADGE GEOMETRY
+     Cells: circle → octagon → hexagon → triangle.
+     Facets reduce and sharpen as rarity rises, so the rarest
+     badge is the closest thing to the brand's bare peak.
+     pathLength="100" lets the progress arc be set in percent.
+     ============================================================ -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false"><defs>
+  <!-- cells -->
+  <g id="c-cir"><path pathLength="100" d="M36 9A27 27 0 1 1 36 63A27 27 0 1 1 36 9Z"/></g>
+  <g id="c-oct"><path pathLength="100" d="M36 9 55.09 16.91 63 36 55.09 55.09 36 63 16.91 55.09 9 36 16.91 16.91Z"/></g>
+  <g id="c-hex"><path pathLength="100" d="M36 9 59.38 22.5 59.38 49.5 36 63 12.62 49.5 12.62 22.5Z"/></g>
+  <g id="c-hex-o"><path d="M36 3 64.58 19.5 64.58 52.5 36 69 7.42 52.5 7.42 19.5Z"/></g>
+  <g id="c-tri"><path pathLength="100" d="M36 9 59.38 49.5H12.62Z"/></g>
+  <g id="c-tri-o"><path d="M36 2 65.44 53H6.56Z"/></g>
+
+  <!-- glyphs: peaks, chevrons and one diamond. Peak count = magnitude,
+       height = rank, inversion = opposition, nesting = depth,
+       apex diamond = origin. -->
+  <g id="g-one"><path fill="currentColor" d="M36 26 50 46H22Z"/></g>
+  <g id="g-pair"><path fill="currentColor" d="M20 46 28.5 30 37 46Z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" d="M35 46 43.5 30 52 46Z"/></g>
+  <g id="g-asc"><path fill="currentColor" d="M20 46 25.5 38 31 46Z"/><path fill="currentColor" d="M30 46 36 33 42 46Z"/><path fill="currentColor" d="M41 46 47 27 53 46Z"/></g>
+  <g id="g-three"><path fill="currentColor" d="M20 46 28 34 36 46Z"/><path fill="currentColor" d="M28 46 36 24 44 46Z"/><path fill="currentColor" d="M36 46 44 34 52 46Z"/></g>
+  <g id="g-lift"><path fill="currentColor" d="M19 46 27 36 35 46Z"/><path fill="currentColor" d="M30 46 41 25 52 46Z"/></g>
+  <g id="g-flank"><path fill="currentColor" d="M36 25 45.5 46H26.5Z"/><path fill="currentColor" d="M14 46 20 35 26 46Z"/><path fill="currentColor" d="M46 46 52 35 58 46Z"/></g>
+  <g id="g-chev3"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M22 33 36 24 50 33M22 41 36 32 50 41M22 49 36 40 50 49"/></g>
+  <g id="g-bar"><path fill="currentColor" d="M36 26 50 46H22Z"/><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M23 37H49"/></g>
+  <g id="g-mirror"><path fill="currentColor" d="M36 23 47 34H25Z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" d="M36 49 25 38H47Z"/></g>
+  <g id="g-saw"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M14 46 21 34 28 46 35 34 42 46 49 34 56 46"/></g>
+  <g id="g-range"><path fill="currentColor" d="M16 46 23 34 29 40 36 25 43 40 49 34 56 46Z"/></g>
+  <g id="g-found"><path fill="currentColor" d="M36 30 48 46H24Z"/><path fill="currentColor" d="M36 18.5 40.5 23 36 27.5 31.5 23Z"/></g>
+
+  <!-- the award moment's rays fade out from the badge so the clipped
+       outer ends never read as solid bars -->
+  <radialGradient id="rayfade" gradientUnits="userSpaceOnUse" cx="100" cy="100" r="94">
+    <stop offset="0" stop-color="#9BE222" stop-opacity=".60"/>
+    <stop offset=".5" stop-color="#9BE222" stop-opacity=".20"/>
+    <stop offset="1" stop-color="#9BE222" stop-opacity="0"/>
+  </radialGradient>
+</defs></svg></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Four screens behind the Merits tab</h2>
+
+  <p>The Merits tab shows a member where they stand. These four screens answer the questions that
+  follow: <b>how did I get here</b>, <b>what else is there to win</b>, <b>how do I win this one</b>,
+  and — the only one the member doesn't ask for — <b>you just won something</b>.</p>
+
+  <p>The current app has an <code>ACHIEVEMENTS</code> screen with two tabs, both captured empty, and a
+  separate <code>HALL OF FAME</code> list. Between them they use four different golds
+  (<code>#D4AF37</code>, <code>#B28401</code>, <code>#DFAA11</code> and a declared
+  <code>weaponBronzeColor</code>), and none of the four is a brand colour. <code>#DFAA11</code> is
+  literally <code>colorVeto</code> — the amber the app uses to show a proposal being blocked. So today
+  a celebration and a veto are painted the same colour.</p>
+
+  <p>The new palette has no gold and no metallics at all, so the badges are not medals. They are drawn
+  from the brand's own geometry: <b>a peak, held in a cell</b>. The glyph inside says what the member
+  did; the cell around it says how rare the badge is. The whole system is one accent
+  <code>#9BE222</code>, the surface ladder and the shape of the cell — no second hue anywhere on the
+  page. This is the biggest decision on these screens and the one worth your attention first: see
+  <em>Badge artwork</em> in the anatomy table and <em>Rarity</em> in the states table.</p>
+
+  <p>The four are separate screens, and each one has its own phone above, numbered and captioned.
+  They are pushed routes, so they carry a back arrow rather than the tab bar.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <p>Four screens, one device each: <b>1 merit history</b>, <b>2 badge collection</b>,
+    <b>3 badge detail</b> and <b>4 award moment</b>. The Region column says which screen a row belongs
+    to. The first three carry their own hero and back control; the award moment is presented over the
+    collection and carries its own dismiss.</p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Grouped by screen and region. Order matches the reading order within each screen. Values
+        as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>1 · History</td><td>Hero</td><td class="t-note">The <code>merits.html</code> hero
+          verbatim: <code>138px</code>, <code>16px</code> radius, gradient <code>112deg</code>
+          <code>#0D3617</code> → <code>#17481C</code> → <code>#0C3416</code>, white field triangles at
+          <code>2.4–3%</code>, three accent peaks bottom-right at <code>54% × 38%</code>. The knockout
+          athlete prop is dropped on pushed routes so the peaks stay clean.</td></tr>
+        <tr><td>1 · History</td><td>Back control</td><td class="t-note"><code>36px</code> circle,
+          <code>rgba(255,255,255,.12)</code>, white <code>1.9</code>-stroke chevron, top-left inside the
+          hero.</td></tr>
+        <tr><td>1 · History</td><td>Hero title lockup</td><td class="t-note">Tracked micro-label
+          <code>MERITS</code> (<code>10.5/700/.14em</code>, <code>rgba(255,255,255,.6)</code>) over
+          <code>HISTORY</code> at <code>34/800/-.025em</code> uppercase. The label carries the route so
+          the title can stay short enough to clear the peaks.</td></tr>
+        <tr><td>1 · History</td><td>Season summary</td><td class="t-note"><code>#1C2129</code> card,
+          <code>16px</code> radius and padding. <code>2,480</code> at <code>32/800</code> tabular,
+          <code>646 this month</code> in accent with the up-arrow from the standings delta, and a
+          <code>#13171E</code> panel holding the entry count.</td></tr>
+        <tr><td>1 · History</td><td>Section container</td><td class="t-note"><code>#080A0C</code> fill,
+          1 px <code>rgba(255,255,255,.075)</code>, <code>16px</code> radius, <code>12px</code>
+          padding. Holds the <code>SEASON 25/26</code> status pill and two <code>38px</code> icon
+          buttons, exactly as the standings container does.</td></tr>
+        <tr><td>1 · History</td><td>Group header</td><td class="t-note"><code>THIS WEEK</code> at
+          <code>11/700/.14em</code> <code>#5B606B</code> with a right-aligned accent subtotal
+          (<code>+346</code>). The subtotal is what makes it a ledger rather than a feed.</td></tr>
+        <tr><td>1 · History</td><td>Ledger row</td><td class="t-note"><code>34px</code>
+          <code>#13171E</code> icon tile at <code>12px</code> radius, title <code>13.5/600</code>,
+          context and date <code>11.5</code> <code>#99A0AE</code>, amount <code>14/700</code> accent
+          tabular. Rows are <code>11px</code> vertical with a <code>rgba(255,255,255,.045)</code> top
+          border, first child none.</td></tr>
+        <tr><td>1 · History</td><td>Source icons</td><td class="t-note">Each entry is attributed to the
+          surface that produced it, using that surface's own tab-bar glyph — War Room hammer, Backchat
+          mic, Merits trophy. Awards get the accent-wash tile
+          (<code>rgba(155,226,34,.12)</code>).</td></tr>
+        <tr><td>2 · Badges</td><td>Badge artwork</td><td class="t-note">Inline SVG on a
+          <code>72</code> box. Every badge is one <b>cell</b> plus one <b>glyph</b>. Cell paths carry
+          <code>pathLength="100"</code> so the progress arc can be expressed as a percentage of the
+          perimeter. No raster, no gradient, no metal, no gold.</td></tr>
+        <tr><td>2 · Badges</td><td>Cell — rarity</td><td class="t-note">Circle <code>r27</code>
+          (common) → octagon <code>r27</code> (uncommon) → hexagon <code>r27</code> with a faint outer
+          hexagon at <code>r33</code> (rare) → triangle <code>r27</code> with an outer triangle at
+          <code>r34</code> (elite). The cell <b>loses facets and sharpens</b> as rarity rises, so the
+          rarest badge is the closest thing to the bare peak in the mark. Ring weight
+          <code>1.6</code>.</td></tr>
+        <tr><td>2 · Badges</td><td>Glyph — the deed</td><td class="t-note">One vocabulary: peaks,
+          chevrons and a single diamond, all seated on a shared baseline at <code>y46</code>. Peak
+          count reads as magnitude, peak height as rank, an inverted peak as opposition, a solid range
+          as the summit, a diamond above the apex as origin. Twelve glyphs, no glyph reused.</td></tr>
+        <tr><td>2 · Badges</td><td>Grid</td><td class="t-note">Three columns, <code>8px</code> gap,
+          <code>grid-auto-rows:1fr</code> so every cell in the grid is the same height.
+          <code>#1C2129</code> tile at <code>12px</code> radius, <code>58px</code> badge, name
+          <code>12/600</code>, status line <code>10.5</code>.</td></tr>
+        <tr><td>2 · Badges</td><td>Filter row</td><td class="t-note">Four <code>32px</code> pills —
+          All / Earned / In progress / Locked. Pressed state is the accent wash with accent text; the
+          counts live in the status pill above (<code>6 OF 12 EARNED</code>) so the row fits
+          <code>375</code> without scrolling.</td></tr>
+        <tr><td>2 · Badges</td><td>Rarity legend</td><td class="t-note">A four-up strip of empty cells
+          at <code>44px</code> with the rarity name and the population band. Present because the shape
+          system is new and needs teaching once.</td></tr>
+        <tr><td>3 · Detail</td><td>Badge hero</td><td class="t-note">Same hero band, with the badge at
+          <code>104px</code> centred and in front of the peaks — the slot the knockout athlete occupies
+          on the tab screens.</td></tr>
+        <tr><td>3 · Detail</td><td>Title and rarity</td><td class="t-note"><code>KINGMAKER</code> at
+          <code>34/800</code> uppercase, then a <code>RARE</code> tag
+          (<code>26px</code>, <code>#13171E</code>) and the population in plain words —
+          <code>212 of 6,840 members · 3.1%</code>.</td></tr>
+        <tr><td>3 · Detail</td><td>How it's earned</td><td class="t-note">One sentence of rule, then a
+          progress panel: <code>8px</code> track on <code>#13171E</code> with an accent fill at
+          <code>70%</code>, labelled <code>7 of 10 motions</code> / <code>3 to go</code>. The same
+          figure appears twice on this screen — once as the arc on the cell, once as a bar — because
+          the arc alone is not readable to a number.</td></tr>
+        <tr><td>3 · Detail</td><td>Evidence list</td><td class="t-note">The three most recent motions
+          that counted, each with the date it carried and the majority the member voted with, and its
+          running index in the accent.</td></tr>
+        <tr><td>3 · Detail</td><td>Holders</td><td class="t-note">Six <code>30px</code> portraits
+          overlapping at <code>-9px</code> with a <code>2px</code> <code>#080A0C</code> ring, a plain
+          count sentence, then three named holders with the date they earned it. Portraits are from
+          <code>_assets/avatars.css</code>.</td></tr>
+        <tr><td>3 · Detail</td><td>Reward note</td><td class="t-note"><code>#1C2129</code> card with the
+          Merits trophy glyph in the accent: <code>+150 merits</code> on unlock. Ties the badge back to
+          the ledger in frame 1.</td></tr>
+        <tr><td>4 · Moment</td><td>Backdrop</td><td class="t-note">The collection behind
+          <code>blur(10px)</code> plus a <code>rgba(3,4,1,.55)</code> scrim, so the member can see what
+          they were looking at. The live modal blurs its backdrop the same way
+          (<code>σ ≈ 12–15pt</code>) — that part of the current build was right.</td></tr>
+        <tr><td>4 · Moment</td><td>Card</td><td class="t-note"><code>#1C2129</code>, 1 px
+          <code>rgba(255,255,255,.075)</code>, <code>16px</code> radius, <code>18px</code> padding. The
+          live card is <code>#21093E</code> with no border and separates from its backdrop only by
+          blur.</td></tr>
+        <tr><td>4 · Moment</td><td>The moment itself</td><td class="t-note">A <code>158px</code> art
+          area: the three-peak range motif at <code>196 × 52</code> in full accent, the badge at
+          <code>96px</code> cresting it, and twelve thin spokes filled with a radial gradient that
+          fades the accent to nothing by <code>r94</code> — so the fan reads as light off the badge
+          rather than as twelve green bars. No confetti, no particles, no clip-art.</td></tr>
+        <tr><td>4 · Moment</td><td>Copy and value</td><td class="t-note"><code>BADGE EARNED</code>
+          eyebrow, <code>MEMBER OF THE MATCH</code> at <code>26/800</code> uppercase, one sentence of
+          why, then <code>+250 MERITS</code> as a status pill beside the rarity tag.</td></tr>
+        <tr><td>4 · Moment</td><td>Actions</td><td class="t-note">Two <code>46px</code> pill buttons —
+          <b>Share</b> in <code>#9BE222</code> on <code>#0B0E06</code> with an upload glyph, and
+          <b>View badge</b> on <code>#13171E</code> — plus a <code>32px</code> ✕ dismiss top-right.
+          The live modal has one button, no share and no dismiss control of any kind.</td></tr>
+        <tr><td>All frames</td><td>Colour audit</td><td class="t-note">Every value on these screens is a
+          contract token, a shade already used on the Merits tab (<code>#0C3416</code>,
+          <code>#20262F</code>, <code>#222833</code>), or one of three disclosed neighbours on the same
+          ladder: <code>#0E1116</code> for a locked cell, <code>#1A1F27</code> for a pressed ghost
+          button, and a <code>brightness(1.08)</code> filter for the accent button. No new hue, no
+          gold, no metal.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <p>Everything below varies <em>inside</em> one of the four screens — badge states and rarity on the
+    collection (2) and badge detail (3), ledger rows on merit history (1), the presentation on the award
+    moment (4). The screens themselves are not states of each other.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Badge — earned</td><td class="t-note">Cell filled with the accent wash
+          <code>rgba(155,226,34,.12)</code>, ring in the accent, glyph solid <code>#9BE222</code>.
+          Caption reads <code>Earned 28 Dec</code>.</td></tr>
+        <tr><td>Badge — in progress</td><td class="t-note">Cell stays <code>#13171E</code>, glyph drops
+          to <code>rgba(255,255,255,.30)</code>, and an accent arc <code>2.8</code> wide runs
+          clockwise from the apex around the facets of the cell for the share earned. Caption carries
+          the number: <code>7 of 10</code>.</td></tr>
+        <tr><td>Badge — locked</td><td class="t-note">Cell <code>#0E1116</code>, ring reduced to a
+          dashed hairline (<code>2.2 / 2.6</code> of the perimeter), glyph reduced to a silhouette at
+          <code>rgba(255,255,255,.13)</code>. The shape is still there — the member can see what they
+          are missing — but it has no weight. Caption reads <code>Locked</code>.</td></tr>
+        <tr><td>Rarity</td><td class="t-note">Four bands carried by cell shape and ring strength only:
+          <b>Common</b> circle · <b>Uncommon</b> octagon · <b>Rare</b> hexagon with an outer ring ·
+          <b>Elite</b> triangle with an outer ring. Earned rings step
+          <code>.45 → .55 → .70 → .85</code> accent opacity, and Elite alone gets a stronger cell fill
+          at <code>rgba(155,226,34,.17)</code>. This is a description of how scarce a badge is, not a
+          ladder to climb — there is no bronze, no silver, no gold and no upgrade path.</td></tr>
+        <tr><td>Ledger — credit</td><td class="t-note">Amount in the accent with a leading
+          <code>+</code>, tabular figures so the column aligns.</td></tr>
+        <tr><td>Ledger — reversal</td><td class="t-note">The one downward row uses the semantic red
+          <code>#E2564A</code> and a true minus sign: <code>−40</code> for a vote withdrawn before the
+          motion closed. Shown so you can rule on whether merits are ever taken back.</td></tr>
+        <tr><td>Filter pill</td><td class="t-note">Resting <code>#1C2129</code> with
+          <code>#99A0AE</code> label; pressed <code>rgba(155,226,34,.12)</code> with an accent label.
+          Live in the build — tap them.</td></tr>
+        <tr><td>Moment — entering</td><td class="t-note">Card lifts <code>14px</code> and settles over
+          <code>.5s</code>; the peaks rise <code>26px</code> over <code>.8s</code>; the badge pops from
+          <code>.72</code> with a <code>1.06</code> overshoot; the ray fan turns once every
+          <code>34s</code>; the copy stages up in <code>60ms</code> steps. All on
+          <code>cubic-bezier(.16,1,.3,1)</code>.</td></tr>
+        <tr><td>Moment — shared</td><td class="t-note">Tapping Share confirms in place with a single
+          accent line, <code>Shared to Backchat</code>. No second dialog.</td></tr>
+        <tr><td>Moment — dismissed</td><td class="t-note">The ✕ closes the card and leaves a
+          <code>Replay the moment</code> pill on the blurred collection. That pill is review
+          scaffolding so you can watch the animation again; it would not ship.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note"><code>prefers-reduced-motion</code> disables every
+          transition <em>and</em> every animation. The moment then presents fully formed, which is the
+          correct still frame — nothing is only legible in motion.</td></tr>
+        <tr><td>Not built</td><td class="t-note">Empty ledger (a new member with no entries), the
+          all-badges-earned collection, loading skeletons and error states for all four
+          screens.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Token block</b> — copied verbatim from <code>merits.html</code>, itself sampled from the
+          War Room and Backchat dark-mode exports. Not one value invented.</li>
+        <li><b>Hero banner</b> — gradient, field triangles and the three accent peaks, unchanged.</li>
+        <li><b>Three-peak range motif</b> — the same path data as the hero, reused at
+          <code>196 × 52</code> as the centrepiece of the award moment.</li>
+        <li><b>Section container, status pill, icon button, pill button, row, avatar</b> — all from
+          <code>merits.html</code>.</li>
+        <li><b>Summary card</b> — the standings card construction, re-pointed at a season total.</li>
+        <li><b>Tab-bar glyphs</b> — the War Room, Backchat and Merits icons, reused at
+          <code>17px</code> to attribute each ledger entry to its source surface.</li>
+        <li><b>Portraits</b> — six faces from <code>_assets/avatars.css</code>.</li>
+        <li><b>Blurred backdrop</b> — the one thing worth keeping from the live congratulations
+          modal.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The badge system</b> — cell plus glyph, drawn from the peak motif. Replaces four
+          non-brand golds, a stock laurel pair, two unrelated crown illustrations and a
+          concave-cornered plaque frame with one geometry that costs nothing to extend.</li>
+        <li><b>Rarity by facet count</b> — circle → octagon → hexagon → triangle. A distinction carried
+          by shape and ring opacity instead of a new hue, per the palette rule.</li>
+        <li><b>Progress on the perimeter</b> — the accent arc riding the cell's own facets. The live
+          build has no progress indicator anywhere in this area.</li>
+        <li><b>Locked and in-progress states</b> — neither exists today; no locked silhouette, tier
+          marker or progress indicator appears on any of the six captured screens.</li>
+        <li><b>Merit ledger</b> — grouped by period with a subtotal per group. The nearest thing in the
+          code is <code>ItemCreditTransactionHistory</code>, a bare title-and-date pair.</li>
+        <li><b>Dates that resolve</b> — no date in the live capture set carries a year, on a surface
+          filtered by season. Here the season sits in the status pill and the period in the group
+          header, so <code>28 Dec</code> is never ambiguous.</li>
+        <li><b>The award moment</b> — angular ray fan on a radial fade, the peaks rising, the badge
+          cresting them, a <b>Share</b> action and a <b>✕ dismiss</b>. The live version is a static
+          card with generic three-ball clip-art in <code>#DFAA11</code> — the veto amber — with no
+          motion, no share and no way out other than the CTA.</li>
+        <li><b>Hero eyebrow on pushed routes</b> — a tracked micro-label above the title so the route
+          name can be short enough not to collide with the peaks.</li>
+        <li><b>Reversal row</b> — the semantic red used once, for merits taken back.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li><h3>Does the badge collection replace Achievements <em>and</em> Hall of Fame?</h3>
+      <p>Today there are three overlapping status surfaces: Achievements (tabbed
+      <code>Playoff titles</code> / <code>Leader status</code>, both captured empty), Hall of Fame (a
+      podium plus a holders list), and Credit/Reputation. We have assumed
+      <span class="flag">one badge collection replaces the Achievements tabs</span>, and that Hall of
+      Fame survives as the <em>Who holds it</em> section on each badge plus the podium already built on
+      the Merits tab. If Hall of Fame must stay a separate destination, say so — it changes the
+      navigation, not the artwork.</p></li>
+
+    <li><h3>Is the badge geometry the right answer to the gold problem?</h3>
+      <p>This is the decision to push back on if you are going to. The live badges use
+      <code>#D4AF37</code>, <code>#B28401</code>, <code>#DFAA11</code> and a bronze token; the new
+      palette has no gold and no metallics, and <code>#DFAA11</code> is the veto colour. Rather than
+      invent a metal, we made rarity structural — <span class="flag">facet count and ring opacity</span>
+      — so the whole system runs on one accent. The trade is that rarity is quieter than gold: it is
+      legible, but it does not shout across a room. If you want the loudest possible Elite badge we can
+      go further on scale and stroke weight, but we will not add a hue.</p></li>
+
+    <li><h3>What is a merit worth, and can it be taken away?</h3>
+      <p>The ledger figures are placeholders: <span class="flag">Member of the Match +250, badge earned
+      +100, veto held +80, seven-day streak +70, motion carried +60, votes cast +40, replies upvoted
+      +36, member invited +50</span>. We have also built one <span class="flag">−40 reversal</span> for a
+      vote withdrawn before the motion closed, in the semantic red. If merits only ever go up, that row
+      comes out and the red never appears on this surface. The live app also calls this currency three
+      things — <code>points</code>, <code>Reputation Points</code> and
+      <code>credit transactions</code>; we have used <b>merits</b> throughout and recommend retiring the
+      other two.</p></li>
+
+    <li><h3>Are these the right twelve badges?</h3>
+      <p>Only one badge name in the entire code snapshot is real:
+      <code>Member of the Match/Week/Season</code>. The other eleven — First Vote, Backchat Regular,
+      Derby Day, Recruiter, Streak Keeper, Top Ten, Veto Held, Kingmaker, Full Season, Founding Member,
+      Hall of Fame — are <span class="flag">our proposal</span>, chosen so that every one of the app's
+      four surfaces has something to earn. Confirm the roster and the earning rules; the artwork system
+      absorbs any number of badges without change.</p></li>
+
+    <li><h3>What are the rarity bands?</h3>
+      <p>We have assumed <span class="flag">Common = most members, Uncommon = 10–40%, Rare = 1–10%,
+      Elite = under 1%</span>, computed live from the holder count rather than assigned by hand. If
+      rarity is instead editorial — someone decides a badge is Elite — the bands need naming and the
+      legend copy changes.</p></li>
+
+    <li><h3>Where does Share go?</h3>
+      <p>We have assumed <span class="flag">Backchat</span>, since it is the app's own social surface and
+      keeps the member inside the product. The alternative is the OS share sheet to Instagram and X,
+      which needs a designed share card at story dimensions — a separate piece of work.</p></li>
+
+    <li><h3>The default avatar has to be replaced.</h3>
+      <p>Not a question so much as a blocker. The current default avatar is watermarked marketing
+      key-art: the circular crop cuts the burned-in wordmark to <code>SPORTSHEI</code>, and a red
+      <code>…WED BY 1.00 PIXELS</code> watermark plus a yellow-and-black hazard bar are plainly legible
+      at the <code>90pt</code> podium size. The same image renders five times on one Hall of Fame
+      screen. Every portrait on these frames comes from <code>_assets/avatars.css</code> instead, but a
+      licensed or generated default-avatar asset is still needed before any of this ships. We would
+      propose a badge cell with no glyph as the fallback — it is already in the file and needs no new
+      art.</p></li>
+
+    <li><h3>One thing to confirm rather than decide.</h3>
+      <p>These are pushed routes, so they carry a back arrow and <b>no tab bar</b> — matching how the
+      live Achievements and Hall of Fame routes behave. If you would rather the tab bar stayed visible
+      throughout, all four frames gain <code>58px</code> of bottom chrome and the moment's card moves
+      up.</p></li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  /* filter pills — collection */
+  document.querySelectorAll('.filt').forEach(function(g){
+    g.addEventListener('click', function(e){
+      var b = e.target.closest('.filt__b'); if(!b) return;
+      g.querySelectorAll('.filt__b').forEach(function(x){
+        x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+      });
+    });
+  });
+
+  /* award moment — dismiss, replay, share */
+  var moment  = document.getElementById('moment');
+  var award   = document.getElementById('award');
+  var dismiss = document.getElementById('dismiss');
+  var replay  = document.getElementById('replay');
+  var share   = document.getElementById('share');
+
+  if (dismiss) dismiss.addEventListener('click', function(){
+    moment.classList.add('is-off');
+    award.classList.remove('award--anim');
+    award.classList.remove('is-shared');
+  });
+
+  if (replay) replay.addEventListener('click', function(){
+    moment.classList.remove('is-off');
+    void award.offsetWidth;              /* restart the keyframes */
+    award.classList.add('award--anim');
+  });
+
+  if (share) share.addEventListener('click', function(){
+    award.classList.add('is-shared');
+  });
+})();
+</script>

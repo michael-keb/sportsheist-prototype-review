@@ -1,0 +1,2202 @@
+<!DOCTYPE html>
+<html lang="en" data-component="voting-list">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Voting list</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — VOTING LIST
+   The destination of the `View all ↗` pill on the War Room's
+   Voting rail. The rail peeks four cards; this screen is every
+   Proposal currently being counted at the club.
+
+   Sourced from:
+     lib/pages/voting/voting_screen.dart            (754 lines)
+     lib/pages/voting/widget/show_filter.dart       (the sheet)
+     lib/cubit/proposal/voting.dart                 (VotingC / VotingS)
+     lib/constants/src/list_string.dart             (CLString)
+     lib/service/src/proposal.dart                  (getListIdea)
+     lib/constants/src/idea_permission.dart         (CIdeaPost)
+     lib/pages/access/app_bar/back_ground_fragment_home.dart
+
+   Nothing here is invented where the code had an answer:
+     · the voting card is voting-card.html's card, unchanged, run
+       at full column width instead of the rail's 268 px cell
+     · the sheet shell, option row and search control are
+       sheets.html / forms.html, unchanged
+     · the skeleton bone is states.html's bone, unchanged
+     · the segmented control is CLString.listFilterPri —
+       ["DECISIONS", "POSITIONS"] — in enum order
+     · the chips SWAP with the segment, exactly as
+       VotingC.getFilterListIdea swaps them:
+         DECISIONS → CLString.listFilterSup
+                     ["", "ALL", "ON-FIELD", "OFF-FIELD",
+                      "MANAGEMENT", "MY IDEAS"]
+         POSITIONS → CLString.listFilterSupIDea
+                     ["", "ALL", "MY IDEAS"]
+       index 0 is the sheet trigger, not a chip, so it is dropped,
+       and an out-of-range index falls back to 1 (ALL) — the code's
+       `indexFilterSupChange` clamp
+     · the sort sheet is CLString.listSortProposal — MOST RECENT,
+       MOST URGENT, MOST POPULAR — three options, single-select
+     · there is NO pagination and NO infinite scroll: getListIdea
+       sends `limit: 50` with no offset and no cursor, reads
+       result.data["results"] once and never touches `next`
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;
+  --surface:       #1C2129;
+  --sunken:        #13171E;
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+  --acid-line:     rgba(155,226,34,.30);   /* derived, as sheets.html */
+  --acid-track:    #2E3F1F;                /* voting-card.html's bar track */
+
+  /* semantic red — the only other hue */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.14);
+
+  /* neutral wash + neutral track, for the frozen / veto-hold state */
+  --neutral-wash:  rgba(255,255,255,.07);
+  --ring-track:    #3D424B;
+  --hairline:      rgba(255,255,255,.06);
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* skeleton — states.html values, unchanged */
+  --bone:          rgba(255,255,255,.055);
+  --sheen:         rgba(255,255,255,.06);
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  /* the sheet shell — sheets.html values, unchanged */
+  --r-sheet:       18px;
+  --sheet-max:     560px;
+  --sheet-vh:      88vh;
+  --grab-w:        40px;
+  --grab-h:        4px;
+  --h-field:       52px;
+  --h-row:         48px;
+  --scrim:         rgba(3,4,1,.72);
+  --scrim-blur:    10px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* portraits — the five faces voting-card.html already gives these
+     authors, so a Proposal reads as the same Proposal on the rail
+     and here */
+  --av-01:url(data:image/jpeg;base64,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);
+  --av-02:url(data:image/jpeg;base64,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);
+  --av-03:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAGwAAAgMBAQEAAAAAAAAAAAAABQYDBAcBAgD/xAA6EAACAQMCBAMHAgQFBQEAAAABAgMABBEFIQYSMUETIlEUMmFxgZHBsdEHFaHwI0JSYuElM0NjcoL/xAAaAQACAwEBAAAAAAAAAAAAAAADBAABBQIG/8QAKhEAAgIBBAIBAgYDAAAAAAAAAQIAAxEEEiExE0EiUWEFFDJCcYGhweH/2gAMAwEAAhEDEQA/AJdLZIbLCgRAklV7gfGl/im+jEeFHmbKjzdu+MUUuJkt7VFJdUK7LjbAxtSnKkmr6rHbIffYAr1JFHzhQsTCZsLmNml27W3A4jVfPOerDrn/AIoxommCG1wFA74+NSNZqzWtgpysCAsR9h+fvRyKFIFXAA5RsBXDH1GAPc8JCI8gADeuGMlgMZ+NdaYdD1rxJfW9lC011PHDGP8ANIwUVJJNJFyw5x0pN1V3Lyxk+XHnYn0PT69KKXP8QOHkDRm9Mg/9UbN+KBX3FOgXUDeFc+Y5yJIypO+fl2FQGQiLeo3DRK5kUtLL5o49zy5O+SewAA+tFNKd5uF5lDBpLeQSnJx13x99qFXxV3aYZbxFLA4BC5/vFWeGJRFqUtjPllmQoSSD5vn33qDuQ9Rr1eOOfSGEeGZ0Dl8gbdRj7UhXEfjTMVHmbckdF/2/Sn8RzfyM2w2fl5TsCSR/fWlVbaM3DIZULN03zgZ/XrQLCQOI9o61ss+R4E7ounJPOGkU+FGOZz6VY1i7nv8AxTDE5tYBjK7Z7b1dvjHpdgtqpHPICW261WsOaaylhjGGI5uvUd6E9nhG0d+49RpRrmOoP6V4X/ZlPVtReHfxlMuCfJnmb+mFG529Bmr/AAdpsVjZy63fKByL5SPT4UvWNpNruswwR5jjkdiTykeUd/xTvqKia4h0m3IEcIDSKBsCOg2H97U4D7mGR6kmgXbyXD3FyxDzvzBTtyj9ulNC3SOp3BJpagsniwFUcxPXbb96JxQSFQfNgfGrwO5MwfxVxANBsFMIV7qfIiDbgerH5Vn1tY6jxDeNNdTyTHO7Oc/YdqKcWTjUeJmt1GUtEEOf93U/rj6UY0C3SCDCD60pdZt4Ec09O889SC34TtIYuVk5mI3JGapapwbE6c9mhVyd07U8xRpyKSc5r2YlKnFJB3BzmaJqrIxiZRJouraVzcieLBzAlOb0OfpUVhM0eoxyoSVR+b3d8ZrR7yBRG2etJV1YY1rwI08tyQ2FA6jb8imqb2Y7Wieo0you5ZoshiuIfHt8EvEXQDHXHX4d96XdL0tJ7p5n3jRyAxOQ+D+lGbjNppvgcufIIjg+8DgYGfUULsna2s7ljty7BQO+Ph9KOTlxAgFdK5HZwB/cBa7O0+oycr+RSEUZ9P1qtDdyW2BGWUHffv6VHLJ40xYDO+TgDBxXVieVhyHrgZrPsJd8z1ekRNPR4/Q4jXw3pv8AJtJbUbqLFzImAuw5QTsoo7o+kB0M86KZJCHbPUn1NULHUINYveZSI7aBvKr+83xPpTdGY/DXlz67VqMfU8WJXWx82MY2617mNraontEiRh2CLzHGT6fap1ONyenYUH4gthfG3TBblJZMHBD9iD2NDsYquYamsWOFMzESwDiO6FxKsfiXUmZGYEL5j1NMkt7aaXZ+Lb3NvdMcckccuGfJwMZG/wC1VYrf/rlw00QSQjLLjuetfXujww3FvechiVZcPIh5eUEHDfekndWYZmgiMq4WEYNdvoFWS70K5SEn342DDHyo1Z3drqVql1bMyo2dnGD6UEk0zVYsGLUXMfUmVg6kfPA+9D4Ld4tM1LUvEniEjlkMUjLzqo3OPiRmqJT0J2A4PMOajLAh5PGTm/0lhmgdsUPFVqWQtypIQFG+QuRQ2WHTbm1W61WO+nndQWlz5VyNgAKpWsi2WoReFcmSBkfkc5JUFcdtx3/pRa0AYEGBusJQgiOF3NNeDEShUhzkLv1G/wB6hMEp0blVCWkOwAyM5qDh/Uh7RLb8oVHXpnIHwz647076SbS006Ngik4zmmAnyMCdQPGi46IP84mbtol5GOZbWUBhgeXFfezPbMFKsMdj61rVtdQ3iMV5GAO2DtVW6tdLu8xTwR59elcCgA5zHX/EzYNu3AiPw5YskYeQ4zuB/WnW2c+CFJzjcntWfaZqU0qxwAgdsg9PgfjT3pwLWqsNjjpTLEHqZJQgAmXzuM5znvVDUF/wvEBJaNuYAemN/wClWyGCDfOaQOONV1DTdbspIpHEIiJ8MMQr74YH6YoZUMMGdBimGEhtbyK+1qe5jcuje6xGMgYpiOpWlnbGS6CsjeUIRnn+GKRbKX2C58M52VdvQECi95aNqwtPCmCOquVJ3GduorPZfl9ppVuSv3ly6/lHIl5OIY4ub/sx8zog7EjOD26DFFZJ7S604Sw3EU0bL07EUIsdEivIVt7jU7d7hzypHNGYif8A5bb80J4h4PuNIiaeYXaW67sY5Qynfrjau9qmdFmH0MJW0E8EbwLp/tixZEbLIquF7Ag9QOmaXZ5H9ondolhIwuOXHLn1P0q7pesyLJbQwhjBGh8xUqQuN85qjcSG4d5WXPOTjrvj+zRaE+fMBe25QBO2s/PMrbAuO22PifSm2a5uW0qCK3AZmUAr1ztjr2pDUmCVZVY5PTBwd/0p54WvF1COHHMWjOPLvyn0PrTmMDiZ7ptYZ+sauGraWCxUTqA4wuCdj6UO1e6nGp8sZYevw+lNCxNgkjGAN8VWMen2kxmdUaUnPM25+lUIVR8uszL47STSdX9km6O2Ecgcr9/yK0XTDJ7Mm+5A60iWF0OKNCbzAXtichick4G35pj4X1o3MPgSgiVDh1Iwcj4VbD2IFXJGDGYtypgqfSkf+IdmZ4dOmC/+YxH/APWP2NOjy4GHzjFBtcNtcWBjlXnCOrR+bcODsa5PAJlj5MBEHimxktpI76IHwyAj4HQjpXNGvmuP8MSBXU5Un5b04NZx3to8Eq8yOuGFZxqlndaFqLIpIKNlG6cw9aQrO4bTNCwFDuHUc21tbJDFe2jywv6LzofmDQ6+1KwuXVLXxOXIzFztybdByk42ND7LjRUCpPDgf5jjIPrVDUtfW5dks15efYtjpRAp6xIdQMf8l3W9cjgga2gKtNLvK435R2UfqacraPTNZ0u2042/sdz4AEbgdfL3+dZI8ZNxyA7lsZNPaFrSK3KyEvb8uGJyWwNv0q2bxYx7htLT+ZVyex1B+qadPaXbWkgbxEPhoWOyjORj0GP1qLRNSl0nUEnDKsathtycnfBA7mmniq8stSgtL2MAzFSJB3GB0P1pNv8AmYeIxzuSwHr3O399KOtmH2fWCardULCMETYNO1qG6VXXzc4HbPard7psd2GZT4cnTptWe8PyFdPgdAegbGcDI7/uKcbHVHmnjhjj2AIOWJI+A36UXaYn51VsqcGZzp6z6BxMH5T7MXUONjkHYfTP4phXStSt+KfGtYFNvIMsS2Ap+XyoHBrEt/r1hJOkYCzp0X1YZrS/KH29egFRmH7YpUrbRv7ivxRxLcWNytnbKFlADO7gN1GQB+9VNF1J9Y9oS5l5rhcFV6Dl+A+f61R44GOIQwUDmhQ5z16j8UAhuJrS4S5t3KSocgigOC64jFbbGzNIiBjbp0qrq2n2WrRmG6jyrDZh1U+oNUtM4ssL5VjuStrcDqG2Rj8D2+Rou8aToHjdGHqGBpAoynmaaurjiZzqXBN7aOzWrC6jzty7Nj5VNo/Ccw5rjUIjGq+7G3Vj8fhTxI8VuuZrqGNR/qkAoXe8SaTboUjla5f0iG33NF32MMCBKVKcmLGo8Oxwj25ZDhpfcKjC98fLai9r4+rpI1pE0jqeZ4lX3R2279PSg2oanNqMgLKIo19yMHYf8008CxZsbybfzSqu3wGfzR/GWUBu5xXqzSx2DgwNNaXaP4bWsy43YlGBPfehuoFlhZiRzHBPM39O37bVpOqTvb6VdSLM4CQucZPoaykzLNKrXCllDZIU4z8KpKdrg54jB16PWVK8x04X0PU57CN4y8SNuvP0we9OUFpb6JbNLJIZXPXlXp8gKB6PxfbXVusUMZjKLjw/Tb57ivN/qD3KkCRlz0CnH60yOCfvBJUdQAcDA945mfQuYp45OhRw32Oa2QHmPMMb7isXOT9RWv6VcG50mzmAHnhQk/QVzM8RS/iBFi+s5yD54mUn5HP5pRp6/iDETYWc+PdlZemOq/8AFIgO9SSceMP1ANReGV2BYfJqmzXCRmpKkz2UQ0eG65W8WS5kjJLbcqqp++WquoC7AUSlweGbfrtfSj7xpQ2pJOnPWtA4MjMXDyv3lmdvmNh+Kz4kVqOiWvs/D9hHghhCGbB9d/zUlyrxXP4XDV2e8ihOvqQOlZjT9x5KqaPBErbyz7jocAE/kUgGpKlizuXtJ0ljO6n7/CtAt1t5rZLkyMEkUEebAx86zg9aZ+H5/FsDEfM0bYHmI2PT810CB3GtNXba/jRyuf8AM//Z);
+  --av-04:url(data:image/jpeg;base64,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);
+  --av-05:url(data:image/jpeg;base64,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);
+}
+
+/* the one loop in the file — a shimmer cannot be a transition */
+@keyframes shim{to{transform:translateX(100%)}}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+/* bottom breathing room. It has to live on an element INSIDE the frame: the
+   builder does not emit <main class="screen"> or the .frame wrapper itself, so
+   padding declared on either is dropped. */
+.frame__pad{height:96px}
+
+/* ============================================================
+   PAGE FURNITURE
+   ============================================================ */
+/* 34 px of top clearance: on a device the app bar sits under the status bar,
+   and in the review shell the phone's 26 px island is inset 8 px from the top.
+   `.screen`'s padding cannot do this job — in multi-frame mode the builder emits
+   each frame's contents and drops the <main class="screen"> wrapper, so any
+   padding declared on it is lost. */
+.bar{display:flex;align-items:center;gap:11px;margin:34px var(--gutter) 14px}
+.bar__eyebrow{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);
+}
+.bar .spacer{flex:1}
+.title{
+  margin:0 var(--gutter) 10px;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.lede{margin:0 var(--gutter) 16px;font-size:13px;line-height:1.5;color:var(--muted)}
+.lede b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   CONTROLS — 38 px discs with the create-idea.html ::after
+   expansion to a 44 px hit area; labelled controls are 44 outright
+   ============================================================ */
+.icon-btn{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.icon-btn--acid:hover{background:#A8EC33}
+
+.pill-btn{
+  display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 18px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.pill-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.pill-btn--acid:hover{background:#A8EC33}
+.pill-btn svg{width:15px;height:15px;flex:0 0 auto}
+
+.btn{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em;
+  cursor:pointer;white-space:nowrap;transition:background .18s var(--ease);
+}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--wide{width:100%}
+.btn__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
+  background:rgba(11,14,6,.16);font-size:12px;font-variant-numeric:tabular-nums;
+}
+.btn:focus-visible,.pill-btn:focus-visible,.icon-btn:focus-visible{
+  outline:2px solid var(--acid);outline-offset:2px;
+}
+
+/* ============================================================
+   MODE — Decisions / Positions. CLString.listFilterPri, sent as
+   `type=decisions|position`. Switching it also swaps the chip row.
+   ============================================================ */
+.modes{
+  display:flex;gap:4px;margin:0 var(--gutter) 10px;padding:4px;
+  border-radius:var(--r-pill);background:var(--surface);
+}
+.mode{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  height:40px;border:0;border-radius:var(--r-pill);
+  background:transparent;color:var(--muted);
+  font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.mode:hover{color:var(--text)}
+.mode[aria-selected="true"]{background:var(--acid);color:var(--acid-ink)}
+.mode__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:19px;padding:0 6px;border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--dim);
+  font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.mode[aria-selected="true"] .mode__n{background:rgba(11,14,6,.16);color:var(--acid-ink)}
+.mode:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+.seek{
+  display:flex;align-items:center;gap:10px;width:calc(100% - 2 * var(--gutter));
+  margin:0 var(--gutter) 8px;height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--dim);
+  font:inherit;font-size:14px;text-align:left;cursor:pointer;
+  transition:border-color .16s var(--ease);
+}
+.seek:hover{border-color:rgba(255,255,255,.14)}
+.seek svg{width:19px;height:19px;flex:0 0 auto;color:var(--muted)}
+.seek span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seek:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.tools{display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 10px}
+/* the sort trigger carries a value and the filter trigger carries one word, so
+   they do not split the row evenly — 1.35 : 1 is what fits `Sort · Most recent`
+   at 375 px without an ellipsis */
+.tools .tool:first-child{flex:1.35 1 0}
+.tool{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 13px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--surface);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:border-color .16s var(--ease),background .18s var(--ease);
+}
+.tool:hover{border-color:rgba(255,255,255,.14)}
+.tool svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted)}
+.tool__t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.tool__t em{font-style:normal;color:var(--muted);font-weight:500}
+.tool__n{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
+  background:var(--acid-wash);color:var(--acid);
+  font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.tool.is-on{border-color:var(--acid-line)}
+.tool.is-on > svg{color:var(--acid)}
+.tool:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   CATEGORY CHIPS — CLString.listFilterSup / listFilterSupIDea
+   ============================================================ */
+.scope{
+  display:flex;gap:7px;margin:0 0 12px;padding:0 var(--gutter) 2px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.scope::-webkit-scrollbar{height:0}
+.scope__b{
+  flex:0 0 auto;height:36px;padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--muted);
+  font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  cursor:pointer;white-space:nowrap;
+  transition:background .16s var(--ease),color .16s var(--ease),border-color .16s var(--ease);
+}
+.scope__b:hover{color:var(--text);border-color:rgba(255,255,255,.14)}
+.scope__b[aria-pressed="true"]{
+  background:var(--acid-wash);border-color:var(--acid-line);color:var(--acid);
+}
+.scope__b:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   TALLY
+   ============================================================ */
+.tally{
+  display:flex;align-items:center;gap:8px;margin:0 var(--gutter) 10px;
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--dim);
+}
+.tally b{color:var(--text);font-variant-numeric:tabular-nums}
+.tally .spacer{flex:1}
+.tally__x{
+  border:0;background:transparent;padding:4px 2px;margin:0;
+  color:var(--acid);font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;cursor:pointer;
+}
+.tally__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   THE VOTING CARD — voting-card.html's card, unchanged.
+   The only edit is width: the full list is not a 268 px rail
+   cell, so the card runs the full column.
+   ============================================================ */
+.list{display:flex;flex-direction:column;gap:12px;margin:0 var(--gutter)}
+
+.sh-vote-card{
+  width:100%;
+  padding:16px;
+  border-radius:var(--r-card);
+  background:var(--surface);
+  display:flex;flex-direction:column;
+  box-shadow:inset 0 1px 0 var(--hairline);
+  text-align:left;
+}
+
+/* -- author row -- */
+.sh-vote-card__author{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.sh-avatars{display:flex;flex:0 0 auto}
+.sh-avatars > .sh-avatar + .sh-avatar{margin-left:-9px}
+.sh-avatar{
+  width:22px;height:22px;border-radius:50%;flex:0 0 auto;
+  border:1.5px solid var(--surface);
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+.sh-vote-card__byline{
+  min-width:0;flex:1;
+  font-size:12.5px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* -- title + body -- */
+.sh-vote-card__title{
+  margin:0 0 8px;
+  font-size:17px;font-weight:600;line-height:1.2;letter-spacing:-.015em;color:var(--text);
+}
+.sh-vote-card__body{margin:0 0 7px;font-size:13px;line-height:1.35;color:var(--muted)}
+.sh-vote-card__body:last-of-type{margin-bottom:0}
+
+/* -- meta row -- */
+.sh-vote-card__meta{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin:14px 0 10px;
+}
+.sh-timer{display:inline-flex;align-items:center;gap:6px;color:var(--text)}
+.sh-timer svg{width:14px;height:14px;flex:0 0 auto}
+.sh-timer time,.sh-timer span{
+  font-size:13.5px;font-weight:600;letter-spacing:.01em;font-variant-numeric:tabular-nums;
+}
+.sh-timer--closed{color:var(--dim)}
+/* a held clock keeps full-contrast white digits — veto.html */
+.sh-timer--frozen{color:var(--text)}
+/* isDanger — the code flips a red plate under the clock once the
+   remaining time drops under findCardState(). Red is paired with a
+   word, never carried by colour alone. */
+.sh-timer--hot{color:var(--red)}
+.sh-timer--hot::after{
+  content:"FINAL";margin-left:2px;font-size:9.5px;font-weight:700;letter-spacing:.13em;
+}
+.sh-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;
+}
+.sh-tag::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;flex:0 0 auto}
+
+/* ============================================================
+   THRESHOLD PANEL — voting-card.html, unchanged
+   ============================================================ */
+.sh-vote{
+  padding:12px 14px;border-radius:var(--r-panel);background:var(--sunken);overflow:hidden;
+  --sh-bar-track:var(--acid-track);
+  --sh-bar-fill:var(--acid);
+  --sh-now-ink:var(--text);
+}
+.sh-vote__head{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
+.sh-vote__lede{
+  flex:1;min-width:0;
+  font-size:13.5px;font-weight:600;line-height:1.25;letter-spacing:-.005em;color:var(--text);
+}
+.sh-verdict{
+  flex:0 0 auto;max-width:110px;
+  padding:5px 9px;border-radius:var(--r-pill);
+  background:var(--acid-wash);color:var(--acid);
+  font-size:10px;font-weight:700;letter-spacing:.1em;line-height:1.3;
+  text-transform:uppercase;text-align:center;
+}
+.sh-verdict--off{background:var(--red-wash);color:var(--red)}
+.sh-verdict--hold{background:var(--neutral-wash);color:var(--muted)}
+
+.sh-vote__opt{display:flex;align-items:flex-start;gap:8px;margin-top:11px}
+.sh-vote__name{
+  flex:1;min-width:0;
+  font-size:15px;font-weight:600;line-height:1.25;letter-spacing:-.01em;color:var(--text);
+}
+.sh-info{
+  flex:0 0 auto;width:18px;height:18px;padding:0;margin-top:1px;position:relative;
+  border:0;background:transparent;color:var(--dim);cursor:pointer;
+  transition:color .18s var(--ease);
+}
+.sh-info::after{content:"";position:absolute;inset:-13px;border-radius:50%}
+.sh-info svg{width:18px;height:18px;display:block}
+.sh-info:hover{color:var(--acid)}
+.sh-info:focus-visible{outline:2px solid var(--acid);outline-offset:2px;border-radius:50%}
+
+.sh-bar{
+  position:relative;height:8px;margin:13px 0 0;
+  border-radius:var(--r-pill);background:var(--sh-bar-track);
+}
+.sh-bar__fill{
+  position:absolute;left:0;top:0;bottom:0;width:0;
+  border-radius:var(--r-pill);background:var(--sh-bar-fill);
+  transition:width 1.15s var(--ease);
+}
+.sh-vote-card.is-drawn .sh-bar__fill{width:calc(var(--now) * 1%)}
+.sh-bar__knob{
+  position:absolute;right:0;top:50%;
+  width:14px;height:14px;border-radius:50%;
+  transform:translate(50%,-50%);
+  background:var(--sh-bar-fill);box-shadow:0 0 0 3px var(--sunken);
+}
+.sh-bar__tick{
+  position:absolute;left:calc(var(--req) * 1%);top:calc(100% + 5px);
+  width:2px;height:7px;margin-left:-1px;border-radius:1px;background:var(--acid);
+}
+
+.sh-figs{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:17px}
+.sh-figs b{font-size:14px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.sh-figs span{margin-left:4px;font-size:11.5px;font-weight:500;color:var(--dim)}
+.sh-figs__now b{color:var(--sh-now-ink)}
+.sh-figs__req b{color:var(--acid)}
+
+.sh-vote--off{
+  --sh-bar-track:var(--red-wash);
+  --sh-bar-fill:var(--red);
+  --sh-now-ink:var(--red);
+}
+.sh-vote--hold{
+  --sh-bar-track:var(--ring-track);
+  --sh-bar-fill:var(--muted);
+  --sh-now-ink:var(--muted);
+  /* CONTRACT's canonical hold mark, added to voting-card.html's panel:
+     static accent bars at 135°, 5 on / 6 off, over --sunken, acid ring */
+  background-color:var(--sunken);
+  background-image:repeating-linear-gradient(135deg,
+    rgba(155,226,34,.11) 0 5px, transparent 5px 11px);
+  box-shadow:inset 0 0 0 1px var(--acid-line);
+}
+.sh-vote--hold .sh-bar__knob{box-shadow:0 0 0 3px #171B22}
+
+/* -- CTA — voting-card.html's ghost pill, with voting_screen.dart's labels -- */
+.sh-ghost{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;height:52px;margin-top:10px;
+  border:1px solid var(--acid);border-radius:var(--r-pill);
+  background:transparent;color:var(--acid);
+  font:inherit;font-size:15px;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;
+  transition:background .18s var(--ease),transform .12s var(--ease);
+}
+.sh-ghost svg{width:19px;height:19px;flex:0 0 auto}
+.sh-ghost:hover{background:var(--acid-wash)}
+.sh-ghost:active{transform:translateY(1px)}
+.sh-ghost:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+/* the un-voted CTA is the filled pill: a ballot you have not cast is
+   the one thing on the card that wants a tap */
+.sh-ghost--go{background:var(--acid);border-color:var(--acid);color:var(--acid-ink)}
+.sh-ghost--go:hover{background:#A8EC33}
+
+/* ============================================================
+   END OF LIST — there is no pager and no loader.
+   ============================================================ */
+.end{
+  display:flex;align-items:center;gap:10px;margin:16px var(--gutter) 0;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.end::before,.end::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.cap{
+  display:flex;align-items:flex-start;gap:8px;margin:12px var(--gutter) 0;
+  padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--section);
+  font-size:11.5px;line-height:1.45;color:var(--muted);
+}
+.cap svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:var(--dim)}
+.cap b{color:var(--text);font-weight:600}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+
+/* ---------- skeleton — states.html bone, unchanged ---------- */
+.bone{position:relative;overflow:hidden;background:var(--bone);border-radius:5px;flex:0 0 auto}
+.bone--pill{border-radius:var(--r-pill)}
+.bone--circ{border-radius:50%}
+.bone::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 18%,var(--sheen) 50%,transparent 82%);
+  transform:translateX(-100%);animation:shim 1.5s linear infinite;
+}
+/* skeleton voting card — geometry taken from .sh-vote-card */
+.skel{padding:16px;border-radius:var(--r-card);background:var(--surface)}
+.skel__by{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.skel__meta{display:flex;align-items:center;justify-content:space-between;margin:14px 0 10px}
+.skel__vote{padding:12px 14px;border-radius:var(--r-panel);background:var(--sunken)}
+.skel__head{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
+.skel__figs{display:flex;align-items:center;justify-content:space-between;margin-top:17px}
+
+/* ============================================================
+   EMPTY STATES — states.html panel and illustration rules
+   ============================================================ */
+.empty{
+  margin:0 var(--gutter);padding:24px 20px 22px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.empty h3{margin:14px 0 0;font-size:17px;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+.empty p{margin:7px auto 0;max-width:31ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.empty p b{color:var(--text);font-weight:600}
+.empty .pill-btn{margin-top:16px}
+.ill{display:block;width:132px;height:88px;margin:0 auto}
+.wait{
+  display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+  padding:8px 13px;border-radius:var(--r-pill);background:var(--sunken);
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+}
+.wait svg{width:13px;height:13px;flex:0 0 auto}
+.nohit{
+  margin:0 var(--gutter);padding:22px 18px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+  text-align:center;
+}
+.nohit h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.nohit p{margin:6px auto 0;max-width:30ch;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.nohit .pill-btn{margin-top:14px}
+
+/* ============================================================
+   SHEET SHELL — sheets.html, unchanged except that panes stack
+   ============================================================ */
+.sheet{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;
+  width:100%;max-height:min(var(--sheet-vh),var(--sheet-max));
+  border:1px solid var(--line);border-bottom:0;
+  border-radius:var(--r-sheet) var(--r-sheet) 0 0;
+  background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%);
+  box-shadow:0 -20px 50px rgba(0,0,0,.6);
+  overflow:hidden;
+}
+.sheet:focus{outline:none}
+.sheet:focus-visible{outline:2px solid var(--acid);outline-offset:-3px}
+.sheet__grab{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  height:26px;width:100%;padding:0;margin:0;border:0;background:transparent;
+  cursor:grab;touch-action:none;
+}
+.sheet__grab::before{
+  content:"";width:var(--grab-w);height:var(--grab-h);border-radius:var(--r-pill);
+  background:rgba(255,255,255,.18);transition:background .16s var(--ease);
+}
+.sheet__grab:hover::before{background:rgba(255,255,255,.30)}
+.sheet__grab:focus-visible{outline:2px solid var(--acid);outline-offset:-4px}
+.sheet.is-dragging{transition:none}
+.sheet.is-dragging .sheet__grab{cursor:grabbing}
+
+.sheet__head{
+  flex:0 0 auto;display:flex;align-items:center;gap:9px;
+  padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);
+}
+.sheet__title{
+  margin:0;flex:1;min-width:0;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text);
+}
+.sheet__n{
+  flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px;
+  border-radius:var(--r-pill);background:var(--acid-wash);color:var(--acid);
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;
+}
+.sheet__clear{
+  flex:0 0 auto;border:0;background:transparent;padding:4px 2px;margin:0;
+  color:var(--muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:color .16s var(--ease);
+}
+.sheet__clear:hover{color:var(--text)}
+.sheet__clear[disabled]{color:var(--dim);cursor:default}
+.sheet__x{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-4px;position:relative;
+  border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.sheet__x::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.sheet__x:hover{background:rgba(255,255,255,.11);color:var(--text)}
+.sheet__x svg{width:16px;height:16px}
+.sheet__x:focus-visible,.sheet__clear:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+.sheet__body::-webkit-scrollbar{width:0;height:0}
+.sheet__body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:12px var(--gutter);scrollbar-width:none;
+}
+.sheet__grp{
+  margin:16px 0 8px;font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.sheet__body > .sheet__grp:first-child{margin-top:0}
+.sheet__foot{
+  flex:0 0 auto;padding:12px var(--gutter);
+  padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);background:var(--sunken);
+}
+.sheet__body--last{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+
+/* ---------- option row — sheets.html, unchanged ---------- */
+.opt{
+  display:flex;align-items:center;gap:12px;width:100%;
+  min-height:var(--h-row);padding:11px 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background-color:var(--sunken);background-image:none;
+  color:var(--text);font:inherit;font-size:13.5px;font-weight:500;
+  text-align:left;cursor:pointer;
+  transition:background-color .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);
+}
+.opt + .opt{margin-top:8px}
+.opt:hover{border-color:rgba(255,255,255,.14)}
+.opt__text{flex:1;min-width:0}
+.opt__text small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.opt[aria-checked="true"]{
+  background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash));
+  border-color:var(--acid-line);color:var(--acid);font-weight:600;
+}
+.opt[aria-checked="true"] .opt__text small{color:rgba(155,226,34,.72)}
+.opt:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.check,.radio{
+  position:relative;flex:0 0 auto;width:20px;height:20px;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);
+  transition:background .16s var(--ease),box-shadow .16s var(--ease);
+}
+.check{border-radius:6px}
+.radio{border-radius:50%}
+.check svg,.radio svg{
+  position:absolute;inset:0;width:20px;height:20px;opacity:0;
+  transition:opacity .14s var(--ease);
+}
+.check svg{color:var(--acid-ink)}
+.radio svg{color:var(--acid)}
+.opt[aria-checked="true"] .check{background:var(--acid);box-shadow:none}
+.opt[aria-checked="true"] .radio{box-shadow:inset 0 0 0 1.7px var(--acid);background:transparent}
+.opt[aria-checked="true"] .check svg,.opt[aria-checked="true"] .radio svg{opacity:1}
+
+/* ---------- the real search field — forms.html control ---------- */
+.ctl{
+  display:flex;align-items:center;gap:10px;
+  height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.ctl__icon{flex:0 0 auto;width:19px;height:19px;color:var(--muted)}
+.ctl__in{
+  flex:1;min-width:0;height:100%;border:0;background:transparent;color:inherit;
+  font:inherit;font-size:16px;padding:0;margin:0;outline:none;
+}
+.ctl__in::placeholder{color:var(--dim);opacity:1}
+.ctl__in::-webkit-search-cancel-button{display:none}
+.ctl:focus-within{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.ctl:focus-within .ctl__icon{color:var(--text)}
+.ctl__btn{
+  position:relative;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-6px;
+  border:0;border-radius:50%;background:transparent;color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.ctl__btn::after{content:"";position:absolute;inset:-7px;border-radius:inherit}
+.ctl__btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.ctl__btn:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.ctl__btn svg{width:18px;height:18px}
+.ctl--stick{
+  position:sticky;top:0;z-index:2;margin:-12px calc(-1 * var(--gutter)) 12px;
+  padding:12px var(--gutter);height:auto;
+  border:0;border-bottom:1px solid var(--line-soft);border-radius:0;
+  background:#181D25;box-shadow:none;
+}
+.ctl--stick:focus-within{box-shadow:none;border-color:transparent;border-bottom-color:var(--acid-line)}
+.ctl--stick .ctl__box{
+  display:flex;align-items:center;gap:10px;width:100%;height:44px;padding:0 12px;
+  border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.ctl--stick:focus-within .ctl__box{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+
+/* ---------- search sheet internals ---------- */
+.res{display:flex;align-items:center;gap:8px;margin:0 0 12px}
+.res h4{
+  margin:0;flex:1;min-width:0;
+  font-size:15px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;
+}
+.res .icon-btn{width:34px;height:34px;background:var(--sunken)}
+.res .icon-btn svg{width:16px;height:16px}
+.recent{display:flex;flex-wrap:wrap;gap:7px}
+.recent__b{
+  display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 13px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:border-color .16s var(--ease),background .16s var(--ease);
+}
+.recent__b:hover{border-color:rgba(255,255,255,.14);background:#181D25}
+.recent__b svg{width:13px;height:13px;color:var(--dim);flex:0 0 auto}
+.recent__b:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.searchlist{display:flex;flex-direction:column;gap:12px}
+
+/* a docked sheet, in the flow at the bottom of its own frame */
+.dock{margin-top:20px}
+.dock .sheet{max-height:none}
+.dimmed{opacity:.34;filter:saturate(.55);pointer-events:none}
+
+/* ============================================================
+   LIVE LAYER — outside <main class="screen">
+   ============================================================ */
+.layer{position:fixed;inset:0;z-index:60;display:none}
+.layer.is-open{display:block}
+.scrim{
+  position:absolute;inset:0;background:var(--scrim);
+  -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+          backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+  opacity:0;transition:opacity .22s var(--ease);
+}
+.layer.is-in .scrim{opacity:1}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .scrim{background:rgba(3,4,1,.86)}
+}
+.layer .sheet{
+  position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:420px;
+  max-height:min(var(--sheet-vh),var(--sheet-max),calc(100% - 24px - env(safe-area-inset-top,0px)));
+  transform:translateY(101%);transition:transform .32s var(--ease);will-change:transform;
+}
+.layer .sheet.is-up{transform:translateY(0)}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
+  .bone::after{display:none}
+  .bone{background:rgba(255,255,255,.08)}
+}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+<!-- ============================================================
+     FRAME 1 — THE POPULATED LIST
+     ============================================================ -->
+<section class="frame" data-title="Voting list">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+    <!-- the create entry point. It goes to the Idea gate (idea-gate.html)
+         and is present only when CIdeaPost.canPost is true. -->
+    <button class="icon-btn icon-btn--acid" type="button" aria-label="Create idea">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <h1 class="title">Voting</h1>
+  <p class="lede">
+    Every Proposal Barcelona is counting right now. A Proposal is approved when support
+    <b>clears its threshold before the clock runs out</b>. Pull down to refresh.
+  </p>
+
+  <!-- ===== DECISIONS / POSITIONS — CLString.listFilterPri ===== -->
+  <div class="modes" role="tablist" aria-label="Which kind of proposal">
+    <button class="mode" type="button" role="tab" aria-selected="true"  data-mode="decisions">Decisions <span class="mode__n" data-n="decisions">5</span></button>
+    <button class="mode" type="button" role="tab" aria-selected="false" data-mode="position">Positions <span class="mode__n" data-n="position">3</span></button>
+  </div>
+
+  <!-- ===== SEARCH TRIGGER ===== -->
+  <button class="seek" type="button" data-open="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+    <span>Search proposals or authors</span>
+  </button>
+
+  <!-- ===== SORT + FILTER ===== -->
+  <div class="tools">
+    <button class="tool" type="button" data-open="sort" aria-label="Change sort order">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+      <span class="tool__t"><em>Sort ·</em> <span data-sortlabel>Most recent</span></span>
+    </button>
+    <button class="tool" type="button" data-open="filter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16l-6.3 7.4V19l-3.4-2.2v-3.9L4 5.5Z"/></svg>
+      <span class="tool__t">Filter</span>
+      <span class="tool__n" data-fcount hidden>0</span>
+    </button>
+  </div>
+
+  <!-- ===== CATEGORY CHIPS — they swap with the segment ===== -->
+  <div class="scope" aria-label="Narrow the list">
+    <button class="scope__b" type="button" aria-pressed="true"  data-scope="all">All</button>
+    <button class="scope__b" type="button" aria-pressed="false" data-scope="on_field_decisions" data-dec-only>On-field</button>
+    <button class="scope__b" type="button" aria-pressed="false" data-scope="off_field_decisions" data-dec-only>Off-field</button>
+    <button class="scope__b" type="button" aria-pressed="false" data-scope="management_decisions" data-dec-only>Management</button>
+    <button class="scope__b" type="button" aria-pressed="false" data-scope="my_idea">My ideas</button>
+  </div>
+
+  <p class="tally" aria-live="polite">
+    <b data-shown>5</b>&nbsp;proposals <span data-sorttally>· most recent</span>
+    <span class="spacer"></span>
+    <button class="tally__x" type="button" data-reset hidden>Clear</button>
+  </p>
+
+  <!-- ===== THE LIST · DECISIONS ===== -->
+  <div class="list" data-list="decisions" role="list" aria-label="Decision proposals">
+
+    <!-- 1 · on track to be approved -->
+    <article class="sh-vote-card" role="listitem"
+             data-title="change manager shortlist" data-by="capitan_7"
+             data-state="open" data-voted="0" data-hot="0" data-track="1"
+             data-cat="management_decisions" data-r="6" data-p="74">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-01)" role="img" aria-label="capitan_7"></span>
+        </span>
+        <span class="sh-vote-card__byline">by capitan_7</span>
+      </div>
+      <h2 class="sh-vote-card__title">Change Manager</h2>
+      <p class="sh-vote-card__body">Members pick the next first-team manager from the club’s official shortlist.</p>
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT2H47M6S" data-countdown="10026">02:47:06</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+      <div class="sh-vote">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Option 1 leading</span>
+          <span class="sh-verdict">On track to be approved</span>
+        </div>
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Pep Guardiola</span>
+          <button class="sh-info" type="button" aria-label="How the 70% threshold works">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+        <div class="sh-bar" style="--now:74;--req:70" role="img" aria-label="74% of the vote against a 70% threshold">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>74%</b><span>now</span></span>
+          <span class="sh-figs__req"><b>70%</b><span>required</span></span>
+        </div>
+      </div>
+      <button class="sh-ghost sh-ghost--go" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4.5 12.5l5 5 10-11"/>
+        </svg>
+        Vote here
+      </button>
+    </article>
+
+    <!-- 2 · below threshold, already voted -->
+    <article class="sh-vote-card" role="listitem"
+             data-title="shirt sponsor renewal" data-by="scout_mode dons_mode"
+             data-state="open" data-voted="1" data-hot="0" data-track="0"
+             data-cat="off_field_decisions" data-r="5" data-p="41">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-02)" role="img" aria-label="scout_mode"></span>
+          <span class="sh-avatar" style="background-image:var(--av-03)" role="img" aria-label="dons_mode"></span>
+        </span>
+        <span class="sh-vote-card__byline">by scout_mode &amp; dons_mode</span>
+      </div>
+      <h2 class="sh-vote-card__title">Shirt sponsor renewal</h2>
+      <p class="sh-vote-card__body">Renew with the current shirt sponsor, or open the slot to new bidders.</p>
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT41M58S" data-countdown="2518">00:41:58</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+      <div class="sh-vote sh-vote--off">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Option 1 leading</span>
+          <span class="sh-verdict sh-verdict--off">Not on track</span>
+        </div>
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Renew for three years</span>
+          <button class="sh-info" type="button" aria-label="How the 70% threshold works">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+        <div class="sh-bar" style="--now:41;--req:70" role="img" aria-label="41% of the vote against a 70% threshold">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>41%</b><span>now</span></span>
+          <span class="sh-figs__req"><b>70%</b><span>required</span></span>
+        </div>
+      </div>
+      <button class="sh-ghost" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+        View votes
+      </button>
+    </article>
+
+    <!-- 3 · final minutes -->
+    <article class="sh-vote-card" role="listitem"
+             data-title="sevilla away allocation loyalty ballot" data-by="scout_mode"
+             data-state="open" data-voted="0" data-hot="1" data-track="0"
+             data-cat="off_field_decisions" data-r="4" data-p="66">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-02)" role="img" aria-label="scout_mode"></span>
+        </span>
+        <span class="sh-vote-card__byline">by scout_mode</span>
+      </div>
+      <h2 class="sh-vote-card__title">Ballot the Sevilla away allocation</h2>
+      <p class="sh-vote-card__body">Run the 2,400 away seats as a loyalty ballot rather than first-come.</p>
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer sh-timer--hot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT3M22S" data-countdown="202">00:03:22</time>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+      <div class="sh-vote sh-vote--off">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Option 2 leading</span>
+          <span class="sh-verdict sh-verdict--off">Not on track</span>
+        </div>
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Loyalty ballot, capped at two seats</span>
+          <button class="sh-info" type="button" aria-label="How the 70% threshold works">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+        <div class="sh-bar" style="--now:66;--req:70" role="img" aria-label="66% of the vote against a 70% threshold">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>66%</b><span>now</span></span>
+          <span class="sh-figs__req"><b>70%</b><span>required</span></span>
+        </div>
+      </div>
+      <button class="sh-ghost sh-ghost--go" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4.5 12.5l5 5 10-11"/>
+        </svg>
+        Vote here
+      </button>
+    </article>
+
+    <!-- 4 · reject-veto ballot — TypeIdeaEnum.rejectVeto -->
+    <article class="sh-vote-card" role="listitem"
+             data-title="reject the veto on rest pedri" data-by="fan_pulse"
+             data-state="reject" data-voted="0" data-hot="0" data-track="0"
+             data-cat="management_decisions" data-r="3" data-p="34">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-04)" role="img" aria-label="fan_pulse"></span>
+        </span>
+        <span class="sh-vote-card__byline">by fan_pulse</span>
+      </div>
+      <h2 class="sh-vote-card__title">Reject the veto on “Rest Pedri”</h2>
+      <p class="sh-vote-card__body">The board vetoed the Pedri rotation Proposal. This ballot can overturn it.</p>
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT52M4S" data-countdown="3124">00:52:04</time>
+        </span>
+        <span class="sh-tag">Reject veto</span>
+      </div>
+      <div class="sh-vote sh-vote--off">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Reject the veto</span>
+          <span class="sh-verdict sh-verdict--off">Not on track</span>
+        </div>
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Overturn the board’s veto</span>
+          <button class="sh-info" type="button" aria-label="How the reject-veto threshold works">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+        <div class="sh-bar" style="--now:34;--req:60" role="img" aria-label="34% of the vote against a 60% threshold">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>34%</b><span>now</span></span>
+          <span class="sh-figs__req"><b>60%</b><span>required</span></span>
+        </div>
+      </div>
+      <button class="sh-ghost sh-ghost--go" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4.5 12.5l5 5 10-11"/>
+        </svg>
+        Vote on veto
+      </button>
+    </article>
+
+    <!-- 5 · closed, result published -->
+    <article class="sh-vote-card" role="listitem"
+             data-title="academy budget uplift transfer levy" data-by="council_fc"
+             data-state="done" data-voted="1" data-hot="0" data-track="1"
+             data-cat="management_decisions" data-r="2" data-p="76">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-05)" role="img" aria-label="council_fc"></span>
+        </span>
+        <span class="sh-vote-card__byline">by council_fc</span>
+      </div>
+      <h2 class="sh-vote-card__title">Academy budget uplift</h2>
+      <p class="sh-vote-card__body">Raise the academy budget from July, funded out of the transfer levy.</p>
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer sh-timer--closed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5"/><path d="m8.2 12.2 2.6 2.6 5-5.4"/>
+          </svg>
+          <span>Closed 12 Jul</span>
+        </span>
+        <span class="sh-tag">Decision</span>
+      </div>
+      <div class="sh-vote">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Option 2 approved</span>
+          <span class="sh-verdict">Result published</span>
+        </div>
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Uplift by 12% from July</span>
+          <button class="sh-info" type="button" aria-label="How this count was settled">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+        <div class="sh-bar" style="--now:76;--req:70" role="img" aria-label="Closed at 76% of the vote against a 70% threshold">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>76%</b><span>final</span></span>
+          <span class="sh-figs__req"><b>70%</b><span>required</span></span>
+        </div>
+      </div>
+      <button class="sh-ghost" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+        View result
+      </button>
+    </article>
+  </div>
+
+  <!-- ===== THE LIST · POSITIONS ===== -->
+  <div class="list" data-list="position" role="list" aria-label="Position proposals" hidden>
+
+    <!-- veto hold — counting frozen. The hold hatch, static. -->
+    <article class="sh-vote-card" role="listitem"
+             data-title="ticket price freeze season ticket bands" data-by="fan_pulse"
+             data-state="held" data-voted="0" data-hot="0" data-track="0"
+             data-cat="my_idea" data-r="5" data-p="63">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-04)" role="img" aria-label="fan_pulse"></span>
+        </span>
+        <span class="sh-vote-card__byline">by fan_pulse</span>
+      </div>
+      <h2 class="sh-vote-card__title">Ticket price freeze</h2>
+      <p class="sh-vote-card__body">Hold every season-ticket band at this season’s price for two more years.</p>
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer sh-timer--frozen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M10.4 11.4v4.2M13.6 11.4v4.2M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT1H12M40S">01:12:40</time>
+        </span>
+        <span class="sh-tag">Position</span>
+      </div>
+      <div class="sh-vote sh-vote--hold">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">⊘ Option 1 leading</span>
+          <span class="sh-verdict sh-verdict--hold">Veto hold</span>
+        </div>
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Freeze every band</span>
+          <button class="sh-info" type="button" aria-label="Why counting is on veto hold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+        <div class="sh-bar" style="--now:63;--req:70" role="img" aria-label="63% of the vote against a 70% threshold, counting paused">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>63%</b><span>frozen</span></span>
+          <span class="sh-figs__req"><b>70%</b><span>required</span></span>
+        </div>
+      </div>
+      <button class="sh-ghost" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+        View details
+      </button>
+    </article>
+
+    <article class="sh-vote-card" role="listitem"
+             data-title="rest pedri against getafe" data-by="capitan_7"
+             data-state="open" data-voted="0" data-hot="0" data-track="1"
+             data-cat="all" data-r="4" data-p="72">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-01)" role="img" aria-label="capitan_7"></span>
+        </span>
+        <span class="sh-vote-card__byline">by capitan_7</span>
+      </div>
+      <h2 class="sh-vote-card__title">Rest Pedri against Getafe</h2>
+      <p class="sh-vote-card__body">Start Fermín in midfield and keep Pedri for the Arsenal second leg.</p>
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT18M9S" data-countdown="1089">00:18:09</time>
+        </span>
+        <span class="sh-tag">Position</span>
+      </div>
+      <div class="sh-vote">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Option 1 leading</span>
+          <span class="sh-verdict">On track to be approved</span>
+        </div>
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Rest him, start Fermín</span>
+          <button class="sh-info" type="button" aria-label="How the 70% threshold works">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+        <div class="sh-bar" style="--now:72;--req:70" role="img" aria-label="72% of the vote against a 70% threshold">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>72%</b><span>now</span></span>
+          <span class="sh-figs__req"><b>70%</b><span>required</span></span>
+        </div>
+      </div>
+      <button class="sh-ghost sh-ghost--go" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4.5 12.5l5 5 10-11"/>
+        </svg>
+        Vote here
+      </button>
+    </article>
+
+    <article class="sh-vote-card" role="listitem"
+             data-title="armband rotation cubarsi cup run" data-by="council_fc"
+             data-state="open" data-voted="1" data-hot="1" data-track="0"
+             data-cat="all" data-r="3" data-p="48">
+      <div class="sh-vote-card__author">
+        <span class="sh-avatars">
+          <span class="sh-avatar" style="background-image:var(--av-05)" role="img" aria-label="council_fc"></span>
+        </span>
+        <span class="sh-vote-card__byline">by council_fc</span>
+      </div>
+      <h2 class="sh-vote-card__title">Rotate the armband for the cup run</h2>
+      <p class="sh-vote-card__body">Hand the captaincy to Cubarsí for every cup tie between now and April.</p>
+      <div class="sh-vote-card__meta">
+        <span class="sh-timer sh-timer--hot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/>
+          </svg>
+          <time datetime="PT1M44S" data-countdown="104">00:01:44</time>
+        </span>
+        <span class="sh-tag">Position</span>
+      </div>
+      <div class="sh-vote sh-vote--off">
+        <div class="sh-vote__head">
+          <span class="sh-vote__lede">Option 2 leading</span>
+          <span class="sh-verdict sh-verdict--off">Not on track</span>
+        </div>
+        <div class="sh-vote__opt">
+          <span class="sh-vote__name">Leave the armband as it is</span>
+          <button class="sh-info" type="button" aria-label="How the 70% threshold works">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2"/><path d="M12 7.6v6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+        <div class="sh-bar" style="--now:48;--req:70" role="img" aria-label="48% of the vote against a 70% threshold">
+          <span class="sh-bar__fill"><span class="sh-bar__knob"></span></span>
+          <span class="sh-bar__tick"></span>
+        </div>
+        <div class="sh-figs">
+          <span class="sh-figs__now"><b>48%</b><span>now</span></span>
+          <span class="sh-figs__req"><b>70%</b><span>required</span></span>
+        </div>
+      </div>
+      <button class="sh-ghost" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+        View votes
+      </button>
+    </article>
+  </div>
+
+  <div class="nohit" data-nohit hidden>
+    <h3>No proposal matches that combination</h3>
+    <p>There are proposals here — <b>none of them match</b> the chip and the filters you have on.</p>
+    <button class="pill-btn" type="button" data-reset>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      Clear filters
+    </button>
+  </div>
+
+  <p class="end" data-end>That’s all 5 proposals</p>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The list is one request, capped at 50.</b> <code>getListIdea</code> sends
+    <code>limit: 50</code> with no offset and no cursor, and never reads the response’s
+    <code>next</code>. <code>getListVotingNoLimit</code> then <b>re-sorts the page ascending by
+    vote count</b> — least-supported first — which contradicts the <b>Most recent</b> label the
+    sheet says is applied. Fixed here: the label and the order agree.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 2 — THE SORT SHEET  (lib/pages/voting/widget/show_filter.dart)
+     ============================================================ -->
+<section class="frame" data-title="Sort sheet">
+
+  <div class="dimmed" aria-hidden="true">
+    <div class="bar">
+      <span class="icon-btn"></span>
+      <span class="bar__eyebrow">War Room</span>
+      <span class="spacer"></span>
+      <span class="icon-btn icon-btn--acid"></span>
+    </div>
+    <h1 class="title">Voting</h1>
+    <div class="modes">
+      <span class="mode" aria-selected="true">Decisions</span>
+      <span class="mode">Positions</span>
+    </div>
+    <p class="tally"><b>5</b>&nbsp;proposals · most recent</p>
+  </div>
+
+  <div class="dock">
+    <section class="sheet" aria-label="Sort voting">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Sort voting</h3>
+        <span class="sheet__x" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </span>
+      </div>
+      <div class="sheet__body sheet__body--last">
+        <div class="opt" role="radio" aria-checked="true">
+          <span class="opt__text">Most recent<small>Newest Proposal first · <code>ordering=recent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+        <div class="opt" role="radio" aria-checked="false">
+          <span class="opt__text">Most urgent<small>Shortest clock left first · <code>ordering=urgent</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+        <div class="opt" role="radio" aria-checked="false">
+          <span class="opt__text">Most popular<small>Most support first · <code>ordering=popular</code></small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span>These are the <b>only three options the shipped sheet contains</b> — the same
+    <code>CLString.listSortProposal</code> the Ideas sheet uses, mapped to
+    <code>listKeySortProposal = ["recent","urgent","popular"]</code>. The file is
+    <code>widget/show_filter.dart</code> and its trigger draws a filter glyph, but everything
+    inside it sorts. Tapping an option re-requests the list and animates the scroll to the top.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 3 — THE FILTER SHEET
+     ============================================================ -->
+<section class="frame" data-title="Filter sheet">
+
+  <div class="dimmed" aria-hidden="true">
+    <div class="bar">
+      <span class="icon-btn"></span>
+      <span class="bar__eyebrow">War Room</span>
+      <span class="spacer"></span>
+      <span class="icon-btn icon-btn--acid"></span>
+    </div>
+    <h1 class="title">Voting</h1>
+    <div class="modes">
+      <span class="mode" aria-selected="true">Decisions</span>
+      <span class="mode">Positions</span>
+    </div>
+    <p class="tally"><b>2</b>&nbsp;proposals · most recent</p>
+  </div>
+
+  <div class="dock">
+    <section class="sheet" aria-label="Filter voting">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Filter · voting</h3>
+        <span class="sheet__n">2 on</span>
+        <span class="sheet__clear">Clear all</span>
+        <span class="sheet__x" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </span>
+      </div>
+      <div class="sheet__body">
+        <p class="sheet__grp">Stage</p>
+        <div class="opt" role="checkbox" aria-checked="true">
+          <span class="opt__text">Counting now<small><code>status = active</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <div class="opt" role="checkbox" aria-checked="false">
+          <span class="opt__text">Veto hold<small><code>status = veto</code> · counting frozen</small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <div class="opt" role="checkbox" aria-checked="false">
+          <span class="opt__text">Reject-veto ballots<small><code>type = reject_veto</code> · its own threshold</small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <p class="sheet__grp">Against the threshold</p>
+        <div class="opt" role="checkbox" aria-checked="false">
+          <span class="opt__text">On track to be approved<small>Support at or above <code>findTargetVote()</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <div class="opt" role="checkbox" aria-checked="false">
+          <span class="opt__text">Not on track<small>Support below the threshold</small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <p class="sheet__grp">Me</p>
+        <div class="opt" role="checkbox" aria-checked="true">
+          <span class="opt__text">Ballots I’ve voted in<small><code>isVote != null</code></small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <div class="opt" role="checkbox" aria-checked="false">
+          <span class="opt__text">Not voted yet<small>Still needs a vote from you</small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+        <p class="sheet__grp">Urgency</p>
+        <div class="opt" role="checkbox" aria-checked="false">
+          <span class="opt__text">Final minutes only<small><code>isDanger</code> · clock under the card-state threshold</small></span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </div>
+      </div>
+      <div class="sheet__foot">
+        <span class="btn btn--acid btn--wide">Apply <span class="btn__n">2</span></span>
+      </div>
+    </section>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>This sheet is new.</b> The shipped app has no filter sheet — its only sheet sorts.
+    Every option here is an existing field (<code>status</code>, <code>type</code>,
+    <code>isVote</code>, <code>isDanger</code>, and <code>voted</code> against
+    <code>findTargetVote()</code>) applied to the page already in memory, so it needs no new
+    endpoint.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 4 — FIRST LOAD
+     ============================================================ -->
+<section class="frame" data-title="Loading">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+    <button class="icon-btn icon-btn--acid" type="button" aria-label="Create idea">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <h1 class="title">Voting</h1>
+
+  <div class="modes" aria-hidden="true">
+    <span class="mode" aria-selected="true">Decisions</span>
+    <span class="mode">Positions</span>
+  </div>
+
+  <div class="tools" aria-hidden="true">
+    <span class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg><span class="tool__t"><em>Sort ·</em> Most recent</span></span>
+    <span class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16l-6.3 7.4V19l-3.4-2.2v-3.9L4 5.5Z"/></svg><span class="tool__t">Filter</span></span>
+  </div>
+
+  <div class="list" role="status" aria-label="Loading proposals">
+    <div class="skel">
+      <div class="skel__by">
+        <div class="bone bone--circ" style="width:22px;height:22px"></div>
+        <div class="bone bone--pill" style="width:104px;height:11px"></div>
+      </div>
+      <div class="bone" style="width:74%;height:16px"></div>
+      <div class="bone" style="width:92%;height:11px;margin-top:10px"></div>
+      <div class="skel__meta">
+        <div class="bone bone--pill" style="width:78px;height:13px"></div>
+        <div class="bone bone--pill" style="width:62px;height:10px"></div>
+      </div>
+      <div class="skel__vote">
+        <div class="skel__head">
+          <div class="bone bone--pill" style="width:96px;height:12px"></div>
+          <div class="bone bone--pill" style="width:74px;height:22px"></div>
+        </div>
+        <div class="bone bone--pill" style="width:62%;height:14px;margin-top:11px"></div>
+        <div class="bone bone--pill" style="width:100%;height:8px;margin-top:13px"></div>
+        <div class="skel__figs">
+          <div class="bone bone--pill" style="width:64px;height:12px"></div>
+          <div class="bone bone--pill" style="width:78px;height:12px"></div>
+        </div>
+      </div>
+      <div class="bone bone--pill" style="width:100%;height:52px;margin-top:10px"></div>
+    </div>
+    <div class="skel">
+      <div class="skel__by">
+        <div class="bone bone--circ" style="width:22px;height:22px"></div>
+        <div class="bone bone--pill" style="width:136px;height:11px"></div>
+      </div>
+      <div class="bone" style="width:60%;height:16px"></div>
+      <div class="bone" style="width:86%;height:11px;margin-top:10px"></div>
+      <div class="skel__meta">
+        <div class="bone bone--pill" style="width:78px;height:13px"></div>
+        <div class="bone bone--pill" style="width:62px;height:10px"></div>
+      </div>
+      <div class="skel__vote">
+        <div class="skel__head">
+          <div class="bone bone--pill" style="width:96px;height:12px"></div>
+          <div class="bone bone--pill" style="width:74px;height:22px"></div>
+        </div>
+        <div class="bone bone--pill" style="width:70%;height:14px;margin-top:11px"></div>
+        <div class="bone bone--pill" style="width:100%;height:8px;margin-top:13px"></div>
+        <div class="skel__figs">
+          <div class="bone bone--pill" style="width:64px;height:12px"></div>
+          <div class="bone bone--pill" style="width:78px;height:12px"></div>
+        </div>
+      </div>
+      <div class="bone bone--pill" style="width:100%;height:52px;margin-top:10px"></div>
+    </div>
+    <div class="skel">
+      <div class="skel__by">
+        <div class="bone bone--circ" style="width:22px;height:22px"></div>
+        <div class="bone bone--pill" style="width:92px;height:11px"></div>
+      </div>
+      <div class="bone" style="width:84%;height:16px"></div>
+      <div class="bone" style="width:70%;height:11px;margin-top:10px"></div>
+      <div class="skel__meta">
+        <div class="bone bone--pill" style="width:78px;height:13px"></div>
+        <div class="bone bone--pill" style="width:62px;height:10px"></div>
+      </div>
+      <div class="skel__vote">
+        <div class="skel__head">
+          <div class="bone bone--pill" style="width:96px;height:12px"></div>
+          <div class="bone bone--pill" style="width:74px;height:22px"></div>
+        </div>
+        <div class="bone bone--pill" style="width:56%;height:14px;margin-top:11px"></div>
+        <div class="bone bone--pill" style="width:100%;height:8px;margin-top:13px"></div>
+        <div class="skel__figs">
+          <div class="bone bone--pill" style="width:64px;height:12px"></div>
+          <div class="bone bone--pill" style="width:78px;height:12px"></div>
+        </div>
+      </div>
+      <div class="bone bone--pill" style="width:100%;height:52px;margin-top:10px"></div>
+    </div>
+    <div class="skel">
+      <div class="skel__by">
+        <div class="bone bone--circ" style="width:22px;height:22px"></div>
+        <div class="bone bone--pill" style="width:118px;height:11px"></div>
+      </div>
+      <div class="bone" style="width:68%;height:16px"></div>
+      <div class="bone" style="width:90%;height:11px;margin-top:10px"></div>
+      <div class="skel__meta">
+        <div class="bone bone--pill" style="width:78px;height:13px"></div>
+        <div class="bone bone--pill" style="width:62px;height:10px"></div>
+      </div>
+      <div class="skel__vote">
+        <div class="skel__head">
+          <div class="bone bone--pill" style="width:96px;height:12px"></div>
+          <div class="bone bone--pill" style="width:74px;height:22px"></div>
+        </div>
+        <div class="bone bone--pill" style="width:64%;height:14px;margin-top:11px"></div>
+        <div class="bone bone--pill" style="width:100%;height:8px;margin-top:13px"></div>
+        <div class="skel__figs">
+          <div class="bone bone--pill" style="width:64px;height:12px"></div>
+          <div class="bone bone--pill" style="width:78px;height:12px"></div>
+        </div>
+      </div>
+      <div class="bone bone--pill" style="width:100%;height:52px;margin-top:10px"></div>
+    </div>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>Four cards</b>, matching <code>childCount: 4</code> in
+    <code>buildShimmerEffect()</code>, which passes <code>IdeaShimmer(isVoting: true)</code> on
+    first load. The bone is <code>states.html</code>'s bone. The shipped shimmer is
+    <code>Colors.grey.shade300 → shade100</code> — a light-theme skeleton on a dark screen — and
+    <code>buildShimmerEffectFilter()</code> drops the <code>isVoting</code> flag, so changing a
+    chip briefly draws four <b>Ideas</b> skeletons on the Voting screen.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================
+     FRAME 5 — NOTHING BEING COUNTED
+     ============================================================ -->
+<section class="frame" data-title="Nothing to vote on">
+
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back to the War Room">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <span class="bar__eyebrow">War Room</span>
+    <span class="spacer"></span>
+    <button class="icon-btn icon-btn--acid" type="button" aria-label="Create idea">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <h1 class="title">Voting</h1>
+
+  <div class="modes" role="tablist" aria-label="Which kind of proposal">
+    <button class="mode" type="button" role="tab" aria-selected="true">Decisions <span class="mode__n">0</span></button>
+    <button class="mode" type="button" role="tab" aria-selected="false">Positions <span class="mode__n">0</span></button>
+  </div>
+
+  <div class="tools">
+    <button class="tool" type="button" data-open="sort" aria-label="Change sort order">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+      <span class="tool__t"><em>Sort ·</em> Most recent</span>
+    </button>
+    <button class="tool" type="button" data-open="filter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16l-6.3 7.4V19l-3.4-2.2v-3.9L4 5.5Z"/></svg>
+      <span class="tool__t">Filter</span>
+    </button>
+  </div>
+
+  <div class="empty">
+    <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+      <path d="M2 72 L26 42 L50 72 Z" fill="#1C2129"/>
+      <path d="M86 72 L110 38 L132 72 Z" fill="#1C2129" opacity=".7"/>
+      <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+      <rect x="48" y="40" width="36" height="30" rx="3" stroke="#9BE222" stroke-width="1.8"/>
+      <path d="M56 40v-6h20v6" stroke="#9BE222" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M58 55l5 5 11-12" stroke="#9BE222" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 4"/>
+    </svg>
+    <h3>Nothing is being counted</h3>
+    <p>
+      No Proposal has cleared the Ideas stage yet. <b>6 Ideas are collecting Likes</b> — Like one
+      and it may land here.
+    </p>
+    <button class="pill-btn" type="button">See open ideas</button>
+  </div>
+
+  <p class="cap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+    <span><b>The shipped screen has no empty state at all</b> — and no pull-to-refresh either:
+    unlike <code>ideas_screen.dart</code>, <code>voting_screen.dart</code> has no
+    <code>RefreshIndicator</code>, so a member who lands on an empty Voting screen has nothing to
+    tap and no way to re-request. The panel points at the Ideas stage, which is the only thing that
+    can fill this list.</span>
+  </p>
+  <div class="frame__pad" aria-hidden="true"></div>
+</section>
+
+</main>
+
+<!-- ============================================================
+     LIVE LAYER — outside <main class="screen">
+     ============================================================ -->
+<div class="layer tabbar" id="layer">
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ---------- search ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="s-t" data-pane="search" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="s-t" data-searchtitle>Find a Decision proposal</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <div class="ctl ctl--stick">
+        <span class="ctl__box">
+          <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.6"/><path d="M16 16l4.2 4.2"/></svg>
+          <input class="ctl__in" id="q" type="search" placeholder="Proposals or authors"
+                 aria-label="Search proposals or authors" autocomplete="off" spellcheck="false">
+          <button class="ctl__btn" type="button" id="qx" aria-label="Clear search" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+          </button>
+        </span>
+      </div>
+
+      <div data-recent>
+        <p class="sheet__grp">Recent searches</p>
+        <div class="recent">
+          <button class="recent__b" type="button" data-term="manager">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            manager
+          </button>
+          <button class="recent__b" type="button" data-term="sponsor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            sponsor
+          </button>
+          <button class="recent__b" type="button" data-term="fan_pulse">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            fan_pulse
+          </button>
+          <button class="recent__b" type="button" data-term="veto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3 2"/></svg>
+            veto
+          </button>
+        </div>
+        <p class="sheet__grp">How it works</p>
+        <p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)">
+          Search reads Proposal titles and authors <b>in the set already loaded</b> — the current
+          Decisions-or-Positions request, capped at 50. It does not reach the server, and it does
+          not read ballot options or comments.
+        </p>
+        <button class="sheet__clear" type="button" id="qclear" style="margin-top:14px;padding-left:0">
+          Clear recent searches
+        </button>
+      </div>
+
+      <div data-results hidden>
+        <div class="res">
+          <h4 data-rescount>0 results found</h4>
+          <button class="icon-btn" type="button" data-open="filter" aria-label="Filter these results">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16l-6.3 7.4V19l-3.4-2.2v-3.9L4 5.5Z"/></svg>
+          </button>
+          <button class="icon-btn" type="button" data-open="sort" aria-label="Sort these results">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>
+          </button>
+        </div>
+        <div class="searchlist" id="reslist" role="list"></div>
+      </div>
+
+      <div class="empty" data-resnone hidden style="margin:8px 0 0">
+        <svg class="ill" viewBox="0 0 132 88" fill="none" aria-hidden="true">
+          <path d="M2 72 L24 42 L46 72 Z" fill="#1C2129"/>
+          <path d="M92 72 L114 40 L132 72 Z" fill="#1C2129" opacity=".7"/>
+          <path d="M4 72H128" stroke="rgba(255,255,255,.10)" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="60" cy="38" r="25" fill="#080A0C"/>
+          <path d="M41 46H79" stroke="rgba(255,255,255,.14)" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="60" cy="38" r="25" stroke="#9BE222" stroke-width="1.8"/>
+          <path d="M78.5 57 L94 72.5" stroke="#9BE222" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+        <h3 data-resterm>Nothing matches that</h3>
+        <p data-resscope>
+          No Decision proposal at Barcelona uses that word. Search reads titles and authors in the
+          loaded set — it does not read ballot options or comments.
+        </p>
+        <button class="pill-btn" type="button" id="qwipe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+          Clear search
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- sort — CLString.listSortProposal, verbatim ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="o-t" data-pane="sort" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="o-t">Sort voting</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close sort">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last" role="radiogroup" aria-label="Sort order">
+      <button class="opt" type="button" role="radio" aria-checked="true" data-sort="recent">
+        <span class="opt__text">Most recent<small>Newest Proposal first</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="radio" aria-checked="false" data-sort="urgent">
+        <span class="opt__text">Most urgent<small>Shortest clock left first</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="radio" aria-checked="false" data-sort="popular">
+        <span class="opt__text">Most popular<small>Most support first</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ---------- filter ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="l-t" data-pane="filter" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="l-t">Filter · voting</h3>
+      <span class="sheet__n" data-count hidden>0 on</span>
+      <button class="sheet__clear" type="button" data-clear disabled>Clear all</button>
+      <button class="sheet__x" type="button" data-close aria-label="Close filter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <p class="sheet__grp">Stage</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="open">
+        <span class="opt__text">Counting now</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="held">
+        <span class="opt__text">Veto hold</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="reject">
+        <span class="opt__text">Reject-veto ballots</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="done">
+        <span class="opt__text">Closed · result published</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <p class="sheet__grp">Against the threshold</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="track">
+        <span class="opt__text">On track to be approved</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="offtrack">
+        <span class="opt__text">Not on track</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <p class="sheet__grp">Me</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="voted">
+        <span class="opt__text">Ballots I’ve voted in</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="unvoted">
+        <span class="opt__text">Not voted yet</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <p class="sheet__grp">Urgency</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb="hot">
+        <span class="opt__text">Final minutes only</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+    </div>
+    <div class="sheet__foot">
+      <button class="btn btn--acid btn--wide" type="button" data-apply>
+        <span data-applylabel>Apply</span>
+      </button>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var reduce = window.matchMedia &&
+               window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ============================================================
+     STATE
+     mode  — 'decisions' | 'position'   (CLString.listFilterPri)
+     scope — CLString.listFilterSupKey / listKeyFilterIdeaSup
+     sort  — CLString.listKeySortProposal
+     filt  — new; client-side over the loaded page
+     ============================================================ */
+  var SORTNAME = {recent:'Most recent', urgent:'Most urgent', popular:'Most popular'};
+  var st = {mode:'decisions', scope:'all', sort:'recent', filt:[]};
+
+  var $  = function(s,r){ return (r||document).querySelector(s); };
+  var $$ = function(s,r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+
+  var lists  = {decisions:$('[data-list="decisions"]'), position:$('[data-list="position"]')};
+  var nohit  = $('[data-nohit]');
+  var endL   = $('[data-end]');
+  var shown  = $('[data-shown]');
+  var tallyS = $('[data-sorttally]');
+  var resetB = $$('[data-reset]');
+  var fcount = $('[data-fcount]');
+  var ftool  = $('[data-open="filter"].tool');
+  var sortLb = $('[data-sortlabel]');
+
+  function cards(mode){ return $$('.sh-vote-card', lists[mode]); }
+  function stateOf(c){ return c.getAttribute('data-state'); }
+  function flg(c,n){ return c.getAttribute('data-' + n) === '1'; }
+
+  function matches(c){
+    /* the chips are a server-side `category` in the real app; here they
+       read the card's own category, and ALL passes everything */
+    if (st.scope !== 'all'){
+      if (st.scope === 'my_idea'){ if (c.getAttribute('data-cat') !== 'my_idea') return false; }
+      else if (c.getAttribute('data-cat') !== st.scope) return false;
+    }
+
+    var f = st.filt;
+    if (!f.length) return true;
+
+    var stg = [];
+    ['open','held','reject','done'].forEach(function(k){ if (f.indexOf(k) > -1) stg.push(k); });
+    if (stg.length && stg.indexOf(stateOf(c)) < 0) return false;
+
+    var thr = [];
+    if (f.indexOf('track')    > -1) thr.push(flg(c,'track'));
+    if (f.indexOf('offtrack') > -1) thr.push(!flg(c,'track'));
+    if (thr.length && thr.indexOf(true) < 0) return false;
+
+    var me = [];
+    if (f.indexOf('voted')   > -1) me.push(flg(c,'voted'));
+    if (f.indexOf('unvoted') > -1) me.push(!flg(c,'voted'));
+    if (me.length && me.indexOf(true) < 0) return false;
+
+    if (f.indexOf('hot') > -1 && !flg(c,'hot')) return false;
+
+    return true;
+  }
+
+  function order(a,b){
+    if (st.sort === 'popular'){
+      return parseFloat(b.getAttribute('data-p')) - parseFloat(a.getAttribute('data-p'));
+    }
+    if (st.sort === 'urgent'){
+      var at = $('[data-countdown]', a), bt = $('[data-countdown]', b);
+      var av = at ? parseInt(at.getAttribute('data-countdown'),10) : 1e9;
+      var bv = bt ? parseInt(bt.getAttribute('data-countdown'),10) : 1e9;
+      return av - bv;
+    }
+    return parseFloat(b.getAttribute('data-r')) - parseFloat(a.getAttribute('data-r'));
+  }
+
+  function render(){
+    var mode = st.mode, list = lists[mode], n = 0;
+
+    lists.decisions.hidden = mode !== 'decisions';
+    lists.position.hidden  = mode !== 'position';
+
+    /* the chip row swaps with the segment, and an index that no longer
+       exists falls back to ALL — the code's indexFilterSupChange clamp */
+    $$('.scope__b[data-dec-only]').forEach(function(b){ b.hidden = mode !== 'decisions'; });
+    if (mode !== 'decisions' && st.scope !== 'all' && st.scope !== 'my_idea') setScope('all');
+
+    cards(mode).slice().sort(order).forEach(function(c){ list.appendChild(c); });
+
+    cards(mode).forEach(function(c){
+      var hit = matches(c);
+      c.hidden = !hit;
+      if (hit) n++;
+    });
+
+    shown.textContent  = String(n);
+    tallyS.textContent = '· ' + SORTNAME[st.sort].toLowerCase();
+    sortLb.textContent = SORTNAME[st.sort];
+
+    var fn = st.filt.length;
+    fcount.hidden = fn === 0;
+    fcount.textContent = String(fn);
+    ftool.classList.toggle('is-on', fn > 0);
+
+    var dirty = fn > 0 || st.scope !== 'all';
+    resetB.forEach(function(b){ if (b.classList.contains('tally__x')) b.hidden = !dirty; });
+
+    list.hidden  = n === 0;
+    nohit.hidden = n > 0;
+    endL.hidden  = n === 0;
+    endL.textContent = 'That’s all ' + n + (n === 1 ? ' proposal' : ' proposals');
+
+    $$('[data-n]').forEach(function(el){
+      el.textContent = String(cards(el.getAttribute('data-n')).length);
+    });
+
+    $('[data-searchtitle]').textContent =
+      mode === 'decisions' ? 'Find a Decision proposal' : 'Find a Position proposal';
+
+    $$('[data-pane="sort"] [data-sort]').forEach(function(o){
+      o.setAttribute('aria-checked', o.getAttribute('data-sort') === st.sort ? 'true' : 'false');
+    });
+    $$('[data-pane="filter"] [data-cb]').forEach(function(o){
+      o.setAttribute('aria-checked', st.filt.indexOf(o.getAttribute('data-cb')) > -1 ? 'true' : 'false');
+    });
+    syncFilterHead();
+  }
+
+  /* ---------- mode ---------- */
+  $$('.modes [data-mode]').forEach(function(b){
+    b.addEventListener('click', function(){
+      st.mode = b.getAttribute('data-mode');
+      $$('.modes [data-mode]').forEach(function(x){
+        x.setAttribute('aria-selected', x === b ? 'true' : 'false');
+      });
+      render();
+      if (searchOpen()) runSearch();
+    });
+  });
+
+  /* ---------- chips ---------- */
+  function setScope(v){
+    st.scope = v;
+    $$('.scope__b').forEach(function(x){
+      x.setAttribute('aria-pressed', x.getAttribute('data-scope') === v ? 'true' : 'false');
+    });
+  }
+  $$('.scope__b').forEach(function(b){
+    b.addEventListener('click', function(){ setScope(b.getAttribute('data-scope')); render(); });
+  });
+
+  resetB.forEach(function(b){
+    b.addEventListener('click', function(){ st.filt = []; setScope('all'); render(); });
+  });
+
+  /* ---------- sort sheet: single-select, applies on tap ---------- */
+  $$('[data-pane="sort"] [data-sort]').forEach(function(o){
+    o.addEventListener('click', function(){
+      st.sort = o.getAttribute('data-sort');
+      render();
+      close();
+      if (searchOpen()) runSearch();
+    });
+  });
+
+  /* ---------- filter sheet: multi-select, Apply commits ---------- */
+  var draft = [];
+  var fpane = $('[data-pane="filter"]');
+
+  function syncFilterHead(){
+    var on = draft.length;
+    var pill = $('[data-count]', fpane);
+    var cl   = $('[data-clear]', fpane);
+    var lb   = $('[data-applylabel]', fpane);
+    pill.hidden = on === 0;
+    pill.textContent = on + ' on';
+    cl.disabled = on === 0;
+    lb.innerHTML = on === 0 ? 'Apply' : 'Apply <span class="btn__n">' + on + '</span>';
+  }
+  $$('[data-cb]', fpane).forEach(function(o){
+    o.addEventListener('click', function(){
+      var k = o.getAttribute('data-cb'), i = draft.indexOf(k);
+      if (i > -1) draft.splice(i,1); else draft.push(k);
+      o.setAttribute('aria-checked', i > -1 ? 'false' : 'true');
+      syncFilterHead();
+    });
+  });
+  $('[data-clear]', fpane).addEventListener('click', function(){
+    draft = [];
+    $$('[data-cb]', fpane).forEach(function(o){ o.setAttribute('aria-checked','false'); });
+    syncFilterHead();
+  });
+  $('[data-apply]', fpane).addEventListener('click', function(){
+    st.filt = draft.slice();
+    render();
+    if (searchOpen()) runSearch();
+    close();
+  });
+
+  /* ============================================================
+     SEARCH — client-side over the loaded page. There is no
+     proposal search endpoint; getListIdea takes no query param.
+     ============================================================ */
+  var q       = $('#q');
+  var qx      = $('#qx');
+  var reslist = $('#reslist');
+  var recent  = $('[data-recent]');
+  var results = $('[data-results]');
+  var resnone = $('[data-resnone]');
+
+  function searchOpen(){ return stack.indexOf($('[data-pane="search"]')) > -1; }
+  function hay(c){
+    return ((c.getAttribute('data-title') || '') + ' ' +
+            (c.getAttribute('data-by') || '')).toLowerCase();
+  }
+
+  function runSearch(){
+    var v = q.value.trim().toLowerCase();
+    qx.hidden = !v;
+    if (!v){ recent.hidden = false; results.hidden = true; resnone.hidden = true; return; }
+    recent.hidden = true;
+
+    var hits = cards(st.mode).filter(function(c){ return matches(c) && hay(c).indexOf(v) > -1; });
+
+    reslist.innerHTML = '';
+    hits.forEach(function(c){
+      var copy = c.cloneNode(true);
+      copy.hidden = false;
+      copy.classList.add('is-drawn');
+      copy.setAttribute('role','listitem');
+      reslist.appendChild(copy);
+    });
+
+    var n = hits.length;
+    results.hidden = n === 0;
+    resnone.hidden = n > 0;
+    $('[data-rescount]').textContent = n + (n === 1 ? ' result found' : ' results found');
+    $('[data-resterm]').textContent  = 'Nothing matches “' + q.value.trim() + '”';
+    $('[data-resscope]').textContent =
+      'No ' + (st.mode === 'decisions' ? 'Decision' : 'Position') +
+      ' proposal at Barcelona uses that word. Search reads titles and authors in the loaded set — ' +
+      'it does not read ballot options or comments.';
+  }
+
+  q.addEventListener('input', runSearch);
+  qx.addEventListener('click', function(){ q.value=''; runSearch(); q.focus(); });
+  $('#qwipe').addEventListener('click', function(){ q.value=''; runSearch(); q.focus(); });
+  $('#qclear').addEventListener('click', function(){
+    $('.recent', recent).innerHTML = '';
+    $('#qclear').disabled = true;
+  });
+  $$('[data-term]').forEach(function(b){
+    b.addEventListener('click', function(){ q.value = b.getAttribute('data-term'); runSearch(); q.focus(); });
+  });
+
+  /* ============================================================
+     THE LAYER — panes stack, so sort can open over search
+     ============================================================ */
+  var layer = $('#layer');
+  var scrim = $('#scrim');
+  var main  = $('main.screen');
+  var stack = [];
+  var openers = [];
+
+  function focusables(root){
+    return $$('button, [href], input, select, textarea, [tabindex]', root).filter(function(el){
+      return !el.hasAttribute('disabled') &&
+             el.getAttribute('tabindex') !== '-1' &&
+             el.offsetParent !== null;
+    });
+  }
+
+  function open(name, trigger){
+    var p = layer.querySelector('[data-pane="' + name + '"]');
+    if (!p || stack.indexOf(p) > -1) return;
+    if (name === 'filter') draft = st.filt.slice();
+
+    openers.push(trigger || null);
+    stack.push(p);
+    p.hidden = false;
+    p.style.zIndex = String(2 + stack.length);
+    p.style.transform = '';
+    layer.classList.add('is-open');
+    if (main) main.setAttribute('aria-hidden','true');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function(){
+      layer.classList.add('is-in');
+      p.classList.add('is-up');
+    });
+    p.setAttribute('tabindex','-1');
+    p.focus();
+    var sel = p.querySelector('[aria-checked="true"]');
+    if (sel && sel.scrollIntoView) sel.scrollIntoView({block:'nearest'});
+    if (name === 'search'){ runSearch(); setTimeout(function(){ q.focus(); }, reduce ? 0 : 340); }
+    document.addEventListener('keydown', onKey, true);
+  }
+
+  function close(){
+    var p = stack.pop();
+    if (!p) return;
+    var back = openers.pop();
+    p.classList.remove('is-up');
+    if (!stack.length){
+      layer.classList.remove('is-in');
+      document.removeEventListener('keydown', onKey, true);
+      if (main) main.removeAttribute('aria-hidden');
+      document.body.style.overflow = '';
+    }
+    setTimeout(function(){
+      p.hidden = true;
+      p.style.transform = '';
+      if (!stack.length) layer.classList.remove('is-open');
+    }, reduce ? 0 : 300);
+    if (back && back.offsetParent !== null) back.focus();
+    else if (stack.length) stack[stack.length - 1].focus();
+  }
+
+  function onKey(e){
+    var p = stack[stack.length - 1];
+    if (!p) return;
+    if (e.key === 'Escape'){ e.preventDefault(); close(); return; }
+    if (e.key !== 'Tab') return;
+    var f = focusables(p);
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    else if (!p.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+  }
+
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+    var o = e.target.closest('[data-open]');
+    if (o){ open(o.getAttribute('data-open'), o); return; }
+    if (e.target.closest('[data-close]')){ close(); return; }
+    if (e.target === scrim) close();
+  });
+
+  /* ---------- grabber drag ---------- */
+  var drag = null;
+  layer.addEventListener('pointerdown', function(e){
+    var g = e.target.closest ? e.target.closest('.sheet__grab') : null;
+    var p = stack[stack.length - 1];
+    if (!g || !p || !p.contains(g)) return;
+    drag = {y:e.clientY, t:Date.now(), dy:0, p:p};
+    p.classList.add('is-dragging');
+    if (g.setPointerCapture) g.setPointerCapture(e.pointerId);
+  });
+  layer.addEventListener('pointermove', function(e){
+    if (!drag) return;
+    drag.dy = Math.max(0, e.clientY - drag.y);
+    drag.p.style.transform = 'translateY(' + drag.dy + 'px)';
+    if (stack.length === 1) scrim.style.opacity = String(Math.max(0, 1 - drag.dy / 420));
+  });
+  function endDrag(){
+    if (!drag) return;
+    var d = drag.dy, ms = Math.max(1, Date.now() - drag.t), p = drag.p;
+    var fast = d / ms > 0.55;
+    drag = null;
+    p.classList.remove('is-dragging');
+    scrim.style.opacity = '';
+    if (d > 90 || (fast && d > 24)){ p.style.transform = 'translateY(101%)'; close(); }
+    else { p.style.transform = ''; }
+  }
+  layer.addEventListener('pointerup', endDrag);
+  layer.addEventListener('pointercancel', endDrag);
+
+  /* ---------- draw the bars once the cards are on screen ---------- */
+  var all = $$('.sh-vote-card');
+  if ('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting){ en.target.classList.add('is-drawn'); io.unobserve(en.target); }
+      });
+    }, {threshold:0.2});
+    all.forEach(function(c){ io.observe(c); });
+  } else {
+    all.forEach(function(c){ c.classList.add('is-drawn'); });
+  }
+
+  /* ---------- countdowns ---------- */
+  function pad(n){ return String(n).padStart(2,'0'); }
+  var clocks = $$('[data-countdown]').map(function(el){
+    return {el:el, left:parseInt(el.getAttribute('data-countdown'),10) || 0};
+  });
+  if (clocks.some(function(c){ return c.left > 0; })){
+    setInterval(function(){
+      clocks.forEach(function(c){
+        if (c.left <= 0) return;
+        c.left -= 1;
+        var h = Math.floor(c.left / 3600),
+            m = Math.floor((c.left % 3600) / 60),
+            s = c.left % 60;
+        c.el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+        c.el.setAttribute('datetime','PT' + h + 'H' + m + 'M' + s + 'S');
+      });
+    }, 1000);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<p class="dek">The gamification surface behind the Merits tab: the ledger that explains where a
+member's merits came from, the badge collection, a single badge in detail, and the moment a badge is
+awarded. Four pushed routes, reached from the Merits standing card.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Four screens behind the Merits tab</h2>
+
+  <p>The Merits tab shows a member where they stand. These four screens answer the questions that
+  follow: <b>how did I get here</b>, <b>what else is there to win</b>, <b>how do I win this one</b>,
+  and — the only one the member doesn't ask for — <b>you just won something</b>.</p>
+
+  <p>The current app has an <code>ACHIEVEMENTS</code> screen with two tabs, both captured empty, and a
+  separate <code>HALL OF FAME</code> list. Between them they use four different golds
+  (<code>#D4AF37</code>, <code>#B28401</code>, <code>#DFAA11</code> and a declared
+  <code>weaponBronzeColor</code>), and none of the four is a brand colour. <code>#DFAA11</code> is
+  literally <code>colorVeto</code> — the amber the app uses to show a proposal being blocked. So today
+  a celebration and a veto are painted the same colour.</p>
+
+  <p>The new palette has no gold and no metallics at all, so the badges are not medals. They are drawn
+  from the brand's own geometry: <b>a peak, held in a cell</b>. The glyph inside says what the member
+  did; the cell around it says how rare the badge is. The whole system is one accent
+  <code>#9BE222</code>, the surface ladder and the shape of the cell — no second hue anywhere on the
+  page. This is the biggest decision on these screens and the one worth your attention first: see
+  <em>Badge artwork</em> in the anatomy table and <em>Rarity</em> in the states table.</p>
+
+  <p>The four are separate screens, and each one has its own phone above, numbered and captioned.
+  They are pushed routes, so they carry a back arrow rather than the tab bar.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <p>Four screens, one device each: <b>1 merit history</b>, <b>2 badge collection</b>,
+    <b>3 badge detail</b> and <b>4 award moment</b>. The Region column says which screen a row belongs
+    to. The first three carry their own hero and back control; the award moment is presented over the
+    collection and carries its own dismiss.</p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Grouped by screen and region. Order matches the reading order within each screen. Values
+        as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>1 · History</td><td>Hero</td><td class="t-note">The <code>merits.html</code> hero
+          verbatim: <code>138px</code>, <code>16px</code> radius, gradient <code>112deg</code>
+          <code>#0D3617</code> → <code>#17481C</code> → <code>#0C3416</code>, white field triangles at
+          <code>2.4–3%</code>, three accent peaks bottom-right at <code>54% × 38%</code>. The knockout
+          athlete prop is dropped on pushed routes so the peaks stay clean.</td></tr>
+        <tr><td>1 · History</td><td>Back control</td><td class="t-note"><code>36px</code> circle,
+          <code>rgba(255,255,255,.12)</code>, white <code>1.9</code>-stroke chevron, top-left inside the
+          hero.</td></tr>
+        <tr><td>1 · History</td><td>Hero title lockup</td><td class="t-note">Tracked micro-label
+          <code>MERITS</code> (<code>10.5/700/.14em</code>, <code>rgba(255,255,255,.6)</code>) over
+          <code>HISTORY</code> at <code>34/800/-.025em</code> uppercase. The label carries the route so
+          the title can stay short enough to clear the peaks.</td></tr>
+        <tr><td>1 · History</td><td>Season summary</td><td class="t-note"><code>#1C2129</code> card,
+          <code>16px</code> radius and padding. <code>2,480</code> at <code>32/800</code> tabular,
+          <code>646 this month</code> in accent with the up-arrow from the standings delta, and a
+          <code>#13171E</code> panel holding the entry count.</td></tr>
+        <tr><td>1 · History</td><td>Section container</td><td class="t-note"><code>#080A0C</code> fill,
+          1 px <code>rgba(255,255,255,.075)</code>, <code>16px</code> radius, <code>12px</code>
+          padding. Holds the <code>SEASON 25/26</code> status pill and two <code>38px</code> icon
+          buttons, exactly as the standings container does.</td></tr>
+        <tr><td>1 · History</td><td>Group header</td><td class="t-note"><code>THIS WEEK</code> at
+          <code>11/700/.14em</code> <code>#5B606B</code> with a right-aligned accent subtotal
+          (<code>+346</code>). The subtotal is what makes it a ledger rather than a feed.</td></tr>
+        <tr><td>1 · History</td><td>Ledger row</td><td class="t-note"><code>34px</code>
+          <code>#13171E</code> icon tile at <code>12px</code> radius, title <code>13.5/600</code>,
+          context and date <code>11.5</code> <code>#99A0AE</code>, amount <code>14/700</code> accent
+          tabular. Rows are <code>11px</code> vertical with a <code>rgba(255,255,255,.045)</code> top
+          border, first child none.</td></tr>
+        <tr><td>1 · History</td><td>Source icons</td><td class="t-note">Each entry is attributed to the
+          surface that produced it, using that surface's own tab-bar glyph — War Room hammer, Backchat
+          mic, Merits trophy. Awards get the accent-wash tile
+          (<code>rgba(155,226,34,.12)</code>).</td></tr>
+        <tr><td>2 · Badges</td><td>Badge artwork</td><td class="t-note">Inline SVG on a
+          <code>72</code> box. Every badge is one <b>cell</b> plus one <b>glyph</b>. Cell paths carry
+          <code>pathLength="100"</code> so the progress arc can be expressed as a percentage of the
+          perimeter. No raster, no gradient, no metal, no gold.</td></tr>
+        <tr><td>2 · Badges</td><td>Cell — rarity</td><td class="t-note">Circle <code>r27</code>
+          (common) → octagon <code>r27</code> (uncommon) → hexagon <code>r27</code> with a faint outer
+          hexagon at <code>r33</code> (rare) → triangle <code>r27</code> with an outer triangle at
+          <code>r34</code> (elite). The cell <b>loses facets and sharpens</b> as rarity rises, so the
+          rarest badge is the closest thing to the bare peak in the mark. Ring weight
+          <code>1.6</code>.</td></tr>
+        <tr><td>2 · Badges</td><td>Glyph — the deed</td><td class="t-note">One vocabulary: peaks,
+          chevrons and a single diamond, all seated on a shared baseline at <code>y46</code>. Peak
+          count reads as magnitude, peak height as rank, an inverted peak as opposition, a solid range
+          as the summit, a diamond above the apex as origin. Twelve glyphs, no glyph reused.</td></tr>
+        <tr><td>2 · Badges</td><td>Grid</td><td class="t-note">Three columns, <code>8px</code> gap,
+          <code>grid-auto-rows:1fr</code> so every cell in the grid is the same height.
+          <code>#1C2129</code> tile at <code>12px</code> radius, <code>58px</code> badge, name
+          <code>12/600</code>, status line <code>10.5</code>.</td></tr>
+        <tr><td>2 · Badges</td><td>Filter row</td><td class="t-note">Four <code>32px</code> pills —
+          All / Earned / In progress / Locked. Pressed state is the accent wash with accent text; the
+          counts live in the status pill above (<code>6 OF 12 EARNED</code>) so the row fits
+          <code>375</code> without scrolling.</td></tr>
+        <tr><td>2 · Badges</td><td>Rarity legend</td><td class="t-note">A four-up strip of empty cells
+          at <code>44px</code> with the rarity name and the population band. Present because the shape
+          system is new and needs teaching once.</td></tr>
+        <tr><td>3 · Detail</td><td>Badge hero</td><td class="t-note">Same hero band, with the badge at
+          <code>104px</code> centred and in front of the peaks — the slot the knockout athlete occupies
+          on the tab screens.</td></tr>
+        <tr><td>3 · Detail</td><td>Title and rarity</td><td class="t-note"><code>KINGMAKER</code> at
+          <code>34/800</code> uppercase, then a <code>RARE</code> tag
+          (<code>26px</code>, <code>#13171E</code>) and the population in plain words —
+          <code>212 of 6,840 members · 3.1%</code>.</td></tr>
+        <tr><td>3 · Detail</td><td>How it's earned</td><td class="t-note">One sentence of rule, then a
+          progress panel: <code>8px</code> track on <code>#13171E</code> with an accent fill at
+          <code>70%</code>, labelled <code>7 of 10 motions</code> / <code>3 to go</code>. The same
+          figure appears twice on this screen — once as the arc on the cell, once as a bar — because
+          the arc alone is not readable to a number.</td></tr>
+        <tr><td>3 · Detail</td><td>Evidence list</td><td class="t-note">The three most recent motions
+          that counted, each with the date it carried and the majority the member voted with, and its
+          running index in the accent.</td></tr>
+        <tr><td>3 · Detail</td><td>Holders</td><td class="t-note">Six <code>30px</code> portraits
+          overlapping at <code>-9px</code> with a <code>2px</code> <code>#080A0C</code> ring, a plain
+          count sentence, then three named holders with the date they earned it. Portraits are from
+          <code>_assets/avatars.css</code>.</td></tr>
+        <tr><td>3 · Detail</td><td>Reward note</td><td class="t-note"><code>#1C2129</code> card with the
+          Merits trophy glyph in the accent: <code>+150 merits</code> on unlock. Ties the badge back to
+          the ledger in frame 1.</td></tr>
+        <tr><td>4 · Moment</td><td>Backdrop</td><td class="t-note">The collection behind
+          <code>blur(10px)</code> plus a <code>rgba(3,4,1,.55)</code> scrim, so the member can see what
+          they were looking at. The live modal blurs its backdrop the same way
+          (<code>σ ≈ 12–15pt</code>) — that part of the current build was right.</td></tr>
+        <tr><td>4 · Moment</td><td>Card</td><td class="t-note"><code>#1C2129</code>, 1 px
+          <code>rgba(255,255,255,.075)</code>, <code>16px</code> radius, <code>18px</code> padding. The
+          live card is <code>#21093E</code> with no border and separates from its backdrop only by
+          blur.</td></tr>
+        <tr><td>4 · Moment</td><td>The moment itself</td><td class="t-note">A <code>158px</code> art
+          area: the three-peak range motif at <code>196 × 52</code> in full accent, the badge at
+          <code>96px</code> cresting it, and twelve thin spokes filled with a radial gradient that
+          fades the accent to nothing by <code>r94</code> — so the fan reads as light off the badge
+          rather than as twelve green bars. No confetti, no particles, no clip-art.</td></tr>
+        <tr><td>4 · Moment</td><td>Copy and value</td><td class="t-note"><code>BADGE EARNED</code>
+          eyebrow, <code>MEMBER OF THE MATCH</code> at <code>26/800</code> uppercase, one sentence of
+          why, then <code>+250 MERITS</code> as a status pill beside the rarity tag.</td></tr>
+        <tr><td>4 · Moment</td><td>Actions</td><td class="t-note">Two <code>46px</code> pill buttons —
+          <b>Share</b> in <code>#9BE222</code> on <code>#0B0E06</code> with an upload glyph, and
+          <b>View badge</b> on <code>#13171E</code> — plus a <code>32px</code> ✕ dismiss top-right.
+          The live modal has one button, no share and no dismiss control of any kind.</td></tr>
+        <tr><td>All frames</td><td>Colour audit</td><td class="t-note">Every value on these screens is a
+          contract token, a shade already used on the Merits tab (<code>#0C3416</code>,
+          <code>#20262F</code>, <code>#222833</code>), or one of three disclosed neighbours on the same
+          ladder: <code>#0E1116</code> for a locked cell, <code>#1A1F27</code> for a pressed ghost
+          button, and a <code>brightness(1.08)</code> filter for the accent button. No new hue, no
+          gold, no metal.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <p>Everything below varies <em>inside</em> one of the four screens — badge states and rarity on the
+    collection (2) and badge detail (3), ledger rows on merit history (1), the presentation on the award
+    moment (4). The screens themselves are not states of each other.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Badge — earned</td><td class="t-note">Cell filled with the accent wash
+          <code>rgba(155,226,34,.12)</code>, ring in the accent, glyph solid <code>#9BE222</code>.
+          Caption reads <code>Earned 28 Dec</code>.</td></tr>
+        <tr><td>Badge — in progress</td><td class="t-note">Cell stays <code>#13171E</code>, glyph drops
+          to <code>rgba(255,255,255,.30)</code>, and an accent arc <code>2.8</code> wide runs
+          clockwise from the apex around the facets of the cell for the share earned. Caption carries
+          the number: <code>7 of 10</code>.</td></tr>
+        <tr><td>Badge — locked</td><td class="t-note">Cell <code>#0E1116</code>, ring reduced to a
+          dashed hairline (<code>2.2 / 2.6</code> of the perimeter), glyph reduced to a silhouette at
+          <code>rgba(255,255,255,.13)</code>. The shape is still there — the member can see what they
+          are missing — but it has no weight. Caption reads <code>Locked</code>.</td></tr>
+        <tr><td>Rarity</td><td class="t-note">Four bands carried by cell shape and ring strength only:
+          <b>Common</b> circle · <b>Uncommon</b> octagon · <b>Rare</b> hexagon with an outer ring ·
+          <b>Elite</b> triangle with an outer ring. Earned rings step
+          <code>.45 → .55 → .70 → .85</code> accent opacity, and Elite alone gets a stronger cell fill
+          at <code>rgba(155,226,34,.17)</code>. This is a description of how scarce a badge is, not a
+          ladder to climb — there is no bronze, no silver, no gold and no upgrade path.</td></tr>
+        <tr><td>Ledger — credit</td><td class="t-note">Amount in the accent with a leading
+          <code>+</code>, tabular figures so the column aligns.</td></tr>
+        <tr><td>Ledger — reversal</td><td class="t-note">The one downward row uses the semantic red
+          <code>#E2564A</code> and a true minus sign: <code>−40</code> for a vote withdrawn before the
+          motion closed. Shown so you can rule on whether merits are ever taken back.</td></tr>
+        <tr><td>Filter pill</td><td class="t-note">Resting <code>#1C2129</code> with
+          <code>#99A0AE</code> label; pressed <code>rgba(155,226,34,.12)</code> with an accent label.
+          Live in the build — tap them.</td></tr>
+        <tr><td>Moment — entering</td><td class="t-note">Card lifts <code>14px</code> and settles over
+          <code>.5s</code>; the peaks rise <code>26px</code> over <code>.8s</code>; the badge pops from
+          <code>.72</code> with a <code>1.06</code> overshoot; the ray fan turns once every
+          <code>34s</code>; the copy stages up in <code>60ms</code> steps. All on
+          <code>cubic-bezier(.16,1,.3,1)</code>.</td></tr>
+        <tr><td>Moment — shared</td><td class="t-note">Tapping Share confirms in place with a single
+          accent line, <code>Shared to Backchat</code>. No second dialog.</td></tr>
+        <tr><td>Moment — dismissed</td><td class="t-note">The ✕ closes the card and leaves a
+          <code>Replay the moment</code> pill on the blurred collection. That pill is review
+          scaffolding so you can watch the animation again; it would not ship.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note"><code>prefers-reduced-motion</code> disables every
+          transition <em>and</em> every animation. The moment then presents fully formed, which is the
+          correct still frame — nothing is only legible in motion.</td></tr>
+        <tr><td>Not built</td><td class="t-note">Empty ledger (a new member with no entries), the
+          all-badges-earned collection, loading skeletons and error states for all four
+          screens.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Token block</b> — copied verbatim from <code>merits.html</code>, itself sampled from the
+          War Room and Backchat dark-mode exports. Not one value invented.</li>
+        <li><b>Hero banner</b> — gradient, field triangles and the three accent peaks, unchanged.</li>
+        <li><b>Three-peak range motif</b> — the same path data as the hero, reused at
+          <code>196 × 52</code> as the centrepiece of the award moment.</li>
+        <li><b>Section container, status pill, icon button, pill button, row, avatar</b> — all from
+          <code>merits.html</code>.</li>
+        <li><b>Summary card</b> — the standings card construction, re-pointed at a season total.</li>
+        <li><b>Tab-bar glyphs</b> — the War Room, Backchat and Merits icons, reused at
+          <code>17px</code> to attribute each ledger entry to its source surface.</li>
+        <li><b>Portraits</b> — six faces from <code>_assets/avatars.css</code>.</li>
+        <li><b>Blurred backdrop</b> — the one thing worth keeping from the live congratulations
+          modal.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The badge system</b> — cell plus glyph, drawn from the peak motif. Replaces four
+          non-brand golds, a stock laurel pair, two unrelated crown illustrations and a
+          concave-cornered plaque frame with one geometry that costs nothing to extend.</li>
+        <li><b>Rarity by facet count</b> — circle → octagon → hexagon → triangle. A distinction carried
+          by shape and ring opacity instead of a new hue, per the palette rule.</li>
+        <li><b>Progress on the perimeter</b> — the accent arc riding the cell's own facets. The live
+          build has no progress indicator anywhere in this area.</li>
+        <li><b>Locked and in-progress states</b> — neither exists today; no locked silhouette, tier
+          marker or progress indicator appears on any of the six captured screens.</li>
+        <li><b>Merit ledger</b> — grouped by period with a subtotal per group. The nearest thing in the
+          code is <code>ItemCreditTransactionHistory</code>, a bare title-and-date pair.</li>
+        <li><b>Dates that resolve</b> — no date in the live capture set carries a year, on a surface
+          filtered by season. Here the season sits in the status pill and the period in the group
+          header, so <code>28 Dec</code> is never ambiguous.</li>
+        <li><b>The award moment</b> — angular ray fan on a radial fade, the peaks rising, the badge
+          cresting them, a <b>Share</b> action and a <b>✕ dismiss</b>. The live version is a static
+          card with generic three-ball clip-art in <code>#DFAA11</code> — the veto amber — with no
+          motion, no share and no way out other than the CTA.</li>
+        <li><b>Hero eyebrow on pushed routes</b> — a tracked micro-label above the title so the route
+          name can be short enough not to collide with the peaks.</li>
+        <li><b>Reversal row</b> — the semantic red used once, for merits taken back.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li><h3>Does the badge collection replace Achievements <em>and</em> Hall of Fame?</h3>
+      <p>Today there are three overlapping status surfaces: Achievements (tabbed
+      <code>Playoff titles</code> / <code>Leader status</code>, both captured empty), Hall of Fame (a
+      podium plus a holders list), and Credit/Reputation. We have assumed
+      <span class="flag">one badge collection replaces the Achievements tabs</span>, and that Hall of
+      Fame survives as the <em>Who holds it</em> section on each badge plus the podium already built on
+      the Merits tab. If Hall of Fame must stay a separate destination, say so — it changes the
+      navigation, not the artwork.</p></li>
+
+    <li><h3>Is the badge geometry the right answer to the gold problem?</h3>
+      <p>This is the decision to push back on if you are going to. The live badges use
+      <code>#D4AF37</code>, <code>#B28401</code>, <code>#DFAA11</code> and a bronze token; the new
+      palette has no gold and no metallics, and <code>#DFAA11</code> is the veto colour. Rather than
+      invent a metal, we made rarity structural — <span class="flag">facet count and ring opacity</span>
+      — so the whole system runs on one accent. The trade is that rarity is quieter than gold: it is
+      legible, but it does not shout across a room. If you want the loudest possible Elite badge we can
+      go further on scale and stroke weight, but we will not add a hue.</p></li>
+
+    <li><h3>What is a merit worth, and can it be taken away?</h3>
+      <p>The ledger figures are placeholders: <span class="flag">Member of the Match +250, badge earned
+      +100, veto held +80, seven-day streak +70, motion carried +60, votes cast +40, replies upvoted
+      +36, member invited +50</span>. We have also built one <span class="flag">−40 reversal</span> for a
+      vote withdrawn before the motion closed, in the semantic red. If merits only ever go up, that row
+      comes out and the red never appears on this surface. The live app also calls this currency three
+      things — <code>points</code>, <code>Reputation Points</code> and
+      <code>credit transactions</code>; we have used <b>merits</b> throughout and recommend retiring the
+      other two.</p></li>
+
+    <li><h3>Are these the right twelve badges?</h3>
+      <p>Only one badge name in the entire code snapshot is real:
+      <code>Member of the Match/Week/Season</code>. The other eleven — First Vote, Backchat Regular,
+      Derby Day, Recruiter, Streak Keeper, Top Ten, Veto Held, Kingmaker, Full Season, Founding Member,
+      Hall of Fame — are <span class="flag">our proposal</span>, chosen so that every one of the app's
+      four surfaces has something to earn. Confirm the roster and the earning rules; the artwork system
+      absorbs any number of badges without change.</p></li>
+
+    <li><h3>What are the rarity bands?</h3>
+      <p>We have assumed <span class="flag">Common = most members, Uncommon = 10–40%, Rare = 1–10%,
+      Elite = under 1%</span>, computed live from the holder count rather than assigned by hand. If
+      rarity is instead editorial — someone decides a badge is Elite — the bands need naming and the
+      legend copy changes.</p></li>
+
+    <li><h3>Where does Share go?</h3>
+      <p>We have assumed <span class="flag">Backchat</span>, since it is the app's own social surface and
+      keeps the member inside the product. The alternative is the OS share sheet to Instagram and X,
+      which needs a designed share card at story dimensions — a separate piece of work.</p></li>
+
+    <li><h3>The default avatar has to be replaced.</h3>
+      <p>Not a question so much as a blocker. The current default avatar is watermarked marketing
+      key-art: the circular crop cuts the burned-in wordmark to <code>SPORTSHEI</code>, and a red
+      <code>…WED BY 1.00 PIXELS</code> watermark plus a yellow-and-black hazard bar are plainly legible
+      at the <code>90pt</code> podium size. The same image renders five times on one Hall of Fame
+      screen. Every portrait on these frames comes from <code>_assets/avatars.css</code> instead, but a
+      licensed or generated default-avatar asset is still needed before any of this ships. We would
+      propose a badge cell with no glyph as the fallback — it is already in the file and needs no new
+      art.</p></li>
+
+    <li><h3>One thing to confirm rather than decide.</h3>
+      <p>These are pushed routes, so they carry a back arrow and <b>no tab bar</b> — matching how the
+      live Achievements and Hall of Fame routes behave. If you would rather the tab bar stayed visible
+      throughout, all four frames gain <code>58px</code> of bottom chrome and the moment's card moves
+      up.</p></li>
+  </ol>
+</section>

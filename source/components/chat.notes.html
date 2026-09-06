@@ -1,0 +1,177 @@
+<p class="dek">The live text lane that runs beside the audio while a locker room is open. A member
+reads it with one thumb while somebody else is talking, types two words, and never comes back to
+it — which is why it is built nothing like the Comments thread that hangs off a proposal.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The third talking surface, and the fastest one</h2>
+  <p>SportsHeist now has three places where members say things, and they are easy to confuse.
+    <b>Locker room</b> is the audio stage — hands up, mics, speakers, reactions, and nobody types.
+    <b>Comments</b> is the argument attached to a War Room proposal — a bordered panel of rows,
+    threaded one level, sortable, with agree and disagree counts, meant to be re-read the day a
+    vote closes. This screen is neither. It is the chat lane inside a room that is already live:
+    ephemeral, fast, dozens of short messages, read once and in the order they arrived.</p>
+  <p>Four rules keep it from drifting into either of the others. <b>Order is the only
+    structure</b> — no replies, no indent, no sort control, because a chat you can re-order is a
+    comment thread with a worse composer. <b>Nothing is counted</b> — Comments carries agreement
+    as ink, chat does not carry agreement at all. <b>Bubbles on the canvas, not rows in a
+    panel</b>, because a bubble's width tells you a message is two words long before you read it.
+    And <b>one accent fill on the whole screen — the send button</b>, exactly as in Comments,
+    where it means "post" and nothing else.</p>
+  <p>The screen is a proposal in full. The four kinds of author, the grouping rule, the system
+    lines, the unread divider, the jump-to-latest control, the typing indicator, every send state
+    and the moderation states are all new; see <b>Provenance</b> for the line-by-line split.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Room bar</td><td>Minimise · Live pill · people</td><td class="t-note">Lifted whole from <code>locker-room.html</code>. <code>38px</code> circular icon buttons on <code>--surface</code> with an <code>::after</code> inset to a <code>44px</code> hit area; the Live pill is the kit status pill — <code>--acid-wash</code> fill, <code>32px</code>, accent <code>11/700/.11em</code> caps, <code>6px</code> leading dot that pulses on a <code>2.4s</code> cycle.</td></tr>
+        <tr><td>Room bar</td><td>Topic + byline</td><td class="t-note">Topic <code>28/800/-.025em</code> uppercase, clamped to two lines. Byline <code>12.5px</code> <code>--muted</code>: <b>Hosted by taythaytu · 214 listening</b>, tabular figures.</td></tr>
+        <tr><td>Room bar</td><td>Stage / Chat switch</td><td class="t-note">The <code>.tax</code> segmented control from <code>results-actions.html</code>, unchanged: <code>46px</code> track on <code>--sunken</code>, <code>38px</code> buttons, selected item takes the accent fill with <code>--acid-ink</code>. It is chrome — it switches views, it holds no opinion — so it is allowed the fill. The unread total sits on the Chat side.</td></tr>
+        <tr><td>Log</td><td>Container</td><td class="t-note">A plain list on the canvas at the <code>16px</code> gutter. <b>No panel, no card, no hairlines</b> — the opposite of the Comments thread, which is a <code>--surface</code> panel divided by <code>--line-soft</code> rules.</td></tr>
+        <tr><td>Log</td><td>Bubble</td><td class="t-note"><code>--surface</code> fill, <code>14px</code> radius with the tail corner at <code>4px</code>, <code>9px 12px 10px</code> padding, text <code>14/1.42</code> white — <code>14.5:1</code> on <code>--surface</code>. Max width <code>calc(100% − 36px)</code>. <code>3px</code> between bubbles inside a run.</td></tr>
+        <tr><td>Log</td><td>Portrait + name row</td><td class="t-note"><code>28px</code> circle, bottom-aligned to the bubble, <code>8px</code> gap. Name <code>12/600</code> <code>--muted</code>, time <code>11px</code> <code>--dim</code> tabular. Portraits from <code>_assets/avatars.css</code> on <code>locker-room.html</code>'s mapping — <code>--av-01</code> taythaytu, <code>04</code> capitan_7, <code>07</code> scout_mode, <code>10</code> fan_pulse, <code>13</code> dons_mode, <code>16</code> dylan_n (you), <code>17</code> tiki_taka_ana.</td></tr>
+        <tr><td>Log</td><td>Grouped continuation</td><td class="t-note">Same author inside two minutes: portrait and name row dropped, a <code>36px</code> indent holds the avatar column open, gap falls <code>12px → 3px</code>, and only the last bubble in the run keeps its <code>4px</code> tail corner.</td></tr>
+        <tr><td>Log</td><td>Your own message</td><td class="t-note">Right aligned, <b>no portrait</b> (which buys <code>36px</code> of measure on a 375 pt screen), the literal word <b>You</b>, and a <code>1px</code> inset accent hairline at <code>rgba(155,226,34,.30)</code>. Tail flips to bottom-right. <b>No accent fill and no accent wash</b> — those belong to the send button and, in Comments, to the ballot.</td></tr>
+        <tr><td>Log</td><td>The host</td><td class="t-note">Four markers, no hue: a <code>HOST</code> monochrome badge tile, the name at white <code>700</code> against every other name at <code>--muted 600</code>, a <code>2px</code> rail at <code>rgba(255,255,255,.28)</code> on the bubble's leading edge, and a <code>1.5px</code> <code>--muted</code> ring on the portrait.</td></tr>
+        <tr><td>Log</td><td>The club account</td><td class="t-note"><code>comments.html</code>'s construction reused whole: the portrait becomes a <code>28px</code> monochrome crest tile at <code>8px</code> radius — a rounded square, because an institution is not a person — plus a <code>CLUB</code> badge, the shield-and-tick verified glyph, a <code>--sunken</code> bubble with a <code>1px --line</code> ring, and the <code>PINNED BY THE CLUB</code> tracked micro-label.</td></tr>
+        <tr><td>Log</td><td>System line</td><td class="t-note">Not a bubble, because nobody said it: centred <code>11px</code> <code>--dim</code> with a <code>13px</code> glyph, names in <code>--muted 600</code>. Joined, left, room opened, and removed-by-a-moderator.</td></tr>
+        <tr><td>Log</td><td>Unread divider</td><td class="t-note">A hairline in <code>rgba(155,226,34,.30)</code> either side of a <code>24px</code> <code>--sunken</code> pill with the same accent hairline and an accent <code>9.5/700/.13em</code> caps count. Accent as ink at <code>9.6:1</code>, never a fill.</td></tr>
+        <tr><td>Log</td><td>Sending</td><td class="t-note">Bubble placed immediately at <code>72%</code> opacity, with a <code>12px</code> clock glyph and the word <b>Sending</b> below it. Deliberately <b>not</b> the <code>135°</code> accent hatch — the contract reserves that for genuinely paused states.</td></tr>
+        <tr><td>Log</td><td>Failed</td><td class="t-note"><code>1px</code> <code>rgba(226,86,74,.28)</code> ring on the bubble, a <code>12px</code> <code>#E2564A</code> warning glyph, the words <b>Not sent · no connection</b>, then <b>Delete</b> and <b>Retry</b>. Message text stays full-contrast white: a failure is loud, not disabled. Red carries the glyph and the hairline only — <code>#E2564A</code> is <code>4.36:1</code> on <code>--surface</code>.</td></tr>
+        <tr><td>Log</td><td>Typing indicator</td><td class="t-note"><code>22px</code> stacked portraits overlapped <code>−8px</code>, a <code>26px</code> <code>--surface</code> pill holding three <code>5px</code> dots on a <code>1.25s</code> stagger, then the <b>names</b> — capped at two plus a count. It sits at the foot of the log, never in the composer: it is somebody else's activity, not the state of your field.</td></tr>
+        <tr><td>Pinned</td><td>Jump to latest</td><td class="t-note"><code>38px</code> pill on <code>--surface</code> with a <code>1px --line</code> inset ring and a <code>--acid-wash</code> count chip, <code>::after</code> to <code>44px</code>. Lives inside the pinned composer layer at <code>−52px</code>, so it never scrolls away and never lands on a message. Hidden while the foot of the log is on screen.</td></tr>
+        <tr><td>Pinned</td><td>Composer</td><td class="t-note"><code>comments.html</code> unchanged: <code>--surface</code> field at <code>12px</code> radius with <code>1px --line</code>, the accent border and <code>3px --acid-wash</code> focus ring, <code>16px</code> value text (below <code>16px</code> iOS zooms the page on focus), <code>44px</code> minimum height, <code>44px</code> accent send disc. Band is <code>rgba(3,4,1,.93)</code> with a <code>14px</code> backdrop blur and a <code>1px --line</code> top edge. Outside <code>&lt;main&gt;</code>, per the contract.</td></tr>
+        <tr><td>Pinned</td><td>Composer strip</td><td class="t-note">One slot above the field, never two occupants at once: connection state, the muted notice, or slow mode. <code>11.5px</code> <code>--muted</code> with a <code>14px</code> glyph and a trailing link.</td></tr>
+        <tr><td>Empty</td><td>Empty state</td><td class="t-note"><code>dialogs.html</code>'s empty panel: <code>--section</code> fill, <code>1px --line</code>, <code>--r-card</code>, a <code>52px</code> neutral-wash tile at <code>14px</code> radius holding a <code>1.5</code>-stroke glyph, and a <b>secondary</b> pill. Per Comments, a full-width accent pill in a talking surface is the ballot's <em>Vote</em> button and nothing here may look like it.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>A member</td><td class="t-note">The baseline. Round portrait, left aligned, tail bottom-left, name in <code>--muted 12/600</code>.</td></tr>
+        <tr><td>You</td><td class="t-note">Right aligned, portrait dropped, <code>1px</code> accent hairline, the word <b>You</b>. Three signals, none of them a fill.</td></tr>
+        <tr><td>Host</td><td class="t-note"><code>HOST</code> badge · white <code>700</code> name · <code>2px</code> white leading rail · <code>1.5px</code> portrait ring.</td></tr>
+        <tr><td>Club account</td><td class="t-note">Crest tile as a rounded square · <code>CLUB</code> badge · verified shield · <code>--sunken</code> bubble with a <code>--line</code> ring · optional <code>PINNED</code> label.</td></tr>
+        <tr><td>Grouped run</td><td class="t-note">Portrait and header dropped, <code>36px</code> indent, <code>3px</code> gaps, tail only on the last bubble. Broken by a new author, a two-minute gap, or a system line.</td></tr>
+        <tr><td>Joined / left</td><td class="t-note">Centred system line with a door glyph. Anything inside a 30-second window batches into one line, capped at two names plus a count — a 200-person room that logged every join would be a list of arrivals with a conversation buried in it.</td></tr>
+        <tr><td>Removed by a moderator</td><td class="t-note">The bubble is replaced by a system line naming the author and the fact of removal. Keeps the Comments rule: an icon, a plain sentence, and no colour doing the work.</td></tr>
+        <tr><td>Unread</td><td class="t-note">Accent hairline plus a <code>--sunken</code> pill carrying the count. Survives one scroll past it, then clears.</td></tr>
+        <tr><td>Sending</td><td class="t-note">Bubble in place at <code>72%</code> opacity, clock glyph, the word <b>Sending</b>.</td></tr>
+        <tr><td>Failed</td><td class="t-note">Red hairline, red glyph, <b>Not sent</b> plus a cause, then <b>Retry</b> and <b>Delete</b>. Retry re-sends in place and keeps the original position in the log; Delete needs no confirmation, because nothing left the device.</td></tr>
+        <tr><td>Composer · empty</td><td class="t-note">Send is disabled — <code>--sunken</code> disc, <code>--dim</code> glyph.</td></tr>
+        <tr><td>Composer · composing</td><td class="t-note">Accent border and <code>3px</code> wash. Grows one <code>23px</code> line at a time to <code>68px</code>, then scrolls. The counter appears at <b>40 characters remaining</b> of <b>300</b>; over the limit it takes a minus sign, a warning glyph, the red field border, and send disables.</td></tr>
+        <tr><td>Composer · sending</td><td class="t-note">Send disc goes <code>--sunken</code> with an accent ring spinner, <code>aria-busy="true"</code>, pointer events off, so it can't be double-submitted.</td></tr>
+        <tr><td>Composer · reconnecting</td><td class="t-note">Strip above the field with a ring spinner and the promise that anything typed now goes out when the room is back. The field keeps its text and stays enabled.</td></tr>
+        <tr><td>Composer · muted</td><td class="t-note">The field is <b>replaced</b>, not greyed: a <code>--sunken</code> bar with the reason, the end time and an <b>Appeal</b> link. A greyed field with a live placeholder invites a member to type a paragraph into a box that will throw it away.</td></tr>
+        <tr><td>Jump to latest</td><td class="t-note">Hidden while the foot of the log is on screen. Carries the unread count when there is one, and no count when the member has simply scrolled up. The log auto-scrolls only when already at the foot.</td></tr>
+        <tr><td>Empty</td><td class="t-note">Neutral tile, two lines, secondary pill. Names the size of the audience, because "be first in an empty room" and "be first in front of 214 people" are different decisions.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions off; the typing dots, the send spinner and the Live pulse all stop. The dots hold at <code>70%</code> opacity so the indicator still reads.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the library</h3>
+      <ul>
+        <li><b>Composer, field, focus ring, counter and the 44 px send disc</b> — <code>comments.html</code>, unchanged construction</li>
+        <li><b>Badge tile, crest tile, verified shield, PINNED micro-label</b> — <code>comments.html</code></li>
+        <li><b>Room bar, Live status pill, 38 px icon button</b> — <code>locker-room.html</code></li>
+        <li><b>Segmented Stage / Chat switch</b> — the <code>.tax</code> control from <code>results-actions.html</code></li>
+        <li><b>Empty panel, 52 px state tile, ring spinner</b> — <code>dialogs.html</code></li>
+        <li><b>44 px hit-area expansion via <code>::after</code></b> — the contract's sanctioned pattern, on every control under 44 px</li>
+        <li><b>Portraits and the username mapping</b> — <code>_assets/avatars.css</code> as used by <code>locker-room.html</code></li>
+        <li><b>Room, topic and host</b> — the same <b>Post-Match Breakdown</b> room, hosted by <b>taythaytu</b>, that <code>locker-room.html</code> shows the audio side of</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The whole screen.</b> <code>chat_body.dart</code> is the Backchat <em>home</em> scaffold — two 20%-opacity background PNGs, the shared hero with an <code>AddNewRoom</code> button, and a pull-to-refresh list of Fan Stadium plus live and upcoming rooms. There is no message list, no composer, no message model, no send call and no chat socket anywhere in the repository; <code>SocketIO</code> carries only <code>like</code> and <code>voted</code> proposal events. The bubbles, composer, send and emoji controls in the Backchat atlas (<code>BC-C60</code>–<code>BC-C64</code>) exist only in the BC-03/BC-04 screenshots, which the atlas records as <em>not located — no counterpart anywhere in lib/</em>.</li>
+        <li><b>Author distinction of any kind.</b> The shipped bubble is a single <code>#542BE2</code> pill with <em>no author, avatar, timestamp, in/out variant or max width</em>. Own-versus-others, host, club and system lines are all new.</li>
+        <li><b>Consecutive-message grouping</b> and the two-minute run rule — new</li>
+        <li><b>Join / leave system lines</b>, batched at 30 seconds and capped at two names — new</li>
+        <li><b>Unread divider</b> — new</li>
+        <li><b>Jump to latest</b>, and the rule that the log only auto-scrolls when already at the foot — new</li>
+        <li><b>Typing indicator</b> with names — new</li>
+        <li><b>Sending, failed, Retry and Delete</b> — new. The shipped send button has <em>no disabled rendering at all</em>.</li>
+        <li><b>Character limit, counter and the growth cap</b> — new; there is no limit or counter on the shipped composer</li>
+        <li><b>Return sends, Shift+Return newlines</b> — new</li>
+        <li><b>Reconnecting and muted composer states</b> — new</li>
+        <li><b>Removed-by-a-moderator line, and the overflow as the only route to Report</b> — new here, extending the moderation set <code>comments.html</code> proposed</li>
+        <li><b>Empty state</b> — new; there is no empty chat anywhere in the capture set</li>
+        <li><b>14 px bubble radius and the 4 px tail corner</b> — the only radii in the file outside the kit's three. The shipped bubble is <code>R≈36</code>, a full pill at one line, which reads as a control rather than as speech.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Is there a text chat at all, and who runs it?</h3>
+      <p>This is the first question, because nothing in the Flutter app sends a message. The room
+        runtime that produced BC-03 and BC-04 sits outside the repository — no RTC dependency, no
+        room page, and a font family that appears nowhere else in the product — so the bubbles in
+        those screenshots are almost certainly a third-party SDK's own UI. If that stays true,
+        this design is a <span class="flag">specification for a surface the SDK vendor would have
+        to be able to skin</span>, and the practical answer may be that the chat is built in-house
+        against the existing socket instead. We need to know which before build.</p></li>
+    <li><h3>Is the chat ephemeral or kept?</h3>
+      <p>Everything here assumes <span class="flag">ephemeral</span> — the log lives as long as
+        the room does and is gone when it closes. That assumption drives the absence of search,
+        of day dividers, of permalinks and of a "load earlier" control. If chat is retained and
+        readable after the room ends, it needs all four, plus a decision about whether a member
+        can delete their own history.</p></li>
+    <li><h3>Who can post, and is there a rate limit?</h3>
+      <p>The audio stage has hands-up and a speaker list, so a room already has a permission
+        model for talking. We have assumed <span class="flag">every attendee can type
+        immediately</span>, with no slow mode and no listener-only lock. A 200-person room during
+        a derby will need at least a host-controlled slow mode; the composer's strip has a slot
+        reserved for it, but the rule is not designed.</p></li>
+    <li><h3>Who moderates, and how fast?</h3>
+      <p>We have proposed a mute with an end time and an appeal, and a removed-message line, on
+        the same reasoning as <b>Comments</b> — a product with members under 18 cannot ship a live
+        unmoderated chat. But a live surface needs someone acting in <em>seconds</em>, not the
+        next working day. Does the host moderate their own room, does the club, or is there a
+        SportsHeist queue? We have assumed <span class="flag">the host can mute inside their own
+        room and the club moderates removals</span>.</p></li>
+    <li><h3>Are reactions and emoji in or out?</h3>
+      <p>The captures show a floating reaction layer and a <code>~54pt</code> emoji button inside
+        the composer, and <code>locker-room.html</code> already rebuilt reactions as a drawn tray
+        on the <em>audio</em> surface. We have left <span class="flag">both out of the chat</span>
+        so that reactions mean one thing in one place. If an emoji picker goes into the composer,
+        it needs a drawn glyph set — the contract permits no system emoji, and the shipped 🙏 is a
+        platform glyph the brand cannot recolour.</p></li>
+    <li><h3>Does 14 px body text stand?</h3>
+      <p>The contract's measured scale puts body copy at <code>13/400</code>, and Comments sets
+        comment text at <code>13px</code>. Chat bubbles here are <span class="flag">14px</span> —
+        the document's own body size — on the grounds that a live surface is read at a glance,
+        one-handed, while listening to something else. It is a deliberate one-step increase and
+        we would rather have it signed off than discovered.</p></li>
+    <li><h3>Should the room's unread total appear on the Backchat tab?</h3>
+      <p>The Stage / Chat switch carries the room's unread count. Nothing yet decides whether that
+        number also escapes the room — onto the Backchat tab badge, or into Alerts. We have
+        assumed <span class="flag">it does not</span>: a chat that pushes a badge for every
+        message trains members to ignore the badge.</p></li>
+  </ol>
+</section>

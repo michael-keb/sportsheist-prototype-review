@@ -1,0 +1,232 @@
+<p class="dek">The screen a member uses to schedule a Locker Room — Backchat's live audio rooms — and the
+same screen again for editing or deleting one. It is reached from the <b>+</b> control beside
+<em>Locker Rooms</em> on Backchat, and from <em>Edit</em> on any upcoming room you host.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The biggest screen in Backchat, and the only one with no design</h2>
+
+  <p>This editor is the largest single file in the Backchat feature — <code>1,207</code> lines —
+  and there is no Figma frame for it, in either the old violet theme or the new dark one. It has
+  only ever existed as code. So this is the first time it has been designed, rather than
+  translated, and the twelve frames on the left are laid out in the order a host actually moves
+  through: write the topic, choose who can get in, set when it opens, invite people, review, and
+  publish. Then the same screen again as <em>Edit room</em>, with the delete path.</p>
+
+  <p>The thing that shaped the whole design is how little the room actually stores. The request the
+  app sends carries exactly <b>four</b> pieces of information: the topic, the moment it opens,
+  whether it is open or locked, and who is invited. There is no description, no duration, no end
+  time and no speaker list anywhere in it. Rather than draw fields that no part of the system could
+  accept, the screen collects those four things properly and <em>states</em> the consequences of
+  the gaps — for example, <code>Duration</code> appears as a read-only line saying
+  <b>Open-ended</b>, because a room genuinely has no scheduled end. Whether it should is one of the
+  questions at the foot of this page.</p>
+
+  <p>Three things in the shipped build are broken rather than merely undesigned, and all three are
+  fixed here. Two shipped strings are wrong and are corrected on screen — the delete dialog reads
+  <code>Delete this rooms?</code> and the validation dialog reads <code>Start at must greater than
+  current time</code>. And the <b>Now</b> shortcut on the time picker can never succeed: it
+  resolves to the moment the screen was opened, which the app then rejects for being in the past.
+  Details in <em>States</em>.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>App bar</td><td>Bar</td><td class="t-note"><code>56px</code> tall on <code>#030401</code>, one <code>1px rgba(255,255,255,.045)</code> hairline, no shadow. Close ✕ left in a <code>38px</code> transparent disc with a <code>44px</code> hit area, title left at <code>15/800/.08em</code> uppercase, club or countdown right at <code>10.5/700/.12em</code> in <code>#5B606B</code>. The shipped bar is hard-coded white with a black drop shadow at offset <code>0,6</code> blur <code>6</code> and a centred Bebas title — the only Backchat app bar carrying a shadow.</td></tr>
+        <tr><td>Compose</td><td>Section heading</td><td class="t-note"><code>18/600/-.015em</code> white at the gutter — <b>What is the room about?</b> — with a <code>13px</code> <code>#99A0AE</code> line under it.</td></tr>
+        <tr><td>Compose</td><td>Topic field</td><td class="t-note"><code>forms.html</code> exactly: label outside the box above the control at <code>12.5/600</code> white, an acid <code>*</code> for required, a <code>0/80</code> counter on the label's baseline, then the <code>52px</code> <code>--r-panel</code> shell in <code>#1C2129</code> with a <code>1px rgba(255,255,255,.075)</code> edge. Value <code>16px</code> so iOS does not zoom on focus. The shipped box is square-cornered <code>borderButton</code> with a light-theme hint at <code>black</code> 30%.</td></tr>
+        <tr><td>Compose</td><td>Room type tiles</td><td class="t-note">Two <code>104px</code> tiles in a <code>1fr 1fr</code> grid, <code>10px</code> gap. Chosen tile: <code>rgba(155,226,34,.12)</code> over <code>#13171E</code>, rim <code>rgba(155,226,34,.30)</code>, accent <code>24px</code> padlock, accent label <em>and</em> a filled <code>20px</code> acid tick. Unchosen keeps <code>#1C2129</code> and a <code>rgba(255,255,255,.20)</code> ring. The state is carried four ways, never by the ring alone.</td></tr>
+        <tr><td>Schedule</td><td>Summary strip</td><td class="t-note"><code>#13171E</code>, <code>--r-panel</code>, <code>12/14</code> padding, acid clock glyph, <code>Opens <b>Sunday 2 August, 8:30 PM</b></code> with <code>in 3 days</code> right-aligned in accent.</td></tr>
+        <tr><td>Schedule</td><td>Date + time row</td><td class="t-note"><code>forms.html</code>'s <code>.two-up</code> primitive: a three-row grid whose children re-use its rows with <code>grid-template-rows:subgrid</code>, so both labels sit in one row and both controls in one row. Verified in the build — the two boxes are <code>52px</code> each and their tops are identical to the pixel at both <code>375</code> and <code>430</code>.</td></tr>
+        <tr><td>Schedule</td><td>Duration</td><td class="t-note">A disabled <code>52px</code> control reading <b>Open-ended</b> on <code>#13171E</code> with a <code>rgba(255,255,255,.045)</code> edge, and a helper stating that the room runs until the host closes it. Read-only because no end time exists in the data.</td></tr>
+        <tr><td>Date sheet</td><td>Shell</td><td class="t-note"><code>sheets.html</code> unchanged: <code>18px</code> top corners, <code>#1C2129 → #13171E</code> at 180deg, <code>40 × 4</code> grabber, head title at <code>11/700/.14em</code>, foot padded by <code>env(safe-area-inset-bottom)</code>.</td></tr>
+        <tr><td>Date sheet</td><td>Month grid</td><td class="t-note">Week starts Monday. Selected is a <code>34px</code> acid disc with <code>#0B0E06</code> ink; today is a <code>1px rgba(155,226,34,.30)</code> ring; past days are <code>#5B606B</code>, struck through and inert; <b>Previous month</b> is disabled when the whole month is behind us.</td></tr>
+        <tr><td>Time sheet</td><td>Three lists</td><td class="t-note"><code>1fr 1fr 74px</code> grid of <code>180px</code> scrollers on <code>#13171E</code>. Rows are <code>38px</code>, <code>15/600</code> tabular. Chosen row is <code>rgba(155,226,34,.12)</code> with accent text. Column headings are sticky, because a twelve-item hour list scrolls its own heading away. Minutes are quarters only.</td></tr>
+        <tr><td>Time sheet</td><td>Offset row</td><td class="t-note">Six <code>36px</code> pills, horizontally scrolling: <code>Now · In an hour · In two hours · In three hours · In five hours · In twelve hours</code> — the exact six shipped values. Pressed pill takes the accent wash and the 30% rim. Interactive in this file: pressing one recomputes the readout above it from the clock.</td></tr>
+        <tr><td>Invites</td><td>Search trigger</td><td class="t-note">The same <code>52px</code> shell as a button, magnifier left, <code>+</code> right, placeholder in <code>#5B606B</code>. Opens the invite sheet.</td></tr>
+        <tr><td>Invites</td><td>List heading</td><td class="t-note"><code>IN THE ROOM</code> at <code>10/700/.14em</code> in <code>#5B606B</code>, with the count as an accent-wash pill at <code>10.5/700</code> tabular on the right.</td></tr>
+        <tr><td>Invites</td><td>Member row</td><td class="t-note"><code>60px</code> minimum, top hairline <code>rgba(255,255,255,.045)</code>, <code>40px</code> avatar at <code>background-position:center 22%</code>, username at <code>14.5/600</code>, role beneath at <code>10/700/.13em</code>. The host row's role is accent with a microphone glyph and its trailing control is a padlock, not a ✕. Everyone else gets a <code>38px</code> remove disc on <code>#13171E</code> that turns red-wash on hover, with a <code>44px</code> hit area.</td></tr>
+        <tr><td>Invites</td><td>Empty state</td><td class="t-note"><code>#13171E</code> panel, <b>Nobody invited yet</b> at <code>13.5/600</code> white over a <code>12.5px</code> <code>#99A0AE</code> line, plus a real checkbox for <em>I'll invite people once the room starts</em>.</td></tr>
+        <tr><td>Invite sheet</td><td>Rows</td><td class="t-note"><code>48px</code> minimum, <code>36px</code> avatar, a second line of context (<em>In 4 of your rooms</em>), and a <code>22px</code> round tick. Grouped: <b>Already invited</b> first, then <b>Barcelona members</b>. Search sticks to the top of the scroller on a hairline. <b>Done</b> sits in the head in accent.</td></tr>
+        <tr><td>Review</td><td>Dialog</td><td class="t-note"><code>dialogs.html</code>'s shell: <code>100% − 40</code> wide, <code>--r-card</code>, <code>20px</code> padding, <code>#1C2129</code>, <code>0 24 60 rgba(0,0,0,.55)</code>, <code>30px</code> close top right. Neutral <code>44px</code> icon tile, question title at <code>18/600</code>, consequence at <code>13/400</code>, then a four-row read-back on <code>#13171E</code> and the <code>46px</code> action pair.</td></tr>
+        <tr><td>Created</td><td>Dialog</td><td class="t-note">Same shell. <code>52px</code> acid-wash disc with a drawn tick, <code>ROOM CREATED</code> at <code>22/800</code> uppercase, then the real <code>backchat.html</code> room card on <code>#13171E</code> so the host sees exactly what the club will see. Actions are <b>Share</b> and <b>Done</b>.</td></tr>
+        <tr><td>CTA</td><td>Docked bar</td><td class="t-note"><code>#080A0C</code> with a <code>1px rgba(255,255,255,.075)</code> top edge, padded by <code>env(safe-area-inset-bottom)</code>. Buttons are <code>52px</code> pills — one full-width on create, or <b>Delete</b> beside <b>Save changes</b> on edit. Optional <code>11.5px</code> hint line under, centred, in <code>#5B606B</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <div class="tablewrap">
+    <table>
+      <caption>The two editor modes, the field states, and the three defects corrected.</caption>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Create</td><td class="t-note">Bar reads <b>Schedule a room</b> with the club on the right. Empty topic, <b>Open room</b> pre-selected, no start time chosen yet, nobody invited. One full-width CTA, disabled with its reason showing. The shipped build seeds the start with <code>DateTime.now()</code>, which is what makes the <b>Now</b> defect below possible.</td></tr>
+        <tr><td>Edit</td><td class="t-note">Bar reads <b>Edit room</b> with <em>Opens in 3 days</em> on the right. Every field carries its stored value and the foot splits into <b>Delete</b> and <b>Save changes</b>. The two modes are the whole of <code>LockerRoomEditorState</code> — it has exactly two values, <code>create</code> and <code>edit</code>, and in the shipped build the only thing it changes is that button row.</td></tr>
+        <tr><td>CTA disabled</td><td class="t-note"><code>#13171E</code> fill, <code>#5B606B</code> label, <code>1px</code> edge, and always a reason underneath — <em>Add a topic and a start time to continue.</em> Never a dead button with no explanation.</td></tr>
+        <tr><td>Field error</td><td class="t-note">Red <code>#E2564A</code> border plus a <code>3px rgba(226,86,74,.12)</code> ring, and a message below with a triangle glyph. Colour never carries it alone. The bar's right slot switches to <em>2 to fix</em>.</td></tr>
+        <tr><td>Past start time</td><td class="t-note">The summary strip flips to the red wash with a red rim and reads <em>Would have opened Thursday 30 July, 4:12 PM — 7 minutes ago</em>, and the time control alone takes the error, not the date beside it.</td></tr>
+        <tr><td>Access changed after invites</td><td class="t-note">Switching an open room to locked shows a red warning line naming how many members lose access. <code>updateLockerRoom</code> PUTs all four fields including <code>is_open_room</code>, so this is a real and silent consequence today.</td></tr>
+        <tr><td>Nobody invited</td><td class="t-note">A <code>#13171E</code> panel instead of an empty list, plus the <em>I'll invite people once the room starts</em> checkbox. In the shipped build that checkbox is decoration: nothing reads <code>isInviteLater</code> at submit and <code>resetEditorLockerRoomState</code> forces it to <code>true</code> in both modes. Here it is the difference between deliberately publishing an empty room and having forgotten.</td></tr>
+        <tr><td>Delete</td><td class="t-note">Destructive confirm in the dialog shell: red-ringed <code>44px</code> tile, the room named in the body, the number of cancelled invites stated, <b>Keep room</b> / <b>Delete room</b>. Ink on the red fill is <code>#0B0E06</code>, never white.</td></tr>
+        <tr><td><b>Typo fixed</b></td><td class="t-note">The shipped delete dialog title is <code>Delete this rooms?</code> — one room, plural noun. <b>Corrected to <code>Delete this room?</code></b>, and the body now names the room and the invites lost instead of stopping at <code>All invites sent will be deleted.</code></td></tr>
+        <tr><td><b>Grammar fixed</b></td><td class="t-note">The shipped validation string is <code>Start at must greater than current time</code> — missing its verb, and naming the API's <code>start_at</code> field rather than the control the member is looking at. <b>Corrected to <code>Start time must be later than now.</code></b> Its sibling <code>Please enter topic</code> becomes <code>Give the room a topic.</code> Both move out of <code>OOPS</code> modals and onto the fields they are about.</td></tr>
+        <tr><td><b>Defect found</b></td><td class="t-note">The <b>Now</b> offset cannot ship as written. Each offset adds its hours to the value already in the field, and that value is seeded with <code>DateTime.now()</code> when the screen opens, so <code>Now</code> (<code>+0</code>) resolves to the moment the screen opened. By the time submit compares it to a fresh <code>DateTime.now()</code> it is in the past, and the room is rejected. In this build offsets run from the live clock and round up to the next quarter hour, so <code>Now</code> lands <code>11</code> minutes out and passes.</td></tr>
+        <tr><td>Past dates</td><td class="t-note">Struck through, dimmed and not clickable. The shipped calendar accepts the tap and silently discards it — <code>onDaySelected</code> assigns only when <code>date.isAfterDateOnly(DateTime.now())</code> and there is no feedback for the rest.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions off. The sheet appears without sliding and the scrim without fading.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Two of the five states in <code>forms.html</code> — <em>focus</em> and <em>disabled</em> — are
+  shown here in place on real controls rather than as a separate specimen strip, since the forms kit
+  already documents them exhaustively.</p>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused, unchanged</h3>
+      <ul>
+        <li><b>Every form control</b> — <code>forms.html</code>: the label convention, the
+          <code>52px</code> shell, the focus ring, the error ring, the inline validation row and
+          the <code>subgrid</code> two-up primitive.</li>
+        <li><b>All three pickers</b> — <code>sheets.html</code>: the sheet shell and grabber, the
+          calendar, the three-column time lists, the offset pills, the option row and the sticky
+          in-sheet search.</li>
+        <li><b>All three dialogs</b> — <code>dialogs.html</code>: the shell, the <code>44px</code>
+          icon tile, the <code>46px</code> action pair and the scrim.</li>
+        <li><b>The created-room card</b> — <code>backchat.html</code>'s <code>.room</code>, so the
+          preview is literally the component the club will see.</li>
+        <li><b>Frame chrome</b> — <code>create-idea.html</code>'s numbered phone-width frames.</li>
+        <li><b>The six time offsets</b> — the shipped
+          <code>LockerRoomEditorTimePickerPadding</code> values and their exact labels.</li>
+        <li><b>The room-type metaphor</b> — the padlock pair from the shipped tiles, and the
+          <code>open room</code> / <code>locked room</code> wording.</li>
+        <li><b>Room card in the success dialog</b> — the shipped dialog already does this, and it
+          was the right instinct.</li>
+        <li><b>Portraits and usernames</b> — <code>_assets/avatars.css</code> and the same members
+          the rest of the library uses.</li>
+      </ul>
+    </div>
+
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>A review step before publishing.</b> Today the Create tap fires the POST and the
+          invites go out; the room is only reviewed <em>after</em> it exists. Frame 08 reads all
+          four fields back and names the invitees.</li>
+        <li><b>A docked CTA.</b> The shipped button sits at the bottom of the scroller
+          <em>below</em> the invite list, so a room with ten invitees pushes it off screen.</li>
+        <li><b>An 80-character topic limit and its counter.</b> No limit exists in the code, and the
+          room card clamps to two lines.</li>
+        <li><b>A stated start-time rule</b> — at least 5 minutes out, at most a year, quarter hours
+          only. The shipped bounds are <code>2010-10-16</code> to <code>2030-03-14</code> with
+          <code>minutesInterval: 1</code>, so today a room can legally be scheduled for 8:37 PM in
+          2011.</li>
+        <li><b>Offsets computed from the clock,</b> rolling the date when they cross midnight,
+          instead of adding hours to whatever is already in the field.</li>
+        <li><b>Named-day date format</b> — <code>Sun 2 Aug</code> and a full summary line, replacing
+          <code>MM/dd/yyyy</code> with no order hint.</li>
+        <li><b>A host row in the invite list</b> and the sentence explaining that speakers are
+          promoted inside the room, not here.</li>
+        <li><b>Second-line context on search results</b> (<em>In 4 of your rooms</em>) and the
+          already-invited pinned to the top of the sheet.</li>
+        <li><b>Inline validation</b> in place of the two <code>OOPS</code> modals, plus a
+          <em>2 to fix</em> counter in the app bar.</li>
+        <li><b>The access-change warning</b> on edit.</li>
+        <li><b>A working invite-later checkbox</b> that gates review.</li>
+        <li><b>Grouped, disabled and struck-out calendar days,</b> and a disabled month-back
+          control.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>Nothing here uses a colour outside the sampled tokens plus the one semantic red
+  <code>#E2564A</code>. The shipped screen's palette does not survive: <code>bgLabel</code>
+  <code>#F9F9F9</code>, <code>borderButton</code>, <code>primaryOpacityColor</code> and the
+  <code>colorFrozenBGVotingPregress</code> constant borrowed from the Voting feature are all
+  light-theme values, and the four-stop gradient strip built from that last one — the fade over the
+  offset row — is gone, replaced by the row simply scrolling.</p>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li>
+      <h3>Should a room have a description?</h3>
+      <p>The request carries a topic and nothing else, so the topic line is the entire pitch for
+      the room. On a phone that is one or two lines of text to persuade someone to give up an
+      evening. We have <span class="flag">built it with topic only</span> and added an
+      <code>80</code>-character cap so it cannot overflow the card. If a description is wanted it
+      needs a new field on the endpoint, a decision about whether it appears on the card or only in
+      the room, and a length.</p>
+    </li>
+    <li>
+      <h3>Should a room have a duration or an end time?</h3>
+      <p>Nothing in the request or the room record carries one, so a room runs until the host
+      closes it — and if the host never closes it, presumably forever. We have
+      <span class="flag">stated this on screen as <em>Open-ended</em></span> rather than hide it.
+      Two things argue for adding a duration: attendees plan around it, and an abandoned room
+      currently has no defined ending. A scheduled end also changes the room card, which today
+      shows only a start.</p>
+    </li>
+    <li>
+      <h3>What is the minimum notice for a new room, and is there an "open it now" path?</h3>
+      <p>This is the one that blocks build. The <b>Now</b> offset is currently unusable — it always
+      fails validation — so a host who wants a room immediately has no working route. We have
+      <span class="flag">assumed a 5-minute floor and made <em>Now</em> mean the next quarter
+      hour</span>, which is <code>11</code> minutes away in the frames. The alternatives are a
+      shorter floor, or splitting <em>start a room now</em> into its own action that opens the room
+      immediately rather than scheduling it. Which of the three do you want?</p>
+    </li>
+    <li>
+      <h3>Can a host name speakers before the room opens?</h3>
+      <p>Today they cannot. The request sends one flat list of invitees; the room comes back with a
+      <code>hosts[]</code> array carrying <code>permissions[]</code> and <code>mic_on</code> per
+      person, which means roles exist but are assigned at runtime, inside the room. We have
+      <span class="flag">built invitees only, and said so on screen</span>. If a host should be
+      able to line up two co-speakers when scheduling, that is a new field on the request and a new
+      role state on the invite row — the row is already built to take one.</p>
+    </li>
+    <li>
+      <h3>Should the club see who else is invited before they join?</h3>
+      <p>The room card shows a count and the host, not the guest list. For an open room the count
+      is the draw; for a locked room the list might be the whole reason to attend. We have
+      <span class="flag">kept the guest list private to the editor</span>, matching the card as
+      built, but it is a product call rather than a technical one.</p>
+    </li>
+    <li>
+      <h3>Confirm the app bar wording: "Schedule a room" or "Start a room"?</h3>
+      <p>The shipped bar says <code>START A ROOM</code>, which reads as "open one now" on a screen
+      whose whole purpose is to pick a future time. We have
+      <span class="flag">used <em>Schedule a room</em></span>, with <em>Edit room</em> in the edit
+      mode. If question 3 gains a separate immediate path, <em>Start a room</em> becomes the right
+      name for <em>that</em> and this one stays <em>Schedule</em>.</p>
+    </li>
+    <li>
+      <h3>Two library-wide items this screen inherits.</h3>
+      <p>Control height is still open between <code>52px</code> and <code>64px</code>; this file
+      uses <span class="flag"><code>52px</code></span> because every control on it comes from
+      <code>forms.html</code>. And a failed delete currently closes the screen as though it had
+      worked — <code>deleteLockerRoom</code> catches its own exception and only prints in debug — so
+      the kit's error toast needs wiring to it at build.</p>
+    </li>
+  </ol>
+</section>

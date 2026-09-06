@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en" data-component="club-selection">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Club selection</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — CLUB SELECTION
+   Rebuild of AU-11 / AU-12 (and CL-05, the same cascade reached
+   from Profile → Clubs) in the dark-mode brand language.
+
+   Tokens, type scale and patterns are copied from merits.html
+   and _assets/CONTRACT.md. No new hue is introduced by the app.
+   No external stylesheet or font requests: the contract forbids
+   them, so the Inter webfont is not loaded and the system stack
+   carries the type.
+
+   The three problems this file solves:
+     1. Crest containment  — see CREST PLATE spec below.
+     2. Cascade dependency — steps are numbered, railed and locked.
+     3. The 3-club limit   — promoted above the control it binds.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls, tab bar        */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* hero */
+  --hero-a:        #0D3617;
+  --hero-b:        #17481C;
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* ---- crest plate ------------------------------------------
+     Not new colour: a fixed white scrim and a black hairline,
+     the same construction as --line. See the spec block below. */
+  --plate:         rgba(255,255,255,.94);
+  --plate-edge:    rgba(0,0,0,.13);
+}
+
+/* ============================================================
+   CREST PLATE — SPEC
+   ============================================================
+   THE PROBLEM (measured on the current build, CL-02, one card fill
+   #2B144B holding three crests):
+       Borussia Dortmund yellow  ~15.0 : 1
+       Manchester United gold    ~11.0 : 1
+       Manchester United red      ~3.3 : 1
+       Barcelona garnet           ~2.4 : 1
+       Barcelona blue             ~1.4 : 1   ← dissolves
+   One container, a ~10x contrast spread, because the variable
+   being measured is *the crest against our surface* — and we do
+   not own the crest. Crests are also height-fitted, so the same
+   nominal slot renders at 56 pt, 48x48, 35x47 and 76x80 across
+   the folder, and a wide roundel reads heavier than a tall shield.
+
+   THE MOVE: stop measuring the crest against our surface. Put
+   every crest on an app-owned plate, and measure *the plate*
+   against our surface. That number is then a constant for every
+   club in the catalogue.
+
+       plate ground rgba(255,255,255,.94)
+         on --surface  #1C2129  →  ~14.4 : 1
+         on --sunken   #13171E  →  ~15.6 : 1
+         on --section  #080A0C  →  ~17.5 : 1
+         on --bg       #030401  →  ~18.3 : 1
+
+   A light ground is the correct choice, not an arbitrary one:
+   club crests are authored for light grounds — kit, print,
+   letterhead, broadcast lower-thirds. Compositing them on light
+   preserves the internal contrast their own designers signed off,
+   and the app takes responsibility only for plate-vs-surface,
+   which it fully controls.
+
+   CONSTRUCTION
+     ground        var(--plate)                       — fixed, never per-club
+     inner hairline inset 0 0 0 1px var(--plate-edge) — reads as a bevel,
+                    separates plate from surface without a white ring,
+                    and stops a pale crest bleeding into the plate edge
+     radius        calc(size * .28)                   — squircle, scales with size
+     padding       calc(size * .125)                  — 1/8 of the plate, all sides
+     fit           object-fit:contain into the padded square, NOT
+                   height-fitted. A roundel and a shield therefore occupy
+                   the same bounding box. The eye reads the plate square
+                   as the unit of weight, not the silhouette.
+     no shadow, no glow, no per-club tint, no accent ring.
+
+   SIZE STEPS — three, and only three.
+     .plate--sm   28px   dense/secondary rows: "already following"
+                         strips, meta lines, standings rows
+     .plate--md   40px   the working size: select field values and
+                         club-list rows (the primary tap target)
+     .plate--lg   64px   headers and confirmation lockups
+     Derived at each step (radius / padding / code type):
+       sm  8px / 3.5px / 8.4px
+       md 11.2px / 5px  / 12px
+       lg 17.9px / 8px  / 19.2px
+
+   TEXT FALLBACK — .plate holding the club's short code
+     2–4 characters, uppercase, 800 weight, -.03em, colour
+     var(--acid-ink) (the existing "ink on a light ground" token),
+     size calc(plate * .30). Used when:
+       a) no crest artwork exists for the club;
+       b) artwork fails ingest (see below);
+       c) artwork is still loading — the code is the placeholder, so
+          the row never reflows and never flashes an empty box.
+
+   INGEST RULE — the one thing the plate cannot fix
+     A plate cannot outline the silhouette of a transparent PNG, so
+     artwork that is *reversed* (white or near-white marks on
+     transparency, with no keyline of its own) has nothing to hold
+     an edge against a light plate. At ingest, reject artwork whose
+     mean luminance over its alpha-covered pixels exceeds 0.82 and
+     fall back to the code plate. Do not ship a second dark-plate
+     variant for those clubs: two plate tones in one list destroys
+     the constant optical weight this plate exists to create.
+     Pale artwork that carries its own keyline (a white shield with
+     a dark outline) passes and renders normally.
+   ============================================================ */
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}   /* flex/inline-flex rules below would beat the UA rule */
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ============================================================
+   FRAME — one screen, one device in the review page
+   ============================================================ */
+.frame{position:relative;min-height:812px;padding-bottom:24px}
+
+/* ---------- shared bits (merits.html) ---------- */
+.eyebrow{
+  margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.pill-btn{
+  display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:18px;height:18px}
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  height:32px;padding:0 14px;border-radius:var(--r-pill);
+  background:var(--acid-wash);
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+.status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.spacer{flex:1}
+
+/* ============================================================
+   HEADER
+   Back control + the 34px display title, left aligned. The old
+   build centred a Bebas app-bar title; the dark language already
+   owns one screen-title treatment, so this reuses it.
+   ============================================================ */
+.bar{display:flex;align-items:center;height:44px;padding:0 var(--gutter)}
+.title{
+  margin:14px var(--gutter) 0;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.intro{margin:11px var(--gutter) 0;max-width:31ch;font-size:13px;color:var(--muted)}
+
+/* ============================================================
+   THE CASCADE
+   Four numbered steps on one rail. The rail above a step is acid
+   once that step is satisfied and --line while it is not, so the
+   dependency chain is readable without touching anything.
+   ============================================================ */
+.cascade{list-style:none;margin:24px 0 0;padding:0}
+.step{
+  position:relative;margin-bottom:20px;
+  padding:0 var(--gutter) 0 calc(var(--gutter) + 38px);
+}
+.step:last-child{margin-bottom:0}
+/* the rail */
+.step::before{
+  content:"";position:absolute;left:calc(var(--gutter) + 12px);
+  top:30px;bottom:-20px;width:2px;border-radius:1px;background:var(--line);
+}
+.step:last-child::before{display:none}
+.step.is-done::before{background:var(--acid);opacity:.5}
+.step__mark{
+  position:absolute;left:var(--gutter);top:1px;
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line);
+  font-size:12px;font-weight:800;color:var(--dim);
+  font-variant-numeric:tabular-nums;
+  transition:background .2s var(--ease),color .2s var(--ease);
+}
+.step__mark svg{width:13px;height:13px;display:none}
+.step.is-active .step__mark{color:var(--acid);box-shadow:inset 0 0 0 1.5px var(--acid)}
+.step.is-done  .step__mark{background:var(--acid);color:var(--acid-ink);box-shadow:none}
+.step.is-done  .step__mark b{display:none}
+.step.is-done  .step__mark svg{display:block}
+.step.is-locked .step__mark{opacity:.5}
+.step__label{
+  display:flex;align-items:center;gap:8px;
+  margin:3px 0 9px;font-size:15px;font-weight:600;letter-spacing:-.01em;
+}
+.step.is-locked .step__label{color:var(--muted)}
+.step__lock{width:13px;height:13px;color:var(--dim);flex:0 0 auto}
+.step:not(.is-locked) .step__lock{display:none}
+.hint{margin:8px 0 0;font-size:12px;color:var(--dim)}
+
+/* ---------- select field (replaces C-06) ---------- */
+.field{
+  display:flex;align-items:center;gap:10px;width:100%;
+  min-height:52px;padding:8px 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  font:inherit;text-align:left;cursor:pointer;
+  transition:border-color .18s var(--ease),background .18s var(--ease);
+}
+.field:hover{background:#20262F}
+.field__val{
+  flex:1;min-width:0;font-size:15px;font-weight:600;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.field--empty .field__val{font-weight:400;color:var(--muted)}
+.field__chev{width:18px;height:18px;flex:0 0 auto;color:var(--muted);
+  transition:transform .2s var(--ease)}
+.field[aria-expanded="true"]{border-color:rgba(155,226,34,.45)}
+.field[aria-expanded="true"] .field__chev{transform:rotate(180deg)}
+.field__lock{width:16px;height:16px;flex:0 0 auto;color:var(--dim);display:none}
+.field[aria-disabled="true"]{
+  background:var(--sunken);border-color:var(--line-soft);cursor:not-allowed;
+}
+.field[aria-disabled="true"]:hover{background:var(--sunken)}
+.field[aria-disabled="true"] .field__val{font-weight:400;color:var(--dim)}
+.field[aria-disabled="true"] .field__chev{display:none}
+.field[aria-disabled="true"] .field__lock{display:block}
+
+/* ---------- inline option list ---------- */
+.opts{
+  list-style:none;margin:8px 0 0;padding:6px;
+  border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);
+}
+.opts li{
+  display:flex;align-items:center;gap:9px;
+  padding:10px 11px;border-radius:8px;font-size:14px;cursor:pointer;
+}
+.opts li:hover{background:rgba(255,255,255,.05)}
+.opts li[aria-selected="true"]{color:var(--acid);font-weight:600}
+.opts svg{width:14px;height:14px;flex:0 0 auto;opacity:0}
+.opts li[aria-selected="true"] svg{opacity:1}
+
+/* ============================================================
+   STEP 4 PANEL — the club list
+   Section-container pattern: --section fill, 1px --line, --r-card.
+   ============================================================ */
+.panel{
+  padding:12px;border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);
+}
+.panel--locked{padding:14px 14px 15px}
+.panel--locked .hint{margin:0}
+
+/* ---------- the 3-per-league limit ---------- */
+.limit__bar{display:flex;align-items:center;gap:10px}
+.limit__ticks{display:flex;gap:5px;margin-top:11px}
+.limit__ticks i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.14)}
+.limit__ticks i.on{background:var(--acid)}
+.limit__ticks i.pending{background:var(--acid);opacity:.45}
+.limit--full .status-pill{background:rgba(255,255,255,.06);color:var(--muted)}
+.limit--full .limit__ticks i.on{background:var(--muted)}
+.limit__note{margin:9px 0 0;font-size:12.5px;color:var(--muted)}
+.limit__used{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:11px;padding-top:11px;border-top:1px solid var(--line-soft);
+}
+.limit__used>span:first-child{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin-right:2px;
+}
+.used{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted)}
+
+/* ---------- search ---------- */
+.search{position:relative;margin-top:12px}
+.search input{
+  width:100%;height:44px;padding:0 14px 0 40px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--text);font:inherit;font-size:14px;
+}
+.search input::placeholder{color:var(--dim)}
+.search input:focus{outline:none;border-color:rgba(155,226,34,.45)}
+.search svg{position:absolute;left:14px;top:13.5px;width:17px;height:17px;color:var(--dim)}
+
+/* ---------- club rows ---------- */
+.clist{
+  list-style:none;margin:10px 0 0;padding:0;
+  border-radius:var(--r-panel);background:var(--surface);overflow:hidden;
+}
+.crow{
+  display:flex;align-items:center;gap:11px;padding:9px 12px;
+  border-top:1px solid var(--line-soft);cursor:pointer;
+  transition:background .16s var(--ease);
+}
+.crow:first-child{border-top:0}
+.crow:hover{background:rgba(255,255,255,.035)}
+.crow__id{flex:1;min-width:0}
+.crow__name{display:block;font-size:14px;font-weight:600;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow__sub{display:block;margin-top:2px;font-size:11.5px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow__end{flex:0 0 auto;display:inline-flex;align-items:center;
+  font-size:10.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--dim)}
+.crow__end svg{width:18px;height:18px;color:var(--acid)}
+.crow__end svg.crow__locked{width:16px;height:16px;color:var(--dim)}
+.crow[aria-selected="true"]{background:var(--acid-wash);box-shadow:inset 3px 0 0 var(--acid)}
+.crow[aria-selected="true"]:hover{background:var(--acid-wash)}
+.crow[aria-selected="true"] .crow__sub{color:var(--acid)}
+.crow[aria-disabled="true"]{cursor:not-allowed}
+.crow[aria-disabled="true"]:hover{background:transparent}
+.crow[aria-disabled="true"] .plate,
+.crow[aria-disabled="true"] .crow__id{opacity:.38}
+.clist__none{padding:22px 12px;text-align:center;font-size:13px;color:var(--dim)}
+
+/* ---------- your pick ---------- */
+.pick{
+  display:flex;align-items:center;gap:13px;
+  margin:20px var(--gutter) 0;padding:16px;
+  border-radius:var(--r-card);background:var(--surface);
+}
+.pick__id{flex:1;min-width:0}
+.pick__id h3{margin:0;font-size:17px;font-weight:600;letter-spacing:-.015em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick__sub{margin:3px 0 0;font-size:12px;color:var(--muted)}
+
+/* ============================================================
+   CREST PLATE
+   ============================================================ */
+.plate{
+  --plate-size:40px;
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  width:var(--plate-size);height:var(--plate-size);
+  padding:calc(var(--plate-size) * .125);
+  border-radius:calc(var(--plate-size) * .28);
+  background:var(--plate);
+  box-shadow:inset 0 0 0 1px var(--plate-edge);
+  overflow:hidden;
+  font-size:calc(var(--plate-size) * .30);
+  font-weight:800;letter-spacing:-.03em;line-height:1;
+  color:var(--acid-ink);text-transform:uppercase;
+  -webkit-user-select:none;user-select:none;
+}
+.plate--sm{--plate-size:28px}
+.plate--md{--plate-size:40px}
+.plate--lg{--plate-size:64px}
+/* real crests land here as <img class="plate__art" src="…"> */
+.plate__art{width:100%;height:100%;object-fit:contain;display:block}
+
+/* ------------------------------------------------------------
+   THIRD-PARTY ARTWORK STAND-INS — NOT BRAND COLOUR.
+   No crest image assets exist yet, so these four CSS blocks
+   stand in for real club artwork purely to prove the plate
+   contains it. They are the only non-token colours in this file
+   and they represent artwork the app does not own. Nothing in
+   the product may reuse them.
+     art--stripe-light  high-luminance stripes  (the ~15:1 case)
+     art--stripe-dark   low-luminance stripes   (the ~1.4:1 case)
+     art--shield-light  pale artwork with its own keyline, tall
+                        silhouette (the containment edge case)
+     art--roundel-dark  near-black roundel, wide silhouette
+   ------------------------------------------------------------ */
+.art--stripe-light{background:repeating-linear-gradient(90deg,#FDE100 0 22%,#141414 22% 33%);border-radius:14%}
+.art--stripe-dark{background:repeating-linear-gradient(90deg,#A50044 0 25%,#004D98 25% 50%);border-radius:14%}
+.art--shield-light{
+  background:#F2F4F7;box-shadow:inset 0 0 0 1.5px #16202B;
+  clip-path:polygon(10% 0,90% 0,90% 52%,50% 100%,10% 52%);
+}
+.art--roundel-dark{background:#0B1E3A;box-shadow:inset 0 0 0 1.5px #2E4666;border-radius:50%}
+
+/* ============================================================
+   DOCKED PRIMARY ACTION
+   Disabled and enabled differ by opacity only. Same fill, same
+   1px border, same radius, same height — the old build swapped
+   the fill and dropped the border.
+   ============================================================ */
+.dock{
+  position:fixed;left:0;right:0;bottom:0;max-width:420px;margin:0 auto;
+  padding:13px var(--gutter) calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--bg);border-top:1px solid var(--line);
+  pointer-events:none;
+}
+.dock>*{pointer-events:auto}
+.dock__note{margin:0 0 10px;font-size:12px;color:var(--muted);text-align:center}
+.cta{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;height:52px;
+  border:1px solid var(--acid);border-radius:var(--r-panel);
+  background:var(--acid);color:var(--acid-ink);
+  font:inherit;font-size:15px;font-weight:700;letter-spacing:-.01em;
+  cursor:pointer;transition:opacity .18s var(--ease);
+}
+.cta[disabled]{opacity:.38;cursor:not-allowed}
+
+/* ============================================================
+   SPECIMENS
+   The states a single screenshot cannot hold at once. Same
+   convention as idea-card.html's captioned variants.
+   ============================================================ */
+.specs{margin:30px var(--gutter) 24px;padding-top:6px;border-top:1px solid var(--line)}
+.caption{
+  margin:22px 0 10px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.specs__strip{
+  display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;
+  padding:15px;border-radius:var(--r-panel);background:var(--surface);
+}
+.specs__strip+.specs__strip{margin-top:8px;background:var(--sunken)}
+.demo{display:flex;flex-direction:column;align-items:center;gap:8px}
+.demo span{font-size:9.5px;letter-spacing:.06em;color:var(--dim);text-align:center}
+.specs__ctas{display:flex;gap:10px}
+.specs__ctas>div{flex:1;min-width:0}
+.specs__ctas p{margin:0 0 7px;font-size:9.5px;letter-spacing:.06em;color:var(--dim);text-align:center}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+<!-- ==========================================================
+     FRAME 1 — CHOOSE YOUR CLUB
+     ========================================================== -->
+<section class="frame" data-title="Choose your club" aria-label="Choose your club">
+
+  <!-- ================= HEADER ================= -->
+  <div class="bar">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+  </div>
+
+  <h1 class="title">Club selection</h1>
+  <p class="intro">Pick the club you follow. It becomes your war room, your Backchat and your standings.</p>
+
+  <!-- ================= CASCADE ================= -->
+  <ol class="cascade" id="cascade">
+
+    <!-- step 1 · Sport -->
+    <li class="step is-done" id="st1">
+      <span class="step__mark"><b>1</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__label" id="lb1">Sport</span>
+      <button class="field" type="button" id="f1" aria-expanded="false">
+        <span class="field__val" id="v1">Football</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+        <svg class="field__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </button>
+      <ul class="opts" id="o1" hidden></ul>
+      <p class="hint" id="h1" hidden></p>
+    </li>
+
+    <!-- step 2 · Competition level -->
+    <li class="step is-done" id="st2">
+      <span class="step__mark"><b>2</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__label" id="lb2">Competition level
+        <svg class="step__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </span>
+      <button class="field" type="button" id="f2" aria-expanded="false">
+        <span class="field__val" id="v2">International</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+        <svg class="field__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </button>
+      <ul class="opts" id="o2" hidden></ul>
+      <p class="hint" id="h2" hidden></p>
+    </li>
+
+    <!-- step 3 · League -->
+    <li class="step is-done" id="st3">
+      <span class="step__mark"><b>3</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__label" id="lb3">League
+        <svg class="step__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </span>
+      <button class="field" type="button" id="f3" aria-expanded="false">
+        <span class="plate plate--sm" id="p3" aria-hidden="true">CL</span>
+        <span class="field__val" id="v3">Champions League</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+        <svg class="field__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </button>
+      <ul class="opts" id="o3" hidden></ul>
+      <p class="hint" id="h3" hidden></p>
+    </li>
+
+    <!-- step 4 · Club -->
+    <li class="step is-active" id="st4">
+      <span class="step__mark"><b>4</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4 10-10"/></svg>
+      </span>
+      <span class="step__label" id="lb4">Club
+        <svg class="step__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </span>
+
+      <!-- locked render -->
+      <div class="panel panel--locked" id="panelLocked" hidden>
+        <p class="hint" id="h4">Choose a league first — clubs are listed by league.</p>
+      </div>
+
+      <!-- live render -->
+      <div class="panel" id="panelLive">
+
+        <!-- the limit, above the control it constrains -->
+        <div class="limit" id="limit">
+          <div class="limit__bar">
+            <span class="status-pill" id="limitPill" role="status" aria-live="polite">2 of 3 used in this league</span>
+          </div>
+          <div class="limit__ticks" id="limitTicks" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i></div>
+          <p class="limit__note" id="limitNote">You can follow up to 3 clubs in any one league. This pick counts, even if you leave mid-season.</p>
+          <div class="limit__used" id="limitUsed">
+            <span>Already following</span>
+            <span class="used"><span class="plate plate--sm"><span class="plate__art art--stripe-light"></span></span>Borussia Dortmund</span>
+            <span class="used"><span class="plate plate--sm">MUN</span>Manchester United</span>
+          </div>
+        </div>
+
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+          <input id="q" type="search" autocomplete="off" placeholder="Search Champions League clubs" aria-label="Search clubs">
+        </div>
+
+        <ul class="clist" id="clist" role="listbox" aria-label="Clubs"></ul>
+      </div>
+    </li>
+  </ol>
+
+  <!-- ================= YOUR PICK ================= -->
+  <section class="pick" id="pick" hidden aria-label="Your pick">
+    <span class="plate plate--lg" id="pickPlate" aria-hidden="true">BAR</span>
+    <div class="pick__id">
+      <p class="eyebrow">Your pick</p>
+      <h3 id="pickName">Barcelona</h3>
+      <p class="pick__sub" id="pickSub">Champions League · Football</p>
+    </div>
+    <button class="pill-btn" type="button" id="pickClear">Change</button>
+  </section>
+
+</section>
+
+<!-- ==========================================================
+     FRAME 2 — CREST PLATE SPECIMENS
+     ========================================================== -->
+<section class="frame" data-title="Crest plate specimens" aria-label="Crest plate specimens">
+
+  <div class="bar"></div>
+  <h1 class="title">Crest plate</h1>
+  <p class="intro">One plate, every crest. The plate is measured against the surface, never the artwork.</p>
+
+  <section class="specs" aria-label="Specimens">
+
+    <p class="caption">Crest plate · size steps</p>
+    <div class="specs__strip">
+      <span class="demo"><span class="plate plate--sm"><span class="plate__art art--stripe-dark"></span></span><span>sm 28<br>rows</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--stripe-dark"></span></span><span>md 40<br>selects, list</span></span>
+      <span class="demo"><span class="plate plate--lg"><span class="plate__art art--stripe-dark"></span></span><span>lg 64<br>headers</span></span>
+      <span class="demo"><span class="plate plate--lg">BAR</span><span>lg 64<br>code fallback</span></span>
+    </div>
+
+    <p class="caption">Crest plate · any artwork, one optical weight</p>
+    <div class="specs__strip">
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--stripe-light"></span></span><span>high-key<br>stripes</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--stripe-dark"></span></span><span>low-key<br>stripes</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--shield-light"></span></span><span>pale<br>shield</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--roundel-dark"></span></span><span>dark<br>roundel</span></span>
+      <span class="demo"><span class="plate plate--md">FCB</span><span>code<br>fallback</span></span>
+    </div>
+    <div class="specs__strip">
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--stripe-light"></span></span><span>on --sunken</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--stripe-dark"></span></span><span>on --sunken</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--shield-light"></span></span><span>on --sunken</span></span>
+      <span class="demo"><span class="plate plate--md"><span class="plate__art art--roundel-dark"></span></span><span>on --sunken</span></span>
+      <span class="demo"><span class="plate plate--md">RMA</span><span>on --sunken</span></span>
+    </div>
+
+    <p class="caption">Select field · filled, empty, locked</p>
+    <div class="specs__strip" style="display:block">
+      <button class="field" type="button" aria-expanded="false" aria-disabled="false" onclick="return false">
+        <span class="plate plate--sm">LL</span>
+        <span class="field__val">La Liga</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+      </button>
+      <button class="field field--empty" type="button" style="margin-top:10px" aria-expanded="false" onclick="return false">
+        <span class="field__val">Choose a league</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+      </button>
+      <button class="field" type="button" style="margin-top:10px" aria-disabled="true" tabindex="-1">
+        <span class="field__val">Choose a sport first</span>
+        <svg class="field__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+        <svg class="field__lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      </button>
+    </div>
+
+    <p class="caption">Primary action · one shape, two opacities</p>
+    <div class="specs__ctas">
+      <div><p>disabled</p><button class="cta" type="button" disabled>Continue</button></div>
+      <div><p>enabled</p><button class="cta" type="button" onclick="return false">Continue</button></div>
+    </div>
+  </section>
+
+</section>
+
+</main>
+
+<!-- ================= DOCK (outside main) ================= -->
+<div class="dock">
+  <p class="dock__note" id="dockNote">Choose a club to continue.</p>
+  <button class="cta" type="button" id="cta" disabled>Continue</button>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var LIMIT = 3;
+
+  var SPORTS = ['Football','Basketball','Cricket'];
+  var LEVELS = ['International','National','Regional'];
+
+  var LEAGUES = {
+    'Football|International'  : [['Champions League','CL'],['Europa League','UEL'],['FIFA Club World Cup','CWC']],
+    'Football|National'       : [['English Premier League','EPL'],['La Liga','LL'],['Bundesliga','BUN']],
+    'Football|Regional'       : [['National Premier Leagues NSW','NSW'],['Northern Premier League','NPL']],
+    'Basketball|International': [['EuroLeague','EL'],['Basketball Champions League','BCL']],
+    'Basketball|National'     : [['NBA','NBA'],['WNBA','WNBA']],
+    'Basketball|Regional'     : [['NBL Australia','NBL']],
+    'Cricket|International'   : [['ICC Cricket World Cup','CWC'],['ICC T20 World Cup','T20']],
+    'Cricket|National'        : [['Indian Premier League','IPL'],['Big Bash League','BBL']],
+    'Cricket|Regional'        : [['Sheffield Shield','SHD']]
+  };
+
+  /* n = name, c = short code, a = stand-in artwork class */
+  var CLUBS = {
+    'Champions League': [
+      {n:'Ajax',                c:'AJA'},
+      {n:'Barcelona',           c:'BAR', a:'art--stripe-dark'},
+      {n:'Bayern Munich',       c:'FCB'},
+      {n:'Borussia Dortmund',   c:'BVB', a:'art--stripe-light'},
+      {n:'Inter Milan',         c:'INT', a:'art--roundel-dark'},
+      {n:'Liverpool',           c:'LIV', a:'art--shield-light'},
+      {n:'Manchester United',   c:'MUN'},
+      {n:'Paris Saint-Germain', c:'PSG'},
+      {n:'Real Madrid',         c:'RMA'}
+    ],
+    'Europa League': [
+      {n:'Ajax',c:'AJA'},{n:'AS Roma',c:'ROM'},{n:'Rangers',c:'RAN'},{n:'Villarreal',c:'VIL'}
+    ],
+    'FIFA Club World Cup': [
+      {n:'Al Hilal',c:'HIL'},{n:'Palmeiras',c:'PAL'},{n:'Real Madrid',c:'RMA'},{n:'Seattle Sounders',c:'SEA'}
+    ],
+    'English Premier League': [
+      {n:'Arsenal',c:'ARS'},{n:'Chelsea',c:'CHE'},
+      {n:'Liverpool',c:'LIV',a:'art--shield-light'},
+      {n:'Manchester City',c:'MCI'},{n:'Manchester United',c:'MUN'},
+      {n:'Newcastle United',c:'NEW'},{n:'Tottenham Hotspur',c:'TOT'}
+    ],
+    'La Liga': [
+      {n:'Atlético Madrid',c:'ATM'},
+      {n:'Barcelona',c:'BAR',a:'art--stripe-dark'},
+      {n:'Real Betis',c:'BET'},{n:'Real Madrid',c:'RMA'},{n:'Sevilla',c:'SEV'}
+    ],
+    'Bundesliga': [
+      {n:'Bayer Leverkusen',c:'B04'},{n:'Bayern Munich',c:'FCB'},
+      {n:'Borussia Dortmund',c:'BVB',a:'art--stripe-light'},
+      {n:'RB Leipzig',c:'RBL'}
+    ],
+    'National Premier Leagues NSW': [
+      {n:'APIA Leichhardt',c:'APA'},{n:'Marconi Stallions',c:'MAR'},{n:'Sydney United 58',c:'SU58'}
+    ],
+    'Northern Premier League': [
+      {n:'Chorley',c:'CHO'},{n:'Scarborough Athletic',c:'SCA'},{n:'Whitby Town',c:'WHI'}
+    ],
+    'EuroLeague': [
+      {n:'Fenerbahçe',c:'FEN'},{n:'Olympiacos',c:'OLY'},{n:'Panathinaikos',c:'PAO'},{n:'Real Madrid',c:'RMA'}
+    ],
+    'Basketball Champions League': [
+      {n:'Hapoel Jerusalem',c:'JER'},{n:'La Laguna Tenerife',c:'TEN'},{n:'Unicaja',c:'UNI'}
+    ],
+    'NBA': [
+      {n:'Boston Celtics',c:'BOS'},{n:'Chicago Bulls',c:'CHI'},
+      {n:'Golden State Warriors',c:'GSW'},{n:'Los Angeles Lakers',c:'LAL'},{n:'Miami Heat',c:'MIA'}
+    ],
+    'WNBA': [
+      {n:'Las Vegas Aces',c:'LVA'},{n:'New York Liberty',c:'NYL'},{n:'Seattle Storm',c:'SEA'}
+    ],
+    'NBL Australia': [
+      {n:'Melbourne United',c:'MEL'},{n:'Perth Wildcats',c:'PER'},{n:'Sydney Kings',c:'SYD'}
+    ],
+    'ICC Cricket World Cup': [
+      {n:'Australia',c:'AUS'},{n:'England',c:'ENG'},{n:'India',c:'IND'},{n:'South Africa',c:'RSA'}
+    ],
+    'ICC T20 World Cup': [
+      {n:'Australia',c:'AUS'},{n:'India',c:'IND'},{n:'West Indies',c:'WI'}
+    ],
+    'Indian Premier League': [
+      {n:'Chennai Super Kings',c:'CSK'},{n:'Mumbai Indians',c:'MI'},{n:'Royal Challengers Bengaluru',c:'RCB'}
+    ],
+    'Big Bash League': [
+      {n:'Melbourne Stars',c:'STA'},{n:'Perth Scorchers',c:'SCO'},{n:'Sydney Sixers',c:'SIX'}
+    ],
+    'Sheffield Shield': [
+      {n:'New South Wales',c:'NSW'},{n:'Queensland',c:'QLD'},{n:'Victoria',c:'VIC'}
+    ]
+  };
+
+  /* clubs the account already follows, per league */
+  var FOLLOWED = {
+    'Champions League'      : ['Borussia Dortmund','Manchester United'],
+    'English Premier League': ['Liverpool']
+  };
+
+  var state = {
+    sport : 'Football',
+    level : 'International',
+    league: 'Champions League',
+    code  : 'CL',
+    club  : null,
+    q     : ''
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var open = null;
+
+  function leagues(){
+    if (!state.sport || !state.level) return [];
+    return LEAGUES[state.sport + '|' + state.level] || [];
+  }
+  function clubs(){
+    return (state.league && CLUBS[state.league]) || [];
+  }
+  function followed(){
+    return (state.league && FOLLOWED[state.league]) || [];
+  }
+  function codeOf(name){
+    var l = leagues(), i;
+    for (i = 0; i < l.length; i++) if (l[i][0] === name) return l[i][1];
+    return '';
+  }
+  function tick(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" '
+         + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+         + '<path d="M5 13l4 4 10-10"/></svg>';
+  }
+  function plate(club, size){
+    var inner = club.a ? '<span class="plate__art ' + club.a + '"></span>' : club.c;
+    return '<span class="plate plate--' + size + '" aria-hidden="true">' + inner + '</span>';
+  }
+
+  /* ---------- option lists ---------- */
+  function paintOpts(n){
+    var list = $('o' + n), items, sel, i, out = '';
+    if (n === 1){ items = SPORTS.map(function(s){ return [s,'']; }); sel = state.sport; }
+    else if (n === 2){ items = LEVELS.map(function(s){ return [s,'']; }); sel = state.level; }
+    else { items = leagues(); sel = state.league; }
+    for (i = 0; i < items.length; i++){
+      out += '<li role="option" data-v="' + items[i][0] + '" aria-selected="'
+           + (items[i][0] === sel) + '">' + tick()
+           + '<span>' + items[i][0] + '</span></li>';
+    }
+    list.innerHTML = out;
+  }
+
+  function toggle(n){
+    var f = $('f' + n), list = $('o' + n);
+    if (f.getAttribute('aria-disabled') === 'true') return;
+    if (open === n){ close(); return; }
+    close();
+    paintOpts(n);
+    list.hidden = false;
+    f.setAttribute('aria-expanded','true');
+    open = n;
+  }
+  function close(){
+    if (open === null) return;
+    $('o' + open).hidden = true;
+    $('f' + open).setAttribute('aria-expanded','false');
+    open = null;
+  }
+
+  /* ---------- the club list ---------- */
+  function paintClubs(){
+    var list = $('clist'), all = clubs(), fol = followed(),
+        q = state.q.toLowerCase().replace(/\s+/g,''),
+        full = fol.length + (state.club ? 1 : 0) >= LIMIT,
+        out = '', shown = 0, i, c, isFol, isSel, blocked, end;
+
+    for (i = 0; i < all.length; i++){
+      c = all[i];
+      if (q && c.n.toLowerCase().replace(/\s+/g,'').indexOf(q) === -1
+            && c.c.toLowerCase().indexOf(q) === -1) continue;
+      shown++;
+      isFol   = fol.indexOf(c.n) !== -1;
+      isSel   = state.club === c.n;
+      blocked = !isSel && (isFol || full);
+
+      /* Status lives on the row's second line, so the trailing slot
+         only ever holds a glyph and never competes with the club
+         name for width. The pill states *why* the list is closed, so
+         a blocked row carries a lock rather than repeating it. */
+      if (isSel)      end = tick();
+      else if (isFol) end = '';
+      else if (full)  end = '<svg class="crow__locked" viewBox="0 0 24 24" fill="none" '
+                          + 'stroke="currentColor" stroke-width="1.9" stroke-linecap="round" '
+                          + 'stroke-linejoin="round" aria-hidden="true">'
+                          + '<rect x="5" y="11" width="14" height="9" rx="2.5"/>'
+                          + '<path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>';
+      else            end = '';
+
+      out += '<li class="crow" role="option" data-n="' + c.n + '"'
+           + ' aria-selected="' + isSel + '"'
+           + (blocked ? ' aria-disabled="true"' : '') + '>'
+           + plate(c, 'md')
+           + '<span class="crow__id"><span class="crow__name">' + c.n + '</span>'
+           + '<span class="crow__sub">'
+           + (isSel ? 'Selected' : isFol ? 'Already following' : state.league)
+           + '</span></span>'
+           + '<span class="crow__end">' + end + '</span></li>';
+    }
+    list.innerHTML = shown ? out
+      : '<li class="clist__none">No club in ' + state.league + ' matches that.</li>';
+  }
+
+  /* ---------- the limit ---------- */
+  function paintLimit(){
+    var fol = followed(), used = fol.length, pending = state.club ? 1 : 0,
+        total = used + pending, full = total >= LIMIT, i, t = '', out;
+
+    for (i = 0; i < LIMIT; i++){
+      t += '<i class="' + (i < used ? 'on' : (i < total ? 'pending' : '')) + '"></i>';
+    }
+    $('limitTicks').innerHTML = t;
+    $('limitPill').textContent = full
+      ? 'Limit reached · ' + total + ' of ' + LIMIT
+      : total + ' of ' + LIMIT + ' used in this league';
+    $('limit').className = 'limit' + (full ? ' limit--full' : '');
+    $('limitNote').textContent = full
+      ? 'That is your third club in ' + state.league + '. Leave a club here before adding another.'
+      : 'You can follow up to ' + LIMIT + ' clubs in any one league. This pick counts, even if you leave mid-season.';
+
+    if (!used){
+      $('limitUsed').hidden = true;
+    } else {
+      $('limitUsed').hidden = false;
+      out = '<span>Already following</span>';
+      for (i = 0; i < fol.length; i++){
+        out += '<span class="used">' + plate(find(fol[i]), 'sm') + fol[i] + '</span>';
+      }
+      $('limitUsed').innerHTML = out;
+    }
+  }
+  function find(name){
+    var all = clubs(), i;
+    for (i = 0; i < all.length; i++) if (all[i].n === name) return all[i];
+    return {n:name, c:name.slice(0,3)};
+  }
+
+  /* ---------- steps, dock, pick ---------- */
+  function paintStep(li, s){
+    li.className = 'step ' + s;
+  }
+  function paintField(n, value, placeholder, locked){
+    var f = $('f' + n), v = $('v' + n);
+    f.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    if (locked) f.setAttribute('tabindex','-1'); else f.removeAttribute('tabindex');
+    v.textContent = value || placeholder;
+    f.className = 'field' + (value ? '' : ' field--empty');
+  }
+
+  function paint(){
+    /* step 1 — never locked */
+    paintStep($('st1'), state.sport ? 'is-done' : 'is-active');
+    paintField(1, state.sport, 'Choose a sport', false);
+
+    /* step 2 — needs a sport */
+    paintStep($('st2'), !state.sport ? 'is-locked' : (state.level ? 'is-done' : 'is-active'));
+    paintField(2, state.sport ? state.level : '',
+      state.sport ? 'Choose a competition level' : 'Choose a sport first', !state.sport);
+
+    /* step 3 — needs a competition level */
+    paintStep($('st3'), !state.level ? 'is-locked' : (state.league ? 'is-done' : 'is-active'));
+    paintField(3, state.level ? state.league : '',
+      state.level ? 'Choose a league' : 'Choose a competition level first', !state.level);
+    $('p3').hidden = !state.league;
+    if (state.league){ $('p3').textContent = state.code; }
+
+    /* step 4 — needs a league */
+    if (!state.league){
+      paintStep($('st4'), 'is-locked');
+      $('panelLive').hidden = true;
+      $('panelLocked').hidden = false;
+      $('h4').textContent = state.level
+        ? 'Choose a league first — clubs are listed by league.'
+        : 'Choose a competition level first, then a league.';
+    } else {
+      paintStep($('st4'), state.club ? 'is-done' : 'is-active');
+      $('panelLocked').hidden = true;
+      $('panelLive').hidden = false;
+      $('q').placeholder = 'Search ' + state.league + ' clubs';
+      paintLimit();
+      paintClubs();
+    }
+
+    /* your pick */
+    if (state.club){
+      var c = find(state.club);
+      $('pick').hidden = false;
+      $('pickPlate').innerHTML = c.a ? '<span class="plate__art ' + c.a + '"></span>' : c.c;
+      $('pickName').textContent = c.n;
+      $('pickSub').textContent = state.league + ' · ' + state.sport;
+    } else {
+      $('pick').hidden = true;
+    }
+
+    /* dock */
+    var cta = $('cta'), note = $('dockNote');
+    cta.disabled = !state.club;
+    if (state.club){ note.textContent = state.club + ' · ' + state.league; }
+    else if (!state.sport){ note.textContent = 'Choose a sport to begin.'; }
+    else if (!state.level){ note.textContent = 'Choose a competition level to continue.'; }
+    else if (!state.league){ note.textContent = 'Choose a league to continue.'; }
+    else { note.textContent = 'Choose a club to continue.'; }
+  }
+
+  /* ---------- events ---------- */
+  [1,2,3].forEach(function(n){
+    $('f' + n).addEventListener('click', function(){ toggle(n); });
+    $('o' + n).addEventListener('click', function(e){
+      var li = e.target.closest('li'); if (!li) return;
+      var v = li.getAttribute('data-v');
+      if (n === 1){ state.sport = v;  state.level = null; state.league = null; state.code = ''; }
+      if (n === 2){ state.level = v;  state.league = null; state.code = ''; }
+      if (n === 3){ state.league = v; state.code = codeOf(v); }
+      state.club = null; state.q = ''; $('q').value = '';
+      close(); paint();
+    });
+  });
+
+  $('clist').addEventListener('click', function(e){
+    var li = e.target.closest('.crow'); if (!li) return;
+    if (li.getAttribute('aria-disabled') === 'true') return;
+    var n = li.getAttribute('data-n');
+    state.club = (state.club === n) ? null : n;
+    paint();
+  });
+
+  $('q').addEventListener('input', function(){ state.q = this.value; paintClubs(); });
+  $('pickClear').addEventListener('click', function(){ state.club = null; paint(); });
+
+  document.addEventListener('click', function(e){
+    if (open === null) return;
+    if (e.target.closest('.field') || e.target.closest('.opts')) return;
+    close();
+  });
+
+  paint();
+})();
+</script>
+</body>
+</html>

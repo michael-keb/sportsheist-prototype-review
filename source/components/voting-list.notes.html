@@ -1,0 +1,282 @@
+<p class="dek">Every Proposal a club is counting right now, reached from the <code>View all ↗</code>
+pill on the War Room's Voting rail. Any member uses it to find the ballots that still need their
+vote and to see which ones are close to their threshold.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The rail shows four ballots; this is all of them</h2>
+  <p>An Idea that collects enough Likes becomes a Proposal, and Barcelona votes on it. This screen
+    is every Proposal currently in that stage, at full column width, with the controls the rail had
+    no room for: a Decisions / Positions switch, a category chip row that <em>changes</em> with the
+    switch, a sort sheet, a filter sheet and search.</p>
+  <p>The card is untouched. It is <code>voting-card.html</code>'s card — the same
+    <code>8px</code> threshold bar with its <code>14px</code> knob and its threshold tick, the same
+    <code>now</code> / <code>required</code> figure pair, the same verdict pill and the same
+    <code>52px</code> outlined CTA — with one edit: it runs the full column instead of a
+    <code>268px</code> rail cell.</p>
+  <p>Three findings from the code shape this screen. There is <strong>no pagination and no infinite
+    scroll</strong> — one request, <code>limit: 50</code>, <code>next</code> ignored. The sheet the
+    filter glyph opens <strong>only sorts</strong>. And <code>getListVotingNoLimit</code>
+    <strong>re-sorts the page ascending by vote count</strong> after the request, so the list arrives
+    least-supported first while the sheet says <code>MOST RECENT</code> is applied.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built. Five frames:
+        the list, the sort sheet, the filter sheet, first load, and nothing to vote on.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Header</td><td>Back control</td><td class="t-note"><code>38px</code> disc,
+          <code>#1C2129</code>, white <code>1.9</code>-stroke arrow, with the
+          <code>create-idea.html</code> <code>::after</code> expansion to a <code>44px</code> hit
+          area. The code's <code>context.pop(true)</code>.</td></tr>
+        <tr><td>Header</td><td>Eyebrow</td><td class="t-note"><code>War Room</code> at
+          <code>10.5/700/.14em</code> uppercase in <code>#5B606B</code>.</td></tr>
+        <tr><td>Header</td><td>Create control</td><td class="t-note"><code>38px</code> acid disc,
+          <code>2.4</code>-stroke plus, ink <code>#0B0E06</code>. Goes to the Idea gate
+          (<code>idea-gate.html</code>, frame 01), which is where
+          <code>onPressChildRight</code> already points. Present only when
+          <code>CIdeaPost.canPost</code> is true.</td></tr>
+        <tr><td>Title</td><td>Screen title</td><td class="t-note"><code>Voting</code> at
+          <code>34/800/-.025em</code> uppercase.</td></tr>
+        <tr><td>Title</td><td>Lede</td><td class="t-note"><code>13/400/1.5</code> in
+          <code>#99A0AE</code>. States the approval rule, because the whole card is a reading of
+          it.</td></tr>
+        <tr><td>Segment</td><td>Decisions / Positions</td><td class="t-note"><code>48px</code>
+          <code>#1C2129</code> track, R pill, two <code>40px</code> halves with counts. Active = acid
+          fill, <code>--acid-ink</code>. <code>CLString.listFilterPri</code>, sent as
+          <code>type=decisions</code> or <code>type=position</code>.</td></tr>
+        <tr><td>Search</td><td>Trigger</td><td class="t-note"><code>forms.html</code>'s
+          <code>52px</code> control shell, R<code>12px</code>. <strong>New.</strong></td></tr>
+        <tr><td>Toolbar</td><td>Sort trigger</td><td class="t-note"><code>44px</code> pill with the
+          applied sort shown inline.</td></tr>
+        <tr><td>Toolbar</td><td>Filter trigger</td><td class="t-note">Same pill, with a count in an
+          <code>--acid-wash</code> pill and an <code>rgba(155,226,34,.30)</code> border when
+          anything is on.</td></tr>
+        <tr><td>Chips</td><td>Category row — <em>swaps</em></td><td class="t-note"><code>36px</code>
+          pills, <code>#13171E</code>, <code>11/700/.11em</code> uppercase, horizontally scrolling.
+          Under <b>Decisions</b> the code uses <code>CLString.listFilterSup</code> —
+          <code>["", "ALL", "ON-FIELD", "OFF-FIELD", "MANAGEMENT", "MY IDEAS"]</code>, so five chips.
+          Under <b>Positions</b> it swaps to <code>CLString.listFilterSupIDea</code> —
+          <code>["", "ALL", "MY IDEAS"]</code>, so two. An index that no longer exists falls back to
+          <code>1</code> (<code>ALL</code>) — the code's <code>indexFilterSupChange</code>
+          clamp, reproduced here.</td></tr>
+        <tr><td>Tally</td><td>Count + applied sort</td><td class="t-note"><code>11/700/.11em</code>
+          uppercase, <code>aria-live="polite"</code>, tabular figure, with
+          <code>Clear</code> when anything is on.</td></tr>
+        <tr><td>Card</td><td>Voting card</td><td class="t-note"><code>voting-card.html</code>,
+          unchanged except <code>width:100%</code>. <code>16px</code> padding, R<code>16px</code>,
+          <code>22px</code> avatars at <code>-9px</code>, title
+          <code>17/600/-.015em</code>, body <code>13/1.35</code>, clock <code>13.5/600</code>
+          tabular, tag <code>11/700/.09em</code>.</td></tr>
+        <tr><td>Card</td><td>Threshold panel</td><td class="t-note"><code>#13171E</code>
+          R<code>12px</code>, <code>12 × 14px</code> padding. Lede + verdict pill; leading option at
+          <code>15/600</code> with an <code>18px</code> info button (hit area expanded to
+          <code>44px</code>); an <code>8px</code> bar on a <code>#2E3F1F</code> track with an acid
+          fill, a <code>14px</code> knob ringed <code>3px</code> in <code>#13171E</code>, and a
+          <code>2 × 7px</code> acid tick dropped below the bar at the required percentage; then
+          <code>now</code> and <code>required</code> as <code>14/700</code> tabular
+          figures.</td></tr>
+        <tr><td>Card</td><td>Not on track</td><td class="t-note">Bar track
+          <code>rgba(226,86,74,.14)</code>, fill and <code>now</code> figure
+          <code>#E2564A</code> (<code>4.36:1</code>), verdict pill <code>Not on track</code> in the
+          red wash. The word carries it; the hue reinforces it.</td></tr>
+        <tr><td>Card</td><td>Final minutes</td><td class="t-note"><code>isDanger</code>. Clock
+          <code>#E2564A</code> plus the word <code>FINAL</code> at
+          <code>9.5/700/.13em</code>.</td></tr>
+        <tr><td>Card</td><td>Veto hold</td><td class="t-note"><code>status = veto</code>. Counting is
+          frozen, so the panel takes the canonical hold hatch: static accent bars at
+          <code>135°</code>, <code>rgba(155,226,34,.11)</code>, <code>5px</code> on /
+          <code>6px</code> off, with an <code>rgba(155,226,34,.30)</code> ring. Bar drops to the
+          neutral <code>#3D424B</code> track with a <code>#99A0AE</code> fill, the
+          <code>now</code> label becomes <code>frozen</code>, the verdict pill is
+          <code>Veto hold</code>, and the lede takes a <code>⊘</code>. Clock keeps
+          <strong>full-contrast white digits</strong>.</td></tr>
+        <tr><td>Card</td><td>Closed</td><td class="t-note">Clock replaced by
+          <code>Closed 12 Jul</code> in <code>#5B606B</code> with a tick glyph; <code>now</code>
+          label becomes <code>final</code>; verdict reads <code>Result published</code>; CTA is
+          <code>View result</code>.</td></tr>
+        <tr><td>Card</td><td>Reject-veto</td><td class="t-note"><code>type = reject_veto</code>. Its
+          threshold comes from <code>targetPercentageRejectVeto</code>, not the standard target, so
+          the tick sits at a different point. Tag <code>Reject veto</code>, CTA
+          <code>Vote on veto</code> — the code's own strings.</td></tr>
+        <tr><td>Card</td><td>CTA</td><td class="t-note"><code>52px</code> R-pill. A ballot the member
+          has <em>not</em> voted in gets the filled acid pill (<code>Vote here</code> /
+          <code>Vote on veto</code>); everything else gets <code>voting-card.html</code>'s outlined
+          ghost (<code>View votes</code> / <code>View details</code> / <code>View
+          result</code>).</td></tr>
+        <tr><td>Tail</td><td>End-of-list line</td><td class="t-note"><code>10.5/700/.14em</code>
+          uppercase between two <code>rgba(255,255,255,.045)</code> rules.</td></tr>
+        <tr><td>Tail</td><td>Cap notice</td><td class="t-note"><code>--section</code> panel naming
+          the <code>limit: 50</code> ceiling and the ascending re-sort.</td></tr>
+        <tr><td>Sheet</td><td>Sort</td><td class="t-note"><code>sheets.html</code> shell. Three
+          options, single-select, applying on tap.</td></tr>
+        <tr><td>Sheet</td><td>Filter</td><td class="t-note">Same shell with a count pill,
+          <code>Clear all</code> and a committing <code>Apply</code>. Four groups: stage, threshold,
+          me, urgency. OR inside a group, AND across groups.</td></tr>
+        <tr><td>Sheet</td><td>Search</td><td class="t-note">Sticky <code>44px</code> field on
+          <code>#181D25</code>, recent terms, results as the same Voting card, no-match panel. Sort
+          and filter open over it.</td></tr>
+        <tr><td>Loading</td><td>Skeleton</td><td class="t-note">Four cards, matching
+          <code>childCount: 4</code>, with the threshold panel's own geometry — head row, option
+          line, <code>8px</code> bar, figure pair. <code>states.html</code>'s bone.</td></tr>
+        <tr><td>Empty</td><td>Nothing counting</td><td class="t-note"><code>--section</code> panel, a
+          <code>132 × 88</code> <code>1.8</code>-stroke ballot-box illustration, a headline at
+          <code>17/600</code>, and a <code>See open ideas</code> pill — because the Ideas stage is
+          the only thing that can fill this list.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Default</td><td class="t-note"><code>DECISIONS</code>, <code>ALL</code>,
+          <code>MOST RECENT</code> — the defaults <code>VotingS.initial()</code> sets
+          (<code>currentFilterPri: 0</code>, <code>currentFilterSup: 1</code>,
+          <code>currentSortVoting: 0</code>).</td></tr>
+        <tr><td>On track</td><td class="t-note">Acid bar clearing the tick, acid
+          <code>required</code> figure, <code>On track to be approved</code> pill in the acid
+          wash.</td></tr>
+        <tr><td>Not on track</td><td class="t-note">Red track, red fill, red <code>now</code> figure,
+          <code>Not on track</code> pill. Word and sign together, never the hue alone.</td></tr>
+        <tr><td>Final minutes</td><td class="t-note">Red clock plus <code>FINAL</code>. Reachable
+          live: the countdowns run.</td></tr>
+        <tr><td>Veto hold</td><td class="t-note">Hatched panel, neutral bar, <code>frozen</code>
+          label, <code>⊘</code> in the lede, white clock digits, ghost CTA.</td></tr>
+        <tr><td>Closed</td><td class="t-note">Dim <code>Closed 12 Jul</code>, <code>final</code>
+          label, <code>Result published</code>, <code>View result</code>.</td></tr>
+        <tr><td>Reject-veto</td><td class="t-note">Its own threshold, so the tick moves. Tag and CTA
+          both reworded.</td></tr>
+        <tr><td>Voted / not voted</td><td class="t-note">Not voted = filled acid CTA. Voted = ghost
+          CTA reading <code>View votes</code>. This is the only signal on the card that the member
+          has already acted, and it is a shape difference, not a colour one.</td></tr>
+        <tr><td>Positions segment</td><td class="t-note">Different request, different list, and the
+          chip row drops from five to two. A chip that no longer exists reverts to
+          <code>ALL</code>.</td></tr>
+        <tr><td>Filtered to nothing</td><td class="t-note">Quiet panel plus
+          <code>Clear filters</code>.</td></tr>
+        <tr><td>Nothing counting</td><td class="t-note">Illustrated panel pointing at the Ideas
+          stage with the count of Ideas still collecting Likes.</td></tr>
+        <tr><td>First load</td><td class="t-note">Four skeleton cards. Note that
+          <code>buildShimmerEffectFilter()</code> drops the <code>isVoting</code> flag, so a chip
+          change in the shipped app briefly draws four <em>Ideas</em> skeletons here.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">Transitions off, bar fills instantly, bone
+          sheen stops. The hold hatch is static by design.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the library and the code</h3>
+      <ul>
+        <li><b>The Voting card</b> — <code>voting-card.html</code>, unchanged but for
+          <code>width:100%</code></li>
+        <li><b>Sheet shell, option row, checkbox and radio</b> — <code>sheets.html</code></li>
+        <li><b>Search and text controls</b> — <code>forms.html</code></li>
+        <li><b>The skeleton bone</b> — <code>states.html</code></li>
+        <li><b>The hold hatch</b> — <code>veto.html</code>, via the contract</li>
+        <li><b>Screen furniture</b> — back disc, eyebrow, <code>34px</code> title, segment, chips,
+          tally and end-of-list line, all from <code>all-locker-rooms.html</code></li>
+        <li><b>Segment labels</b> — <code>CLString.listFilterPri</code></li>
+        <li><b>Chip labels and the swap</b> — <code>CLString.listFilterSup</code> /
+          <code>listFilterSupIDea</code>, with <code>VotingC.getFilterListIdea</code>'s clamp</li>
+        <li><b>Sort options</b> — <code>CLString.listSortProposal</code>, all three</li>
+        <li><b>Card-state branches</b> — <code>voting_screen.dart</code>'s
+          <code>veto</code> / <code>rejectVeto</code> / <code>isVote</code> /
+          <code>isDanger</code> splits, and <code>findTargetVote()</code> for the tick</li>
+        <li><b>CTA wording</b> — <code>voting_screen.dart</code>'s
+          <code>actions.vote</code> / <code>actions.view</code> strings</li>
+        <li><b>The create entry point</b> — <code>CRoute.warningIdea</code>, gated on
+          <code>CIdeaPost.canPost</code>, landing on <code>idea-gate.html</code></li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Search</b> — no proposal search endpoint exists; built as a client-side match on
+          title and author over the loaded page</li>
+        <li><b>The filter sheet</b> — the app has none. Every option is an existing field:
+          <code>status</code>, <code>type</code>, <code>isVote</code>, <code>isDanger</code>, and
+          <code>voted</code> compared against <code>findTargetVote()</code></li>
+        <li><b>The applied sort, shown on the trigger</b></li>
+        <li><b>Sorting the list to match its own label</b> — the shipped screen sorts ascending by
+          vote count after the request and never says so</li>
+        <li><b>The tally line</b> and <b>the end-of-list line</b></li>
+        <li><b>The cap notice</b> — <code>limit: 50</code> is a real ceiling</li>
+        <li><b>The empty state</b> — the shipped screen has none, and no pull-to-refresh either</li>
+        <li><b>Pull-to-refresh</b> — <code>voting_screen.dart</code> has no
+          <code>RefreshIndicator</code> at all, unlike <code>ideas_screen.dart</code></li>
+        <li><b>The filled CTA on an unvoted ballot</b> — the shipped card gives every state the same
+          text link, so a ballot needing a vote looks like one already cast</li>
+        <li><b>The hold hatch on the threshold panel</b> — <code>voting-card.html</code> carries the
+          held state as a neutral bar and a pill; the hatch is added so held reads as held at a
+          glance, per the contract</li>
+        <li><b>The <code>FINAL</code> word on a red clock</b></li>
+        <li><b>Dropping the tooltip discs</b> — the segment's two question-mark discs are wired to
+          lorem ipsum</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Should this list paginate at all?</h3>
+      <p>It does not today. <code>getListIdea</code> sends <code>limit: 50</code> with no offset and
+        no cursor, and <code>next</code> is never read. We have assumed <span class="flag">50 is a
+        real cap and the screen should say so</span>. If a club can exceed 50 live ballots this needs
+        cursor paging or server-side chip filtering.</p></li>
+    <li><h3>Which order should the list actually arrive in?</h3>
+      <p><code>getListVotingNoLimit</code> requests <code>ordering=recent</code> and then runs
+        <code>dataListActive.sort((a, b) =&gt; a.voted.compareTo(b.voted))</code> — ascending, so the
+        <em>least</em> supported Proposal is first while the sheet reports
+        <code>MOST RECENT</code>. We have assumed <span class="flag">the label is right and the extra
+        sort is a bug</span>. If putting the ballots that need help first is deliberate, it should be
+        a fourth sort option with a name, not a silent override.</p></li>
+    <li><h3>Should Voting have pull-to-refresh?</h3>
+      <p><code>ideas_screen.dart</code> wraps its body in a <code>RefreshIndicator</code>;
+        <code>voting_screen.dart</code> does not. Since counts move second by second and the screen
+        is driven by a socket stream, a member who suspects a stale figure has nothing to pull. We
+        have assumed <span class="flag">it should be added, matching Ideas</span>.</p></li>
+    <li><h3>Is the sheet a sort sheet or a filter sheet?</h3>
+      <p>The file is <code>widget/show_filter.dart</code>, the trigger draws a filter glyph, and
+        everything inside sorts. We have assumed <span class="flag">two sheets — Sort with the code's
+        three real options, and a new Filter sheet</span>, because sort applies instantly and filters
+        need an Apply.</p></li>
+    <li><h3>Should closed Proposals stay in this list?</h3>
+      <p><code>getListVotingNoLimit</code> keeps only <code>active</code> and <code>veto</code>
+        statuses, but <code>getFilterListIdea</code> — the call every chip and sort tap uses — does
+        <em>not</em> apply that filter, so a settled Proposal can appear the moment a member touches
+        a chip. We have assumed <span class="flag">closed ballots belong here, with their own filter
+        tick and a <code>View result</code> CTA</span>, and that the two calls should agree. The
+        alternative is excluding them from both and sending members to Results.</p></li>
+    <li><h3>Do the chips need to match Ideas?</h3>
+      <p>Voting offers five chips under Decisions; Ideas offers two. That is what the code does, and
+        we have <span class="flag">kept it</span> — but the same Proposal passes through both
+        screens, so a member can filter to <code>MANAGEMENT</code> while voting and not while
+        liking.</p></li>
+    <li><h3>Is “Support” one figure or two?</h3>
+      <p>The shipped card draws a two-ended bar labelled <code>Reject</code> and
+        <code>Approve</code>, then prints a single <code>N% Support</code> figure beneath it. Two
+        readings of the same number in one panel. <code>voting-card.html</code> resolved this as one
+        figure against a threshold and we have <span class="flag">kept that</span>, but if a ballot
+        genuinely has more than two options the panel needs the ranked list instead.</p></li>
+  </ol>
+</section>

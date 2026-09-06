@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="en" data-component="forms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Forms</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — FORMS KIT
+   Every input control, every state, one phone-width screen.
+
+   Token block copied verbatim from merits.html. Colours, geometry
+   and type scale are sampled from War Room-Dark Mode.svg and
+   Backchat-Dark Mode.svg — nothing here is invented.
+
+   The control inventory is taken from the current violet app
+   (Screen-Specs AU-05, AU-06, AU-09, AU-10, AU-11, WR-03,
+   CL-02) together with the variations that flow records. The
+   styling is not: this is the dark rebrand.
+
+   Four things the current app does that this kit fixes are
+   commented at the control that fixes them:
+     - four field-label conventions across eight screens (V-12)
+     - primary button at six different heights (V-13)
+     - no divider in the compound phone field, emoji flags (V-7)
+     - accent on the switch knob instead of the track
+     - two-up rows drifting 3 pt at the top and 6 px in height (V-1)
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls, tab bar        */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* hero */
+  --hero-a:        #0D3617;
+  --hero-b:        #17481C;
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* --- forms-only derivations, provenance noted, no new hue ---
+     --red      the contract's single semantic red, unchanged
+     --red-wash the same red at .12, built exactly like --acid-wash
+     --h-field  52px, lifted from the primary action already
+                shipping in idea-card.html. ONE height for every
+                single-line control and every button on the screen;
+                the current app renders the primary button at
+                62 / 68 / 72 / 86 / 90 / 96 pt (V-13).
+  */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.12);
+  --h-field:       52px;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+/* .val and .actions__say are display:flex, which would otherwise beat
+   the UA rule for [hidden] — and hidden is how a message leaves */
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ============================================================
+   PAGE FURNITURE
+   ============================================================ */
+.title{
+  margin:6px var(--gutter) 0;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;
+  text-transform:uppercase;
+}
+.title-sub{margin:9px var(--gutter) 0;font-size:13px;color:var(--muted)}
+
+.label{
+  margin:26px var(--gutter) 12px;
+  font-size:18px;font-weight:600;letter-spacing:-.015em;
+}
+.spec{padding:0 var(--gutter)}
+
+/* the state caption above each specimen */
+.state-tag{
+  margin:16px 0 7px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.state-tag:first-child{margin-top:0}
+
+/* documentation panel — states the two conventions this kit fixes */
+.note{
+  margin:16px var(--gutter) 0;padding:14px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);
+}
+.note dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 12px}
+.note dt{
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);white-space:nowrap;padding-top:2px;
+}
+.note dd{margin:0;font-size:12.5px;color:var(--muted)}
+.note dd b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   FIELD — the label convention, applied to every control
+   ------------------------------------------------------------
+   ONE convention: label OUTSIDE the box, ABOVE the control,
+   12.5/600 white. The current app ships four (V-12) — inside the
+   box above the value on AU-05, absent on AU-07, outside in muted
+   lilac on AU-09/AU-10, outside in semibold white on AU-11.
+   Outside-above wins because it is the only one of the four that
+   works for every control in this kit: a switch row, a checkbox
+   row and a compound phone field have nowhere to put an inside
+   label, and an absent label leaves a placeholder doing a label's
+   job. It also keeps the box a single-purpose value container, so
+   every control can hold the same fixed height.
+   White rather than the AU-09 muted grey: at 12.5px the label is
+   the accessible name of the control and should not sit at the
+   screen's lowest emphasis. Size, not colour, separates it from
+   the 16px value.
+   ============================================================ */
+.field{display:block;margin-bottom:2px}
+.field__label{
+  display:block;margin-bottom:8px;
+  font-size:12.5px;font-weight:600;letter-spacing:-.005em;
+  color:var(--text);line-height:1.44;   /* 18px line box, one line */
+}
+.field__label .req{color:var(--acid);margin-left:2px}
+.field__help{margin:8px 0 0;font-size:12px;line-height:1.35;color:var(--muted)}
+.field.is-disabled .field__label,
+.field.is-disabled .field__help{color:var(--dim)}
+
+/* ============================================================
+   CONTROL SHELL — .ctl
+   Every single-line control is this box: var(--h-field) tall,
+   --r-panel, --surface fill, 1 px --line. Text field, password,
+   select, date, phone and search share it, so the whole form
+   sits on one baseline grid.
+   ============================================================ */
+.ctl{
+  position:relative;
+  display:flex;align-items:center;gap:10px;
+  height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease),background .16s var(--ease);
+}
+.ctl:hover{border-color:rgba(255,255,255,.14)}
+
+/* value / placeholder */
+.ctl__in{
+  flex:1;min-width:0;height:100%;
+  border:0;background:transparent;color:inherit;
+  font:inherit;font-size:16px;   /* 16px: below it iOS zooms on focus */
+  padding:0;margin:0;outline:none;
+}
+.ctl__in::placeholder{color:var(--dim);opacity:1}
+.ctl__in[type="password"]{letter-spacing:.16em;font-size:15px}
+
+/* leading + trailing glyphs */
+.ctl__icon{flex:0 0 auto;width:19px;height:19px;color:var(--muted)}
+.ctl__btn{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;margin-right:-6px;
+  border:0;border-radius:50%;background:transparent;color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.ctl__btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.ctl__btn:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.ctl__btn svg{width:19px;height:19px}
+.ctl__btn[aria-pressed="true"]{color:var(--acid)}
+
+/* --- FOCUS: accent border + a 3 px accent wash ring ------------
+   .is-focus is the static specimen of exactly what :focus-within
+   renders, so the sheet can be reviewed without a live caret. */
+.ctl:focus-within,.ctl.is-focus{
+  border-color:var(--acid);
+  box-shadow:0 0 0 3px var(--acid-wash);
+}
+.ctl:focus-within .ctl__icon,.ctl.is-focus .ctl__icon{color:var(--text)}
+
+/* the caret, drawn for the static focus specimens */
+.caret{position:relative;display:inline-flex;align-items:center;flex:1;min-width:0}
+.caret__text{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.caret::after{
+  content:"";flex:0 0 auto;width:1.5px;height:19px;margin-left:1px;
+  background:var(--acid);
+}
+
+/* --- ERROR: red border + red wash ring. Never colour alone —
+   every error pairs with an icon + message row below. --------- */
+.ctl.is-error{border-color:var(--red);box-shadow:0 0 0 3px var(--red-wash)}
+.ctl.is-error .ctl__icon{color:var(--red)}
+
+/* --- DISABLED: drops to the sunken fill, softest hairline ---- */
+.ctl.is-disabled{
+  background:var(--sunken);border-color:var(--line-soft);
+  color:var(--dim);cursor:not-allowed;box-shadow:none;
+}
+.ctl.is-disabled:hover{border-color:var(--line-soft)}
+.ctl.is-disabled .ctl__icon,.ctl.is-disabled .ctl__btn{color:var(--dim)}
+.ctl.is-disabled .ctl__btn{pointer-events:none}
+.ctl__in:disabled{color:var(--dim);-webkit-text-fill-color:var(--dim);opacity:1}
+
+/* ---------- textarea: the one control that is not 52 px ------ */
+.ctl--area{
+  height:auto;flex-direction:column;align-items:stretch;gap:6px;
+  padding:12px 14px 10px;
+}
+.ctl--area .ctl__in{
+  height:auto;min-height:72px;   /* three 16/1.5 line boxes */
+  resize:vertical;line-height:1.5;
+}
+.counter{
+  align-self:flex-end;font-size:11.5px;color:var(--dim);
+  font-variant-numeric:tabular-nums;
+}
+.ctl--area.is-error .counter{color:var(--red)}
+
+/* ---------- select ------------------------------------------- */
+/* appearance:none plus the fixed shell height is half of the
+   two-up fix: a native select otherwise sizes itself to its own
+   line box and lands 6 px away from the date field beside it. */
+.ctl__select{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  flex:1;min-width:0;height:100%;
+  border:0;background:transparent;color:inherit;
+  font:inherit;font-size:16px;padding:0;margin:0;outline:none;
+  cursor:pointer;
+}
+.ctl__select option{background:var(--surface);color:var(--text)}
+.ctl--placeholder .ctl__select{color:var(--dim)}
+.ctl.is-disabled .ctl__select{color:var(--dim);cursor:not-allowed}
+.ctl__chev{flex:0 0 auto;width:19px;height:19px;color:var(--muted);pointer-events:none;
+  transition:transform .16s var(--ease),color .16s var(--ease)}
+.ctl.is-disabled .ctl__chev{color:var(--dim)}
+
+/* Branded select menu — the OS popup is the one piece of system chrome the
+   native <select> can't restyle, so the select becomes a hidden state holder
+   and this popover does the showing. Same panel recipe as .dp (date picker):
+   surface, 1px line, r-panel, the 18/44 shadow, anchored to the .ctl. */
+.ctl__select--bh{
+  position:absolute;width:1px;height:1px;opacity:0;
+  pointer-events:none;overflow:hidden;
+}
+.ctl__face{
+  flex:1;min-width:0;height:100%;display:flex;align-items:center;
+  border:0;background:transparent;color:inherit;
+  font:inherit;font-size:16px;padding:0;margin:0;outline:none;
+  cursor:pointer;text-align:left;
+}
+.ctl__face > span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctl--placeholder .ctl__face{color:var(--dim)}
+.ctl.is-open{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.ctl.is-open .ctl__chev{transform:rotate(180deg);color:var(--text)}
+.dd{
+  position:absolute;top:calc(100% + 8px);left:0;z-index:80;
+  min-width:100%;width:max-content;max-width:276px;
+  max-height:288px;overflow:auto;padding:6px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-panel);
+  box-shadow:0 18px 44px rgba(0,0,0,.55);
+}
+.dd--r{left:auto;right:0}
+.dd--spec{position:static;margin-top:8px;min-width:0;width:auto;max-width:none}
+.dd--spec .dd__opt{cursor:default}
+.dd[hidden]{display:none}
+.dd__opt{
+  display:flex;align-items:center;gap:10px;width:100%;min-height:44px;
+  padding:5px 10px;border:0;border-radius:8px;background:none;color:var(--text);
+  font:inherit;font-size:15px;line-height:1.3;text-align:left;cursor:pointer;
+}
+.dd__opt:hover{background:var(--sunken)}
+.dd__opt:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.dd__opt[aria-selected="true"]{font-weight:650}
+.dd__t{flex:1;min-width:0}
+.dd__tick{visibility:hidden;flex:0 0 auto;width:17px;height:17px;color:var(--acid)}
+.dd__opt[aria-selected="true"] .dd__tick{visibility:visible}
+
+/* ============================================================
+   COMPOUND PHONE FIELD
+   ------------------------------------------------------------
+   Two fixes to the AU-09 control:
+   1. THE BOUNDARY IS VISIBLE. AU-09 puts a country-code select
+      and a free-text number in one box with no divider, fill
+      change or border, so there is nothing to tell a member where
+      the tappable dial-code zone ends. A 1 px --line rule, inset
+      9 px top and bottom, marks it — the same hairline the row
+      pattern already uses, so no new device is introduced.
+   2. NO EMOJI FLAGS. AU-09 renders the Vietnam and Italy flags
+      from the platform emoji font (V-7): full-colour, inconsistent
+      across OS versions, and unreadable to a screen reader. A
+      full-colour flag sprite would also be the only thing on the
+      screen outside the palette. This uses the
+      monochrome badge tile the kit already ships for club crests
+      in merits.html — an ISO 3166-1 alpha-2 code in a hairline
+      rounded rect. Deterministic from the dial code, no raster,
+      and no colour outside the palette.
+   ============================================================ */
+.tel{padding:0;gap:0}
+.tel__cc{
+  position:relative;flex:0 0 auto;
+  display:flex;align-items:center;gap:8px;
+  height:100%;padding:0 12px 0 14px;
+}
+.tel__cc::after{                 /* the divider AU-09 is missing */
+  content:"";position:absolute;right:0;top:9px;bottom:9px;
+  width:1px;background:var(--line);
+}
+.ctl.is-disabled .tel__cc::after{background:var(--line-soft)}
+.tel__dial{
+  font-size:16px;font-weight:500;font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.tel__cc .ctl__chev{width:16px;height:16px}
+.tel__num{flex:1;min-width:0;display:flex;align-items:center;height:100%;padding:0 14px}
+.tel__num .ctl__in{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+/* the country tile — merits.html .crest geometry, alpha-2 code */
+.iso{
+  display:inline-flex;align-items:center;justify-content:center;
+  flex:0 0 auto;width:23px;height:16px;border-radius:4px;
+  background:rgba(255,255,255,.10);
+  box-shadow:inset 0 0 0 1px var(--line);
+  font-size:8.5px;font-weight:800;letter-spacing:.04em;
+  color:rgba(255,255,255,.82);
+}
+.ctl.is-disabled .iso{background:rgba(255,255,255,.05);color:var(--dim)}
+
+/* ============================================================
+   TOGGLE SWITCH
+   ------------------------------------------------------------
+   The accent is on the TRACK, knob stays white in both states.
+   PA-01/PA-02 in the current app put the accent on the knob and
+   leave a pale lilac track behind it in the off state, which
+   inverts the platform convention and makes off read as on — the
+   off state renders lighter than the on state. Here off is the
+   darkest thing in the row and on is the brightest.
+   ============================================================ */
+.toggle{
+  position:relative;flex:0 0 auto;
+  width:46px;height:28px;padding:0;border:0;
+  border-radius:var(--r-pill);background:var(--sunken);
+  box-shadow:inset 0 0 0 1px var(--line);
+  cursor:pointer;
+  transition:background .18s var(--ease),box-shadow .18s var(--ease);
+}
+.toggle::after{
+  content:"";position:absolute;top:3px;left:3px;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.55);
+  transition:transform .18s var(--ease),background .18s var(--ease);
+}
+.toggle[aria-checked="true"]{background:var(--acid);box-shadow:inset 0 0 0 1px var(--acid)}
+.toggle[aria-checked="true"]::after{transform:translateX(18px)}
+.toggle.is-focus,.toggle:focus-visible{
+  outline:0;box-shadow:inset 0 0 0 1px var(--acid),0 0 0 3px var(--acid-wash);
+}
+.toggle.is-error{box-shadow:inset 0 0 0 1px var(--red),0 0 0 3px var(--red-wash)}
+.toggle[disabled]{cursor:not-allowed;background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line-soft)}
+.toggle[disabled]::after{background:var(--dim);box-shadow:none}
+
+/* the row a switch lives in — merits .row pattern */
+.sw-row{
+  display:flex;align-items:center;gap:12px;
+  min-height:var(--h-field);
+}
+.sw-row__id{flex:1;min-width:0}
+.sw-row__name{display:block;font-size:14.5px;font-weight:600}
+.sw-row__sub{display:block;margin-top:2px;font-size:12px;color:var(--muted)}
+.sw-row.is-disabled .sw-row__name{color:var(--dim)}
+.sw-row.is-disabled .sw-row__sub{color:var(--dim)}
+
+/* ============================================================
+   CHECKBOX + RADIO
+   ============================================================ */
+.opt{
+  position:relative;display:flex;align-items:center;gap:12px;
+  min-height:44px;cursor:pointer;
+}
+.opt__in{
+  position:absolute;left:0;top:50%;margin:-10px 0 0;
+  width:20px;height:20px;opacity:0;pointer-events:none;
+}
+.check,.radio{
+  position:relative;flex:0 0 auto;width:20px;height:20px;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);
+  transition:background .16s var(--ease),box-shadow .16s var(--ease);
+}
+.check{border-radius:6px}
+.radio{border-radius:50%}
+.check svg,.radio svg{
+  position:absolute;inset:0;width:20px;height:20px;
+  opacity:0;transition:opacity .14s var(--ease);
+}
+.check svg{color:var(--acid-ink)}
+.radio svg{color:var(--acid)}
+.opt__in:checked ~ .check{background:var(--acid);box-shadow:none}
+.opt__in:checked ~ .radio{box-shadow:inset 0 0 0 1.7px var(--acid)}
+.opt__in:checked ~ .check svg,.opt__in:checked ~ .radio svg{opacity:1}
+.opt__in:focus-visible ~ .check,.opt__in:focus-visible ~ .radio,
+.opt.is-focus .check,.opt.is-focus .radio{
+  box-shadow:inset 0 0 0 1px var(--acid),0 0 0 3px var(--acid-wash);
+}
+.opt.is-error .check,.opt.is-error .radio{
+  box-shadow:inset 0 0 0 1px var(--red),0 0 0 3px var(--red-wash);
+}
+.opt.is-disabled{cursor:not-allowed}
+.opt.is-disabled .check,.opt.is-disabled .radio{
+  background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line-soft);
+}
+.opt.is-disabled .check svg{color:var(--dim)}
+.opt.is-disabled .radio svg{color:var(--dim)}
+.opt__text{font-size:14.5px;line-height:1.35}
+.opt.is-disabled .opt__text{color:var(--dim)}
+.opt__text small{display:block;margin-top:2px;font-size:12px;color:var(--muted)}
+
+/* a real grouped radio set, using the established row pattern */
+.opt-list{
+  list-style:none;margin:0;padding:0 14px;
+  border-radius:var(--r-panel);background:var(--surface);
+}
+.opt-list li{border-top:1px solid var(--line-soft)}
+.opt-list li:first-child{border-top:0}
+.opt-list .opt{min-height:50px}
+
+/* ============================================================
+   TWO-UP FIELD ROW  —  .two-up
+   ------------------------------------------------------------
+   AU-09 and AU-10 pair a date control with a self-sizing select
+   and land the left label ~3 pt below the right one, with the two
+   boxes 6 px apart in height (V-1). Two mechanisms, together,
+   make that impossible here:
+
+   1. SHARED ROWS. .two-up is a three-row grid — label, control,
+      message. Each child spans all three and re-uses them with
+      grid-template-rows:subgrid, so both labels occupy ONE grid
+      row and both controls occupy ONE grid row. A label that
+      wraps to two lines grows that row for BOTH columns, so the
+      control tops stay level and the label baselines stay level.
+      That is what removes the ~3 pt drift: the columns are no
+      longer two independent stacks.
+
+   2. FIXED CONTROL BOX. Every control in the row is exactly
+      var(--h-field) tall with align-items:center, and the select
+      carries appearance:none, so nothing sizes itself from font
+      metrics or from a trailing glyph. That is what removes the
+      6 px height delta.
+
+   Engines with no subgrid still align, because .field__label is a
+   single-line 18 px line box and the control height is fixed;
+   subgrid is what keeps it true once a label wraps.
+   ============================================================ */
+.two-up{
+  display:grid;
+  /* minmax(0,1fr), not 1fr: a native select reports its widest
+     option as min-content, which blows a 1fr track out past the
+     gutter and re-introduces unequal columns. */
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  column-gap:12px;
+  grid-template-rows:auto auto auto;
+  align-items:start;
+}
+.two-up > .field{
+  display:grid;grid-row:1 / -1;grid-template-rows:subgrid;
+  min-width:0;margin-bottom:0;
+}
+.two-up .ctl{min-width:0}
+.two-up .ctl__select{width:100%}
+@supports not (grid-template-rows:subgrid){
+  .two-up > .field{display:block}
+  .two-up > .field .field__label{min-height:36px;display:flex;align-items:flex-end}
+}
+
+/* ============================================================
+   INLINE VALIDATION
+   Icon + message in every state, so the state is never carried by
+   colour alone. Three different glyph silhouettes: ring-and-tick,
+   triangle, clock.
+   ============================================================ */
+.val{
+  display:flex;align-items:flex-start;gap:7px;
+  margin:8px 0 0;font-size:12.5px;line-height:1.35;
+}
+.val svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px}
+.val--ok{color:var(--acid)}
+.val--err{color:var(--red)}
+.val--wait{color:var(--muted)}
+
+/* ============================================================
+   FORM FOOTER
+   One height for both actions — var(--h-field), the same 52 px as
+   every field on the screen. Actions are pills, inputs are
+   panels: the two radii already in the kit, used consistently.
+   ============================================================ */
+.actions{
+  display:flex;flex-direction:column;gap:10px;
+  margin:16px var(--gutter) 0;padding:16px;
+  border-radius:var(--r-card);background:var(--section);
+  border:1px solid var(--line);
+}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;height:var(--h-field);
+  border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:15px;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;
+  transition:background .18s var(--ease),transform .12s var(--ease),color .18s var(--ease);
+}
+.btn svg{width:18px;height:18px;flex:0 0 auto}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.btn--primary{background:var(--acid);color:var(--acid-ink)}
+.btn--primary:hover{background:#A8EC33}
+.btn--secondary{background:var(--surface);color:var(--text)}
+.btn--secondary:hover{background:#222833}
+.btn[disabled]{background:var(--sunken);color:var(--dim);cursor:not-allowed;transform:none}
+.actions__legal{margin:2px 0 0;font-size:11.5px;line-height:1.4;color:var(--dim);text-align:center}
+
+/* ============================================================
+   DATE FIELD — the canonical three-part group + picker
+   ------------------------------------------------------------
+   Pasted from _assets/date-picker.md. One implementation in the
+   library: child-account.html already carries it, and this kit is
+   where every other component copies its date field from, so the
+   specimen has to be the working control, not a glyph.
+
+   The single DD/MM/YYYY text box the kit used to draw could not
+   host the canonical picker — it has nowhere to write a day, a
+   month and a year back to — so the specimen is now the same
+   three-input `.dob` group the rest of the library uses. The parts
+   flex-shrink, so the group also fits a .two-up column.
+   ============================================================ */
+.ctl.dob{position:relative;gap:0}
+.ctl.dob .ctl__in{
+  flex:0 1 auto;width:2.5em;min-width:1.5em;padding:0;
+  text-align:center;font-variant-numeric:tabular-nums;
+}
+.ctl.dob .ctl__in[data-part="y"]{width:4em;min-width:2.5em}
+.dob__sep{flex:0 0 auto;color:var(--muted);font-size:16px;padding:0 1px}
+.ctl.is-disabled .dob__sep{color:var(--dim)}
+.dob__cal{
+  flex:0 0 auto;margin-left:auto;display:grid;place-items:center;
+  width:28px;height:28px;padding:0;
+  border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;
+}
+.dob__cal svg{width:19px;height:19px}
+.dob__cal:hover{color:var(--text);background:var(--sunken)}
+.dob__cal:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+/* 28 px visual, 44 px hit area — the create-idea.html ::after pattern */
+.dob__cal::after{
+  content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;
+  transform:translate(-50%,-50%);
+}
+.ctl.is-error .dob__cal{color:var(--red)}
+.ctl.is-disabled .dob__cal{color:var(--dim);cursor:not-allowed;pointer-events:none}
+
+.dp{
+  position:absolute;top:calc(100% + 8px);right:0;z-index:80;width:276px;padding:12px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);
+  box-shadow:0 18px 44px rgba(0,0,0,.55);
+}
+.dp[hidden]{display:none}
+.dp__bar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dp__mon{flex:1;text-align:center;font-size:13.5px;font-weight:650;color:var(--text)}
+.dp__nav{
+  width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:8px;
+  background:var(--sunken);color:var(--text);cursor:pointer;
+}
+.dp__nav:hover{background:#181D25}
+.dp__nav:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.dp__nav svg{width:15px;height:15px}
+.dp__dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.dp__dow span{
+  text-align:center;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--dim);
+}
+.dp__grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px}
+.dp__d{
+  height:32px;border:0;border-radius:8px;background:none;color:var(--text);
+  font:inherit;font-size:13px;cursor:pointer;
+}
+.dp__d:hover{background:var(--sunken)}
+.dp__d:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.dp__d[disabled]{color:var(--dim);cursor:default}
+.dp__d[disabled]:hover{background:none}
+.dp__d[aria-selected="true"]{background:var(--acid);color:var(--acid-ink);font-weight:700}
+.dp__d--out{color:var(--dim)}
+
+/* the footer's own report line — the submit button has to say
+   something, and a form kit's something is a validation summary */
+.actions__say{
+  display:flex;align-items:flex-start;gap:7px;margin:2px 0 0;
+  font-size:12.5px;line-height:1.35;
+}
+.actions__say svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px}
+.actions__say--ok{color:var(--acid)}
+.actions__say--err{color:var(--red)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+  <h1 class="title">Forms</h1>
+  <p class="title-sub">Every input control in the dark rebrand, with its five states.</p>
+
+  <div class="note">
+    <dl>
+      <dt>Labels</dt>
+      <dd><b>Outside the box, above the control, 12.5/600 white.</b> One convention for
+          every control; the current app ships four across eight screens.</dd>
+      <dt>Height</dt>
+      <dd><b>52 px</b> for every single-line control and every button. The current app
+          renders the primary button at six heights, 62 to 96 pt.</dd>
+      <dt>Radius</dt>
+      <dd>Inputs take <b>12 px</b>, actions take the <b>pill</b>. No third value.</dd>
+    </dl>
+  </div>
+
+  <!-- ================= TEXT FIELD ================= -->
+  <h2 class="label">Text field</h2>
+  <div class="spec">
+
+    <p class="state-tag">Default</p>
+    <label class="field">
+      <span class="field__label">Username</span>
+      <span class="ctl">
+        <input class="ctl__in" type="text" placeholder="Pick a public username"
+               data-username aria-describedby="user-help">
+      </span>
+      <span class="field__help" id="user-help">3–20 characters, letters, numbers and underscore. Members see this on every leaderboard.</span>
+      <span class="val val--err" data-username-msg hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        <span data-username-text></span>
+      </span>
+      <span class="val val--ok" data-username-ok hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="m8 12.3 2.7 2.7L16.3 9.3"/>
+        </svg>
+        Username available
+      </span>
+    </label>
+
+    <p class="state-tag">Focus</p>
+    <div class="field">
+      <span class="field__label">Username</span>
+      <div class="ctl is-focus">
+        <span class="caret"><span class="caret__text">dylan_n</span></span>
+      </div>
+    </div>
+
+    <p class="state-tag">Filled</p>
+    <label class="field">
+      <span class="field__label">Username</span>
+      <span class="ctl">
+        <input class="ctl__in" type="text" value="dylan_n">
+      </span>
+    </label>
+
+    <p class="state-tag">Error</p>
+    <label class="field">
+      <span class="field__label">Username</span>
+      <span class="ctl is-error">
+        <input class="ctl__in" type="text" value="dylan n" aria-invalid="true" aria-describedby="err-user">
+      </span>
+      <span class="val val--err" id="err-user">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        Usernames can’t contain spaces. Try an underscore.
+      </span>
+    </label>
+
+    <p class="state-tag">Disabled</p>
+    <div class="field is-disabled">
+      <span class="field__label">Username</span>
+      <div class="ctl is-disabled">
+        <input class="ctl__in" type="text" value="dylan_n" disabled>
+      </div>
+      <p class="field__help">Set during registration. Contact support to change it.</p>
+    </div>
+  </div>
+
+  <!-- ================= PASSWORD FIELD ================= -->
+  <h2 class="label">Password field</h2>
+  <div class="spec">
+
+    <p class="state-tag">Default</p>
+    <label class="field">
+      <span class="field__label">Password</span>
+      <span class="ctl">
+        <input class="ctl__in" type="password" placeholder="Enter your password" data-pw>
+        <button class="ctl__btn" type="button" aria-pressed="false" aria-label="Show password" data-pw-toggle>
+          <svg data-eye viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/>
+          </svg>
+        </button>
+      </span>
+      <span class="field__help">At least 8 characters, with one number.</span>
+    </label>
+
+    <p class="state-tag">Focus</p>
+    <div class="field">
+      <span class="field__label">Password</span>
+      <div class="ctl is-focus">
+        <span class="caret"><span class="caret__text" style="letter-spacing:.16em;font-size:15px" data-pw-mask data-plain="Camp-Nou-2026">••••••••</span></span>
+        <button class="ctl__btn" type="button" aria-pressed="false" aria-label="Show password" data-pw-toggle>
+          <svg data-eye viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <p class="state-tag">Filled — revealed</p>
+    <label class="field">
+      <span class="field__label">Password</span>
+      <span class="ctl">
+        <input class="ctl__in" type="text" value="Camp-Nou-2026" data-pw>
+        <button class="ctl__btn" type="button" aria-pressed="true" aria-label="Hide password" data-pw-toggle>
+          <svg data-eye viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 4l16 16"/>
+            <path d="M9.7 5.9A9.6 9.6 0 0 1 12 5.8c6 0 9.5 6.2 9.5 6.2a17 17 0 0 1-2.7 3.6M6.4 8.1A17 17 0 0 0 2.5 12S6 18.2 12 18.2c.9 0 1.7-.1 2.5-.4"/>
+            <path d="M9.9 9.9a3.1 3.1 0 0 0 4.3 4.3"/>
+          </svg>
+        </button>
+      </span>
+      <span class="field__help">Visible. Tap the eye to hide it again.</span>
+    </label>
+
+    <p class="state-tag">Error</p>
+    <label class="field">
+      <span class="field__label">Password</span>
+      <span class="ctl is-error">
+        <input class="ctl__in" type="password" value="12345678" aria-invalid="true" aria-describedby="err-pw" data-pw>
+        <button class="ctl__btn" type="button" aria-pressed="false" aria-label="Show password" data-pw-toggle>
+          <svg data-eye viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/>
+          </svg>
+        </button>
+      </span>
+      <span class="val val--err" id="err-pw">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        Incorrect Login Credentials. Please try again
+      </span>
+    </label>
+
+    <p class="state-tag">Disabled</p>
+    <div class="field is-disabled">
+      <span class="field__label">Password</span>
+      <div class="ctl is-disabled">
+        <input class="ctl__in" type="password" value="12345678" disabled>
+        <button class="ctl__btn" type="button" aria-label="Show password" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.1"/>
+          </svg>
+        </button>
+      </div>
+      <p class="field__help">Locked while the account is being verified.</p>
+    </div>
+  </div>
+
+  <!-- ================= TEXTAREA ================= -->
+  <h2 class="label">Textarea</h2>
+  <div class="spec">
+
+    <p class="state-tag">Default</p>
+    <label class="field">
+      <span class="field__label">Your Idea</span>
+      <span class="ctl ctl--area">
+        <textarea class="ctl__in" rows="3" maxlength="250" placeholder="Say what you want the club to do, and why." data-count></textarea>
+        <span class="counter">0/250</span>
+      </span>
+      <span class="field__help">Ideas go to every member of your club before they reach the board.</span>
+    </label>
+
+    <p class="state-tag">Focus</p>
+    <div class="field">
+      <span class="field__label">Your Idea</span>
+      <div class="ctl ctl--area is-focus">
+        <span class="ctl__in" style="min-height:72px;line-height:1.5;display:block">
+          <span style="font-size:16px">Support a change in coaching staff for Barcelona</span><span class="caret" style="display:inline-flex;vertical-align:-4px"></span>
+        </span>
+        <span class="counter">48/250</span>
+      </div>
+    </div>
+
+    <p class="state-tag">Filled</p>
+    <label class="field">
+      <span class="field__label">Your Idea</span>
+      <span class="ctl ctl--area">
+        <textarea class="ctl__in" rows="3" maxlength="250" data-count>Support a change in coaching staff for Barcelona to improve performance.</textarea>
+        <span class="counter">72/250</span>
+      </span>
+    </label>
+
+    <p class="state-tag">Error</p>
+    <label class="field">
+      <span class="field__label">Your Idea</span>
+      <span class="ctl ctl--area is-error">
+        <textarea class="ctl__in" rows="3" maxlength="250" aria-invalid="true" aria-describedby="err-idea" data-count>Sack the board.</textarea>
+        <span class="counter">15/250</span>
+      </span>
+      <span class="val val--err" id="err-idea">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        Ideas need at least 40 characters so the club can act on them.
+      </span>
+    </label>
+
+    <p class="state-tag">Disabled</p>
+    <div class="field is-disabled">
+      <span class="field__label">Your Idea</span>
+      <div class="ctl ctl--area is-disabled">
+        <textarea class="ctl__in" rows="3" disabled>Support a change in coaching staff for Barcelona to improve performance.</textarea>
+        <span class="counter">72/250</span>
+      </div>
+      <p class="field__help">Submitted 2 July. Ideas can’t be edited once they are live.</p>
+    </div>
+  </div>
+
+  <!-- ================= SELECT ================= -->
+  <h2 class="label">Select</h2>
+  <div class="spec">
+
+    <p class="state-tag">Default</p>
+    <label class="field">
+      <span class="field__label">Idea Stage</span>
+      <span class="ctl ctl--placeholder">
+        <select class="ctl__select">
+          <option value="" selected>Choose a stage</option>
+          <option>Position</option>
+          <option>Decision</option>
+          <option>Mandate</option>
+        </select>
+        <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+      </span>
+    </label>
+
+    <p class="state-tag">Focus — picker open</p>
+    <div class="field">
+      <span class="field__label">Idea Stage</span>
+      <div class="ctl is-focus is-open">
+        <span class="caret"><span class="caret__text">Decision</span></span>
+        <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+      </div>
+      <!-- the open menu, drawn in place. The OS popup can't be restyled, so an
+           enhanced select swaps it for this panel — same recipe as the date
+           picker: surface, 1px line, r-panel, the 18/44 shadow. -->
+      <div class="dd dd--spec" aria-hidden="true">
+        <span class="dd__opt"><span class="dd__t">Position</span><svg class="dd__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg></span>
+        <span class="dd__opt" aria-selected="true"><span class="dd__t">Decision</span><svg class="dd__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg></span>
+        <span class="dd__opt"><span class="dd__t">Mandate</span><svg class="dd__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg></span>
+      </div>
+    </div>
+
+    <p class="state-tag">Filled</p>
+    <label class="field">
+      <span class="field__label">Idea Stage</span>
+      <span class="ctl">
+        <select class="ctl__select">
+          <option selected>Decision</option>
+          <option>Position</option>
+          <option>Mandate</option>
+        </select>
+        <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+      </span>
+    </label>
+
+    <p class="state-tag">Error</p>
+    <label class="field">
+      <span class="field__label">Idea Stage <span class="req">*</span></span>
+      <span class="ctl ctl--placeholder is-error">
+        <select class="ctl__select" aria-invalid="true" aria-describedby="err-stage">
+          <option value="" selected>Choose a stage</option>
+          <option>Position</option>
+          <option>Decision</option>
+        </select>
+        <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+      </span>
+      <span class="val val--err" id="err-stage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        Pick a stage before you submit.
+      </span>
+    </label>
+
+    <p class="state-tag">Disabled</p>
+    <div class="field is-disabled">
+      <span class="field__label">Idea Stage</span>
+      <div class="ctl is-disabled">
+        <select class="ctl__select" disabled>
+          <option selected>Decision</option>
+        </select>
+        <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+      </div>
+      <p class="field__help">Fixed once the vote opens.</p>
+    </div>
+  </div>
+
+  <!-- ================= DATE FIELD ================= -->
+  <h2 class="label">Date field</h2>
+  <div class="spec">
+
+    <p class="state-tag">Default</p>
+    <div class="field">
+      <span class="field__label" id="dob-a-l">Date of Birth</span>
+      <div class="ctl dob" role="group" aria-labelledby="dob-a-l">
+        <input data-part="d" class="ctl__in" type="text" inputmode="numeric" maxlength="2" aria-label="Day" placeholder="DD">
+        <span class="dob__sep" aria-hidden="true">/</span>
+        <input data-part="m" class="ctl__in" type="text" inputmode="numeric" maxlength="2" aria-label="Month" placeholder="MM">
+        <span class="dob__sep" aria-hidden="true">/</span>
+        <input data-part="y" class="ctl__in" type="text" inputmode="numeric" maxlength="4" aria-label="Year" placeholder="YYYY">
+        <button class="dob__cal" type="button" aria-label="Choose a date" aria-expanded="false" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.5V6M16 3.5V6M3.5 10h17"/>
+          </svg>
+        </button>
+      </div>
+      <!-- AU-09 shows 02/06/2001 with no format hint, so DD/MM and
+           MM/DD are both readable from the digits. Three separately
+           labelled parts remove the ambiguity entirely — there is
+           nothing left to misread. -->
+      <span class="field__help">Day / month / year. SportsHeist checks this against your ID.</span>
+    </div>
+
+    <p class="state-tag">Focus</p>
+    <div class="field">
+      <span class="field__label" id="dob-b-l">Date of Birth</span>
+      <div class="ctl dob is-focus" role="group" aria-labelledby="dob-b-l">
+        <input data-part="d" class="ctl__in" type="text" inputmode="numeric" maxlength="2" value="02" aria-label="Day" placeholder="DD">
+        <span class="dob__sep" aria-hidden="true">/</span>
+        <input data-part="m" class="ctl__in" type="text" inputmode="numeric" maxlength="2" value="06" aria-label="Month" placeholder="MM">
+        <span class="dob__sep" aria-hidden="true">/</span>
+        <input data-part="y" class="ctl__in" type="text" inputmode="numeric" maxlength="4" value="2001" aria-label="Year" placeholder="YYYY">
+        <button class="dob__cal" type="button" aria-label="Choose a date" aria-expanded="false" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.5V6M16 3.5V6M3.5 10h17"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <p class="state-tag">Filled</p>
+    <div class="field">
+      <span class="field__label" id="dob-c-l">Date of Birth</span>
+      <div class="ctl dob" role="group" aria-labelledby="dob-c-l">
+        <input data-part="d" class="ctl__in" type="text" inputmode="numeric" maxlength="2" value="02" aria-label="Day" placeholder="DD">
+        <span class="dob__sep" aria-hidden="true">/</span>
+        <input data-part="m" class="ctl__in" type="text" inputmode="numeric" maxlength="2" value="06" aria-label="Month" placeholder="MM">
+        <span class="dob__sep" aria-hidden="true">/</span>
+        <input data-part="y" class="ctl__in" type="text" inputmode="numeric" maxlength="4" value="2001" aria-label="Year" placeholder="YYYY">
+        <button class="dob__cal" type="button" aria-label="Choose a date" aria-expanded="false" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.5V6M16 3.5V6M3.5 10h17"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <p class="state-tag">Error</p>
+    <div class="field">
+      <span class="field__label" id="dob-d-l">Date of Birth <span class="req">*</span></span>
+      <div class="ctl dob is-error" role="group" aria-labelledby="dob-d-l" data-age-gate>
+        <input data-part="d" class="ctl__in" type="text" inputmode="numeric" maxlength="2" value="02" aria-label="Day" placeholder="DD" aria-invalid="true" aria-describedby="err-dob">
+        <span class="dob__sep" aria-hidden="true">/</span>
+        <input data-part="m" class="ctl__in" type="text" inputmode="numeric" maxlength="2" value="06" aria-label="Month" placeholder="MM" aria-invalid="true" aria-describedby="err-dob">
+        <span class="dob__sep" aria-hidden="true">/</span>
+        <input data-part="y" class="ctl__in" type="text" inputmode="numeric" maxlength="4" value="2014" aria-label="Year" placeholder="YYYY" aria-invalid="true" aria-describedby="err-dob">
+        <button class="dob__cal" type="button" aria-label="Choose a date" aria-expanded="false" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.5V6M16 3.5V6M3.5 10h17"/>
+          </svg>
+        </button>
+      </div>
+      <span class="val val--err" id="err-dob">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        <span data-age-msg>If you are under 18 an adult SportsHeist member must sign you up.</span>
+      </span>
+    </div>
+
+    <p class="state-tag">Disabled</p>
+    <div class="field is-disabled">
+      <span class="field__label" id="dob-e-l">Date of Birth</span>
+      <div class="ctl dob is-disabled" role="group" aria-labelledby="dob-e-l">
+        <input data-part="d" class="ctl__in" type="text" inputmode="numeric" maxlength="2" value="02" aria-label="Day" disabled>
+        <span class="dob__sep" aria-hidden="true">/</span>
+        <input data-part="m" class="ctl__in" type="text" inputmode="numeric" maxlength="2" value="06" aria-label="Month" disabled>
+        <span class="dob__sep" aria-hidden="true">/</span>
+        <input data-part="y" class="ctl__in" type="text" inputmode="numeric" maxlength="4" value="2001" aria-label="Year" disabled>
+        <button class="dob__cal" type="button" aria-label="Choose a date" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.5V6M16 3.5V6M3.5 10h17"/>
+          </svg>
+        </button>
+      </div>
+      <p class="field__help">Verified against your ID on 14 June.</p>
+    </div>
+  </div>
+
+  <!-- ================= COMPOUND PHONE FIELD ================= -->
+  <h2 class="label">Phone field</h2>
+  <div class="spec">
+
+    <p class="state-tag">Default</p>
+    <label class="field">
+      <span class="field__label">Mobile Number</span>
+      <span class="ctl tel">
+        <span class="tel__cc">
+          <span class="iso" aria-hidden="true">AU</span>
+          <span class="tel__dial">+61</span>
+          <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </span>
+        <span class="tel__num">
+          <input class="ctl__in" type="tel" inputmode="tel" placeholder="400 000 000">
+        </span>
+      </span>
+      <span class="field__help">Australia selected. Tap the country zone to change it.</span>
+    </label>
+
+    <p class="state-tag">Focus — number zone</p>
+    <div class="field">
+      <span class="field__label">Mobile Number</span>
+      <div class="ctl tel is-focus">
+        <span class="tel__cc">
+          <span class="iso" aria-hidden="true">VN</span>
+          <span class="tel__dial">+84</span>
+          <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </span>
+        <span class="tel__num">
+          <span class="caret"><span class="caret__text" style="font-variant-numeric:tabular-nums">906 434 012</span></span>
+        </span>
+      </div>
+    </div>
+
+    <p class="state-tag">Filled</p>
+    <label class="field">
+      <span class="field__label">Mobile Number</span>
+      <span class="ctl tel">
+        <span class="tel__cc">
+          <span class="iso" aria-hidden="true">VN</span>
+          <span class="tel__dial">+84</span>
+          <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </span>
+        <span class="tel__num">
+          <input class="ctl__in" type="tel" value="906 434 012">
+        </span>
+      </span>
+    </label>
+
+    <p class="state-tag">Error</p>
+    <label class="field">
+      <span class="field__label">Mobile Number <span class="req">*</span></span>
+      <span class="ctl tel is-error">
+        <span class="tel__cc">
+          <span class="iso" aria-hidden="true">AU</span>
+          <span class="tel__dial">+61</span>
+          <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </span>
+        <span class="tel__num">
+          <input class="ctl__in" type="tel" value="400 12" aria-invalid="true" aria-describedby="err-tel">
+        </span>
+      </span>
+      <span class="val val--err" id="err-tel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        An Australian mobile number is 9 digits after +61.
+      </span>
+    </label>
+
+    <p class="state-tag">Disabled</p>
+    <div class="field is-disabled">
+      <span class="field__label">Mobile Number</span>
+      <div class="ctl tel is-disabled">
+        <span class="tel__cc">
+          <span class="iso" aria-hidden="true">AU</span>
+          <span class="tel__dial">+61</span>
+          <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </span>
+        <span class="tel__num">
+          <input class="ctl__in" type="tel" value="400 512 908" disabled>
+        </span>
+      </div>
+      <p class="field__help">Verified by SMS. Change it in Profile → Security.</p>
+    </div>
+  </div>
+
+  <!-- ================= SEARCH FIELD ================= -->
+  <h2 class="label">Search field</h2>
+  <div class="spec">
+
+    <p class="state-tag">Default</p>
+    <label class="field">
+      <span class="field__label">Find your club</span>
+      <span class="ctl">
+        <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+        <input class="ctl__in" type="search" placeholder="Search for team">
+      </span>
+    </label>
+
+    <p class="state-tag">Focus</p>
+    <div class="field">
+      <span class="field__label">Find your club</span>
+      <div class="ctl is-focus">
+        <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+        <span class="caret"><span class="caret__text">barcel</span></span>
+      </div>
+    </div>
+
+    <p class="state-tag">Filled — clear affordance</p>
+    <label class="field">
+      <span class="field__label">Find your club</span>
+      <span class="ctl">
+        <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+        <input class="ctl__in" type="search" value="Barcelona" data-search>
+        <button class="ctl__btn" type="button" aria-label="Clear search" data-search-clear>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </span>
+      <span class="field__help">3 clubs match.</span>
+    </label>
+
+    <p class="state-tag">Error — no result</p>
+    <label class="field">
+      <span class="field__label">Find your club</span>
+      <span class="ctl is-error">
+        <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+        <input class="ctl__in" type="search" value="Barcelonaa" aria-invalid="true" aria-describedby="err-find" data-search>
+        <button class="ctl__btn" type="button" aria-label="Clear search" data-search-clear>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </span>
+      <span class="val val--err" id="err-find">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        No club matches “Barcelonaa”.
+      </span>
+    </label>
+
+    <p class="state-tag">Disabled</p>
+    <div class="field is-disabled">
+      <span class="field__label">Find your club</span>
+      <div class="ctl is-disabled">
+        <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+        <input class="ctl__in" type="search" placeholder="Search for team" disabled>
+      </div>
+      <p class="field__help">Choose a league first.</p>
+    </div>
+  </div>
+
+  <!-- ================= TOGGLE SWITCH ================= -->
+  <h2 class="label">Toggle switch</h2>
+  <div class="spec">
+
+    <p class="state-tag">Default — off</p>
+    <div class="field">
+      <div class="sw-row">
+        <span class="sw-row__id">
+          <span class="sw-row__name" id="sw-a">Auto renewal</span>
+          <span class="sw-row__sub">Renews your Barcelona membership each season.</span>
+        </span>
+        <button class="toggle" type="button" role="switch" aria-checked="false" aria-labelledby="sw-a" data-switch></button>
+      </div>
+    </div>
+
+    <p class="state-tag">Focus</p>
+    <div class="field">
+      <div class="sw-row">
+        <span class="sw-row__id">
+          <span class="sw-row__name" id="sw-b">Auto renewal</span>
+          <span class="sw-row__sub">Renews your Barcelona membership each season.</span>
+        </span>
+        <button class="toggle is-focus" type="button" role="switch" aria-checked="false" aria-labelledby="sw-b" data-switch></button>
+      </div>
+    </div>
+
+    <p class="state-tag">Filled — on</p>
+    <div class="field">
+      <div class="sw-row">
+        <span class="sw-row__id">
+          <span class="sw-row__name" id="sw-c">Auto renewal</span>
+          <span class="sw-row__sub">Renews your Barcelona membership each season.</span>
+        </span>
+        <button class="toggle" type="button" role="switch" aria-checked="true" aria-labelledby="sw-c" data-switch></button>
+      </div>
+    </div>
+
+    <p class="state-tag">Error</p>
+    <div class="field">
+      <div class="sw-row">
+        <span class="sw-row__id">
+          <span class="sw-row__name" id="sw-d">Auto renewal</span>
+          <span class="sw-row__sub">Renews your Barcelona membership each season.</span>
+        </span>
+        <button class="toggle is-error" type="button" role="switch" aria-checked="false" aria-labelledby="sw-d" aria-describedby="err-sw" data-switch></button>
+      </div>
+      <p class="val val--err" id="err-sw">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        Turn this on to keep your season seat, or you lose it on 30 June.
+      </p>
+    </div>
+
+    <p class="state-tag">Disabled</p>
+    <div class="field">
+      <div class="sw-row is-disabled">
+        <span class="sw-row__id">
+          <span class="sw-row__name" id="sw-e">Auto renewal</span>
+          <span class="sw-row__sub">Handled by your club, not by SportsHeist.</span>
+        </span>
+        <button class="toggle" type="button" role="switch" aria-checked="false" aria-labelledby="sw-e" disabled></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CHECKBOX + RADIO ================= -->
+  <h2 class="label">Checkbox</h2>
+  <div class="spec">
+
+    <p class="state-tag">Default</p>
+    <label class="opt">
+      <input class="opt__in" type="checkbox">
+      <span class="check" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4.6 10.3 3.6 3.7L15.5 6.3"/></svg>
+      </span>
+      <span class="opt__text">Send me match-day alerts</span>
+    </label>
+
+    <p class="state-tag">Focus</p>
+    <label class="opt is-focus">
+      <input class="opt__in" type="checkbox">
+      <span class="check" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4.6 10.3 3.6 3.7L15.5 6.3"/></svg>
+      </span>
+      <span class="opt__text">Send me match-day alerts</span>
+    </label>
+
+    <p class="state-tag">Filled — checked</p>
+    <label class="opt">
+      <input class="opt__in" type="checkbox" checked>
+      <span class="check" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4.6 10.3 3.6 3.7L15.5 6.3"/></svg>
+      </span>
+      <span class="opt__text">Send me match-day alerts</span>
+    </label>
+
+    <p class="state-tag">Error</p>
+    <div class="field">
+      <label class="opt is-error">
+        <input class="opt__in" type="checkbox" aria-invalid="true" aria-describedby="err-consent">
+        <span class="check" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4.6 10.3 3.6 3.7L15.5 6.3"/></svg>
+        </span>
+        <span class="opt__text">I accept the Membership Terms<small>Required before your first vote.</small></span>
+      </label>
+      <p class="val val--err" id="err-consent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        Accept the Membership Terms to continue.
+      </p>
+    </div>
+
+    <p class="state-tag">Disabled</p>
+    <label class="opt is-disabled">
+      <input class="opt__in" type="checkbox" checked disabled>
+      <span class="check" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4.6 10.3 3.6 3.7L15.5 6.3"/></svg>
+      </span>
+      <span class="opt__text">Send me match-day alerts<small>Set by the adult who signed you up.</small></span>
+    </label>
+  </div>
+
+  <h2 class="label">Radio</h2>
+  <div class="spec">
+
+    <p class="state-tag">Default</p>
+    <label class="opt">
+      <input class="opt__in" type="radio" name="r-default">
+      <span class="radio" aria-hidden="true">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4.4" fill="currentColor"/></svg>
+      </span>
+      <span class="opt__text">Email</span>
+    </label>
+
+    <p class="state-tag">Focus</p>
+    <label class="opt is-focus">
+      <input class="opt__in" type="radio" name="r-focus">
+      <span class="radio" aria-hidden="true">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4.4" fill="currentColor"/></svg>
+      </span>
+      <span class="opt__text">Email</span>
+    </label>
+
+    <p class="state-tag">Filled — selected</p>
+    <label class="opt">
+      <input class="opt__in" type="radio" name="r-filled" checked>
+      <span class="radio" aria-hidden="true">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4.4" fill="currentColor"/></svg>
+      </span>
+      <span class="opt__text">Email</span>
+    </label>
+
+    <p class="state-tag">Error — nothing chosen</p>
+    <div class="field">
+      <span class="field__label" id="lbl-reset">How should we reset your password? <span class="req">*</span></span>
+      <ul class="opt-list" role="radiogroup" aria-labelledby="lbl-reset" aria-describedby="err-reset">
+        <li>
+          <label class="opt is-error">
+            <input class="opt__in" type="radio" name="r-error" aria-invalid="true">
+            <span class="radio" aria-hidden="true">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4.4" fill="currentColor"/></svg>
+            </span>
+            <span class="opt__text">Email</span>
+          </label>
+        </li>
+        <li>
+          <label class="opt is-error">
+            <input class="opt__in" type="radio" name="r-error" aria-invalid="true">
+            <span class="radio" aria-hidden="true">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4.4" fill="currentColor"/></svg>
+            </span>
+            <span class="opt__text">Mobile number</span>
+          </label>
+        </li>
+      </ul>
+      <p class="val val--err" id="err-reset">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        Choose one to receive your reset code.
+      </p>
+    </div>
+
+    <p class="state-tag">Disabled</p>
+    <label class="opt is-disabled">
+      <input class="opt__in" type="radio" name="r-disabled" disabled>
+      <span class="radio" aria-hidden="true">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4.4" fill="currentColor"/></svg>
+      </span>
+      <span class="opt__text">Mobile number<small>No verified number on this account.</small></span>
+    </label>
+
+    <p class="state-tag">Grouped — one selected</p>
+    <div class="field">
+      <span class="field__label" id="lbl-reset2">How should we reset your password?</span>
+      <ul class="opt-list" role="radiogroup" aria-labelledby="lbl-reset2">
+        <li>
+          <label class="opt">
+            <input class="opt__in" type="radio" name="r-group" checked>
+            <span class="radio" aria-hidden="true">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4.4" fill="currentColor"/></svg>
+            </span>
+            <span class="opt__text">Email</span>
+          </label>
+        </li>
+        <li>
+          <label class="opt">
+            <input class="opt__in" type="radio" name="r-group">
+            <span class="radio" aria-hidden="true">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="4.4" fill="currentColor"/></svg>
+            </span>
+            <span class="opt__text">Mobile number</span>
+          </label>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ================= TWO-UP ROW ================= -->
+  <h2 class="label">Two-up field row</h2>
+  <div class="spec">
+
+    <p class="state-tag">Date + self-sizing select — the AU-09 pair</p>
+    <div class="two-up">
+      <div class="field">
+        <span class="field__label" id="dob-f-l">Date of Birth</span>
+        <div class="ctl dob" role="group" aria-labelledby="dob-f-l">
+          <input data-part="d" class="ctl__in" type="text" inputmode="numeric" maxlength="2" value="02" aria-label="Day" placeholder="DD">
+          <span class="dob__sep" aria-hidden="true">/</span>
+          <input data-part="m" class="ctl__in" type="text" inputmode="numeric" maxlength="2" value="06" aria-label="Month" placeholder="MM">
+          <span class="dob__sep" aria-hidden="true">/</span>
+          <input data-part="y" class="ctl__in" type="text" inputmode="numeric" maxlength="4" value="2001" aria-label="Year" placeholder="YYYY">
+          <button class="dob__cal" type="button" aria-label="Choose a date" aria-expanded="false" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.5V6M16 3.5V6M3.5 10h17"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <label class="field">
+        <span class="field__label">Gender</span>
+        <span class="ctl">
+          <select class="ctl__select">
+            <option selected>Male</option>
+            <option>Female</option>
+            <option>Prefer not to say</option>
+          </select>
+          <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </span>
+      </label>
+    </div>
+
+    <p class="state-tag">Wrapping label — one row grows, both stay level</p>
+    <div class="two-up">
+      <label class="field">
+        <span class="field__label">Country or region of residence</span>
+        <span class="ctl">
+          <select class="ctl__select">
+            <option selected>Italy</option>
+            <option>Spain</option>
+            <option>Vietnam</option>
+          </select>
+          <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </span>
+      </label>
+      <label class="field">
+        <span class="field__label">Province / State</span>
+        <span class="ctl">
+          <select class="ctl__select">
+            <option selected>Lazio</option>
+            <option>Lombardy</option>
+          </select>
+          <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </span>
+      </label>
+    </div>
+
+    <p class="state-tag">Mixed states — error left, disabled right</p>
+    <div class="two-up">
+      <div class="field">
+        <span class="field__label" id="dob-g-l">Date of Birth <span class="req">*</span></span>
+        <div class="ctl dob is-error" role="group" aria-labelledby="dob-g-l" data-required-date>
+          <input data-part="d" class="ctl__in" type="text" inputmode="numeric" maxlength="2" aria-label="Day" placeholder="DD" aria-invalid="true" aria-describedby="err-two">
+          <span class="dob__sep" aria-hidden="true">/</span>
+          <input data-part="m" class="ctl__in" type="text" inputmode="numeric" maxlength="2" aria-label="Month" placeholder="MM" aria-invalid="true" aria-describedby="err-two">
+          <span class="dob__sep" aria-hidden="true">/</span>
+          <input data-part="y" class="ctl__in" type="text" inputmode="numeric" maxlength="4" aria-label="Year" placeholder="YYYY" aria-invalid="true" aria-describedby="err-two">
+          <button class="dob__cal" type="button" aria-label="Choose a date" aria-expanded="false" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.5V6M16 3.5V6M3.5 10h17"/>
+            </svg>
+          </button>
+        </div>
+        <span class="val val--err" id="err-two">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+          </svg>
+          Required.
+        </span>
+      </div>
+      <div class="field is-disabled">
+        <span class="field__label">Gender</span>
+        <div class="ctl is-disabled">
+          <select class="ctl__select" disabled>
+            <option selected>Male</option>
+          </select>
+          <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= INLINE VALIDATION ================= -->
+  <h2 class="label">Inline validation</h2>
+  <div class="spec">
+
+    <p class="state-tag">Success</p>
+    <label class="field">
+      <span class="field__label">Username</span>
+      <span class="ctl">
+        <input class="ctl__in" type="text" value="dylan_n" aria-describedby="v-ok">
+      </span>
+      <span class="val val--ok" id="v-ok">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="m8 12.3 2.7 2.7L16.3 9.3"/>
+        </svg>
+        Username available
+      </span>
+    </label>
+
+    <p class="state-tag">Error</p>
+    <label class="field">
+      <span class="field__label">Username</span>
+      <span class="ctl is-error">
+        <input class="ctl__in" type="text" value="capitan_7" aria-invalid="true" aria-describedby="v-err">
+      </span>
+      <span class="val val--err" id="v-err">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+        </svg>
+        That username is taken
+      </span>
+    </label>
+
+    <p class="state-tag">Pending</p>
+    <label class="field">
+      <span class="field__label">Username</span>
+      <span class="ctl">
+        <input class="ctl__in" type="text" value="dylan_nolan" aria-describedby="v-wait">
+      </span>
+      <span class="val val--wait" id="v-wait" role="status">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="M12 7.4V12l3 2"/>
+        </svg>
+        Checking availability…
+      </span>
+    </label>
+
+    <!-- Each message pairs a distinct silhouette with the colour —
+         ring-and-tick, triangle, clock — so the state survives a
+         monochrome render and a colour-vision deficiency. -->
+  </div>
+
+  <!-- ================= FORM FOOTER ================= -->
+  <h2 class="label">Form footer</h2>
+
+  <div class="actions">
+    <button class="btn btn--primary" type="button" data-submit>Create account</button>
+    <button class="btn btn--secondary" type="button" data-reset>Cancel</button>
+    <p class="actions__legal">By continuing you accept the Membership Terms.</p>
+    <p class="actions__say" data-say hidden role="status"></p>
+  </div>
+
+  <p class="state-tag" style="margin:16px var(--gutter) 7px">Footer — submit disabled</p>
+  <div class="actions">
+    <button class="btn btn--primary" type="button" disabled>Create account</button>
+    <button class="btn btn--secondary" type="button" data-reset>Cancel</button>
+    <p class="actions__legal">Accept the Membership Terms to continue.</p>
+    <p class="actions__say" data-say hidden role="status"></p>
+  </div>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var EYE = 'M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z';
+  var eyeOpen =
+    '<path d="' + EYE + '"/><circle cx="12" cy="12" r="3.1"/>';
+  var eyeOff =
+    '<path d="M4 4l16 16"/>' +
+    '<path d="M9.7 5.9A9.6 9.6 0 0 1 12 5.8c6 0 9.5 6.2 9.5 6.2a17 17 0 0 1-2.7 3.6M6.4 8.1A17 17 0 0 0 2.5 12S6 18.2 12 18.2c.9 0 1.7-.1 2.5-.4"/>' +
+    '<path d="M9.9 9.9a3.1 3.1 0 0 0 4.3 4.3"/>';
+
+  /* password visibility.
+     The Focus specimen draws a static caret rather than a live input,
+     so it carries a [data-pw-mask] span the toggle swaps instead —
+     otherwise the eye there would change its own icon and nothing
+     else, which is a control that only pretends to work. */
+  document.querySelectorAll('[data-pw-toggle]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var box = btn.closest('.ctl');
+      var input = box && box.querySelector('[data-pw]');
+      var mask = box && box.querySelector('[data-pw-mask]');
+      var svg = btn.querySelector('[data-eye]');
+      var shown = btn.getAttribute('aria-pressed') === 'true';
+      if (input) { input.type = shown ? 'password' : 'text'; }
+      if (mask) {
+        var plain = mask.getAttribute('data-plain') || '';
+        if (shown) {
+          mask.textContent = new Array(plain.length + 1).join('•');
+          mask.style.letterSpacing = '.16em';
+        } else {
+          mask.textContent = plain;
+          mask.style.letterSpacing = '';
+        }
+      }
+      btn.setAttribute('aria-pressed', String(!shown));
+      btn.setAttribute('aria-label', shown ? 'Show password' : 'Hide password');
+      if (svg) { svg.innerHTML = shown ? eyeOpen : eyeOff; }
+    });
+  });
+
+  /* toggle switch — the track carries the state */
+  document.querySelectorAll('[data-switch]').forEach(function (sw) {
+    sw.addEventListener('click', function () {
+      sw.setAttribute('aria-checked', sw.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+    });
+  });
+
+  /* textarea counter */
+  document.querySelectorAll('[data-count]').forEach(function (ta) {
+    var out = ta.parentNode.querySelector('.counter');
+    var max = ta.getAttribute('maxlength') || 250;
+    function sync() { if (out) { out.textContent = ta.value.length + '/' + max; } }
+    ta.addEventListener('input', sync);
+    sync();
+  });
+
+  /* search clear — clearing a no-result search also clears the
+     no-result state, or the error would outlive the query it names */
+  document.querySelectorAll('[data-search-clear]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var box = btn.closest('.ctl');
+      var input = box && box.querySelector('[data-search]');
+      if (!input) { return; }
+      input.value = '';
+      input.focus();
+      if (box.classList.contains('is-error')) {
+        box.classList.remove('is-error');
+        input.removeAttribute('aria-invalid');
+        var msg = input.getAttribute('aria-describedby');
+        var el = msg && document.getElementById(msg);
+        if (el) { el.hidden = true; }
+      }
+    });
+  });
+
+  /* ============================================================
+     USERNAME — live validation on the Default specimen
+     The kit shows an Error state; a member has to be able to reach
+     it by typing, or the state is a picture rather than a rule.
+     ============================================================ */
+  var TAKEN = ['capitan_7', 'scout_mode', 'taythaytu', 'admin'];
+  document.querySelectorAll('[data-username]').forEach(function (input) {
+    var field = input.closest('.field');
+    var box   = input.closest('.ctl');
+    var help  = field && field.querySelector('.field__help');
+    var bad   = field && field.querySelector('[data-username-msg]');
+    var badTx = field && field.querySelector('[data-username-text]');
+    var good  = field && field.querySelector('[data-username-ok]');
+    function check() {
+      var v = input.value.trim(), err = '';
+      if (!v) { err = ''; }
+      else if (v.length < 3) { err = 'Too short — 3 characters minimum.'; }
+      else if (v.length > 20) { err = 'Too long — 20 characters maximum.'; }
+      else if (!/^[A-Za-z0-9_]+$/.test(v)) { err = 'Letters, numbers and underscore only.'; }
+      else if (TAKEN.indexOf(v.toLowerCase()) > -1) { err = 'That username is taken.'; }
+      if (err) {
+        box.classList.add('is-error');
+        input.setAttribute('aria-invalid', 'true');
+        if (badTx) { badTx.textContent = err; }
+        if (bad)  { bad.hidden = false; }
+        if (good) { good.hidden = true; }
+        if (help) { help.hidden = true; }
+      } else {
+        box.classList.remove('is-error');
+        input.removeAttribute('aria-invalid');
+        if (bad)  { bad.hidden = true; }
+        if (good) { good.hidden = !v; }
+        if (help) { help.hidden = !!v; }
+      }
+    }
+    input.addEventListener('input', check);
+    input.addEventListener('blur', check);
+  });
+
+  /* ============================================================
+     DATE PICKER — pasted from _assets/date-picker.md
+     One implementation. Do not write a second calendar.
+     ============================================================ */
+  function initDatePickers(root){
+    const MON=['January','February','March','April','May','June','July',
+               'August','September','October','November','December'];
+    root.querySelectorAll('.dob').forEach(function(field){
+      const btn=field.querySelector('.dob__cal');
+      if(!btn||btn.tagName!=='BUTTON'||field.__dp) return;
+      field.__dp=true;
+      const D=field.querySelector('[data-part="d"]'),
+            M=field.querySelector('[data-part="m"]'),
+            Y=field.querySelector('[data-part="y"]');
+
+      const pop=document.createElement('div');
+      pop.className='dp'; pop.hidden=true; pop.setAttribute('role','dialog');
+      pop.setAttribute('aria-label','Choose a date');
+      pop.innerHTML=
+        '<div class="dp__bar">'+
+        '<button class="dp__nav" type="button" data-go="-1" aria-label="Previous month">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>'+
+        '<div class="dp__mon" aria-live="polite"></div>'+
+        '<button class="dp__nav" type="button" data-go="1" aria-label="Next month">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>'+
+        '</div><div class="dp__dow"><span>M</span><span>T</span><span>W</span><span>T</span>'+
+        '<span>F</span><span>S</span><span>S</span></div><div class="dp__grid"></div>';
+      field.appendChild(pop);
+      const grid=pop.querySelector('.dp__grid'), label=pop.querySelector('.dp__mon');
+
+      // The prototype must not depend on today's date, or a frame captured in a
+      // screenshot drifts. Seed from the field; fall back to a fixed date.
+      function seed(){
+        const d=+D.value, m=+M.value, y=+Y.value;
+        if(d>0&&m>0&&y>1000) return new Date(y,m-1,d);
+        return new Date(2010,8,2);
+      }
+      let view=seed(), sel=seed();
+
+      function draw(){
+        label.textContent=MON[view.getMonth()]+' '+view.getFullYear();
+        grid.innerHTML='';
+        const first=new Date(view.getFullYear(),view.getMonth(),1);
+        const lead=(first.getDay()+6)%7;                      // Monday-first
+        const days=new Date(view.getFullYear(),view.getMonth()+1,0).getDate();
+        for(let i=0;i<lead;i++) grid.appendChild(document.createElement('span'));
+        for(let n=1;n<=days;n++){
+          const b=document.createElement('button');
+          b.type='button'; b.className='dp__d'; b.textContent=n;
+          const isSel = sel && sel.getDate()===n &&
+                        sel.getMonth()===view.getMonth() &&
+                        sel.getFullYear()===view.getFullYear();
+          if(isSel) b.setAttribute('aria-selected','true');
+          b.addEventListener('click',function(){
+            sel=new Date(view.getFullYear(),view.getMonth(),n);
+            D.value=String(n).padStart(2,'0');
+            M.value=String(view.getMonth()+1).padStart(2,'0');
+            Y.value=String(view.getFullYear());
+            [D,M,Y].forEach(function(i){i.dispatchEvent(new Event('input',{bubbles:true}))});
+            close(); btn.focus();
+          });
+          grid.appendChild(b);
+        }
+      }
+      function open(){ view=seed(); sel=seed(); draw(); pop.hidden=false;
+                       btn.setAttribute('aria-expanded','true');
+                       document.addEventListener('mousedown',away,true);
+                       document.addEventListener('keydown',esc,true); }
+      function close(){ pop.hidden=true; btn.setAttribute('aria-expanded','false');
+                        document.removeEventListener('mousedown',away,true);
+                        document.removeEventListener('keydown',esc,true); }
+      function away(e){ if(!field.contains(e.target)) close() }
+      function esc(e){ if(e.key==='Escape'){ close(); btn.focus() } }
+
+      btn.addEventListener('click',function(){ pop.hidden?open():close() });
+      pop.addEventListener('click',function(e){
+        const nav=e.target.closest('[data-go]'); if(!nav) return;
+        view=new Date(view.getFullYear(),view.getMonth()+ +nav.dataset.go,1); draw();
+      });
+    });
+  }
+  initDatePickers(document);
+
+  /* ============================================================
+     THE TWO DATE RULES THE KIT DRAWS
+     Selecting a date fires `input` on all three parts, so both of
+     these re-run on their own — which is the whole point of the
+     canonical picker firing them.
+     Reference date is FIXED at 30 July 2026, matching
+     child-account.html. Never new Date(): a frame that shows
+     "today" drifts between the screenshot and the review.
+     ============================================================ */
+  var TODAY = new Date(2026, 6, 30);
+  function partsOf(group) {
+    return {
+      d: group.querySelector('[data-part="d"]'),
+      m: group.querySelector('[data-part="m"]'),
+      y: group.querySelector('[data-part="y"]')
+    };
+  }
+  function dateOf(group) {
+    var p = partsOf(group), d = +p.d.value, m = +p.m.value, y = +p.y.value;
+    if (!(d > 0 && m > 0 && y > 1000)) { return null; }
+    var dt = new Date(y, m - 1, d);
+    if (dt.getDate() !== d || dt.getMonth() !== m - 1) { return null; }
+    return dt;
+  }
+  function setInvalid(group, on) {
+    group.classList.toggle('is-error', on);
+    var p = partsOf(group);
+    [p.d, p.m, p.y].forEach(function (i) {
+      if (on) { i.setAttribute('aria-invalid', 'true'); }
+      else { i.removeAttribute('aria-invalid'); }
+    });
+  }
+
+  /* under-18 gate */
+  document.querySelectorAll('[data-age-gate]').forEach(function (group) {
+    var msgWrap = group.parentNode.querySelector('.val--err');
+    var msg = group.parentNode.querySelector('[data-age-msg]');
+    function run() {
+      var dt = dateOf(group);
+      if (!dt) {
+        setInvalid(group, true);
+        if (msgWrap) { msgWrap.hidden = false; }
+        if (msg) { msg.textContent = 'Enter a real day, month and year.'; }
+        return;
+      }
+      var age = TODAY.getFullYear() - dt.getFullYear();
+      var mo = TODAY.getMonth() - dt.getMonth();
+      if (mo < 0 || (mo === 0 && TODAY.getDate() < dt.getDate())) { age--; }
+      if (dt > TODAY) {
+        setInvalid(group, true);
+        if (msgWrap) { msgWrap.hidden = false; }
+        if (msg) { msg.textContent = 'That date is in the future. Enter the date you were born.'; }
+      } else if (age < 18) {
+        setInvalid(group, true);
+        if (msgWrap) { msgWrap.hidden = false; }
+        if (msg) { msg.textContent = 'You are ' + age + '. If you are under 18 an adult SportsHeist member must sign you up.'; }
+      } else {
+        setInvalid(group, false);
+        if (msgWrap) { msgWrap.hidden = true; }
+      }
+    }
+    group.addEventListener('input', run);
+    run();
+  });
+
+  /* required date */
+  document.querySelectorAll('[data-required-date]').forEach(function (group) {
+    var msgWrap = group.parentNode.querySelector('.val--err');
+    function run() {
+      var ok = !!dateOf(group);
+      setInvalid(group, !ok);
+      if (msgWrap) { msgWrap.hidden = ok; }
+    }
+    group.addEventListener('input', run);
+  });
+
+  /* ============================================================
+     FOOTER — the two buttons have to do something, and the honest
+     something for a specimen sheet is: report what is invalid, and
+     put the sheet back the way it was authored.
+     ============================================================ */
+  var OK_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.3 2.7 2.7L16.3 9.3"/></svg>';
+  var ERR_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/></svg>';
+
+  function say(btn, kind, text) {
+    var out = btn.closest('.actions').querySelector('[data-say]');
+    if (!out) { return; }
+    out.className = 'actions__say actions__say--' + kind;
+    out.innerHTML = (kind === 'ok' ? OK_ICON : ERR_ICON) + '<span></span>';
+    out.querySelector('span').textContent = text;
+    out.hidden = false;
+  }
+
+  /* ---- the selects: branded menu over a hidden native holder ----
+     The OS option popup is the one piece of system chrome a <select> can't
+     restyle, so the select stays in the DOM as the state holder — value,
+     aria-invalid and the submit/reset machinery keep working — and a
+     button + listbox popover does the showing. Same rules as the date
+     picker: Escape closes, away-click closes, arrows move, choosing fires
+     input + change on the native select. */
+  var DD_UID = 0;
+  function initSelects(root){
+    var TICK = '<svg class="dd__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>';
+    [].slice.call(root.querySelectorAll('select.ctl__select')).forEach(function(sel){
+      if (sel.__dd || sel.disabled) return;
+      var ctl = sel.closest('.ctl');
+      if (!ctl || ctl.classList.contains('is-disabled')) return;
+      sel.__dd = true;
+      sel.classList.add('ctl__select--bh');
+      sel.tabIndex = -1;
+      sel.setAttribute('aria-hidden','true');
+
+      var base = sel.id || 'dd' + (++DD_UID);
+      var lbl = sel.id ? document.querySelector('label[for="' + sel.id + '"]') : null;
+      if (!lbl){
+        var wrap = sel.closest('label');
+        if (wrap) lbl = wrap.querySelector('.field__label');
+      }
+      if (lbl && !lbl.id) lbl.id = base + '-lbl';
+
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'ctl__face';
+      btn.id = base + '-face';
+      btn.setAttribute('aria-haspopup','listbox');
+      btn.setAttribute('aria-expanded','false');
+      if (lbl) btn.setAttribute('aria-labelledby', lbl.id + ' ' + btn.id);
+      btn.appendChild(document.createElement('span'));
+      var face = btn.firstChild;
+      sel.parentNode.insertBefore(btn, sel.nextSibling);
+
+      var dd = document.createElement('div');
+      dd.className = 'dd'; dd.hidden = true;
+      dd.setAttribute('role','listbox');
+      if (lbl) dd.setAttribute('aria-labelledby', lbl.id);
+      ctl.appendChild(dd);
+
+      /* in the right column of a two-up, grow toward the middle of the
+         screen rather than off the edge */
+      var fld = ctl.closest('.field');
+      if (fld && fld.parentElement && fld.parentElement.classList.contains('two-up') &&
+          fld.previousElementSibling) dd.classList.add('dd--r');
+
+      function paintFace(){
+        var o = sel.options[sel.selectedIndex];
+        face.textContent = o ? o.textContent : '';
+        ctl.classList.toggle('ctl--placeholder', !!o && o.value === '' && o.hasAttribute('value'));
+      }
+      function build(){
+        dd.innerHTML = '';
+        [].slice.call(sel.options).forEach(function(o, i){
+          /* a "Choose a…" placeholder is a prompt, not a choice */
+          if (o.value === '' && o.hasAttribute('value')) return;
+          var b = document.createElement('button');
+          b.type = 'button'; b.className = 'dd__opt';
+          b.setAttribute('role','option');
+          b.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
+          if (o.disabled) b.disabled = true;
+          var t = document.createElement('span'); t.className = 'dd__t';
+          t.textContent = o.textContent;
+          b.appendChild(t); b.insertAdjacentHTML('beforeend', TICK);
+          b.addEventListener('click', function(){
+            sel.selectedIndex = i;
+            paintFace();
+            sel.dispatchEvent(new Event('input',  {bubbles:true}));
+            sel.dispatchEvent(new Event('change', {bubbles:true}));
+            shut(); btn.focus();
+          });
+          dd.appendChild(b);
+        });
+      }
+      function opts(){ return [].slice.call(dd.querySelectorAll('.dd__opt:not([disabled])')); }
+      function show(){
+        build(); dd.hidden = false; ctl.classList.add('is-open');
+        btn.setAttribute('aria-expanded','true');
+        var cur = dd.querySelector('[aria-selected="true"]:not([disabled])') || opts()[0];
+        if (cur){ cur.focus(); cur.scrollIntoView({block:'nearest'}); }
+        document.addEventListener('mousedown', away, true);
+        document.addEventListener('keydown', keys, true);
+      }
+      function shut(){
+        dd.hidden = true; ctl.classList.remove('is-open');
+        btn.setAttribute('aria-expanded','false');
+        document.removeEventListener('mousedown', away, true);
+        document.removeEventListener('keydown', keys, true);
+      }
+      function away(e){ if (!ctl.contains(e.target)) shut(); }
+      function keys(e){
+        if (e.key === 'Escape'){ shut(); btn.focus(); return; }
+        if (e.key === 'Tab'){ shut(); return; }
+        var os = opts(), i = os.indexOf(document.activeElement);
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+          e.preventDefault();
+          var n = e.key === 'ArrowDown' ? Math.min(i + 1, os.length - 1) : Math.max(i - 1, 0);
+          if (os[n]){ os[n].focus(); os[n].scrollIntoView({block:'nearest'}); }
+        } else if (e.key === 'Home' && os[0]){
+          e.preventDefault(); os[0].focus();
+        } else if (e.key === 'End' && os.length){
+          e.preventDefault(); os[os.length - 1].focus();
+        }
+      }
+      btn.addEventListener('click', function(){ dd.hidden ? show() : shut(); });
+      btn.addEventListener('keydown', function(e){
+        if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && dd.hidden){ e.preventDefault(); show(); }
+      });
+      sel.addEventListener('focus', function(){ btn.focus(); });
+      sel.addEventListener('input',  paintFace);
+      sel.addEventListener('change', paintFace);
+      sel.__ddShut = shut;
+      paintFace();
+    });
+  }
+  initSelects(document);
+
+  /* remember every authored value once, before anything is typed */
+  var SNAP = [];
+  document.querySelectorAll('.screen input, .screen select, .screen textarea').forEach(function (el) {
+    SNAP.push({
+      el: el,
+      value: el.value,
+      checked: el.checked,
+      type: el.type,
+      invalid: el.getAttribute('aria-invalid'),
+      error: el.closest('.ctl') ? el.closest('.ctl').classList.contains('is-error') : false
+    });
+  });
+  var SWITCHES = [];
+  document.querySelectorAll('[data-switch]').forEach(function (sw) {
+    SWITCHES.push({ el: sw, on: sw.getAttribute('aria-checked') });
+  });
+
+  document.querySelectorAll('[data-submit]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var bad = [].slice.call(document.querySelectorAll('.screen [aria-invalid="true"]'))
+        .filter(function (el) { return !el.disabled; });
+      /* the three parts of one date group are one problem, not three */
+      var groups = [];
+      bad.forEach(function (el) {
+        var g = el.closest('.dob') || el;
+        if (groups.indexOf(g) === -1) { groups.push(g); }
+      });
+      if (!groups.length) {
+        say(btn, 'ok', 'Nothing on this sheet is invalid — this is what submit would send.');
+        return;
+      }
+      var first = groups[0];
+      var focusable = first.matches('input,select,textarea') ? first : first.querySelector('input,select,textarea');
+      if (focusable) { focusable.focus(); }
+      say(btn, 'err', groups.length === 1
+        ? '1 field needs attention. Focus moved to it.'
+        : groups.length + ' fields need attention. Focus moved to the first.');
+    });
+  });
+
+  document.querySelectorAll('[data-reset]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      SNAP.forEach(function (s) {
+        if (s.type === 'checkbox' || s.type === 'radio') { s.el.checked = s.checked; }
+        else { s.el.value = s.value; }
+        if (s.invalid) { s.el.setAttribute('aria-invalid', s.invalid); }
+        else { s.el.removeAttribute('aria-invalid'); }
+        var box = s.el.closest('.ctl');
+        if (box) { box.classList.toggle('is-error', s.error); }
+        s.el.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      SWITCHES.forEach(function (s) { s.el.setAttribute('aria-checked', s.on); });
+      document.querySelectorAll('.dp').forEach(function (p) { p.hidden = true; });
+      document.querySelectorAll('.dob__cal').forEach(function (c) { c.setAttribute('aria-expanded', 'false'); });
+      document.querySelectorAll('select.ctl__select').forEach(function (s) { if (s.__ddShut) { s.__ddShut(); } });
+      say(btn, 'ok', 'Every specimen is back to its authored state.');
+    });
+  });
+})();
+</script>
+</body>
+</html>

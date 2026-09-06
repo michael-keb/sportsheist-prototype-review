@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en" data-component="matches">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Matches</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — MATCHES
+   Two frames: the fixture list and the finished-match record.
+
+   Matches is NOT one of the five tabs in the new navigation
+   (War Room, Merits, Backchat, Alerts, Profile), and it does not
+   exist in the checked-out Flutter source — matches_body.dart
+   renders an empty Container(). Both frames are therefore built
+   as PUSHED screens: a back control, no tab bar.
+
+   Token block copied verbatim from merits.html. Content and
+   behaviour are taken from Screen-Specs/04-matches (MT-01…MT-03);
+   nothing of the old violet brand is carried over.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls, tab bar        */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+
+  /* hero */
+  --hero-a:        #0D3617;
+  --hero-b:        #17481C;
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* ---- crest plate ------------------------------------------
+     Not new colour: a fixed white scrim and a black hairline,
+     the same construction as --line. See the spec block below. */
+  --plate:         rgba(255,255,255,.94);
+  --plate-edge:    rgba(0,0,0,.13);
+
+  /* photography — three portraits from _assets/avatars.css */
+  --av-jen:  url(data:image/jpeg;base64,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);
+  --av-just: url(data:image/jpeg;base64,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);
+  --av-jes:  url(data:image/jpeg;base64,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);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+[hidden]{display:none!important}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ============================================================
+   FRAME — one screen, one device in the review page
+   ============================================================ */
+.frame{position:relative;padding-bottom:24px}
+
+/* ============================================================
+   SHARED BITS  (same construction as merits.html)
+   ============================================================ */
+.label{
+  margin:24px var(--gutter) 10px;
+  font-size:18px;font-weight:600;letter-spacing:-.015em;
+}
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+.icon-btn:hover{background:#222833}
+.icon-btn svg{width:18px;height:18px}
+
+/* ---- ONE status-pill pattern, two intensities -----------------
+   Contract pill: --acid-wash fill, 32px, accent 11/700/.11em caps,
+   6px leading dot. The only permitted variation is intensity —
+   `--quiet` swaps the wash for --sunken and the accent for --muted.
+   Geometry, type and dot are identical. No second hue, ever.     */
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  height:32px;padding:0 14px;border-radius:var(--r-pill);
+  background:var(--acid-wash);
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;
+}
+.status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.status-pill--quiet{background:var(--sunken);color:var(--muted)}
+.status-pill--sm{height:26px;padding:0 11px;font-size:10px;gap:6px}
+.status-pill--sm::before{width:5px;height:5px}
+
+.avatar{
+  border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+
+/* ============================================================
+   CREST PLATE
+   Canonical construction, settled in club-selection.html and
+   ported here verbatim. This file originally drew a dark
+   --sunken plate at 56/40/24 with a 1px --line border, which
+   predates the spec; the sizes remap 56→64 and 24→28.
+
+   Third-party crests come in every colour, so the app never
+   composites them straight onto a dark surface — measured on the
+   old build a yellow crest hit ~15:1 and a blue one ~1.4:1. The
+   fixed light plate makes contrast a property of *the plate*
+   (~14.4:1 on --surface, ~18.3:1 on --bg) for every club alike,
+   and fitting artwork into the padded SQUARE rather than to the
+   height kills the roundel-vs-shield weight variance.
+
+   Three sizes only:
+     .plate--sm   28px   inline in a data row
+     .plate--md   40px   dense lists and select values
+     .plate--lg   64px   fixture card + result lockup
+   No shadow, no tint, no ring — two plate tones or a per-state
+   ring would destroy the constant optical weight it exists for.
+   ============================================================ */
+.plate{
+  --plate-size:40px;
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  width:var(--plate-size);height:var(--plate-size);
+  padding:calc(var(--plate-size) * .125);
+  border-radius:calc(var(--plate-size) * .28);
+  background:var(--plate);
+  box-shadow:inset 0 0 0 1px var(--plate-edge);
+  overflow:hidden;
+  font-size:calc(var(--plate-size) * .30);
+  font-weight:800;letter-spacing:-.03em;line-height:1;
+  color:var(--acid-ink);text-transform:uppercase;
+  -webkit-user-select:none;user-select:none;
+}
+.plate--sm{--plate-size:28px}
+.plate--md{--plate-size:40px}
+.plate--lg{--plate-size:64px}
+/* real crests land here as <img class="plate__art" src="…"> */
+.plate__art{width:100%;height:100%;object-fit:contain;display:block}
+
+/* ---- CARD + ROW ---------------------------------------------- */
+.card{margin:10px var(--gutter) 0;padding:0 16px;border-radius:var(--r-card);background:var(--surface)}
+.card--inset{margin:12px 0 0}
+.row{display:flex;align-items:flex-start;gap:16px;padding:11px 0;border-top:1px solid var(--line-soft)}
+.row:first-child{border-top:0}
+.row__k{flex:0 0 auto;padding-top:1px;font-size:13px;color:var(--muted)}
+.row__v{
+  flex:1;min-width:0;text-align:right;
+  font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;
+}
+.row__v--club{display:flex;align-items:center;justify-content:flex-end;gap:9px}
+
+/* ============================================================
+   SCREEN HEADER  (pushed screen: back control, no tab bar)
+   ============================================================ */
+.top{margin:0 var(--gutter) 0}
+.top__title{
+  margin:14px 0 0;
+  font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:.95;
+  text-transform:uppercase;
+}
+
+/* ============================================================
+   SEGMENTED FILTER
+   ============================================================ */
+.filter{
+  display:flex;gap:4px;margin:18px var(--gutter) 0;
+  padding:4px;border-radius:var(--r-pill);background:var(--surface);
+}
+.filter__btn{
+  flex:1;height:38px;padding:0 6px;
+  border:0;border-radius:var(--r-pill);background:transparent;color:var(--muted);
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.filter__btn:hover{color:var(--text)}
+.filter__btn[aria-selected="true"]{background:var(--acid);color:var(--acid-ink);font-weight:700}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty{
+  margin:14px var(--gutter) 0;padding:26px 20px 24px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);text-align:center;
+}
+.empty__icon{
+  width:44px;height:44px;margin:0 auto 14px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface);color:var(--dim);
+}
+.empty__icon svg{width:21px;height:21px}
+.empty h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.005em}
+.empty p{margin:6px auto 0;max-width:26ch;font-size:12.5px;color:var(--muted)}
+
+/* ============================================================
+   FIXTURE CARD
+   ============================================================ */
+.list{display:flex;flex-direction:column;gap:10px;margin-top:12px;padding:0 var(--gutter)}
+.fx{
+  width:100%;display:block;padding:14px 16px 0;
+  border:0;border-radius:var(--r-card);background:var(--surface);
+  color:inherit;font:inherit;text-align:left;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.fx:hover{background:#222833}
+.fx__comp{
+  display:block;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.fx__body{
+  display:grid;grid-template-columns:1fr auto 1fr;
+  align-items:center;justify-items:center;column-gap:10px;row-gap:9px;
+  margin:14px 0 14px;
+}
+.fx__team{justify-self:stretch;width:100%;min-width:0}
+.fx__name{
+  display:block;max-width:100%;font-size:12.5px;font-weight:600;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.fx__team--out .fx__name{font-weight:500;color:var(--muted)}
+/* winner: full-strength name and score against a muted loser.
+   The crest plate is never re-ringed to carry state — it is a
+   fixed constant, so the outcome rests on weight and colour. */
+.fx__figure{display:flex;align-items:center;gap:9px;font-variant-numeric:tabular-nums}
+.fx__n{font-size:26px;font-weight:800;letter-spacing:-.035em;line-height:1}
+.fx__n--out{color:var(--muted)}
+.fx__dash{width:9px;height:1.5px;background:var(--dim);border-radius:1px}
+.fx__kick{font-size:22px;font-weight:800;letter-spacing:-.025em;line-height:1;font-variant-numeric:tabular-nums}
+.fx__foot{
+  display:flex;align-items:center;gap:8px;
+  padding:11px 0;border-top:1px solid var(--line-soft);
+}
+.fx__date{
+  flex:1;min-width:0;text-align:right;font-size:11.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.fx__foot svg{width:15px;height:15px;flex:0 0 auto;color:var(--dim)}
+
+/* ============================================================
+   RESULT LOCKUP  (hero language: same gradient + faint field
+   triangles as the title hero, without the acid peaks or the
+   knockout prop — those belong to a titled hero.)
+   ============================================================ */
+.result{
+  position:relative;overflow:hidden;
+  margin:14px var(--gutter) 0;padding:16px 16px 18px;
+  border-radius:var(--r-card);
+  background:linear-gradient(112deg,var(--hero-a) 0%,var(--hero-b) 58%,#0C3416 100%);
+}
+.result__field{position:absolute;inset:0;pointer-events:none}
+.result__comp{
+  position:relative;margin:0 0 16px;text-align:center;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.62);
+}
+.result__body{
+  position:relative;
+  display:grid;grid-template-columns:1fr auto 1fr;
+  align-items:center;justify-items:center;column-gap:12px;row-gap:10px;
+}
+.result__name{
+  justify-self:stretch;width:100%;min-width:0;
+  max-width:100%;font-size:12.5px;font-weight:700;letter-spacing:.03em;
+  text-transform:uppercase;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.result__team--out .result__name{font-weight:600;color:rgba(255,255,255,.58)}
+/* the winner is named in words by the Winner pill below the
+   lockup, not by an accent ring on the plate. */
+.result__figure{display:flex;align-items:center;gap:10px;font-variant-numeric:tabular-nums}
+.result__n{font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.result__n--out{color:rgba(255,255,255,.5)}
+.result__dash{width:12px;height:2px;background:rgba(255,255,255,.4);border-radius:1px}
+.result__tag{min-height:26px;display:flex;align-items:center}
+
+/* ============================================================
+   SECTION CONTAINER + PODIUM  (merits.html construction)
+   ============================================================ */
+.section{
+  margin:0 var(--gutter);padding:12px;
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);
+}
+.podium{
+  position:relative;
+  display:grid;grid-template-columns:1fr 1.14fr 1fr;align-items:end;gap:8px;
+  padding:12px 10px 16px;overflow:hidden;
+  border-radius:var(--r-panel);background:var(--surface);
+}
+/* the award is named in words and points at the winner's column */
+.podium__award{
+  grid-column:1/-1;
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  margin-bottom:4px;
+}
+.podium__caret{width:14px;height:14px;color:var(--acid)}
+.plinth{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
+.plinth__badge{position:relative;margin-bottom:8px}
+.plinth__avatar{
+  width:52px;height:52px;
+  box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--ring,rgba(255,255,255,.20));
+}
+.plinth--first .plinth__avatar{width:64px;height:64px}
+.plinth__rank{
+  position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);
+  min-width:21px;height:21px;padding:0 6px;border-radius:var(--r-pill);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;
+  background:var(--rankbg,#2A303A);color:var(--rankink,#FFF);
+  box-shadow:0 0 0 2px var(--surface);
+}
+.plinth__name{
+  margin:5px 0 2px;max-width:100%;font-size:12.5px;font-weight:600;line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+/* all three members scored the same, so all three read the same.
+   Rank, size, ring and the named award carry the outcome.        */
+.plinth__score{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+<!-- ============================================================
+     FRAME 1 — FIXTURE LIST
+     ============================================================ -->
+<section class="frame" data-title="Fixture list" aria-label="Fixture list">
+
+  <header class="top">
+    <button class="icon-btn" type="button" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5 8 12l6.5 7"/></svg>
+    </button>
+    <h1 class="top__title">Matches</h1>
+  </header>
+
+  <div class="filter" role="tablist" aria-label="Fixture status">
+    <button class="filter__btn" type="button" role="tab" id="tab-live" aria-selected="true" aria-controls="pane-live">Live</button>
+    <button class="filter__btn" type="button" role="tab" id="tab-upcoming" aria-selected="false" aria-controls="pane-upcoming">Upcoming</button>
+    <button class="filter__btn" type="button" role="tab" id="tab-finished" aria-selected="false" aria-controls="pane-finished">Finished</button>
+  </div>
+
+  <!-- ---------- LIVE ---------- -->
+  <div id="pane-live" role="tabpanel" aria-labelledby="tab-live">
+
+    <div class="empty">
+      <span class="empty__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="1.6"/>
+          <path d="M8.9 15.1a4.4 4.4 0 0 1 0-6.2M15.1 8.9a4.4 4.4 0 0 1 0 6.2"/>
+          <path d="M6 18a8.5 8.5 0 0 1 0-12M18 6a8.5 8.5 0 0 1 0 12"/>
+        </svg>
+      </span>
+      <h3>No live game at the moment</h3>
+      <p>Barcelona's next fixture appears here the moment it kicks off.</p>
+    </div>
+
+    <h2 class="label">Next up</h2>
+
+    <div class="list">
+      <button class="fx" type="button">
+        <span class="fx__comp">LaLiga · Matchday 33</span>
+        <span class="fx__body">
+          <span class="plate plate--lg">BAR</span>
+          <span class="fx__kick">21:00</span>
+          <span class="plate plate--lg">RMA</span>
+          <span class="fx__team"><span class="fx__name">Barcelona</span></span>
+          <span></span>
+          <span class="fx__team"><span class="fx__name">Real Madrid</span></span>
+        </span>
+        <span class="fx__foot">
+          <span class="status-pill status-pill--sm">Upcoming</span>
+          <span class="fx__date">Today</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5 16 12l-6.5 7"/></svg>
+        </span>
+      </button>
+
+      <button class="fx" type="button">
+        <span class="fx__comp">LaLiga · Matchday 34</span>
+        <span class="fx__body">
+          <span class="plate plate--lg">SEV</span>
+          <span class="fx__kick">18:30</span>
+          <span class="plate plate--lg">BAR</span>
+          <span class="fx__team"><span class="fx__name">Sevilla</span></span>
+          <span></span>
+          <span class="fx__team"><span class="fx__name">Barcelona</span></span>
+        </span>
+        <span class="fx__foot">
+          <span class="status-pill status-pill--sm">Upcoming</span>
+          <span class="fx__date">Sat 2 May</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5 16 12l-6.5 7"/></svg>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ---------- UPCOMING ---------- -->
+  <div id="pane-upcoming" role="tabpanel" aria-labelledby="tab-upcoming" hidden>
+    <div class="list">
+      <button class="fx" type="button">
+        <span class="fx__comp">LaLiga · Matchday 33</span>
+        <span class="fx__body">
+          <span class="plate plate--lg">BAR</span>
+          <span class="fx__kick">21:00</span>
+          <span class="plate plate--lg">RMA</span>
+          <span class="fx__team"><span class="fx__name">Barcelona</span></span>
+          <span></span>
+          <span class="fx__team"><span class="fx__name">Real Madrid</span></span>
+        </span>
+        <span class="fx__foot">
+          <span class="status-pill status-pill--sm">Upcoming</span>
+          <span class="fx__date">Today</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5 16 12l-6.5 7"/></svg>
+        </span>
+      </button>
+
+      <button class="fx" type="button">
+        <span class="fx__comp">LaLiga · Matchday 34</span>
+        <span class="fx__body">
+          <span class="plate plate--lg">SEV</span>
+          <span class="fx__kick">18:30</span>
+          <span class="plate plate--lg">BAR</span>
+          <span class="fx__team"><span class="fx__name">Sevilla</span></span>
+          <span></span>
+          <span class="fx__team"><span class="fx__name">Barcelona</span></span>
+        </span>
+        <span class="fx__foot">
+          <span class="status-pill status-pill--sm">Upcoming</span>
+          <span class="fx__date">Sat 2 May</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5 16 12l-6.5 7"/></svg>
+        </span>
+      </button>
+
+      <button class="fx" type="button">
+        <span class="fx__comp">Champions League · Semi-final</span>
+        <span class="fx__body">
+          <span class="plate plate--lg">BAR</span>
+          <span class="fx__kick">21:00</span>
+          <span class="plate plate--lg">INT</span>
+          <span class="fx__team"><span class="fx__name">Barcelona</span></span>
+          <span></span>
+          <span class="fx__team"><span class="fx__name">Inter</span></span>
+        </span>
+        <span class="fx__foot">
+          <span class="status-pill status-pill--sm">Upcoming</span>
+          <span class="fx__date">Tue 5 May</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5 16 12l-6.5 7"/></svg>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ---------- FINISHED ---------- -->
+  <div id="pane-finished" role="tabpanel" aria-labelledby="tab-finished" hidden>
+    <div class="list">
+      <button class="fx" type="button">
+        <span class="fx__comp">Champions League · Quarter-final</span>
+        <span class="fx__body">
+          <span class="plate plate--lg">BAR</span>
+          <span class="fx__figure">
+            <span class="fx__n">2</span><span class="fx__dash"></span><span class="fx__n fx__n--out">1</span>
+          </span>
+          <span class="plate plate--lg">ARS</span>
+          <span class="fx__team fx__team--won"><span class="fx__name">Barcelona</span></span>
+          <span></span>
+          <span class="fx__team fx__team--out"><span class="fx__name">Arsenal</span></span>
+        </span>
+        <span class="fx__foot">
+          <span class="status-pill status-pill--sm status-pill--quiet">Full time</span>
+          <span class="fx__date">Sun 19 Apr · 20:45</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5 16 12l-6.5 7"/></svg>
+        </span>
+      </button>
+
+      <button class="fx" type="button">
+        <span class="fx__comp">LaLiga · Matchday 32</span>
+        <span class="fx__body">
+          <span class="plate plate--lg">GIR</span>
+          <span class="fx__figure">
+            <span class="fx__n">2</span><span class="fx__dash"></span><span class="fx__n">2</span>
+          </span>
+          <span class="plate plate--lg">BAR</span>
+          <span class="fx__team"><span class="fx__name">Girona</span></span>
+          <span></span>
+          <span class="fx__team"><span class="fx__name">Barcelona</span></span>
+        </span>
+        <span class="fx__foot">
+          <span class="status-pill status-pill--sm status-pill--quiet">Full time</span>
+          <span class="fx__date">Sun 12 Apr · 16:15</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5 16 12l-6.5 7"/></svg>
+        </span>
+      </button>
+
+      <button class="fx" type="button">
+        <span class="fx__comp">LaLiga · Matchday 31</span>
+        <span class="fx__body">
+          <span class="plate plate--lg">BAR</span>
+          <span class="fx__figure">
+            <span class="fx__n">3</span><span class="fx__dash"></span><span class="fx__n fx__n--out">0</span>
+          </span>
+          <span class="plate plate--lg">VIL</span>
+          <span class="fx__team fx__team--won"><span class="fx__name">Barcelona</span></span>
+          <span></span>
+          <span class="fx__team fx__team--out"><span class="fx__name">Villarreal</span></span>
+        </span>
+        <span class="fx__foot">
+          <span class="status-pill status-pill--sm status-pill--quiet">Full time</span>
+          <span class="fx__date">Sat 4 Apr · 18:30</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5 16 12l-6.5 7"/></svg>
+        </span>
+      </button>
+
+      <button class="fx" type="button">
+        <span class="fx__comp">LaLiga · Matchday 30</span>
+        <span class="fx__body">
+          <span class="plate plate--lg">ATH</span>
+          <span class="fx__figure">
+            <span class="fx__n fx__n--out">–</span><span class="fx__n fx__n--out">–</span>
+          </span>
+          <span class="plate plate--lg">BAR</span>
+          <span class="fx__team fx__team--out"><span class="fx__name">Athletic Club</span></span>
+          <span></span>
+          <span class="fx__team fx__team--out"><span class="fx__name">Barcelona</span></span>
+        </span>
+        <span class="fx__foot">
+          <span class="status-pill status-pill--sm status-pill--quiet">Pending</span>
+          <span class="fx__date">Wed 1 Apr · 21:00</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5 16 12l-6.5 7"/></svg>
+        </span>
+      </button>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     FRAME 2 — MATCH DETAIL
+     ============================================================ -->
+<section class="frame" data-title="Finished match" aria-label="Match detail">
+
+  <header class="top">
+    <button class="icon-btn" type="button" aria-label="Back to matches">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5 8 12l6.5 7"/></svg>
+    </button>
+    <h1 class="top__title">Finished match</h1>
+  </header>
+
+  <!-- ---------- RESULT LOCKUP ---------- -->
+  <section class="result" aria-label="Result">
+    <svg class="result__field" viewBox="0 0 343 172" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 172 L52 86 L104 172 Z"   fill="#fff" opacity=".030"/>
+      <path d="M92 172 L146 70 L200 172 Z" fill="#fff" opacity=".024"/>
+      <path d="M226 0 L282 0 L226 84 Z"    fill="#fff" opacity=".026"/>
+    </svg>
+
+    <p class="result__comp">Champions League · Quarter-final</p>
+
+    <div class="result__body">
+      <span class="plate plate--lg">BAR</span>
+      <span class="result__figure">
+        <span class="result__n">2</span><span class="result__dash"></span><span class="result__n result__n--out">1</span>
+      </span>
+      <span class="plate plate--lg">ARS</span>
+
+      <span class="result__name">Barcelona</span>
+      <span></span>
+      <span class="result__name">Arsenal</span>
+
+      <span class="result__tag"><span class="status-pill status-pill--sm">Winner</span></span>
+      <span></span>
+      <span class="result__tag"></span>
+    </div>
+  </section>
+
+  <!-- ---------- DETAIL ROWS ---------- -->
+  <h2 class="label">Match detail</h2>
+
+  <div class="card">
+    <div class="row"><span class="row__k">Match date</span><span class="row__v">Sun 19 Apr 2026</span></div>
+    <div class="row"><span class="row__k">Kick-off</span><span class="row__v">20:45</span></div>
+    <div class="row"><span class="row__k">Full time</span><span class="row__v">22:41</span></div>
+    <div class="row">
+      <span class="row__k">Opponent</span>
+      <span class="row__v row__v--club"><span class="plate plate--sm">ARS</span>Arsenal</span>
+    </div>
+    <div class="row"><span class="row__k">Location</span><span class="row__v">Emi, Mimasaka, 709-4292, Japan</span></div>
+  </div>
+
+  <!-- ---------- MEMBER PLAYOFFS ---------- -->
+  <h2 class="label">Member playoffs</h2>
+
+  <section class="section" aria-label="Member playoffs">
+    <div class="podium">
+      <div class="podium__award">
+        <span class="status-pill status-pill--sm">Member of the match</span>
+        <svg class="podium__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 16l6-6.5"/></svg>
+      </div>
+
+      <div class="plinth">
+        <div class="plinth__badge">
+          <div class="avatar plinth__avatar" style="background-image:var(--av-just)" role="img" aria-label="Justin K"></div>
+          <span class="plinth__rank">2</span>
+        </div>
+        <span class="plinth__name">Justin K</span>
+        <span class="plinth__score">0 points</span>
+      </div>
+
+      <div class="plinth plinth--first" style="--ring:#9BE222;--rankbg:#9BE222;--rankink:#0B0E06">
+        <div class="plinth__badge">
+          <div class="avatar plinth__avatar" style="background-image:var(--av-jen)" role="img" aria-label="Jen Q, member of the match"></div>
+          <span class="plinth__rank">1</span>
+        </div>
+        <span class="plinth__name">Jen Q</span>
+        <span class="plinth__score">0 points</span>
+      </div>
+
+      <div class="plinth">
+        <div class="plinth__badge">
+          <div class="avatar plinth__avatar" style="background-image:var(--av-jes)" role="img" aria-label="Jes S"></div>
+          <span class="plinth__rank">3</span>
+        </div>
+        <span class="plinth__name">Jes S</span>
+        <span class="plinth__score">0 points</span>
+      </div>
+    </div>
+
+    <div class="card card--inset">
+      <div class="row"><span class="row__k">Member of the match prize</span><span class="row__v">1,000 points</span></div>
+      <div class="row"><span class="row__k">Member of the week prize</span><span class="row__v">1,000 points</span></div>
+      <div class="row"><span class="row__k">Week opens</span><span class="row__v">Sat 18 Apr 2026 · 07:00</span></div>
+      <div class="row"><span class="row__k">Week closes</span><span class="row__v">Sat 25 Apr 2026 · 07:00</span></div>
+    </div>
+  </section>
+</section>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var bar = document.querySelector('.filter');
+  if(!bar) return;
+  var tabs = [].slice.call(bar.querySelectorAll('.filter__btn'));
+  bar.addEventListener('click', function(e){
+    var b = e.target.closest('.filter__btn'); if(!b) return;
+    tabs.forEach(function(t){
+      var on = t === b;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      var pane = document.getElementById(t.getAttribute('aria-controls'));
+      if (pane) pane.hidden = !on;
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<p class="dek">The fourth of the five navigation tabs. It is the one place a member is told that something
+they have a stake in has moved — a vote closing, an Idea promoted, a veto upheld, Merits awarded —
+and it is the screen the notification badge points at. Four screens: the feed, and the three
+states it passes through before it gets there.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>A designed screen for an undesigned tab</h2>
+  <p>
+    Alerts has a tab, an icon and a badge in every frame of the Figma file, but no screen behind it.
+    The live build has one — <code>alert_body.dart</code> renders a flat list of rows and marks them
+    read on tap — so unlike Merits or Profile there is real behaviour to respect here, just no visual
+    design for it.
+  </p>
+  <p>
+    This is a rebuild of that list in the dark-mode language. The two changes of substance are that
+    alerts are grouped by day rather than run as one undifferentiated stream, and that an alert which
+    is asking for an action now carries that action on the row. Everything else — the hero, the
+    bordered section, the accent-wash row treatment — is lifted from screens already signed off.
+  </p>
+  <p>
+    Ten alerts are shown across four day groups, four of them unread. Eight of them are alert types
+    the shipped build already raises; two are proposals. The whole thing is live: tapping a row marks it read, the
+    <code>4&nbsp;unread</code> pill and each group's <code>3&nbsp;new</code> counter recount, and
+    <code>Mark&nbsp;all&nbsp;read</code> disables itself when the feed is clear.
+  </p>
+  <p>
+    <b>Why four phones.</b> The empty state used to sit under the live feed on the same scroll,
+    which showed it but did not show what it replaces. It is now its own frame, with loading and
+    load-failed beside it. The last of those is the finding worth stopping on: the build
+    <em>does</em> branch on failure, and it renders <code>No message added yet</code> — the same
+    widget and the same string as an empty inbox. A member whose request died is told they have no
+    alerts. Frame <b>04</b> separates the two, and gives the retry a visible control instead of a
+    pull gesture nobody is told about.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Hero</td><td>Banner</td>
+          <td class="t-note"><code>138&nbsp;px</code> at <code>R16</code>, field gradient
+            <code>#0D3617</code>→<code>#17481C</code>→<code>#0C3416</code> at 112°. Three faint white
+            triangles in the field at <code>3.0%</code>, <code>2.4%</code> and <code>2.6%</code>
+            opacity; three acid peaks <code>#9BE222</code> filling <code>54%&nbsp;×&nbsp;38%</code>
+            of the bottom-right; knocked-out athlete <code>124&nbsp;px</code> tall layered
+            <em>in front of</em> the peaks.</td>
+        </tr>
+        <tr>
+          <td>Hero</td><td>Screen title</td>
+          <td class="t-note"><code>Alerts</code> at 34/800, uppercase, tracking
+            <code>-.025em</code>. Title only, no strapline — the mobile convention.</td>
+        </tr>
+        <tr>
+          <td>Feed header</td><td>Label + mark-all</td>
+          <td class="t-note"><code>Your alerts</code> at 18/600, tracking <code>-.015em</code>, then a
+            <code>34&nbsp;px</code> pill on <code>#1C2129</code> carrying a double-tick glyph at
+            1.9 stroke and <code>Mark all read</code> at 12.5/500.</td>
+        </tr>
+        <tr>
+          <td>Feed</td><td>Section container</td>
+          <td class="t-note">Bordered wrapper <code>#080A0C</code>, 1&nbsp;px hairline at white
+            <code>7.5%</code>, <code>R16</code>, <code>12&nbsp;px</code> padding — the Locker Rooms
+            construction. The hairline is doing all the work; the fill is only
+            <code>1.04:1</code> against the canvas.</td>
+        </tr>
+        <tr>
+          <td>Feed</td><td>Control bar</td>
+          <td class="t-note">Unread count as a status pill — <code>rgba(155,226,34,.12)</code> wash,
+            <code>32&nbsp;px</code>, accent text 11/700 tracked <code>.11em</code>, 6&nbsp;px leading
+            dot — then two <code>38&nbsp;px</code> circular buttons on <code>#1C2129</code> for
+            search and settings, icons at 1.9 stroke.</td>
+        </tr>
+        <tr>
+          <td>Day group</td><td>Day header</td>
+          <td class="t-note">Day name at 11/700 tracked <code>.14em</code> uppercase in white, the
+            date beside it in <code>#5B606B</code> with <code>tabular-nums</code>, and a new-count at
+            11/700 tracked <code>.11em</code> in accent pushed to the right edge. The counter is
+            hidden by <code>:empty</code> rather than by a class, so a fully-read day loses it
+            cleanly.</td>
+        </tr>
+        <tr>
+          <td>Day group</td><td>Feed panel</td>
+          <td class="t-note">Each day's rows sit in one <code>R12</code> panel on
+            <code>#1C2129</code> with <code>overflow:hidden</code>, so the unread rail is clipped to
+            the panel's corner radius.</td>
+        </tr>
+        <tr>
+          <td>Alert row</td><td>Shell</td>
+          <td class="t-note"><code>12&nbsp;px</code> padding, <code>11&nbsp;px</code> gap, 1&nbsp;px
+            <code>rgba(255,255,255,.045)</code> top border, suppressed on
+            <code>:first-child</code> — the contract row.</td>
+        </tr>
+        <tr>
+          <td>Alert row</td><td>Leading mark</td>
+          <td class="t-note">Two kinds, both <code>34&nbsp;px</code>. A person-driven alert shows
+            their portrait as a circle, <code>background-position:center 22%</code>. A system alert
+            shows a glyph tile at <code>R11</code> on <code>#13171E</code> with an
+            <code>18&nbsp;px</code> icon in <code>#99A0AE</code>. Eight distinct glyphs are drawn —
+            stopwatch, ballot box, trophy, shield-with-cross, shield-with-tick, speaker, slashed
+            circle, hourglass — all 24-box, round caps, 1.7–1.9 stroke.</td>
+        </tr>
+        <tr>
+          <td>Alert row</td><td>Title</td>
+          <td class="t-note">14.5/500, line-height <code>1.28</code>, tracking <code>-.01em</code>.
+            Rises to weight 600 while unread. Sentence case, never truncated — an alert that has to
+            be re-read is a failed alert.</td>
+        </tr>
+        <tr>
+          <td>Alert row</td><td>Body</td>
+          <td class="t-note">13/400 in <code>#99A0AE</code>, line-height <code>1.38</code>. The
+            server's <code>**emphasis**</code> runs render as weight 600 in white, which is what makes
+            an object name — <code>Girona Loan Window</code> — findable at a glance.</td>
+        </tr>
+        <tr>
+          <td>Alert row</td><td>Foot</td>
+          <td class="t-note">Relative time at 11.5/500 in <code>#5B606B</code> with
+            <code>tabular-nums</code>, carried on a real <code>&lt;time datetime&gt;</code>. Where the
+            alert asks for something, a <code>34&nbsp;px</code> action pill sits right-aligned on
+            <code>#13171E</code> with accent label at 12.5/600 and a 13&nbsp;px corner arrow —
+            <code>Open room</code>, <code>Vote here</code>, <code>View details</code>. Focus ring is a
+            2&nbsp;px accent outline at 2&nbsp;px offset.</td>
+        </tr>
+        <tr>
+          <td>Unread</td><td>Marking</td>
+          <td class="t-note">Four simultaneous signals, only one of which is colour: the accent wash
+            behind the row, a <code>3&nbsp;px</code> accent rail inset on the left edge, a
+            <code>7&nbsp;px</code> accent dot beside the title, and the glyph tile inverting to accent
+            on wash. The title's weight step is a fifth.</td>
+        </tr>
+        <tr>
+          <td>Frame 02</td><td>Skeleton</td>
+          <td class="t-note">The States kit's bone — white at <code>5.5%</code> under a single
+            <code>1.5&nbsp;s</code> sheen — in the shipped shimmer's own shape: a label block, then
+            rows of a square leading mark beside three text lines. Laid out at this screen's row
+            geometry (<code>12&nbsp;px</code> padding, <code>34&nbsp;px</code> mark,
+            <code>11&nbsp;px</code> gap) and inside the feed panel, so nothing reflows when the
+            alerts land. The banner stays, because the shipped shimmer sits inside the header
+            widget rather than replacing it.</td>
+        </tr>
+        <tr>
+          <td>Frame 03</td><td>Empty panel</td>
+          <td class="t-note">Same <code>R12</code> panel, <code>32/22&nbsp;px</code> padding, centred:
+            a <code>44&nbsp;px</code> bell at 1.7 stroke in accent at <code>.9</code> opacity,
+            <code>Nothing to report</code> at 15/600, one line of body at 13/400 in
+            <code>#99A0AE</code> capped at <code>27ch</code>, and the settings pill. The unread pill
+            reads <code>All caught up</code>; <code>Mark all read</code> and the search control are
+            dropped, because there is nothing to mark and nothing to search.</td>
+        </tr>
+        <tr>
+          <td>Frame 04</td><td>Error panel</td>
+          <td class="t-note">The same panel with the icon tile instead of the bell — an error is a
+            thing that happened, not a space that is unfilled. Tile <code>52&nbsp;px</code> at
+            <code>R14</code> on <code>rgba(226,86,74,.12)</code> with a
+            <code>rgba(226,86,74,.28)</code> ring and a 1.7-stroke retry-with-alert glyph in
+            <code>#E2564A</code>. Below it a <code>46&nbsp;px</code> accent retry, label 14.5/700 in
+            <code>#0B0E06</code> (<code>12.31:1</code>), which overlays a spinner on its own label
+            when pressed so the width cannot change and it cannot fire twice.</td>
+        </tr>
+        <tr>
+          <td>Chrome</td><td>Tab bar</td>
+          <td class="t-note">Floating <code>58&nbsp;px</code> pill on <code>#1C2129</code>,
+            <code>10&nbsp;px</code> inner padding, <code>0 10px 30px rgba(0,0,0,.6)</code> lift.
+            Alerts is the active tab: accent fill with icon <em>and</em> label in
+            <code>#0B0E06</code>; the other four are 19&nbsp;px outline icons only. Pinned outside
+            the scrolling region.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Unread</td><td class="t-note">Accent wash, 3&nbsp;px left rail, trailing dot, accent glyph tile, title at weight 600.</td></tr>
+        <tr><td>Read</td><td class="t-note">Panel fill, no rail, no dot, glyph in <code>#99A0AE</code>, title at weight 500. The row stays fully legible — read is not disabled.</td></tr>
+        <tr><td>Tapped</td><td class="t-note">The row marks itself read and the dot is removed from the DOM. It does not navigate — see the decisions.</td></tr>
+        <tr><td>Mark all read</td><td class="t-note">Clears every row, then the pill switches from <code>4 unread</code> to <code>All caught up</code> and the button itself goes to <code>[disabled]</code> in <code>#5B606B</code> with no hover.</td></tr>
+        <tr><td>Day fully read</td><td class="t-note">The group's <code>3 new</code> counter empties and disappears; the day header and its date stay.</td></tr>
+        <tr><td>Person alert</td><td class="t-note">Portrait instead of a glyph tile — used for <code>capitan_7 posted a new Idea</code> and the locker-room reminder.</td></tr>
+        <tr><td>Alert with no action</td><td class="t-note">Foot carries the timestamp alone. Applied to alerts that only report an outcome, such as <code>You earned 7 Merits</code> and <code>Your Idea lapsed</code>.</td></tr>
+        <tr><td>Loading (frame 02)</td><td class="t-note">The dark skeleton, dispatched in code while <code>state.isReloading</code>. The banner stays; only the body is swapped.</td></tr>
+        <tr><td>Empty feed (frame 03)</td><td class="t-note">The bell panel, one explanatory line and a route into alert settings, so the screen is never a dead end. The shipped empty reads <code>No message added yet</code> — an English literal in the source rather than a translation key.</td></tr>
+        <tr><td>Load failed (frame 04)</td><td class="t-note"><b>Branched in code, but on the wrong screen.</b> <code>ActionStatus.fails</code> renders the same <code>No message added yet</code> box as an empty inbox, so a failure is indistinguishable from having no alerts, and the only recovery is an unadvertised pull-to-refresh. This frame gives the failure its own mark, its own words and a visible retry.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions suppressed under <code>prefers-reduced-motion</code>; nothing on this screen depends on movement.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <p>
+    Nothing on this screen was designed in Figma. The tab exists in every frame; the screen behind it
+    does not. Every pattern below was taken from a frame that <em>was</em> designed, and assembled
+    into a layout that was not.
+  </p>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Hero banner</b> — field gradient, triangle motif, acid peaks, prop-in-front layering</li>
+        <li><b>Section container</b> — the Locker Rooms bordered wrapper and its 1&nbsp;px hairline</li>
+        <li><b>Status pill</b> — the <code>LIVE NOW</code> treatment, reused for the unread count</li>
+        <li><b>Icon button</b> — the 38&nbsp;px circle from the War Room section headers</li>
+        <li><b>Row</b> — padding and hairline top border from the data rows in the exports</li>
+        <li><b>Unread treatment</b> — the accent wash and 3&nbsp;px edge marker built for the viewer's own row in Merits</li>
+        <li><b>Tab bar</b> — reconstructed from the four active-state frames</li>
+        <li><b>Photography</b> — both portraits lifted from the same exports</li>
+        <li><b>Alert content</b> — eight of the ten rows are shipped alert types from <code>popup_type.dart</code>, rewritten as sentences</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The whole screen</b> — layout, hierarchy and reading order</li>
+        <li><b>Grouping by day</b> — the live build renders one flat list with no dividers</li>
+        <li><b>Day header</b> — day, date and per-day new count</li>
+        <li><b>Glyph vocabulary</b> — eight drawn icons, one per alert type, so a type is recognisable before it is read</li>
+        <li><b>Inline action pill</b> — <code>Open room</code>, <code>Vote here</code>, <code>View details</code>; the build has no per-row action at all</li>
+        <li><b>Emphasis rendering</b> — the server's <code>**bold**</code> runs promoted to white weight 600</li>
+        <li><b>Unread system</b> — the four-signal marking, the live counters and <code>Mark all read</code></li>
+        <li><b>Empty state</b> — no empty frame exists for this tab, and the shipped string is a hardcoded <code>No message added yet</code></li>
+        <li><b>Dark skeleton</b> — the shipped shimmer is <code>Colors.grey.shade300 → shade100</code>, a light-theme skeleton on a dark screen. Its structure is kept; its palette is not</li>
+        <li><b>Load-failed screen</b> — the branch exists in code but spends itself on the empty-inbox box. The mark, both sentences and the retry are new</li>
+        <li><b>Two alert strings</b> — the locker-room reminder and the vote-closing warning have no matching type in the shipped list; both are proposals</li>
+        <li><b>Search</b> — the magnifier opens a real field that filters every day group in the feed</li>
+        <li><b>Settings entry point</b> — placed, not designed; the destination is Account settings</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:14px">
+    <b>The magnifier is live.</b> It was an <code>aria-hidden</code> glyph on a button with no
+    handler; it now opens a field that filters the feed on every word in an alert — title, body
+    and the emphasised names inside it. A day group whose alerts have all been filtered out
+    hides its heading with them rather than leaving an empty <code>Yesterday</code> behind, and
+    a search that matches nothing says so. <code>Esc</code> closes the field, clears it and
+    returns focus to the glyph. Search is deliberately independent of the unread system: the
+    unread pill and the per-day <code>N&nbsp;new</code> counts keep counting the whole inbox,
+    because how many alerts you have not read is not a function of what you happen to be
+    searching for.
+  </p>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>What is the spendable currency called?</h3>
+      <p>This one screen has to name it three times and there is no agreed name. The build uses
+      <code>Credits</code>, <code>Participation Credits</code>, <code>Participation Deposit</code> and
+      a legacy <code>BOND</code>; the API returns <code>Reputation Points</code>; the new navigation
+      says <code>Merits</code>. The rows here read <span class="flag">Merits</span> for what you earn
+      and <span class="flag">Participation Deposit</span> for what you stake, because they behave
+      differently — but if they are one balance they need one word, and if they are two things the
+      difference needs explaining somewhere a member will see it.</p>
+    </li>
+    <li>
+      <h3>Should tapping an alert go anywhere?</h3>
+      <p>The shipped row only marks itself read, which is why the action lives on an explicit pill
+      here. That is defensible but unusual: most people expect a notification to be a link. We have
+      assumed <span class="flag">tap marks read, the pill navigates</span>. If the whole row should
+      navigate, the pill becomes redundant and the alerts with no destination need a different
+      treatment.</p>
+    </li>
+    <li>
+      <h3>Do reminder alerts exist?</h3>
+      <p>Two rows — <code>Manager Auto Room starts in 15 min</code> and
+      <code>Voting closes in 2&nbsp;hr</code> — are alerts about something that has <em>not</em>
+      happened yet. Nothing in the shipped type list raises them, and they are the two most useful
+      alerts on the screen. Confirm they are wanted and we will specify the trigger windows.</p>
+    </li>
+    <li>
+      <h3>Is there a settings screen behind that button?</h3>
+      <p>The control bar and the empty state both offer <code>Alert settings</code>, on the assumption
+      that a member can mute categories. Nothing like it exists in the build or the Figma. If
+      per-category muting is out of scope, both entry points should be removed rather than left
+      pointing nowhere.</p>
+    </li>
+    <li>
+      <h3>Should a failed load say so?</h3>
+      <p>Today it does not. <code>ActionStatus.fails</code> is checked, and it draws
+      <code>No message added yet</code> — byte for byte the empty-inbox box. So the two states a
+      member most needs to tell apart are the same picture, and the only way back is a
+      pull-to-refresh that nothing on screen mentions. We have drawn
+      <span class="flag">a distinct failure panel with a visible retry</span>. Confirm the words:
+      both sentences are ours, because the shipped string is an English literal rather than a
+      translated one and is not reusable. While that is being decided, the empty string itself is
+      worth a look — <em>message</em> is not a word this product uses anywhere else.</p>
+    </li>
+    <li>
+      <h3>Does this feed also drive push?</h3>
+      <p>Grouping by day and a per-day new count only make sense if a member can come back to a
+      backlog. If every alert also fires a push notification the in-app list becomes a receipt rather
+      than an inbox, which argues for a shorter retention window and a different empty state.</p>
+    </li>
+  </ol>
+</section>

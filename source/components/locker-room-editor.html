@@ -1,0 +1,2315 @@
+<!DOCTYPE html>
+<html lang="en" data-component="locker-room-editor">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Schedule a locker room</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — SCHEDULE A LOCKER ROOM  (BC-C42 … BC-C50)
+
+   The create/edit editor behind Backchat's "+" control. Twelve
+   phone-width frames stacked down one page:
+
+     01  Compose                     create, empty
+     02  Schedule                    date + time two-up
+     03  Room date sheet             specimen
+     04  Start time sheet            specimen, offsets live
+     05  Invites — nobody yet        the "invite later" path
+     06  Invites — three invited     host row + removable rows
+     07  Invite people sheet         specimen + live
+     08  Review and publish          dialog
+     09  Room created                dialog + the card it made
+     10  Edit room                   the edit state
+     11  Delete this room?           destructive confirm
+     12  Validation                  the two shipped OOPS strings
+
+   Token block copied verbatim from merits.html. Controls are
+   forms.html's (.field / .ctl / .two-up / .val), pickers are
+   sheets.html's (.sheet / .srow / .cal / .time / .quick),
+   dialogs are dialogs.html's (.dlg / .tile / .btn), and the
+   created-room preview is backchat.html's .room card. Nothing
+   here invents a competing control.
+
+   ---- what the payload actually carries ---------------------
+   BackChatRoomEditorRequestDTO has FOUR fields and no more:
+     topic           String        -> topic
+     inviteMembers   List<String>  -> invite_members   (user uuids)
+     isOpenRoom      bool          -> is_open_room
+     startAt         String        -> start_at  (.toUtc().toIso8601String())
+   There is no description, no duration, no end time, no speaker
+   list and no cover image anywhere in the request or in
+   BackChatRoomDTO's writable surface. Those are raised as
+   decisions in the notes rather than drawn as fields that no
+   endpoint would accept.
+
+   ---- strings corrected, and why ----------------------------
+   · `Start at must greater than current time`  ->
+     `Start time must be later than now`. The shipped string is
+     missing a verb ("must BE greater") and names the API field
+     rather than the control the member is looking at.
+   · `Delete this rooms?`  ->  `Delete this room?`
+     One room is being deleted; the plural is a typo.
+   · `Please enter topic`  ->  `Give the room a topic`
+     Both validation dialogs are replaced by inline field errors
+     (frame 12) because a modal cannot point at the field.
+
+   ---- the start-time rule, as the code has it ---------------
+   LockerRoomEditorTimePickerPadding is not a constraint, it is
+   six shortcuts: now(0) · inAnHour(1) · inTwoHours(2) ·
+   inThreeHours(3) · inFiveHours(5) · inTwelveHours(12) hours.
+   (There is no four-hour step.) The real constraint is three
+   separate mechanisms, only one of which is enforced:
+     1. TableCalendar's onDaySelected assigns only when
+        date.isAfterDateOnly(DateTime.now()) — today or later.
+        A past day is silently inert, with no feedback.
+     2. Calendar bounds firstDay 2010-10-16, lastDay 2030-03-14.
+     3. TimePicker has minutesInterval: 1 and no floor at all,
+        so an earlier time TODAY can be picked and kept.
+     4. On submit, _validated() rejects
+        editorSelectedDateTime.isBefore(DateTime.now()).
+   Because the offsets add their hours to editorSelectedDateTime
+   (the value already in the field) and not to the live clock,
+   and because that value is seeded with DateTime.now() when the
+   screen opens, the `Now` chip resolves to the moment the screen
+   was opened — which is always in the past by the time step 4
+   runs. `Now` therefore can never pass validation. This file
+   computes the offsets from the live clock and states the floor
+   on screen; see the notes.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;   /* bordered section container      */
+  --surface:       #1C2129;   /* cards, controls                 */
+  --sunken:        #13171E;   /* inner panels, dark pills        */
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+  --acid-line:     rgba(155,226,34,.30);   /* sheets.html: selected rim */
+
+  /* semantic red — destructive / invalid only */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.12);
+  --red-line:      rgba(226,86,74,.28);
+
+  /* neutral wash — a state that must read as neither red nor acid */
+  --neutral-wash:  rgba(255,255,255,.06);
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  /* control height — forms.html's 52, because this screen is built
+     entirely out of forms.html's controls and the two must agree */
+  --h-field:       52px;
+  --h-row:         48px;
+
+  /* sheet shell — sheets.html */
+  --r-sheet:       18px;
+  --sheet-max:     560px;
+  --sheet-vh:      88vh;
+  --scrim:         rgba(3,4,1,.72);
+  --scrim-blur:    10px;
+
+  /* dialog shell — dialogs.html */
+  --dlg-inset:     20px;
+  --dlg-max:       340px;
+  --dlg-pad:       20px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* portraits from the Figma exports (_assets/avatars.css) */
+  --av-tt:url(data:image/jpeg;base64,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);   /* taythaytu */
+  --av-c7:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABwAHADASIAAhEBAxEB/8QAHAAAAQQDAQAAAAAAAAAAAAAABgEDBAcAAgUI/8QAOhAAAQMCBAMFBQYFBQAAAAAAAQACAwQRBRIhMQYiQRMjUWFxFTJCgZEHFBYlsdEkM0NSwVNzoeHx/8QAGAEAAwEBAAAAAAAAAAAAAAAAAAECAwT/xAAgEQEBAQACAwACAwAAAAAAAAAAAQIRIQMSMRNBIlFh/9oADAMBAAIRAxEAPwCoRskSjZIUGwbLEo2SIJiwAnZdXCsI+9s7eV2WIG3qp7oYoXEQMbE1u7iwklHKplzKDC5pMtRI5sUbTcZ9z6BTTURtdlJPrZRat8WjmSMlcd77/ooefrcj/lRZyfUEeHgOkDmkEXFkSwgdl0QPh1eYZml+rb6hHVM5kkLXglwdqCOuiiml4GHDiKjuA05wrgk/lFVBgQP4io/9wK3pP5ZWs+M/2D6+QMqnDqXWAvvqtZoy6AAGxy2KgY9VinxaFp2Ml1OIDKQEEuDmaDbUnYKaqPPAGiRKNkismDZbwxGaZsbd3Gy1GykUL2x1kbyL2Og8T0QBUymNKOziuImCzBmt8yuTiNWLOj5nPB6HlXXqZ3MYJhJcvFg21rjqT5J/BOEKrHpBPL3dMDq49fQKbeGszddQE5JJHaAn5J6OgqJPht6q0sT4SoMLpAaeIcu5O5QxUwtiILRa6xvk/pt+CTuhc4fVxa5L+iL+HKxhpGUcji2dgLsjm7joojHWUOqmdTYpR1UfvZspHiE5r26rPeJmcwc4ELcR0eod3g2VtyHuiVUuBi3EVHpYiRWw890VtPjn/ap+NKgx8QU1j7rhfy1RRmz0TXu0L23ItuP/ABBXHjnfiFoGwc0g/PVHAP8ABiRozgxjTxU6OPOo2SJRskVgo2W0LxHK15F7LUbJOqYFUdNJMxrjz5mgn0HQK1sOFPgOAQurZWx5mgn1IvYeKFsEwejl4QwyqZkjquzBa0O1mbpmuPHU/RG+JUJq6ZjAcpa3Q220XNrUrtxi5+gvG+NMIcx0AleSduQ6ISlxGKqcTG64PkpfFWFVQxhwiEk12ANDW25up0XYj4adQcGuqa+Mfe3OaQbat8lNmZOlfzt4oRfikMLiwtc4jwCyB0eJ4hSxgObaYXDh03/wotVTSuqr5iGA7NXXwCA+0IidA1xcCdbDKVc4nbDXtRjgljxDR2/1Oqtd57r6qqMF14hpObaTdWo4919VtPjmv1TPHTicekJvyPaN0cxhxwyNgA1YD4oE49H529wNuYXHiQf+0dxuIw2KR1rNiFtLJaPLzyNlhSt2SFUGDZIlGyQphbX2dMZiXDMczXk1GGGWncwi4LH87SPA6lWHDK2WlbISNRcqheBa+spuJqOjp53xwV0zIaiMHR7Sev7q4G1r6YiNx5jyvHnsuXc9dO3x698T/HOx6aKlm7VrAXDXzW/FlWz8LxtcWgyhhaAfK65dXjD6rH/Z0NO29yLujc7NpvohXiOSvhqHU8k4YC7Nk7Mt12upkra6nCM9oz69VMwezcQFhpldf0suF200MdiWyXOh1uuvw4502JSvvYRxW+pVScVzb1OBZg4txBS9Of8AZWkT3P1VW4RlGPUtnXGff6Kz83cBdE+OT9qb4+u3GZXAj4TZHMDsuF09mnSJpN9gbIH+0IBuKFxdr4DfdG9G8OwiB5O0IBtsp0cefhskKxuoShj3Gwa4/JWCDZIU4IJD8NvUqRHSMjcH1BzMHwt6/NPgnY4Kib+KMEc4huata658r2VpcTQOpD7RZfJm5z0YfE+Sp+Ug0Uc7H9m+GTlLdMpB0sjzhz7QG1Efs3GmgkjIXuHveqx8svPLp8GpxYyLFZ2kTRlgIdt18briY/M+trDM2qzX+G+yl8UNo8Oj+80EndSHVma4B8kFVGJvc64JUZzz3GmvJ69VPqajI3I3medPNFfD2GS0FEXzWE83M8X90W0Crw1bzI1+1je6sLBcdpsYiDW2bUtbmkjN9PMHqrueI57v2rs4XpjtNa3v/srLY69OD6qssOP51TnLl59vorJidemb6FXPjK/VS/aCA7Fha1yAD5ao3YfyyBjQDaJvXZBPHIbLjjGfFcHffVGsQDaBlhdwZp9UtHFHPZHC05WgXbfRNtlL7k313807Uxk0+cG4Dsn+UzG0ga7De36LVLG8zibJ4vDo7/E1RXucwlrRclOsaWHsyddMyIDbn2wt7HHUzZm+aZ7R8zTKL3afHZOTU+ZpeNR+mqazZIOzAHNrfrZKnGS1csjA17y621zeyYBJJulDCRokOh01SO3ll07Tzy08olhkdG9puHNNiE2GnZONj1I/tGqCF2CcZmGuhkxJjnhjhmlYNbenVXPguL0OM4U2qw+pZPFcglu7T4EbgrzY7SMgddF0cCx/EeHK1tVh0xYf6kbtWSDwcOv6jojgDviTv+Koo/CQX9CjSUfwjGhrXWYAdbeSrSn4hixziOlqGxdk98rQ9hN8pJ6HqFZZb2dEG2bmLLGwsFGjij6Vxkwws3IJcPkU5TQh9MB1zElRMKlOd0Z2Aup57pzi3S4sAtolFlh7KXtgQbAmyZpnGzpH63N1Km0ppTfplChyPDGBregskbRsndzsHRot63WuR1gSNPdGiykAMjg7bS/1XQEIOUkWDBconYQKkNhaGN1cdymo4vid6p+MCeR8xFwNGhbgAuudjbQeCQNRxguAPiSVs3lqXX6vykJCbP8AkQlc4CuB6FwcgGnaODP7SVvYBuq1gZ2rnPO10spsbIBygqHU2I007TYxzMd9HBXxM4GmDicvLcghefSbajpqr+Dm+z4XF3vxtdrr0UaOP//Z);   /* capitan_7 */
+  --av-sm:url(data:image/jpeg;base64,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);   /* scout_mode */
+  --av-cs:url(data:image/jpeg;base64,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);   /* club_staff */
+  --av-fp:url(data:image/jpeg;base64,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);   /* fan_pulse */
+  --av-dm:url(data:image/jpeg;base64,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);   /* dons_mode */
+  --av-tb:url(data:image/jpeg;base64,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);   /* transfer_brig */
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ============================================================
+   PAGE + FRAME CHROME  (documentation, not product)
+   ============================================================ */
+.top{margin:6px var(--gutter) 0}
+.eyebrow{
+  margin:0 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.title{
+  margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;
+  line-height:1;text-transform:uppercase;
+}
+.sub{margin:10px 0 0;font-size:13px;color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+
+.fr-cap{display:flex;align-items:center;gap:9px;margin:32px var(--gutter) 10px}
+.fr-cap__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:26px;height:22px;padding:0 7px;border-radius:var(--r-pill);
+  background:var(--acid-wash);color:var(--acid);
+  font-size:10.5px;font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums;
+}
+.fr-cap__t{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.fr-cap__s{flex:1;height:1px;background:var(--line)}
+
+.fr{
+  position:relative;overflow:hidden;background:var(--bg);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+}
+.fr__body{padding:0 0 18px}
+.fr--tall{min-height:812px}
+.fr-note{margin:11px var(--gutter) 0;font-size:11.5px;line-height:1.45;color:var(--dim)}
+.fr-note b{color:var(--muted);font-weight:600}
+
+.spec__label{
+  display:flex;align-items:center;gap:9px;margin:0 var(--gutter) 11px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.spec__label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+
+/* ============================================================
+   APP BAR — BC-C42, rebuilt
+   The shipped bar is hard-coded white with a black drop shadow and
+   a centred Bebas title; it is the only Backchat bar with a shadow.
+   Here: --bg, one hairline, no shadow, title left at 15/800/.08em.
+   ============================================================ */
+.bar{
+  display:flex;align-items:center;gap:10px;
+  height:56px;padding:0 10px 0 8px;
+  border-bottom:1px solid var(--line-soft);
+}
+.bar__title{flex:1;margin:0;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.bar__aux{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+
+.icon-btn{
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--surface);color:var(--text);
+  cursor:pointer;transition:background .18s var(--ease);
+}
+/* the contract's hit-area expansion: 38 px visual, 44 px target */
+.icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.icon-btn:hover{background:#222833}
+.icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.icon-btn svg{width:17px;height:17px}
+.icon-btn--bare{background:transparent}
+.icon-btn--bare:hover{background:var(--surface)}
+
+/* ============================================================
+   SHARED TEXT + CONTAINERS
+   ============================================================ */
+.label{margin:22px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.help{margin:0 var(--gutter) 14px;font-size:13px;line-height:1.45;color:var(--muted)}
+.help b{color:var(--text);font-weight:600}
+.group{padding:0 var(--gutter)}
+
+.section{
+  margin:0 var(--gutter);padding:12px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+}
+.section__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.section__bar .spacer{flex:1}
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 14px;
+  border-radius:var(--r-pill);background:var(--acid-wash);
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;
+}
+.status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.status-pill--quiet{background:var(--sunken);color:var(--muted)}
+.status-pill--quiet::before{display:none}
+
+.kv{margin:0;padding:0;list-style:none}
+.kv li{
+  display:flex;align-items:baseline;gap:12px;padding:9px 2px;
+  border-top:1px solid var(--line-soft);font-size:12.5px;
+}
+.kv li:first-child{border-top:0}
+.kv li > span{flex:0 0 108px;color:var(--muted)}
+.kv li > b{flex:1;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.kv li > b em{font-style:normal;color:var(--muted);font-weight:400}
+
+.rule{margin:0;padding:0;list-style:none}
+.rule li{
+  display:flex;gap:11px;padding:11px 2px;border-top:1px solid var(--line-soft);
+  font-size:12.5px;line-height:1.45;color:var(--muted);
+}
+.rule li:first-child{border-top:0}
+.rule > li > b{
+  flex:0 0 78px;color:var(--text);font-weight:700;font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;padding-top:2px;
+}
+.rule b.is-acid{color:var(--acid)}
+.rule b.is-red{color:var(--red)}
+
+.avatar{
+  border-radius:50%;flex:0 0 auto;
+  background-color:#20262F;background-size:cover;background-position:center 22%;
+}
+
+/* ============================================================
+   FIELDS — forms.html, unchanged
+   Label OUTSIDE the box, ABOVE the control, 12.5/600 white.
+   ============================================================ */
+.field{display:block;margin:0 0 18px}
+.field__label{
+  display:block;margin-bottom:8px;
+  font-size:12.5px;font-weight:600;letter-spacing:-.005em;
+  color:var(--text);line-height:1.44;
+}
+.field__label .req{color:var(--acid);margin-left:2px}
+.field__help{display:block;margin:8px 0 0;font-size:12px;line-height:1.35;color:var(--muted)}
+.field.is-disabled .field__label,.field.is-disabled .field__help{color:var(--dim)}
+.field__row{display:flex;align-items:flex-end;gap:8px;margin-bottom:8px}
+.field__row .field__label{margin:0;flex:1}
+.counter{font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.is-error .counter{color:var(--red)}
+
+/* control shell */
+.ctl{
+  display:flex;align-items:center;gap:10px;width:100%;
+  height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease),background .16s var(--ease);
+}
+.ctl:hover{border-color:rgba(255,255,255,.14)}
+.ctl__in{
+  flex:1;min-width:0;height:100%;
+  border:0;background:transparent;color:inherit;
+  font:inherit;font-size:16px;padding:0;margin:0;outline:none;
+}
+.ctl__in::placeholder{color:var(--dim);opacity:1}
+.ctl__in::-webkit-search-cancel-button{display:none}
+.ctl__icon{flex:0 0 auto;width:19px;height:19px;color:var(--muted)}
+.ctl__chev{flex:0 0 auto;width:19px;height:19px;color:var(--muted);pointer-events:none}
+.ctl__btn{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;margin-right:-6px;
+  border:0;border-radius:50%;background:transparent;color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.ctl__btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.ctl__btn:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.ctl__btn svg{width:19px;height:19px}
+.ctl:focus-within,.ctl.is-focus{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.ctl:focus-within .ctl__icon,.ctl.is-focus .ctl__icon{color:var(--text)}
+.ctl.is-error{border-color:var(--red);box-shadow:0 0 0 3px var(--red-wash)}
+.ctl.is-error .ctl__icon,.ctl.is-error .ctl__btn{color:var(--red)}
+.ctl.is-disabled{background:var(--sunken);border-color:var(--line-soft);color:var(--dim);box-shadow:none}
+.ctl.is-disabled .ctl__icon,.ctl.is-disabled .ctl__btn{color:var(--dim)}
+
+/* the same shell as a button, for the two picker triggers */
+button.ctl{font:inherit;text-align:left;cursor:pointer}
+button.ctl:focus-visible{outline:none;border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.ctl__val{flex:1;min-width:0;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctl__val--num{font-variant-numeric:tabular-nums}
+.ctl--placeholder .ctl__val{color:var(--dim)}
+
+/* textarea */
+.ctl--area{height:auto;flex-direction:column;align-items:stretch;gap:6px;padding:12px 14px 10px}
+.ctl--area .ctl__in{height:auto;min-height:52px;resize:vertical;line-height:1.5}
+.ctl--area .counter{align-self:flex-end}
+
+/* the caret, drawn for the static focus specimens */
+.caret{position:relative;display:inline-flex;align-items:center;flex:1;min-width:0}
+.caret__text{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.caret::after{content:"";flex:0 0 auto;width:1.5px;height:19px;margin-left:1px;background:var(--acid)}
+
+/* ---- two-up row: subgrid, exactly as forms.html ---- */
+.two-up{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  column-gap:12px;grid-template-rows:auto auto auto;align-items:start;
+}
+.two-up > .field{display:grid;grid-row:1 / -1;grid-template-rows:subgrid;min-width:0;margin-bottom:0}
+.two-up .ctl{min-width:0}
+@supports not (grid-template-rows:subgrid){
+  .two-up > .field{display:block}
+  .two-up > .field .field__label{min-height:36px;display:flex;align-items:flex-end}
+}
+
+/* ---- inline validation: icon + message, never colour alone ---- */
+.val{display:flex;align-items:flex-start;gap:7px;margin:8px 0 0;font-size:12.5px;line-height:1.35}
+.val svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px}
+.val--ok{color:var(--acid)}
+.val--err{color:var(--red)}
+.val--info{color:var(--muted)}
+
+/* ---- checkbox row ---- */
+.cbx{position:relative;display:flex;align-items:flex-start;gap:12px;min-height:44px;cursor:pointer;padding:4px 0}
+.cbx__box{
+  position:relative;flex:0 0 auto;width:20px;height:20px;margin-top:2px;border-radius:6px;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);
+  transition:background .16s var(--ease),box-shadow .16s var(--ease);
+}
+.cbx__box svg{position:absolute;inset:0;width:20px;height:20px;opacity:0;color:var(--acid-ink);transition:opacity .14s var(--ease)}
+.cbx[aria-checked="true"] .cbx__box{background:var(--acid);box-shadow:none}
+.cbx[aria-checked="true"] .cbx__box svg{opacity:1}
+.cbx:focus-visible{outline:none}
+.cbx:focus-visible .cbx__box{box-shadow:inset 0 0 0 1px var(--acid),0 0 0 3px var(--acid-wash)}
+.cbx__txt{font-size:13.5px;line-height:1.4}
+.cbx__txt small{display:block;margin-top:3px;font-size:11.5px;color:var(--muted)}
+
+/* ============================================================
+   ROOM TYPE — BC-C44, rebuilt
+   Two tiles, open / locked. The shipped pair is a #F9F9F9 light
+   tile with a violet 1.5 px ring when chosen. Here the chosen
+   tile is the accent wash over --sunken with the 30% rim, an
+   accent label AND a tick — never the ring alone.
+   ============================================================ */
+.types{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.type{
+  position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:9px;
+  min-height:104px;padding:14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  font:inherit;text-align:left;cursor:pointer;
+  transition:background-color .16s var(--ease),border-color .16s var(--ease);
+}
+.type:hover{border-color:rgba(255,255,255,.14)}
+.type:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.type__ico{width:24px;height:24px;color:var(--muted)}
+.type__id{display:block;width:100%}
+.type__name{display:block;font-size:13.5px;font-weight:700;letter-spacing:.02em}
+.type__note{display:block;margin-top:3px;font-size:11.5px;font-weight:400;line-height:1.35;color:var(--muted)}
+.type__tick{
+  position:absolute;top:12px;right:12px;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;
+  background:transparent;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.20);
+  color:var(--acid-ink);
+}
+.type__tick svg{width:12px;height:12px;opacity:0}
+.type[aria-checked="true"]{background-color:var(--sunken);border-color:var(--acid-line);
+  background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash))}
+.type[aria-checked="true"] .type__ico{color:var(--acid)}
+.type[aria-checked="true"] .type__name{color:var(--acid)}
+.type[aria-checked="true"] .type__tick{background:var(--acid);box-shadow:none}
+.type[aria-checked="true"] .type__tick svg{opacity:1}
+
+/* ============================================================
+   INVITE LIST — BC-C48, rebuilt
+   The shipped row is 56 pt, R8, with a violet border when chosen
+   and a 16 pt bare ✕. Here: the established row pattern, a 40 px
+   avatar, the role as a tracked micro-label, and the remove
+   control as a proper 38/44 icon button.
+   ============================================================ */
+.invs{list-style:none;margin:0;padding:0}
+.invs li{border-top:1px solid var(--line-soft)}
+.invs li:first-child{border-top:0}
+.inv{
+  display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:9px 0;
+  background:transparent;border:0;color:var(--text);font:inherit;text-align:left;
+}
+.inv .avatar{width:40px;height:40px}
+.inv__id{flex:1;min-width:0}
+.inv__name{display:block;font-size:14.5px;font-weight:600;letter-spacing:-.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inv__role{
+  display:inline-flex;align-items:center;gap:5px;margin-top:3px;
+  font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);
+}
+.inv__role--host{color:var(--acid)}
+.inv__role svg{width:11px;height:11px}
+.inv__x{
+  flex:0 0 auto;position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;border:0;border-radius:50%;
+  background:var(--sunken);color:var(--muted);cursor:pointer;
+  transition:background .16s var(--ease),color .16s var(--ease);
+}
+.inv__x::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.inv__x:hover{background:var(--red-wash);color:var(--red)}
+.inv__x:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.inv__x svg{width:15px;height:15px}
+.inv__lock{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;color:var(--dim);
+}
+.inv__lock svg{width:16px;height:16px}
+.invs__head{
+  display:flex;align-items:baseline;gap:8px;margin:0 0 4px;
+  font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.invs__head .spacer{flex:1}
+.count-pill{
+  display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:var(--r-pill);
+  background:var(--acid-wash);color:var(--acid);
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;
+}
+
+/* empty invite state */
+.nobody{
+  margin:0;padding:20px 14px;border-radius:var(--r-panel);
+  background:var(--sunken);border:1px solid var(--line);
+  text-align:center;font-size:12.5px;line-height:1.5;color:var(--muted);
+}
+.nobody b{display:block;margin-bottom:4px;color:var(--text);font-size:13.5px;font-weight:600}
+
+/* ============================================================
+   CTA BAR — one docked bar, not a button buried in the scroll
+   The shipped CTA sits at the bottom of a SingleChildScrollView
+   BELOW the invite list, so a room with ten invitees pushes
+   "Create room & send invites" off screen. Docked instead:
+   --section fill, one hairline on top, safe-area padded.
+   ============================================================ */
+.cta{
+  margin-top:20px;padding:12px var(--gutter) calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);background:var(--section);
+}
+.cta__pair{display:flex;gap:10px}
+.cta__hint{margin:9px 0 0;text-align:center;font-size:11.5px;line-height:1.4;color:var(--dim)}
+.btn{
+  position:relative;flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:var(--h-field);padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:15px;font-weight:700;letter-spacing:-.005em;
+  cursor:pointer;white-space:nowrap;
+  transition:background .18s var(--ease),color .18s var(--ease),transform .12s var(--ease);
+}
+.btn svg{width:18px;height:18px;flex:0 0 auto}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.btn--ghost:hover{background:#181D25}
+.btn--danger{background:var(--red);color:var(--acid-ink)}
+.btn--danger:hover{background:#E9675C}
+.btn--dangerq{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.btn--dangerq:hover{background:rgba(226,86,74,.18)}
+.btn--wide{width:100%;flex:none}
+.btn[disabled]{background:var(--sunken);color:var(--dim);box-shadow:inset 0 0 0 1px var(--line);
+  cursor:not-allowed;transform:none}
+.btn__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
+  background:rgba(11,14,6,.16);font-size:12px;font-variant-numeric:tabular-nums;
+}
+.pill-btn{
+  display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 15px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.pill-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.pill-btn svg{width:15px;height:15px}
+.tryit{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+
+/* ============================================================
+   SUMMARY STRIP — the answer restated in words
+   `08/02/2026` and `8:30 PM` in two boxes are not a schedule.
+   ============================================================ */
+.when{
+  display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:12px 14px;
+  border-radius:var(--r-panel);background:var(--sunken);
+  font-size:12.5px;color:var(--muted);
+}
+.when svg{width:17px;height:17px;flex:0 0 auto;color:var(--acid)}
+.when b{color:var(--text);font-weight:600}
+.when em{margin-left:auto;font-style:normal;font-weight:600;color:var(--acid);white-space:nowrap}
+.when--warn{background:var(--red-wash);box-shadow:inset 0 0 0 1px var(--red-line)}
+.when--warn svg{color:var(--red)}
+.when--warn em{color:var(--red)}
+
+/* ============================================================
+   SHEET SHELL — sheets.html, unchanged
+   ============================================================ */
+.sheet{
+  position:relative;z-index:1;display:flex;flex-direction:column;
+  width:100%;max-height:min(var(--sheet-vh),var(--sheet-max));
+  border:1px solid var(--line);border-bottom:0;
+  border-radius:var(--r-sheet) var(--r-sheet) 0 0;
+  background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%);
+  box-shadow:0 -20px 50px rgba(0,0,0,.6);overflow:hidden;
+}
+.sheet:focus{outline:none}
+.sheet:focus-visible{outline:2px solid var(--acid);outline-offset:-3px}
+.sheet__grab{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  height:26px;width:100%;padding:0;margin:0;border:0;background:transparent;
+  cursor:grab;touch-action:none;
+}
+.sheet__grab::before{
+  content:"";width:40px;height:4px;border-radius:var(--r-pill);
+  background:rgba(255,255,255,.18);transition:background .16s var(--ease);
+}
+.sheet__grab:hover::before{background:rgba(255,255,255,.30)}
+.sheet__grab:focus-visible{outline:2px solid var(--acid);outline-offset:-4px}
+.sheet.is-dragging{transition:none}
+.sheet.is-dragging .sheet__grab{cursor:grabbing}
+.sheet__head{
+  flex:0 0 auto;display:flex;align-items:center;gap:9px;
+  padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);
+}
+.sheet__title{
+  margin:0;flex:1;min-width:0;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text);
+}
+.sheet__n{
+  flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px;
+  border-radius:var(--r-pill);background:var(--acid-wash);color:var(--acid);
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;
+}
+.sheet__done{
+  flex:0 0 auto;border:0;background:transparent;padding:4px 2px;margin:0;
+  color:var(--acid);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+}
+.sheet__done[disabled]{color:var(--dim);cursor:default}
+.sheet__x{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-4px;
+  border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.sheet__x:hover{background:rgba(255,255,255,.11);color:var(--text)}
+.sheet__x svg{width:16px;height:16px}
+.sheet__body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:12px var(--gutter);
+}
+.sheet__body--last{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+.sheet__lede{margin:0 0 12px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.sheet__grp{margin:16px 0 8px;font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim)}
+.sheet__body > .sheet__grp:first-child{margin-top:0}
+.sheet__foot{
+  flex:0 0 auto;padding:12px var(--gutter);
+  padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);background:var(--sunken);
+}
+.sheet__foot--pair{display:flex;gap:10px}
+.sheet__body::-webkit-scrollbar,.time__list::-webkit-scrollbar,.quick::-webkit-scrollbar{width:0;height:0}
+.sheet__body,.time__list{scrollbar-width:none}
+
+/* option row inside a sheet */
+.srow{
+  display:flex;align-items:center;gap:12px;width:100%;
+  min-height:var(--h-row);padding:9px 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background-color:var(--sunken);background-image:none;
+  color:var(--text);font:inherit;font-size:13.5px;font-weight:500;
+  text-align:left;cursor:pointer;
+  transition:background-color .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);
+}
+.srow + .srow{margin-top:8px}
+.srow:hover{border-color:rgba(255,255,255,.14)}
+.srow .avatar{width:36px;height:36px}
+.srow__id{flex:1;min-width:0}
+.srow__name{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srow__sub{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.srow[aria-checked="true"]{
+  background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash));
+  border-color:var(--acid-line);
+}
+.srow[aria-checked="true"] .srow__name{color:var(--acid)}
+.srow[aria-checked="true"] .srow__sub{color:rgba(155,226,34,.72)}
+.srow:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.tick{
+  position:relative;flex:0 0 auto;width:22px;height:22px;border-radius:50%;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);
+  transition:background .16s var(--ease),box-shadow .16s var(--ease);
+}
+.tick svg{position:absolute;inset:0;width:22px;height:22px;opacity:0;color:var(--acid-ink);
+  transition:opacity .14s var(--ease)}
+.srow[aria-checked="true"] .tick{background:var(--acid);box-shadow:none}
+.srow[aria-checked="true"] .tick svg{opacity:1}
+.empty{margin:0;padding:26px 8px;text-align:center;font-size:12.5px;color:var(--dim)}
+
+/* sticky search inside a sheet body */
+.ctl--stick{
+  position:sticky;top:0;z-index:2;margin:-12px calc(-1 * var(--gutter)) 12px;
+  padding:12px var(--gutter);height:auto;
+  border:0;border-bottom:1px solid var(--line-soft);border-radius:0;
+  background:#181D25;box-shadow:none;
+}
+.ctl--stick:focus-within{box-shadow:none;border-color:transparent;border-bottom-color:var(--acid-line)}
+.ctl--stick .ctl__box{
+  display:flex;align-items:center;gap:10px;width:100%;height:44px;padding:0 12px;
+  border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.ctl--stick:focus-within .ctl__box{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+
+/* ============================================================
+   CALENDAR — sheets.html
+   ============================================================ */
+.cal__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.cal__mon{flex:1;min-width:0;text-align:center;font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+.cal__nav{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--sunken);color:var(--text);
+  cursor:pointer;transition:background .16s var(--ease);
+}
+.cal__nav:hover{background:#181D25}
+.cal__nav[disabled]{color:var(--dim);cursor:not-allowed}
+.cal__nav:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.cal__nav svg{width:16px;height:16px}
+.cal__dow,.cal__grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal__dow{margin-bottom:4px}
+.cal__dow span{text-align:center;font-size:9.5px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim)}
+.cal__grid{row-gap:2px}
+.cal__d{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  height:40px;border:0;background:transparent;color:var(--text);
+  font:inherit;font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums;cursor:pointer;
+}
+.cal__d span{
+  position:relative;z-index:1;display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:50%;
+}
+.cal__d--out{color:var(--dim);cursor:default}
+.cal__d--off{color:var(--dim);cursor:not-allowed;text-decoration:line-through;
+  text-decoration-color:rgba(91,96,107,.6)}
+.cal__d--today span{box-shadow:inset 0 0 0 1px var(--acid-line);color:var(--acid)}
+.cal__d[aria-selected="true"] span{background:var(--acid);color:var(--acid-ink);font-weight:700;box-shadow:none}
+.cal__d:focus-visible span{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   TIME PICKER — sheets.html, plus the six shipped offsets
+   ============================================================ */
+.time__now{
+  display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:11px 14px;
+  border-radius:var(--r-panel);background:var(--sunken);font-size:12.5px;color:var(--muted);
+}
+.time__now b{margin-left:auto;font-size:19px;font-weight:800;letter-spacing:-.02em;
+  color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap}
+.time{display:grid;grid-template-columns:1fr 1fr 74px;gap:8px}
+.time__list{
+  position:relative;
+  max-height:180px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);padding:6px;
+}
+/* sticky, because a twelve-item hour list scrolls its own heading away */
+.time__hd{
+  position:sticky;top:-6px;z-index:1;
+  margin:0 0 6px;padding:6px 0 5px;
+  font-size:9.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);text-align:center;
+  background:var(--sunken);
+}
+.time__v{
+  display:flex;align-items:center;justify-content:center;width:100%;height:38px;
+  border:0;border-radius:9px;background:transparent;color:var(--text);
+  font:inherit;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;
+  cursor:pointer;transition:background .14s var(--ease),color .14s var(--ease);
+}
+.time__v + .time__v{margin-top:2px}
+.time__v:hover{background:rgba(255,255,255,.05)}
+.time__v[aria-checked="true"]{background:var(--acid-wash);color:var(--acid)}
+.time__v:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.quick{display:flex;gap:7px;overflow-x:auto;margin:14px 0 0;padding-bottom:2px;
+  -webkit-overflow-scrolling:touch}
+.quick__b{
+  flex:0 0 auto;height:36px;padding:0 13px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--muted);
+  font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:background .16s var(--ease),color .16s var(--ease),border-color .16s var(--ease);
+}
+.quick__b:hover{color:var(--text);border-color:rgba(255,255,255,.14)}
+.quick__b[aria-pressed="true"]{background:var(--acid-wash);border-color:var(--acid-line);color:var(--acid)}
+.quick__b:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.quick__lab{margin:10px 0 0;font-size:11px;line-height:1.45;color:var(--dim)}
+.quick__lab b{color:var(--muted);font-weight:700;white-space:nowrap}
+
+/* ============================================================
+   DIALOG SHELL — dialogs.html, unchanged
+   ============================================================ */
+.tile{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;border-radius:var(--r-panel);flex:0 0 auto;
+}
+.tile svg{width:22px;height:22px}
+.tile--acid{background:var(--acid-wash);color:var(--acid)}
+.tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.tile--neutral{background:var(--neutral-wash);color:var(--text)}
+.dlg{
+  position:relative;
+  width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max);
+  margin:0 auto;padding:var(--dlg-pad);
+  border-radius:var(--r-card);background:var(--surface);border:1px solid var(--line);
+  box-shadow:0 24px 60px rgba(0,0,0,.55);
+}
+.dlg--wide{max-width:376px}
+.dlg__close{
+  position:absolute;top:12px;right:12px;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:50%;
+  background:var(--sunken);border:1px solid var(--line-soft);color:var(--muted);
+  cursor:pointer;transition:color .18s var(--ease),background .18s var(--ease);
+}
+.dlg__close svg{width:15px;height:15px}
+.dlg__close:hover{color:var(--text);background:#1A1F27}
+.dlg__title{margin:14px 0 0;padding-right:26px;font-size:18px;font-weight:600;
+  letter-spacing:-.015em;line-height:1.2}
+.dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.dlg__body b{color:var(--text);font-weight:600}
+.act{display:flex;gap:10px;margin-top:18px}
+.act--single .btn{width:100%}
+.act .btn{height:46px;font-size:14.5px}
+
+/* the dialog's read-back list */
+.recap{list-style:none;margin:14px 0 0;padding:0;border-radius:var(--r-panel);
+  background:var(--sunken);overflow:hidden}
+.recap li{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;
+  border-top:1px solid var(--line-soft);font-size:12.5px}
+.recap li:first-child{border-top:0}
+.recap li svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted);margin-top:1px}
+.recap__k{flex:0 0 76px;color:var(--muted)}
+.recap__v{flex:1;min-width:0;font-size:13px;font-weight:600;line-height:1.35}
+.recap__v small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.faces{display:flex;align-items:center;gap:0;margin-top:5px}
+.faces .avatar{width:22px;height:22px;box-shadow:0 0 0 2px var(--sunken)}
+.faces .avatar + .avatar{margin-left:-7px}
+
+/* in-frame overlay for the dialog frames */
+.behind{opacity:.55;pointer-events:none}
+.frscrim{
+  position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;
+  background:var(--scrim);
+  -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+          backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .frscrim{background:rgba(3,4,1,.86)}
+}
+
+/* ============================================================
+   ROOM CARD — backchat.html's .room, for the created-room preview
+   ============================================================ */
+.room{padding:14px;border-radius:var(--r-panel);background:var(--sunken);text-align:left}
+.room__when{margin:0 0 9px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--acid);font-variant-numeric:tabular-nums}
+.room__title{margin:0;font-size:15px;font-weight:600;line-height:1.27;letter-spacing:-.01em}
+.room__host{display:flex;align-items:center;gap:8px;margin-top:10px;min-width:0}
+.room__host .avatar{width:24px;height:24px}
+.room__host span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room__foot{display:flex;align-items:center;gap:14px;margin-top:12px;padding-top:11px;
+  border-top:1px solid var(--line-soft)}
+.stat{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;
+  font-variant-numeric:tabular-nums}
+.stat svg{width:14px;height:14px;color:var(--muted);flex:0 0 auto}
+.access{margin-left:auto;display:inline-flex;align-items:center;gap:5px;
+  font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);white-space:nowrap}
+.access svg{width:12px;height:12px;flex:0 0 auto}
+
+/* success block above the card */
+.done{text-align:center}
+.done__disc{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:52px;height:52px;border-radius:50%;background:var(--acid-wash);color:var(--acid);
+}
+.done__disc svg{width:26px;height:26px}
+.done h3{margin:13px 0 0;font-size:22px;font-weight:800;letter-spacing:-.025em;
+  text-transform:uppercase;line-height:1}
+.done p{margin:8px 0 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+
+/* ============================================================
+   LIVE LAYER — outside <main class="screen"> so it stays pinned
+   to the bottom of the device frame instead of scrolling away.
+   The class `tabbar` is the review shell's hook.
+   ============================================================ */
+.layer{position:fixed;inset:0;z-index:60;display:none;align-items:flex-end;justify-content:center}
+.layer.is-open{display:flex}
+.layer__scrim{
+  position:absolute;inset:0;background:var(--scrim);
+  -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+          backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+  opacity:0;transition:opacity .22s var(--ease);
+}
+.layer.is-in .layer__scrim{opacity:1}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .layer__scrim{background:rgba(3,4,1,.86)}
+}
+.layer .sheet{
+  max-width:420px;transform:translateY(101%);
+  transition:transform .32s var(--ease);will-change:transform;
+  max-height:min(var(--sheet-vh),var(--sheet-max),calc(100% - 24px - env(safe-area-inset-top,0px)));
+}
+.layer.is-in .sheet{transform:translateY(0)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+  <header class="top">
+    <p class="eyebrow">Backchat</p>
+    <h1 class="title">Schedule a<br>locker room</h1>
+    <p class="sub">
+      The create-and-edit editor behind Backchat's <b>+</b> control, in the dark rebrand. Twelve
+      phone-width frames: compose, schedule, the three pickers, invites, review, created, edit,
+      delete and validation. The invite sheet at the foot is live.
+    </p>
+  </header>
+
+  <!-- ===================== WHAT IT COLLECTS ===================== -->
+  <h2 class="label">What the screen actually collects</h2>
+  <div class="section">
+    <ul class="kv">
+      <li><span>topic</span><b>String <em>· the room's one line of text</em></b></li>
+      <li><span>start_at</span><b>ISO 8601 UTC <em>· one instant, no end</em></b></li>
+      <li><span>is_open_room</span><b>bool <em>· open, or locked</em></b></li>
+      <li><span>invite_members</span><b>uuid[] <em>· invitees only</em></b></li>
+    </ul>
+    <p class="fr-note" style="margin-left:0;margin-right:0">
+      <b>Four fields, and that is the whole payload.</b> <code>BackChatRoomEditorRequestDTO</code>
+      carries no description, no duration, no end time, no speaker list and no cover art, so none
+      is drawn here. All four are raised as decisions in the notes instead.
+    </p>
+  </div>
+
+  <!-- ============================================================
+       01 · COMPOSE
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">01</span><span class="fr-cap__t">Compose · create</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr" aria-label="Schedule a room — compose">
+    <div class="bar">
+      <button class="icon-btn icon-btn--bare" type="button" aria-label="Close, discards this room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <h1 class="bar__title">Schedule a room</h1>
+      <span class="bar__aux">Barcelona</span>
+    </div>
+
+    <div class="fr__body">
+      <h2 class="label">What is the room about?</h2>
+      <p class="help">Members see this line and nothing else before they decide to book in.</p>
+
+      <div class="group">
+        <label class="field">
+          <span class="field__row">
+            <span class="field__label">Topic <span class="req">*</span></span>
+            <span class="counter" data-counter>0/80</span>
+          </span>
+          <span class="ctl">
+            <input class="ctl__in" type="text" maxlength="80" placeholder="Say what you will be talking about" data-count>
+          </span>
+          <span class="field__help">One line. It becomes the room's title everywhere it appears.</span>
+        </label>
+      </div>
+
+      <h2 class="label">Who can get in?</h2>
+      <div class="group">
+        <div class="types" role="radiogroup" aria-label="Type of room">
+          <button class="type" type="button" role="radio" aria-checked="true">
+            <span class="type__tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.4l3.8 3.8L18 7.8"/></svg></span>
+            <svg class="type__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="4.5" y="11" width="15" height="9.5" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/>
+            </svg>
+            <span class="type__id">
+              <span class="type__name">Open room</span>
+              <span class="type__note">Any Barcelona member can walk in. Invites just tell people it exists.</span>
+            </span>
+          </button>
+          <button class="type" type="button" role="radio" aria-checked="false">
+            <span class="type__tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.4l3.8 3.8L18 7.8"/></svg></span>
+            <svg class="type__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="4.5" y="11" width="15" height="9.5" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0V11"/><path d="M12 14.6v2.4"/>
+            </svg>
+            <span class="type__id">
+              <span class="type__name">Locked room</span>
+              <span class="type__note">Invited members only. Nobody else can find it or join.</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div class="cta">
+        <button class="btn btn--acid btn--wide" type="button" disabled>Review room</button>
+        <p class="cta__hint">Add a topic and a start time to continue.</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>Three fixes.</b> The topic box gains <code>--r-panel</code> and the kit's 52 px height —
+    the shipped one is a square-cornered <code>borderButton</code> rectangle with a light-theme
+    hint at <code>black</code> 30%. The room type keeps the padlock metaphor but the chosen tile
+    is the accent wash, an accent label <em>and</em> a tick, not a 1.5 px ring on its own. And the
+    CTA is docked, because in the shipped screen it sits below the invite list inside the
+    scroller: ten invitees push <code>Create room &amp; send invites</code> off the screen.
+  </p>
+
+  <!-- ============================================================
+       02 · SCHEDULE
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">02</span><span class="fr-cap__t">Schedule</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr" aria-label="Schedule a room — start date and time">
+    <div class="bar">
+      <button class="icon-btn icon-btn--bare" type="button" aria-label="Close, discards this room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <h1 class="bar__title">Schedule a room</h1>
+      <span class="bar__aux">Barcelona</span>
+    </div>
+
+    <div class="fr__body">
+      <h2 class="label">When does it open?</h2>
+      <p class="help">Rooms open at the minute you set. Everyone invited gets a reminder just before.</p>
+
+      <div class="group">
+        <p class="when">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.4 2"/></svg>
+          Opens <b>Sunday 2 August, 8:30 PM</b><em>in 3 days</em>
+        </p>
+
+        <div class="two-up">
+          <div class="field">
+            <span class="field__label">Start date</span>
+            <button class="ctl" type="button" aria-haspopup="dialog">
+              <span class="ctl__val">Sun 2 Aug</span>
+              <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3.5" y="5" width="17" height="15.5" rx="2.6"/><path d="M8 3v4M16 3v4M3.5 10h17"/>
+              </svg>
+            </button>
+          </div>
+          <div class="field">
+            <span class="field__label">Start time</span>
+            <button class="ctl" type="button" aria-haspopup="dialog">
+              <span class="ctl__val ctl__val--num">8:30 PM</span>
+              <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="13" r="7.6"/><path d="M12 9.6V13l2.6 1.6M9.4 3.6h5.2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <p class="val val--info" style="margin-top:12px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.6M12 7.7v.2"/></svg>
+          The room must start at least 5 minutes from now, and no more than a year out.
+        </p>
+      </div>
+
+      <h2 class="label">How long does it run?</h2>
+      <div class="group">
+        <div class="field is-disabled">
+          <span class="field__label">Duration</span>
+          <div class="ctl is-disabled">
+            <span class="ctl__val">Open-ended</span>
+            <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16M9 7l-5 5 5 5"/><path d="M15 7l5 5-5 5"/></svg>
+          </div>
+          <p class="field__help">The room stays open until you close it. There is no scheduled end.</p>
+        </div>
+      </div>
+
+      <div class="cta">
+        <button class="btn btn--acid btn--wide" type="button">Review room</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>Date format.</b> The shipped field renders <code>MM/dd/yyyy</code> — <code>08/02/2026</code>
+    with no order hint, which an Australian audience reads as 8 February. A named day and a
+    three-letter month cannot be misread, and the strip above restates the whole answer in words,
+    because two boxes reading <code>08/02/2026</code> and <code>8:30 PM</code> are not a schedule.
+    <b>Duration is shown as a read-only fact, not a field</b>: nothing in the request or the room
+    record carries an end time, so the screen states the consequence rather than pretending to
+    collect it.
+  </p>
+
+  <!-- ============================================================
+       03 · ROOM DATE SHEET
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">03</span><span class="fr-cap__t">Room date sheet</span><span class="fr-cap__s"></span></p>
+
+  <p class="spec__label">Single date · month grid · past days struck out</p>
+  <section class="sheet" role="group" aria-label="Room date, specimen">
+    <div class="sheet__grab" aria-hidden="true"></div>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Room date</h3>
+      <button class="sheet__x" type="button" aria-label="Close date picker">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <p class="when" style="margin-bottom:12px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.6"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+        <b>Sunday 2 August 2026</b><em>in 3 days</em>
+      </p>
+      <div class="cal__bar">
+        <button class="cal__nav" type="button" aria-label="Previous month, July 2026 is in the past" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+        </button>
+        <p class="cal__mon" aria-live="polite">August 2026</p>
+        <button class="cal__nav" type="button" aria-label="Next month">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+        </button>
+      </div>
+      <div class="cal__dow" aria-hidden="true">
+        <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+      </div>
+      <div class="cal__grid" role="grid" aria-label="August 2026">
+        <span class="cal__d cal__d--out cal__d--off"><span>27</span></span>
+        <span class="cal__d cal__d--out cal__d--off"><span>28</span></span>
+        <span class="cal__d cal__d--out cal__d--off"><span>29</span></span>
+        <span class="cal__d cal__d--out cal__d--today"><span>30</span></span>
+        <span class="cal__d cal__d--out"><span>31</span></span>
+        <button class="cal__d" type="button"><span>1</span></button>
+        <button class="cal__d" type="button" aria-selected="true"><span>2</span></button>
+
+        <button class="cal__d" type="button"><span>3</span></button>
+        <button class="cal__d" type="button"><span>4</span></button>
+        <button class="cal__d" type="button"><span>5</span></button>
+        <button class="cal__d" type="button"><span>6</span></button>
+        <button class="cal__d" type="button"><span>7</span></button>
+        <button class="cal__d" type="button"><span>8</span></button>
+        <button class="cal__d" type="button"><span>9</span></button>
+
+        <button class="cal__d" type="button"><span>10</span></button>
+        <button class="cal__d" type="button"><span>11</span></button>
+        <button class="cal__d" type="button"><span>12</span></button>
+        <button class="cal__d" type="button"><span>13</span></button>
+        <button class="cal__d" type="button"><span>14</span></button>
+        <button class="cal__d" type="button"><span>15</span></button>
+        <button class="cal__d" type="button"><span>16</span></button>
+
+        <button class="cal__d" type="button"><span>17</span></button>
+        <button class="cal__d" type="button"><span>18</span></button>
+        <button class="cal__d" type="button"><span>19</span></button>
+        <button class="cal__d" type="button"><span>20</span></button>
+        <button class="cal__d" type="button"><span>21</span></button>
+        <button class="cal__d" type="button"><span>22</span></button>
+        <button class="cal__d" type="button"><span>23</span></button>
+
+        <button class="cal__d" type="button"><span>24</span></button>
+        <button class="cal__d" type="button"><span>25</span></button>
+        <button class="cal__d" type="button"><span>26</span></button>
+        <button class="cal__d" type="button"><span>27</span></button>
+        <button class="cal__d" type="button"><span>28</span></button>
+        <button class="cal__d" type="button"><span>29</span></button>
+        <button class="cal__d" type="button"><span>30</span></button>
+
+        <button class="cal__d" type="button"><span>31</span></button>
+        <span class="cal__d cal__d--out"><span>1</span></span>
+        <span class="cal__d cal__d--out"><span>2</span></span>
+        <span class="cal__d cal__d--out"><span>3</span></span>
+        <span class="cal__d cal__d--out"><span>4</span></span>
+        <span class="cal__d cal__d--out"><span>5</span></span>
+        <span class="cal__d cal__d--out"><span>6</span></span>
+      </div>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button">Cancel</button>
+      <button class="btn btn--acid" type="button">Set date</button>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>The rule is drawn, not hidden.</b> The shipped calendar lets you tap 12 July and simply
+    does nothing — <code>onDaySelected</code> assigns only when
+    <code>date.isAfterDateOnly(DateTime.now())</code>, which is today or later, and there is no
+    feedback for the days it rejects. Here every past day is struck through, dimmed and inert, and
+    <b>Previous month</b> is disabled when the whole month is behind us. Today, 30 July, keeps the
+    1 px accent ring. The shipped bounds are <code>2010-10-16</code> to <code>2030-03-14</code>,
+    which allow a room in 2011; this proposes <b>today to one year out</b>.
+  </p>
+
+  <!-- ============================================================
+       04 · START TIME SHEET
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">04</span><span class="fr-cap__t">Start time sheet</span><span class="fr-cap__s"></span></p>
+
+  <p class="spec__label">Three lists · the six shipped offsets · try them</p>
+  <section class="sheet" role="group" aria-label="Room start time, specimen" id="timeSpec">
+    <div class="sheet__grab" aria-hidden="true"></div>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Room start time</h3>
+      <button class="sheet__x" type="button" aria-label="Close time picker">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <p class="time__now">Opens <span data-day>Sunday 2 August</span><b data-clock>8:30 PM</b></p>
+      <div class="time">
+        <div class="time__list" role="radiogroup" aria-label="Hour" data-tcol="h">
+          <p class="time__hd">Hour</p>
+          <button class="time__v" type="button" role="radio" aria-checked="false">1</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">2</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">3</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">4</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">5</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">6</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">7</button>
+          <button class="time__v" type="button" role="radio" aria-checked="true">8</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">9</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">10</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">11</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">12</button>
+        </div>
+        <div class="time__list" role="radiogroup" aria-label="Minute" data-tcol="m">
+          <p class="time__hd">Min</p>
+          <button class="time__v" type="button" role="radio" aria-checked="false">00</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">15</button>
+          <button class="time__v" type="button" role="radio" aria-checked="true">30</button>
+          <button class="time__v" type="button" role="radio" aria-checked="false">45</button>
+        </div>
+        <div class="time__list" role="radiogroup" aria-label="Morning or afternoon" data-tcol="a">
+          <p class="time__hd">AM/PM</p>
+          <button class="time__v" type="button" role="radio" aria-checked="false">AM</button>
+          <button class="time__v" type="button" role="radio" aria-checked="true">PM</button>
+        </div>
+      </div>
+
+      <div class="quick" role="group" aria-label="Quick start offsets" data-quick>
+        <button class="quick__b" type="button" aria-pressed="false" data-off="0">Now</button>
+        <button class="quick__b" type="button" aria-pressed="false" data-off="1">In an hour</button>
+        <button class="quick__b" type="button" aria-pressed="false" data-off="2">In two hours</button>
+        <button class="quick__b" type="button" aria-pressed="false" data-off="3">In three hours</button>
+        <button class="quick__b" type="button" aria-pressed="false" data-off="5">In five hours</button>
+        <button class="quick__b" type="button" aria-pressed="false" data-off="12">In twelve hours</button>
+      </div>
+      <p class="quick__lab">
+        Offsets run from the clock, not from the date already in the field, and round up to the
+        next quarter hour. Now is <b data-nowline>Thursday 30 July, 4:19 PM</b>.
+      </p>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button">Cancel</button>
+      <button class="btn btn--acid" type="button">Set start time</button>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>The offsets are the six shipped values</b> —
+    <code>now(0) · inAnHour(1) · inTwoHours(2) · inThreeHours(3) · inFiveHours(5) ·
+    inTwelveHours(12)</code> hours. There is no four-hour step in the enum. Two behaviours are
+    corrected. In the shipped sheet each offset adds its hours to
+    <code>editorSelectedDateTime</code> — the value already in the field — so pressing
+    <b>In twelve hours</b> on a room already set for next Sunday quietly moves it to Monday
+    morning, and the sheet resets its highlight to <code>Now</code> every time it opens no matter
+    what is stored. Here the offsets run from the live clock, they roll the date when they cross
+    midnight, and the readout says so. <b>And <code>Now</code> cannot ship as it stands:</b> the
+    field is seeded with the moment the screen opened, so <code>+0</code> resolves to a time that
+    is already in the past when <code>_validated()</code> compares it to a fresh
+    <code>DateTime.now()</code> — it always fails. Minutes are quarters here, following
+    sheets.html; the shipped picker uses <code>minutesInterval: 1</code>, so a room can be
+    scheduled for 8:37 PM.
+  </p>
+
+  <!-- ============================================================
+       05 · INVITES, NOBODY YET
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">05</span><span class="fr-cap__t">Invites · nobody yet</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr" aria-label="Schedule a room — no invites yet">
+    <div class="bar">
+      <button class="icon-btn icon-btn--bare" type="button" aria-label="Close, discards this room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <h1 class="bar__title">Schedule a room</h1>
+      <span class="bar__aux">Barcelona</span>
+    </div>
+
+    <div class="fr__body">
+      <h2 class="label">Who is coming?</h2>
+      <p class="help">
+        An <b>open room</b> is visible to every Barcelona member whether you invite them or not.
+        Inviting sends a notification and puts the room in their upcoming list.
+      </p>
+
+      <div class="group">
+        <div class="field">
+          <span class="field__label">Find members</span>
+          <button class="ctl ctl--placeholder" type="button" aria-haspopup="dialog" data-open="invite">
+            <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+            <span class="ctl__val">Search Barcelona members</span>
+            <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+
+        <p class="nobody">
+          <b>Nobody invited yet</b>
+          You are the only speaker so far. Members can still find an open room on their own.
+        </p>
+
+        <div style="margin-top:14px">
+          <button class="cbx" type="button" role="checkbox" aria-checked="true" data-cbx>
+            <span class="cbx__box" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.4l3.8 3.8L18 7.8"/></svg></span>
+            <span class="cbx__txt">I'll invite people once the room starts
+              <small>Turn this off and we'll ask you to invite someone before you publish.</small>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div class="cta">
+        <button class="btn btn--acid btn--wide" type="button">Review room</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>The checkbox now does something.</b> In the shipped screen
+    <code>I will be inviting people once the room starts.</code> only renders while the invite
+    list is empty, nothing reads <code>isInviteLater</code> at submit, and
+    <code>resetEditorLockerRoomState</code> sets it to <code>true</code> in both create and edit —
+    so it is decoration. Here it is the switch between "publishing with nobody invited is
+    deliberate" and "you meant to invite someone", and it gates the review step.
+  </p>
+
+  <!-- ============================================================
+       06 · INVITES, THREE INVITED
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">06</span><span class="fr-cap__t">Invites · three invited</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr" aria-label="Schedule a room — three invited">
+    <div class="bar">
+      <button class="icon-btn icon-btn--bare" type="button" aria-label="Close, discards this room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <h1 class="bar__title">Schedule a room</h1>
+      <span class="bar__aux">Barcelona</span>
+    </div>
+
+    <div class="fr__body">
+      <h2 class="label">Who is coming?</h2>
+
+      <div class="group">
+        <div class="field">
+          <span class="field__label">Find members</span>
+          <button class="ctl ctl--placeholder" type="button" aria-haspopup="dialog" data-open="invite">
+            <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+            <span class="ctl__val">Search Barcelona members</span>
+            <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+
+        <p class="invs__head">In the room<span class="spacer"></span><span class="count-pill">3 invited</span></p>
+        <ul class="invs">
+          <li>
+            <div class="inv">
+              <span class="avatar" style="background-image:var(--av-tt)" role="img" aria-label="taythaytu"></span>
+              <span class="inv__id">
+                <span class="inv__name">taythaytu</span>
+                <span class="inv__role inv__role--host">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+                  Host · you
+                </span>
+              </span>
+              <span class="inv__lock" aria-label="The host cannot be removed">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9.5" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0V11"/></svg>
+              </span>
+            </div>
+          </li>
+          <li>
+            <div class="inv">
+              <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+              <span class="inv__id">
+                <span class="inv__name">capitan_7</span>
+                <span class="inv__role">Invited</span>
+              </span>
+              <button class="inv__x" type="button" aria-label="Remove capitan_7 from the invites">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+              </button>
+            </div>
+          </li>
+          <li>
+            <div class="inv">
+              <span class="avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+              <span class="inv__id">
+                <span class="inv__name">scout_mode</span>
+                <span class="inv__role">Invited</span>
+              </span>
+              <button class="inv__x" type="button" aria-label="Remove scout_mode from the invites">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+              </button>
+            </div>
+          </li>
+          <li>
+            <div class="inv">
+              <span class="avatar" style="background-image:var(--av-cs)" role="img" aria-label="club_staff"></span>
+              <span class="inv__id">
+                <span class="inv__name">club_staff</span>
+                <span class="inv__role">Invited</span>
+              </span>
+              <button class="inv__x" type="button" aria-label="Remove club_staff from the invites">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+              </button>
+            </div>
+          </li>
+        </ul>
+
+        <p class="val val--info" style="margin-top:12px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          Everyone here can listen. You promote people to speak inside the room once it opens.
+        </p>
+      </div>
+
+      <div class="cta">
+        <button class="btn btn--acid btn--wide" type="button">Review room</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>There are two roles here, not three.</b> <code>UserItemType</code> is <code>selected</code>
+    and <code>searched</code> — which list a row is in, not what the person does. The real roles
+    live elsewhere: the request sends <code>invite_members</code> and nothing else, and the room
+    comes back with a <code>hosts[]</code> array whose members each carry
+    <code>permissions[]</code> and <code>mic_on</code>. So the editor can only make invitees, and
+    the host is whoever created the room. Speaker promotion is a runtime act, and the line above
+    says so rather than the screen implying it can be set here. The shipped row prints
+    <code>user.role</code>, a free-text field with no enumerated values anywhere in the build, so
+    the username carries the row and the role slot carries the room's own vocabulary.
+  </p>
+
+  <!-- ============================================================
+       07 · INVITE PEOPLE SHEET
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">07</span><span class="fr-cap__t">Invite people sheet</span><span class="fr-cap__s"></span></p>
+
+  <p class="spec__label">Search · multi-select · Done in the head</p>
+  <section class="sheet" role="group" aria-label="Invite people, specimen">
+    <div class="sheet__grab" aria-hidden="true"></div>
+    <div class="sheet__head">
+      <h3 class="sheet__title">Invite people</h3>
+      <span class="sheet__n">3 invited</span>
+      <button class="sheet__done" type="button">Done</button>
+    </div>
+    <div class="sheet__body sheet__body--last" style="max-height:330px">
+      <div class="ctl ctl--stick">
+        <span class="ctl__box">
+          <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.6"/><path d="M16 16l4.2 4.2"/></svg>
+          <input class="ctl__in" type="search" placeholder="Search Barcelona members" aria-label="Search members" value="">
+        </span>
+      </div>
+      <p class="sheet__grp">Already invited</p>
+      <button class="srow" type="button" role="checkbox" aria-checked="true">
+        <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+        <span class="srow__id"><span class="srow__name">capitan_7</span><span class="srow__sub">In 4 of your rooms</span></span>
+        <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="srow" type="button" role="checkbox" aria-checked="true">
+        <span class="avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+        <span class="srow__id"><span class="srow__name">scout_mode</span><span class="srow__sub">In 1 of your rooms</span></span>
+        <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="srow" type="button" role="checkbox" aria-checked="true">
+        <span class="avatar" style="background-image:var(--av-cs)" role="img" aria-label="club_staff"></span>
+        <span class="srow__id"><span class="srow__name">club_staff</span><span class="srow__sub">Barcelona staff account</span></span>
+        <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <p class="sheet__grp">Barcelona members</p>
+      <button class="srow" type="button" role="checkbox" aria-checked="false">
+        <span class="avatar" style="background-image:var(--av-fp)" role="img" aria-label="fan_pulse"></span>
+        <span class="srow__id"><span class="srow__name">fan_pulse</span><span class="srow__sub">Never in one of your rooms</span></span>
+        <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="srow" type="button" role="checkbox" aria-checked="false">
+        <span class="avatar" style="background-image:var(--av-dm)" role="img" aria-label="dons_mode"></span>
+        <span class="srow__id"><span class="srow__name">dons_mode</span><span class="srow__sub">In 2 of your rooms</span></span>
+        <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>One list, grouped, with the invited pinned to the top.</b> The shipped sheet has one flat
+    search result and the only way to see who is already invited is to dismiss it and read the
+    form behind. It also fires <code>getSearchUsers</code> on every keystroke with no debounce and
+    tracks the races in a <code>searchingCounter</code>; the count in the head here is the same
+    <code>Invited: N</code> figure, moved to where the decision is being made. Rows are the kit's
+    48 px minimum with a 36 px avatar, not the shipped 56 pt row with a 40 pt one.
+  </p>
+
+  <div class="section" style="margin-top:16px">
+    <div class="section__bar">
+      <span class="status-pill">Interactive</span>
+    </div>
+    <p class="fr-note" style="margin:0 0 4px">
+      <b>Try it.</b> The sheet slides up over the real scrim, traps focus, filters six real
+      members as you type, keeps the count live, and closes on the scrim, the grabber, Done or Esc.
+    </p>
+    <div class="tryit">
+      <button class="pill-btn" type="button" data-open="invite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M18 7.5v5M15.5 10h5"/></svg>
+        Invite people
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       08 · REVIEW AND PUBLISH
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">08</span><span class="fr-cap__t">Review and publish</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr fr--tall" aria-label="Review and publish">
+    <div class="bar behind">
+      <span class="icon-btn icon-btn--bare" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </span>
+      <h1 class="bar__title">Schedule a room</h1>
+      <span class="bar__aux">Barcelona</span>
+    </div>
+    <div class="fr__body behind">
+      <h2 class="label">Who is coming?</h2>
+      <div class="group">
+        <p class="invs__head">In the room<span class="spacer"></span><span class="count-pill">3 invited</span></p>
+        <ul class="invs">
+          <li><div class="inv">
+            <span class="avatar" style="background-image:var(--av-tt)" role="img" aria-label="taythaytu"></span>
+            <span class="inv__id"><span class="inv__name">taythaytu</span><span class="inv__role inv__role--host">Host · you</span></span>
+          </div></li>
+          <li><div class="inv">
+            <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+            <span class="inv__id"><span class="inv__name">capitan_7</span><span class="inv__role">Invited</span></span>
+          </div></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="frscrim">
+      <div class="dlg dlg--wide" role="dialog" aria-modal="true" aria-labelledby="rv-t" aria-describedby="rv-b">
+        <button class="dlg__close" type="button" aria-label="Back to the form">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="tile tile--neutral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.5A2.4 2.4 0 1 1 13 11.8c-.7.4-1 1-1 1.7v.3"/><path d="M12 16.8h.01"/>
+          </svg>
+        </span>
+        <h3 class="dlg__title" id="rv-t">Open this room to Barcelona?</h3>
+        <p class="dlg__body" id="rv-b">
+          Publishing sends <b>3 invites</b> straight away and puts the room in every Barcelona
+          member's upcoming list. You can edit or delete it any time before it opens.
+        </p>
+
+        <ul class="recap">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5h16M4 12h12M4 17.5h8"/></svg>
+            <span class="recap__k">Topic</span>
+            <span class="recap__v">Post-match verdict : Barcelona v Arsenal</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.4 2"/></svg>
+            <span class="recap__k">Opens</span>
+            <span class="recap__v">Sunday 2 August, 8:30 PM<small>In 3 days · runs until you close it</small></span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9.5" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+            <span class="recap__k">Access</span>
+            <span class="recap__v">Open room<small>Any Barcelona member can walk in</small></span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+            <span class="recap__k">Invites</span>
+            <span class="recap__v">capitan_7, scout_mode, club_staff
+              <span class="faces">
+                <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+                <span class="avatar" style="background-image:var(--av-sm)" role="img" aria-label="scout_mode"></span>
+                <span class="avatar" style="background-image:var(--av-cs)" role="img" aria-label="club_staff"></span>
+              </span>
+            </span>
+          </li>
+        </ul>
+
+        <div class="act">
+          <button class="btn btn--ghost" type="button">Keep editing</button>
+          <button class="btn btn--acid" type="button">Publish room</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>New in this proposal.</b> Nothing stands between <code>Create room &amp; send invites</code>
+    and the invites going out today — the tap fires the POST, and the room is only reviewed after
+    it exists, in the success dialog. This is the same dialog shell as every other confirm in the
+    kit: question in the title, consequence in the body, the verb repeated on the button,
+    secondary left and primary right. The read-back lists every one of the four fields the request
+    carries, and names the invitees, because that is the part that cannot be taken back.
+  </p>
+
+  <!-- ============================================================
+       09 · ROOM CREATED
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">09</span><span class="fr-cap__t">Room created</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr fr--tall" aria-label="Room created">
+    <div class="bar behind">
+      <span class="icon-btn icon-btn--bare" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </span>
+      <h1 class="bar__title">Schedule a room</h1>
+      <span class="bar__aux">Barcelona</span>
+    </div>
+    <div class="fr__body behind">
+      <h2 class="label">Who is coming?</h2>
+      <div class="group">
+        <p class="invs__head">In the room<span class="spacer"></span><span class="count-pill">3 invited</span></p>
+      </div>
+    </div>
+
+    <div class="frscrim">
+      <div class="dlg dlg--wide" role="dialog" aria-modal="true" aria-labelledby="cr-t">
+        <div class="done">
+          <span class="done__disc" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="8.5"/><path d="m8.3 12.3 2.6 2.6 4.8-5.4"/>
+            </svg>
+          </span>
+          <h3 id="cr-t">Room created</h3>
+          <p>We'll open it on time, remind everyone invited just before, and tell you when people
+             start arriving.</p>
+        </div>
+
+        <div style="margin-top:16px">
+          <article class="room">
+            <p class="room__when">Sunday · August 2 · 8:30 PM</p>
+            <h3 class="room__title">Post-match verdict : Barcelona v Arsenal</h3>
+            <div class="room__host">
+              <span class="avatar" style="background-image:var(--av-tt)" role="img" aria-label="taythaytu"></span>
+              <span>host : taythaytu</span>
+            </div>
+            <div class="room__foot">
+              <span class="stat" aria-label="1 speaker">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+                1
+              </span>
+              <span class="stat" aria-label="3 invited">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.2" cy="8" r="3.3"/><path d="M3.2 19a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 4.9M17.8 19a6.2 6.2 0 0 0-1.9-4.3"/></svg>
+                3
+              </span>
+              <span class="access">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/></svg>
+                Open room
+              </span>
+            </div>
+          </article>
+        </div>
+
+        <div class="act">
+          <button class="btn btn--ghost" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+            Share
+          </button>
+          <button class="btn btn--acid" type="button">Done</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>The card is the real one.</b> The shipped dialog also renders a live
+    <code>LockerRoomsItem</code>, which is the right instinct — the member sees exactly what the
+    club will see — so it survives here as backchat.html's <code>.room</code> card on
+    <code>--sunken</code>. Two changes: the dialog drops
+    <code>assets/images/dialog_background.png</code> at 10% opacity behind the title, and
+    <code>OKAY</code> becomes <b>Done</b> with a <b>Share</b> beside it, because the next thing a
+    host wants is to tell people.
+  </p>
+
+  <!-- ============================================================
+       10 · EDIT ROOM
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">10</span><span class="fr-cap__t">Edit room</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr" aria-label="Edit room">
+    <div class="bar">
+      <button class="icon-btn icon-btn--bare" type="button" aria-label="Close, discards unsaved changes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <h1 class="bar__title">Edit room</h1>
+      <span class="bar__aux">Opens in 3 days</span>
+    </div>
+
+    <div class="fr__body">
+      <div class="group" style="padding-top:18px">
+        <label class="field">
+          <span class="field__row">
+            <span class="field__label">Topic <span class="req">*</span></span>
+            <span class="counter" data-counter>39/80</span>
+          </span>
+          <span class="ctl">
+            <input class="ctl__in" type="text" maxlength="80" value="Post-match verdict : Barcelona v Arsenal" data-count>
+          </span>
+        </label>
+
+        <p class="when">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.4 2"/></svg>
+          Opens <b>Sunday 2 August, 8:30 PM</b><em>in 3 days</em>
+        </p>
+
+        <div class="two-up">
+          <div class="field">
+            <span class="field__label">Start date</span>
+            <button class="ctl" type="button" aria-haspopup="dialog">
+              <span class="ctl__val">Sun 2 Aug</span>
+              <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3.5" y="5" width="17" height="15.5" rx="2.6"/><path d="M8 3v4M16 3v4M3.5 10h17"/>
+              </svg>
+            </button>
+          </div>
+          <div class="field">
+            <span class="field__label">Start time</span>
+            <button class="ctl" type="button" aria-haspopup="dialog">
+              <span class="ctl__val ctl__val--num">8:30 PM</span>
+              <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="13" r="7.6"/><path d="M12 9.6V13l2.6 1.6M9.4 3.6h5.2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top:18px">
+          <span class="field__label">Who can get in?</span>
+          <div class="types" role="radiogroup" aria-label="Type of room">
+            <button class="type" type="button" role="radio" aria-checked="false">
+              <span class="type__tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.4l3.8 3.8L18 7.8"/></svg></span>
+              <svg class="type__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="4.5" y="11" width="15" height="9.5" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0"/>
+              </svg>
+              <span class="type__id"><span class="type__name">Open room</span></span>
+            </button>
+            <button class="type" type="button" role="radio" aria-checked="true">
+              <span class="type__tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.4l3.8 3.8L18 7.8"/></svg></span>
+              <svg class="type__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="4.5" y="11" width="15" height="9.5" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0V11"/><path d="M12 14.6v2.4"/>
+              </svg>
+              <span class="type__id"><span class="type__name">Locked room</span></span>
+            </button>
+          </div>
+          <p class="val val--err" style="margin-top:10px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+            </svg>
+            Locking it now removes the room from every Barcelona member's upcoming list except the 3 invited.
+          </p>
+        </div>
+
+        <p class="invs__head" style="margin-top:20px">In the room<span class="spacer"></span><span class="count-pill">3 invited</span></p>
+        <ul class="invs">
+          <li><div class="inv">
+            <span class="avatar" style="background-image:var(--av-tt)" role="img" aria-label="taythaytu"></span>
+            <span class="inv__id"><span class="inv__name">taythaytu</span><span class="inv__role inv__role--host">Host · you</span></span>
+            <span class="inv__lock" aria-label="The host cannot be removed">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="9.5" rx="2.6"/><path d="M8.3 11V7.6a3.7 3.7 0 0 1 7.4 0V11"/></svg>
+            </span>
+          </div></li>
+          <li><div class="inv">
+            <span class="avatar" style="background-image:var(--av-c7)" role="img" aria-label="capitan_7"></span>
+            <span class="inv__id"><span class="inv__name">capitan_7</span><span class="inv__role">Invited · reminder on</span></span>
+            <button class="inv__x" type="button" aria-label="Remove capitan_7 from the invites">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+            </button>
+          </div></li>
+        </ul>
+      </div>
+
+      <div class="cta">
+        <div class="cta__pair">
+          <button class="btn btn--dangerq" type="button" data-open="delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/>
+              <path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/>
+            </svg>
+            Delete
+          </button>
+          <button class="btn btn--acid" type="button">Save changes</button>
+        </div>
+        <p class="cta__hint">Everyone invited is told when you change the time.</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>Edit is the same screen with a different foot.</b> <code>LockerRoomEditorState</code> has
+    exactly two values, <code>create</code> and <code>edit</code>, and the only thing it changes in
+    the shipped build is the button row: one full-width
+    <code>CREATE ROOM &amp; SEND INVITES</code>, or <code>DELETE ROOM</code> beside
+    <code>SAVE CHANGES</code>. Three things are added. The bar says <b>Edit room</b> and carries
+    how long is left. Delete is the quiet red — <code>--red-wash</code> with a
+    <code>--red-line</code> rim and an icon — so it can sit next to the primary without competing
+    with it, where the shipped pair gives the destructive action the same visual weight as Save.
+    And changing access after invites have gone out states its consequence, because
+    <code>updateLockerRoom</code> silently PUTs all four fields including
+    <code>is_open_room</code>.
+  </p>
+
+  <!-- ============================================================
+       11 · DELETE THIS ROOM?
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">11</span><span class="fr-cap__t">Delete this room?</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr fr--tall" aria-label="Delete this room">
+    <div class="bar behind">
+      <span class="icon-btn icon-btn--bare" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </span>
+      <h1 class="bar__title">Edit room</h1>
+      <span class="bar__aux">Opens in 3 days</span>
+    </div>
+    <div class="fr__body behind">
+      <div class="group" style="padding-top:18px">
+        <div class="field">
+          <span class="field__label">Topic</span>
+          <div class="ctl"><span class="ctl__val">Post-match verdict : Barcelona v Arsenal</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frscrim">
+      <div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dl-t" aria-describedby="dl-b">
+        <button class="dlg__close" type="button" aria-label="Keep the room">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="tile tile--red" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.6 7h14.8M9.6 7V5.3A1.3 1.3 0 0 1 10.9 4h2.2a1.3 1.3 0 0 1 1.3 1.3V7"/>
+            <path d="M6.5 7l.8 11.4A1.7 1.7 0 0 0 9 20h6a1.7 1.7 0 0 0 1.7-1.6L17.5 7"/>
+            <path d="M10.4 11v5.4M13.6 11v5.4"/>
+          </svg>
+        </span>
+        <h3 class="dlg__title" id="dl-t">Delete this room?</h3>
+        <p class="dlg__body" id="dl-b">
+          <b>Post-match verdict : Barcelona v Arsenal</b> disappears from Backchat and the 3
+          invites are cancelled. This can't be undone.
+        </p>
+        <div class="act">
+          <button class="btn btn--ghost" type="button">Keep room</button>
+          <button class="btn btn--danger" type="button">Delete room</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>The shipped title reads <code>Delete this rooms?</code></b> — one room, plural noun. Fixed
+    here. The body also names the room and the number of invites cancelled, rather than stopping at
+    <code>All invites sent will be deleted.</code>, and the two buttons name what each one does
+    instead of <code>Delete</code> / <code>Cancel</code>. <code>deleteLockerRoom</code> swallows
+    its own exception in a <code>catch</code> that only prints in debug, so a failed delete
+    currently closes the screen as if it had worked; the failure needs the kit's error toast.
+  </p>
+
+  <!-- ============================================================
+       12 · VALIDATION
+       ============================================================ -->
+  <p class="fr-cap"><span class="fr-cap__n">12</span><span class="fr-cap__t">Validation</span><span class="fr-cap__s"></span></p>
+
+  <section class="fr" aria-label="Validation">
+    <div class="bar">
+      <button class="icon-btn icon-btn--bare" type="button" aria-label="Close, discards this room">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <h1 class="bar__title">Schedule a room</h1>
+      <span class="bar__aux">2 to fix</span>
+    </div>
+
+    <div class="fr__body">
+      <div class="group" style="padding-top:18px">
+        <div class="field">
+          <span class="field__row">
+            <span class="field__label">Topic <span class="req">*</span></span>
+            <span class="counter">0/80</span>
+          </span>
+          <div class="ctl is-error">
+            <input class="ctl__in" type="text" placeholder="Say what you will be talking about" aria-invalid="true" aria-describedby="e-topic">
+          </div>
+          <p class="val val--err" id="e-topic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+            </svg>
+            Give the room a topic. It is the only thing members see before they book in.
+          </p>
+        </div>
+
+        <p class="when when--warn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.4 2"/></svg>
+          Would have opened <b>Thursday 30 July, 4:12 PM</b><em>7 minutes ago</em>
+        </p>
+
+        <div class="two-up">
+          <div class="field">
+            <span class="field__label">Start date</span>
+            <button class="ctl" type="button" aria-haspopup="dialog">
+              <span class="ctl__val">Thu 30 Jul</span>
+              <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3.5" y="5" width="17" height="15.5" rx="2.6"/><path d="M8 3v4M16 3v4M3.5 10h17"/>
+              </svg>
+            </button>
+          </div>
+          <div class="field">
+            <span class="field__label">Start time</span>
+            <button class="ctl is-error" type="button" aria-haspopup="dialog" aria-invalid="true" aria-describedby="e-time">
+              <span class="ctl__val ctl__val--num">4:12 PM</span>
+              <svg class="ctl__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="13" r="7.6"/><path d="M12 9.6V13l2.6 1.6M9.4 3.6h5.2"/>
+              </svg>
+            </button>
+            <p class="val val--err" id="e-time">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 4.2 2.8 20h18.4L12 4.2Z"/><path d="M12 9.6v4.4M12 17h.01"/>
+              </svg>
+              Start time must be later than now.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta">
+        <button class="btn btn--acid btn--wide" type="button" disabled>Review room</button>
+        <p class="cta__hint">Fix the two fields above to continue.</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="fr-note">
+    <b>Both shipped validation dialogs are retired.</b> <code>Please enter topic</code> and
+    <code>Start at must greater than current time</code> are modals headed <code>OOPS</code> —
+    they cannot point at the field, they name the API's <code>start_at</code> rather than the
+    control the member is looking at, and the second one is missing a verb. Here each failure is
+    an inline error on its own control with a triangle glyph, the message says what to do, the bar
+    counts what is left, and the CTA is disabled with a reason underneath. The grammar is fixed:
+    <b>Start time must be later than now.</b>
+  </p>
+
+  <!-- ===================== THE START-TIME RULE ===================== -->
+  <h2 class="label">The start-time rule, as built</h2>
+  <div class="section">
+    <ul class="rule">
+      <li><b class="is-acid">Floor</b><span>At least <b>5 minutes</b> from now. Enforced at the picker
+        AND at submit, so nothing can be typed past it. The shipped build enforces only
+        <code>isBefore(DateTime.now())</code>, and only on the Create tap.</span></li>
+      <li><b>Ceiling</b><span>One year out. The shipped calendar bounds are
+        <code>2010-10-16</code> to <code>2030-03-14</code>, which permit a room in 2011.</span></li>
+      <li><b>Days</b><span>Today onwards. Past days are struck out and inert instead of silently
+        ignoring the tap.</span></li>
+      <li><b>Minutes</b><span>Quarter hours, following sheets.html. The shipped picker allows any
+        minute, so 8:37 PM is a legal start.</span></li>
+      <li><b>Offsets</b><span><code>Now · In an hour · In two hours · In three hours ·
+        In five hours · In twelve hours</code> — the six shipped
+        <code>LockerRoomEditorTimePickerPadding</code> values, at <code>+0 / 1 / 2 / 3 / 5 / 12</code>
+        hours. Computed from the clock, and they roll the date.</span></li>
+      <li><b class="is-red">Now</b><span>Cannot ship as written. <code>+0</code> resolves to the
+        moment the screen opened, which submit then rejects for being in the past. Either it gets
+        the 5-minute floor, or it becomes a separate "start immediately" path.</span></li>
+    </ul>
+  </div>
+
+</main>
+
+<!-- ============================================================
+     LIVE LAYER — outside <main class="screen"> so the sheet stays
+     pinned to the bottom of the device frame instead of scrolling
+     away when this file is embedded in the review page.
+     ============================================================ -->
+<div class="layer tabbar" id="layer">
+  <div class="layer__scrim" id="layerScrim"></div>
+
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="iv-t" data-pane="invite" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="iv-t">Invite people</h3>
+      <span class="sheet__n" data-ivcount>3 invited</span>
+      <button class="sheet__done" type="button" data-close>Done</button>
+    </div>
+    <div class="sheet__body sheet__body--last">
+      <div class="ctl ctl--stick">
+        <span class="ctl__box">
+          <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.6"/><path d="M16 16l4.2 4.2"/></svg>
+          <input class="ctl__in" id="ivQ" type="search" placeholder="Search Barcelona members" aria-label="Search members" autocomplete="off" spellcheck="false">
+          <button class="ctl__btn" type="button" id="ivX" aria-label="Clear search" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+          </button>
+        </span>
+      </div>
+      <div id="ivList"></div>
+      <p class="empty" id="ivNone" hidden>No Barcelona member matches that.</p>
+    </div>
+  </section>
+
+  <section class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="dv-t" data-pane="delete" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__body">
+      <div style="text-align:center;padding:4px 4px 2px">
+        <span class="tile tile--red" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.6 7h14.8M9.6 7V5.3A1.3 1.3 0 0 1 10.9 4h2.2a1.3 1.3 0 0 1 1.3 1.3V7"/>
+            <path d="M6.5 7l.8 11.4A1.7 1.7 0 0 0 9 20h6a1.7 1.7 0 0 0 1.7-1.6L17.5 7"/>
+            <path d="M10.4 11v5.4M13.6 11v5.4"/>
+          </svg>
+        </span>
+        <h3 id="dv-t" style="margin:14px 0 0;font-size:19px;font-weight:700;letter-spacing:-.02em;line-height:1.2">Delete this room?</h3>
+        <p style="margin:9px 0 0;font-size:13px;line-height:1.5;color:var(--muted)">
+          Post-match verdict : Barcelona v Arsenal disappears from Backchat and the 3 invites are
+          cancelled. This can't be undone.
+        </p>
+      </div>
+    </div>
+    <div class="sheet__foot sheet__foot--pair">
+      <button class="btn btn--ghost" type="button" data-close>Keep room</button>
+      <button class="btn btn--danger" type="button" data-close>Delete room</button>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var reduce = window.matchMedia &&
+               window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ============================================================
+     A FIXED CLOCK
+     The offsets have to resolve to something, and a real Date.now()
+     would make this document read differently every day it is
+     opened. Base: Thursday 30 July 2026, 4:12 PM — the same "today"
+     the rest of the kit uses.
+     ============================================================ */
+  var NOW = new Date(2026, 6, 30, 16, 19, 0);
+  var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var MONS = ['January','February','March','April','May','June','July',
+              'August','September','October','November','December'];
+
+  function fmtDay(d){ return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONS[d.getMonth()]; }
+  function fmtTime(d){
+    var h = d.getHours(), m = d.getMinutes(), ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if (h === 0) h = 12;
+    return h + ':' + (m < 10 ? '0' + m : m) + ' ' + ap;
+  }
+
+  /* ============================================================
+     TOPIC COUNTER
+     ============================================================ */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-count]'), function(inp){
+    var field = inp.closest('.field');
+    var out   = field && field.querySelector('[data-counter]');
+    var max   = inp.getAttribute('maxlength') || 80;
+    function sync(){ if (out) out.textContent = inp.value.length + '/' + max; }
+    inp.addEventListener('input', sync);
+    sync();
+  });
+
+  /* ============================================================
+     ROOM TYPE + CHECKBOX
+     ============================================================ */
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+
+    var t = e.target.closest('.type');
+    if (t){
+      var grp = t.closest('[role="radiogroup"]');
+      if (grp){
+        Array.prototype.forEach.call(grp.querySelectorAll('.type'), function(x){
+          x.setAttribute('aria-checked', x === t ? 'true' : 'false');
+        });
+      }
+      return;
+    }
+    var c = e.target.closest('[data-cbx]');
+    if (c){
+      c.setAttribute('aria-checked', c.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+      return;
+    }
+  });
+
+  /* ============================================================
+     THE TIME SHEET SPECIMEN
+     Columns and offsets drive one readout, so the relationship the
+     shipped sheet leaves implicit is visible.
+     ============================================================ */
+  var spec = document.getElementById('timeSpec');
+  if (spec){
+    var dayOut  = spec.querySelector('[data-day]');
+    var clockOut= spec.querySelector('[data-clock]');
+    var nowLine = spec.querySelector('[data-nowline]');
+    var quick   = spec.querySelector('[data-quick]');
+    /* the value the sheet opened on: Sunday 2 August 2026, 8:30 PM */
+    var picked  = new Date(2026, 7, 2, 20, 30, 0);
+
+    nowLine.textContent = DAYS[NOW.getDay()] + ' ' + NOW.getDate() + ' ' + MONS[NOW.getMonth()] +
+                          ', ' + fmtTime(NOW);
+
+    function paint(){
+      dayOut.textContent   = fmtDay(picked);
+      clockOut.textContent = fmtTime(picked);
+      var h = picked.getHours() % 12; if (h === 0) h = 12;
+      var m = picked.getMinutes();
+      mark('h', String(h));
+      mark('m', m < 10 ? '0' + m : String(m));
+      mark('a', picked.getHours() >= 12 ? 'PM' : 'AM');
+      centre();
+    }
+    /* keep the chosen value in view. scrollTop, not scrollIntoView:
+       scrollIntoView would also scroll the page behind the sheet. */
+    function centre(){
+      Array.prototype.forEach.call(spec.querySelectorAll('[data-tcol]'), function(list){
+        var on = list.querySelector('[aria-checked="true"]');
+        if (!on) return;
+        list.scrollTop = Math.max(
+          0, on.offsetTop - (list.clientHeight / 2) + (on.offsetHeight / 2)
+        );
+      });
+    }
+    /* offsets land on the quarter hour, so a column and the readout can
+       never disagree — the minute list only holds 00/15/30/45 */
+    function upToQuarter(d){
+      var out = new Date(d.getTime());
+      out.setSeconds(0, 0);
+      var m = out.getMinutes();
+      if (m % 15 !== 0) out.setMinutes(m + (15 - (m % 15)));
+      return out;
+    }
+    function mark(which, value){
+      var list = spec.querySelector('[data-tcol="' + which + '"]');
+      if (!list) return;
+      Array.prototype.forEach.call(list.querySelectorAll('.time__v'), function(b){
+        b.setAttribute('aria-checked', b.textContent.trim() === value ? 'true' : 'false');
+      });
+    }
+
+    centre();
+
+    spec.addEventListener('click', function(e){
+      var off = e.target.closest('[data-off]');
+      if (off){
+        var was = off.getAttribute('aria-pressed') === 'true';
+        Array.prototype.forEach.call(quick.querySelectorAll('.quick__b'), function(x){
+          x.setAttribute('aria-pressed','false');
+        });
+        if (!was){
+          off.setAttribute('aria-pressed','true');
+          picked = upToQuarter(
+            new Date(NOW.getTime() + parseInt(off.getAttribute('data-off'),10) * 3600000)
+          );
+          paint();
+        }
+        return;
+      }
+      var v = e.target.closest('.time__v');
+      if (v){
+        var list = v.closest('[data-tcol]');
+        var which = list.getAttribute('data-tcol');
+        var val = v.textContent.trim();
+        var hh = picked.getHours(), mm = picked.getMinutes();
+        if (which === 'h'){
+          var n = parseInt(val,10) % 12;
+          hh = (hh >= 12 ? 12 : 0) + n;
+        } else if (which === 'm'){
+          mm = parseInt(val,10);
+        } else {
+          hh = (val === 'PM' ? 12 : 0) + (hh % 12);
+        }
+        picked = new Date(picked.getFullYear(), picked.getMonth(), picked.getDate(), hh, mm, 0);
+        /* a column touch is an explicit time, so no offset is pressed any more */
+        Array.prototype.forEach.call(quick.querySelectorAll('.quick__b'), function(x){
+          x.setAttribute('aria-pressed','false');
+        });
+        paint();
+        return;
+      }
+    });
+  }
+
+  /* ============================================================
+     THE LIVE INVITE SHEET
+     Six real members from the kit. Selection drives the count.
+     ============================================================ */
+  var MEMBERS = [
+    ['capitan_7',   'av-c7', 'In 4 of your rooms',        true ],
+    ['scout_mode',  'av-sm', 'In 1 of your rooms',        true ],
+    ['club_staff',  'av-cs', 'Barcelona staff account',   true ],
+    ['fan_pulse',   'av-fp', 'Never in one of your rooms',false],
+    ['dons_mode',   'av-dm', 'In 2 of your rooms',        false],
+    ['transfer_brig','av-tb','In 1 of your rooms',        false]
+  ];
+  var TICK = '<span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" ' +
+             'stroke="currentColor" stroke-width="2.6" stroke-linecap="round" ' +
+             'stroke-linejoin="round"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>';
+
+  var ivList = document.getElementById('ivList');
+  MEMBERS.forEach(function(m){
+    var b = document.createElement('button');
+    b.className = 'srow';
+    b.type = 'button';
+    b.setAttribute('role','checkbox');
+    b.setAttribute('aria-checked', m[3] ? 'true' : 'false');
+    b.setAttribute('data-member', m[0]);
+    b.innerHTML =
+      '<span class="avatar" style="background-image:var(--' + m[1] + ')" role="img" aria-label="' + m[0] + '"></span>' +
+      '<span class="srow__id"><span class="srow__name"></span><span class="srow__sub"></span></span>' +
+      TICK;
+    b.querySelector('.srow__name').textContent = m[0];
+    b.querySelector('.srow__sub').textContent  = m[2];
+    ivList.appendChild(b);
+  });
+
+  var ivQ = document.getElementById('ivQ');
+  var ivX = document.getElementById('ivX');
+  var ivNone = document.getElementById('ivNone');
+  var ivCount = document.querySelector('[data-ivcount]');
+
+  function ivFilter(){
+    var v = ivQ.value.trim().toLowerCase();
+    ivX.hidden = !v;
+    var shown = 0;
+    Array.prototype.forEach.call(ivList.children, function(el){
+      var hit = !v || el.getAttribute('data-member').indexOf(v) > -1;
+      el.hidden = !hit;
+      if (hit) shown++;
+    });
+    ivNone.hidden = shown > 0;
+  }
+  function ivSync(){
+    var n = ivList.querySelectorAll('[aria-checked="true"]').length;
+    ivCount.textContent = n + ' invited';
+    ivCount.hidden = n === 0;
+  }
+  ivQ.addEventListener('input', ivFilter);
+  ivX.addEventListener('click', function(){ ivQ.value = ''; ivFilter(); ivQ.focus(); });
+  ivList.addEventListener('click', function(e){
+    var r = e.target.closest('.srow');
+    if (!r) return;
+    r.setAttribute('aria-checked', r.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+    ivSync();
+  });
+  ivSync();
+
+  /* the static specimen rows stay tappable so states can be felt */
+  document.addEventListener('click', function(e){
+    var r = e.target.closest ? e.target.closest('.sheet:not([data-pane]) .srow') : null;
+    if (!r) return;
+    r.setAttribute('aria-checked', r.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+  });
+
+  /* ============================================================
+     THE LAYER — open, close, focus trap, scrim, grabber drag
+     ============================================================ */
+  var layer = document.getElementById('layer');
+  var scrim = document.getElementById('layerScrim');
+  var main  = document.querySelector('main.screen');
+  var pane = null, opener = null;
+
+  function focusables(root){
+    return Array.prototype.filter.call(
+      root.querySelectorAll('button, [href], input, select, textarea, [tabindex]'),
+      function(el){
+        return !el.hasAttribute('disabled') &&
+               el.getAttribute('tabindex') !== '-1' &&
+               el.offsetParent !== null;
+      }
+    );
+  }
+
+  function open(name, trigger){
+    if (pane) return;
+    pane = layer.querySelector('[data-pane="' + name + '"]');
+    if (!pane) return;
+    opener = trigger || null;
+    pane.hidden = false;
+    pane.style.transform = '';
+    layer.classList.add('is-open');
+    if (main) main.setAttribute('aria-hidden','true');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function(){ layer.classList.add('is-in'); });
+    pane.setAttribute('tabindex','-1');
+    pane.focus();
+    document.addEventListener('keydown', onKey, true);
+  }
+
+  function close(){
+    if (!pane) return;
+    var closing = pane;
+    pane = null;
+    layer.classList.remove('is-in');
+    document.removeEventListener('keydown', onKey, true);
+    if (main) main.removeAttribute('aria-hidden');
+    document.body.style.overflow = '';
+    setTimeout(function(){
+      layer.classList.remove('is-open');
+      closing.hidden = true;
+      closing.style.transform = '';
+    }, reduce ? 0 : 300);
+    if (opener) opener.focus();
+    opener = null;
+  }
+
+  function onKey(e){
+    if (!pane) return;
+    if (e.key === 'Escape'){ e.preventDefault(); close(); return; }
+    if (e.key !== 'Tab') return;
+    var f = focusables(pane);
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    else if (!pane.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+  }
+
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+    var o = e.target.closest('[data-open]');
+    if (o){ open(o.getAttribute('data-open'), o); return; }
+    if (e.target.closest('[data-close]')){ close(); return; }
+    if (e.target === scrim) close();
+  });
+
+  var drag = null;
+  layer.addEventListener('pointerdown', function(e){
+    var g = e.target.closest ? e.target.closest('.sheet__grab') : null;
+    if (!g || !pane) return;
+    drag = { y:e.clientY, t:Date.now(), dy:0 };
+    pane.classList.add('is-dragging');
+    if (g.setPointerCapture) g.setPointerCapture(e.pointerId);
+  });
+  layer.addEventListener('pointermove', function(e){
+    if (!drag || !pane) return;
+    drag.dy = Math.max(0, e.clientY - drag.y);
+    pane.style.transform = 'translateY(' + drag.dy + 'px)';
+    scrim.style.opacity = String(Math.max(0, 1 - drag.dy / 420));
+  });
+  function endDrag(){
+    if (!drag || !pane){ drag = null; return; }
+    var d = drag.dy, ms = Math.max(1, Date.now() - drag.t);
+    var fast = d / ms > 0.55;
+    drag = null;
+    pane.classList.remove('is-dragging');
+    scrim.style.opacity = '';
+    if (d > 90 || (fast && d > 24)){ pane.style.transform = 'translateY(101%)'; close(); }
+    else { pane.style.transform = ''; }
+  }
+  layer.addEventListener('pointerup', endDrag);
+  layer.addEventListener('pointercancel', endDrag);
+})();
+</script>
+</body>
+</html>

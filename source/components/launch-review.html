@@ -1,0 +1,1389 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Splash &amp; entry · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; /* screen canvas */ --section: #080A0C; /* bordered section container */ --surface: #1C2129; /* cards, controls, tab bar */ --sunken: #13171E; /* inner panels, dark pills */ --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); /* hero */ --hero-a: #0D3617; --hero-b: #17481C; /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* dialog shell + scrim — dialogs.html's values, taken unchanged for frame 4's leave-app confirm */ --dlg-inset: 20px; --dlg-max: 340px; --dlg-pad: 20px; --scrim: rgba(3,4,1,.72); --scrim-blur: 10px; /* semantic red — the only other hue in the palette. states.html */ --red: #E2564A; --red-wash: rgba(226,86,74,.12); --red-line: rgba(226,86,74,.28); --neutral-wash: rgba(255,255,255,.06); /* ---- taken from auth.html, which measured them off the Get Started Figma page. These frames run into that one, so they cannot disagree with it. ------------------------------------ */ --pad: 20px; --h-act: 64px; --glow: rgba(39,100,37,.16);}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+.mk code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+.mk .framehead{display:flex;align-items:center;gap:10px;margin:0 var(--pad) 9px;flex-wrap:wrap}
+.mk .framelabel{margin:0;flex:1;min-width:130px; font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .framelabel b{color:var(--acid);font-weight:700}
+.mk .statebar{display:flex;gap:5px}
+.mk .statebar button{height:25px;padding:0 10px;border:0;border-radius:var(--r-pill); background:var(--surface);color:var(--muted); font:inherit;font-size:10px;font-weight:700;letter-spacing:.1em; text-transform:uppercase;cursor:pointer; transition:background .18s var(--ease),color .18s var(--ease);}
+.mk .statebar button[aria-pressed="true"]{background:var(--acid-wash);color:var(--acid)}
+.mk .statebar button:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .frame{position:relative;overflow:hidden; display:flex;flex-direction:column; min-height:852px;margin:0 0 36px; border:1px solid var(--line);border-radius:var(--r-card); background: radial-gradient(circle 460px at -6% 2.4%, var(--glow), rgba(39,100,37,0) 100%), radial-gradient(circle 460px at 82% 110%, var(--glow), rgba(39,100,37,0) 100%), var(--bg);}
+.mk .spec{margin:6px 0 0}
+.mk .spec__label{display:flex;align-items:center;gap:9px;margin:0 var(--pad) 9px; font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .spec__label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.mk .spec__note{margin:11px var(--pad) 0;font-size:11.5px;line-height:1.5;color:var(--dim)}
+.mk .spec__note b{color:var(--muted);font-weight:600}
+.mk .spec__note + .spec__note{margin-top:7px}
+.mk .btn{position:relative;display:flex;align-items:center;justify-content:center; width:100%;height:var(--h-act);flex:0 0 auto; border:0;border-radius:var(--r-pill);background:var(--surface); color:var(--text);font:inherit;font-size:17px;font-weight:500; letter-spacing:-.005em;cursor:pointer; transition:filter .18s var(--ease),transform .12s var(--ease);}
+.mk .btn:hover{filter:brightness(1.16)}
+.mk .btn:active{transform:translateY(1px)}
+.mk .btn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .btn__label{position:relative;z-index:1;display:inline-flex;align-items:center}
+.mk .btn__disc{position:absolute;left:9px;top:9px;width:46px;height:46px; display:flex;align-items:center;justify-content:center; border-radius:50%;background:var(--acid);color:var(--acid-ink);}
+.mk .btn__disc svg{width:19px;height:19px}
+.mk .btn--acid{color:var(--acid-ink)}
+.mk .btn__fill{position:absolute;inset:9px;border-radius:23px;background:var(--acid); transition:opacity .18s var(--ease);}
+.mk .btn__arrow{position:absolute;right:24px;top:50%;transform:translateY(-50%); z-index:1;display:flex;color:var(--acid-ink);}
+.mk .btn__arrow svg{width:17px;height:17px}
+.mk .btn[aria-disabled="true"]{pointer-events:none}
+.mk .btn[aria-busy="true"]{pointer-events:none}
+.mk .btn[aria-busy="true"] .btn__fill{opacity:.55}
+.mk .btn[aria-busy="true"] .btn__arrow{display:none}
+.mk .btn__label--busy{display:none}
+.mk .btn[aria-busy="true"] .btn__label--idle{display:none}
+.mk .btn[aria-busy="true"] .btn__label--busy{display:inline-flex}
+.mk .act{margin:14px var(--pad) 0}
+.mk .act--push{margin-top:auto}
+.mk .act + .act{margin-top:12px}
+.mk .act--foot{margin:16px var(--pad) 30px;text-align:center}
+.mk .tlink{position:relative; display:inline-block;border:0;background:none;padding:0; font:inherit;font-size:13.5px;font-weight:600;color:var(--acid); text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px; cursor:pointer;}
+.mk .tlink::after{content:"";position:absolute;inset:-13px -8px;border-radius:8px}
+.mk .tlink:hover{filter:brightness(1.12)}
+.mk .tlink:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:4px}
+.mk .prompt{margin:0 var(--pad) 30px;padding-top:22px; text-align:center;font-size:13.5px;line-height:1.5;color:var(--muted);}
+.mk .prompt .tlink{margin-left:5px}
+.mk .topbar{display:flex;align-items:center;gap:8px;margin:12px var(--pad) 0;min-height:38px}
+.mk .icon-btn{position:relative; display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease);}
+.mk .icon-btn::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mk .icon-btn:hover{background:#222833}
+.mk .icon-btn:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .icon-btn svg{width:18px;height:18px}
+.mk .title{margin:22px var(--pad) 0; font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1.04; text-transform:uppercase;}
+.mk .subtitle{margin:14px var(--pad) 0;max-width:334px; font-size:15px;font-weight:400;line-height:1.55;color:var(--muted);}
+.mk .subtitle b{color:var(--text);font-weight:600}
+.mk .note{display:flex;align-items:flex-start;gap:8px; margin:20px var(--pad) 0;padding:12px 14px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--section); font-size:12px;line-height:1.45;color:var(--muted);}
+.mk .note svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px;color:var(--dim)}
+.mk .note b{color:var(--text);font-weight:600}
+.mk .note--last{margin-bottom:30px}
+.mk .lockup{display:flex;align-items:center;justify-content:center;gap:8px}
+.mk .lockup__sh{width:25px;height:28px;flex:0 0 auto}
+.mk .lockup__word{width:110px;height:26px;flex:0 0 auto}
+.mk .tile{display:inline-flex;align-items:center;justify-content:center; width:52px;height:52px;border-radius:14px;flex:0 0 auto;}
+.mk .tile svg{width:25px;height:25px}
+.mk .tile--neutral{background:var(--neutral-wash);color:var(--text)}
+.mk .tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.mk .peaks{display:block;color:var(--acid);margin:0 auto}
+.mk .spin{width:17px;height:17px;margin-right:9px}
+.mk .splash{position:absolute;inset:0;overflow:hidden}
+.mk .splash__field{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.mk .splash__lock{position:absolute;left:0;right:0;top:38%;transform:translateY(-50%); display:flex;flex-direction:column;align-items:center;gap:22px;}
+.mk .splash__lock .lockup__sh{width:56px;height:62px}
+.mk .splash__lock .lockup__word{width:196px;height:46px}
+.mk .splash__load{position:absolute;left:var(--pad);right:var(--pad);top:64%;text-align:center}
+.mk .splash__cap{margin:16px 0 0;font-size:11px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--muted);}
+.mk .splash__foot{position:absolute;left:var(--pad);right:var(--pad);bottom:30px;margin:0; text-align:center;font-size:11.5px;line-height:1.5;color:var(--dim);}
+.mk .slow{position:absolute;left:var(--pad);right:var(--pad);bottom:26px; display:flex;align-items:flex-start;gap:11px; padding:12px 13px;border-radius:var(--r-panel); background:var(--neutral-wash);border:1px solid var(--line);}
+.mk .slow__icon{flex:0 0 auto;margin-top:1px;color:var(--text)}
+.mk .slow__icon svg{width:18px;height:18px}
+.mk .slow__txt{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.mk .slow__txt b{display:block;color:var(--text);font-size:13px;font-weight:600;margin-bottom:2px}
+.mk #splash[data-state="checking"] .slow{display:none}
+.mk #splash[data-state="slow"] .splash__foot{display:none}
+.mk .fail{display:flex;flex-direction:column;align-items:center;text-align:center; margin:auto var(--pad);padding:20px 0;}
+.mk .fail h2{margin:16px 0 0;font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.mk .fail p{margin:9px auto 0;max-width:33ch;font-size:13.5px;line-height:1.55;color:var(--muted)}
+.mk .fail p b{color:var(--text);font-weight:600}
+.mk .fail .note{margin-left:0;margin-right:0;width:100%;max-width:none; text-align:left;font-size:12px;line-height:1.45;}
+.mk .fail__ref{display:inline-flex;align-items:center;gap:7px;margin-top:16px; padding:8px 13px;border-radius:var(--r-pill);background:var(--sunken); font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted); font-variant-numeric:tabular-nums;}
+.mk .fail__lock{margin:38px 0 0;opacity:.62}
+.mk .fv{display:none;flex-direction:column;flex:1 1 auto}
+.mk #fail[data-state="offline"] .fv--offline,.mk #fail[data-state="server"]  .fv--server{display:flex}
+.mk .fork{margin:0 var(--pad)}
+.mk .fork--push{margin-top:auto}
+.mk .fork__item + .fork__item{margin-top:18px}
+.mk .fork__note{margin:9px 4px 0;text-align:center; font-size:12.5px;line-height:1.45;color:var(--muted);}
+.mk .gs-heading{margin:32px var(--pad) 0; text-align:center;font-size:24px;font-weight:700;letter-spacing:-.012em;line-height:1.2;}
+.mk .gs-sub{margin:14px var(--pad) 0; text-align:center;font-size:15px;font-weight:400;line-height:24px;color:var(--muted);}
+.mk .fork__lock{margin:auto 0 0}
+.mk .behind{display:flex;flex-direction:column;flex:1 1 auto; opacity:.9;pointer-events:none;}
+.mk .scrim{position:absolute;inset:0;z-index:2; display:flex;align-items:center;justify-content:center; background:var(--scrim); -webkit-backdrop-filter:blur(var(--scrim-blur));backdrop-filter:blur(var(--scrim-blur));}
+.mk .dlg{position:relative; width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max); margin:0 auto;padding:var(--dlg-pad); border-radius:var(--r-card);background:var(--surface); border:1px solid var(--line); box-shadow:0 24px 60px rgba(0,0,0,.55);}
+.mk .dlg__close{position:absolute;top:12px;right:12px; display:inline-flex;align-items:center;justify-content:center; width:30px;height:30px;border-radius:50%; background:var(--sunken);border:1px solid var(--line-soft);color:var(--muted); cursor:pointer;transition:color .18s var(--ease),background .18s var(--ease);}
+.mk .dlg__close svg{width:15px;height:15px}
+.mk .dlg__close:hover{color:var(--text);background:#1A1F27}
+.mk .dlg__close:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .dlg__title{margin:14px 0 0;padding-right:26px; font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.2;}
+.mk .dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .dlg__body b{color:var(--text);font-weight:600}
+.mk .dlg .tile{width:44px;height:44px;border-radius:var(--r-panel)}
+.mk .dlg .tile svg{width:22px;height:22px}
+.mk .dlg .act{display:flex;gap:10px;margin:18px 0 0}
+.mk .dlg .btn{position:relative;flex:1 1 0;min-width:0;width:auto;height:46px; display:inline-flex;align-items:center;justify-content:center;gap:8px; padding:0 14px;border:0;border-radius:var(--r-pill); font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em; white-space:nowrap;cursor:pointer; transition:background .18s var(--ease),opacity .18s var(--ease);}
+.mk .dlg .btn--acid{background:var(--acid);color:var(--acid-ink)}
+.mk .dlg .btn--acid:hover{background:#A8EC33;filter:none}
+.mk .dlg .btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .dlg .btn--ghost:hover{background:#181D25;filter:none}
+.mk .livetag{display:inline-flex;align-items:center;gap:7px;flex:0 1 auto; height:25px;padding:0 11px;border-radius:var(--r-pill); background:var(--neutral-wash);border:1px solid var(--line); font-size:10px;font-weight:700;letter-spacing:.1em; text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.mk .livetag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.mk .livetag--float{position:absolute;top:14px;left:var(--pad);z-index:3}
+.mk .bens{list-style:none;margin:20px var(--pad) 0;padding:0}
+.mk .bens li{display:flex;gap:10px;align-items:flex-start; padding:10px 0;border-top:1px solid var(--line-soft); font-size:13.5px;line-height:1.4;}
+.mk .bens li:first-child{border-top:0}
+.mk .tick{width:18px;height:18px;flex:0 0 auto;margin-top:2px;border-radius:50%; background:var(--acid-wash);color:var(--acid); display:flex;align-items:center;justify-content:center;}
+.mk .tick svg{width:11px;height:11px}
+.mk .bens .is-off{color:var(--muted)}
+.mk .bens .is-off .tick{background:transparent;color:var(--dim);box-shadow:inset 0 0 0 1px var(--line)}
+.mk .pv{display:none;flex-direction:column;flex:1 1 auto}
+.mk #prime[data-state="priming"]  .pv--priming,.mk #prime[data-state="declined"] .pv--declined{display:flex}
+.mk .oswrap{margin:0 var(--pad);padding:26px 14px; border:1px solid var(--line);border-radius:var(--r-card);background:var(--section); display:flex;justify-content:center;}
+.mk .osalert{width:270px;max-width:100%; border-radius:14px;overflow:hidden; background:#E9E9E9;color:#0B0B0B; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif; text-align:center; box-shadow:0 18px 44px rgba(0,0,0,.55);}
+.mk .osalert__body{padding:19px 16px 15px}
+.mk .osalert__title{margin:0;font-size:17px;font-weight:600;line-height:1.29;letter-spacing:-.01em}
+.mk .osalert__msg{margin:4px 0 0;font-size:13px;font-weight:400;line-height:1.31;color:#151515}
+.mk .osalert__acts{display:flex;border-top:1px solid rgba(0,0,0,.22)}
+.mk .osalert__btn{flex:1 1 0;height:44px;border:0;background:none; font:inherit;font-size:17px;color:#3A3A3C;cursor:default;}
+.mk .osalert__btn + .osalert__btn{border-left:1px solid rgba(0,0,0,.22);font-weight:600;color:#0B0B0B}
+.mk .oscap{margin:12px var(--pad) 0;padding:11px 13px; border:1px solid var(--red-line);border-radius:var(--r-panel);background:var(--red-wash); display:flex;align-items:flex-start;gap:9px; font-size:12px;line-height:1.45;color:var(--muted);}
+.mk .oscap svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px;color:var(--red)}
+.mk .oscap b{color:var(--text);font-weight:600}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important;animation:none!important}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Splash &amp; entry</h1>
+    <p class="dek">The five frames that run in front of the log-in screens: the splash a member sees on
+cold launch, what they see when that launch fails, the choice between logging in and signing up,
+what pressing <b>Sign Up</b> actually does in the shipped app today, and the screen that asks for
+notification permission before iOS does.</p>
+    <div class="meta">
+      <span><b>Component</b> launch</span>
+      <span><b>Figma</b> Part in Figma</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> iOS 375×812</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Screens · 5</p>
+    <ul>
+      <li><a class="side__item" href="#scr-1">Splash<span class="side__tag">01</span></a></li>
+      <li><a class="side__item" href="#scr-2">Cold-start failure<span class="side__tag">02</span></a></li>
+      <li><a class="side__item" href="#scr-3">Entry fork<span class="side__tag">03</span></a></li>
+      <li><a class="side__item" href="#scr-4">Sign-up leaves the app · shipped today<span class="side__tag">04</span></a></li>
+      <li><a class="side__item" href="#scr-5">Notification priming<span class="side__tag">05</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><span class="side__item" aria-current="page">Splash &amp; entry<span class="side__tag side__tag--new">This page</span></span></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><a class="side__item" href="foundations-review.html">Foundations<span class="side__tag">Sampled</span></a></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">The first four seconds of the app</a></li>
+    <li><a class="side__item" href="#anatomy">Every element, top to bottom</a></li>
+    <li><a class="side__item" href="#states">What varies</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="screens">
+      <p class="screens__lede">5 screens · each shown in its own frame, live and interactive.</p>
+      <div class="screens__grid">
+      <figure class="scr" id="scr-1">
+        <figcaption class="scr__cap"><span class="scr__n">01</span>Splash</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+    <div class="splash">
+
+      <!-- layer 2: the hero pattern's triangle field, scaled to the
+           whole frame. 2.4-3% white, exactly as in merits.html. -->
+      <svg class="splash__field" viewBox="0 0 393 852" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M-20 852 L96 596 L212 852 Z"  fill="#fff" opacity=".030"/>
+        <path d="M178 852 L300 560 L422 852 Z" fill="#fff" opacity=".024"/>
+        <path d="M232 0 L360 0 L232 214 Z"     fill="#fff" opacity=".026"/>
+        <path d="M0 0 L0 178 L84 0 Z"          fill="#fff" opacity=".022"/>
+      </svg>
+
+      <!-- layer 3: the shipped lockup, stacked. app_icon.svg in
+           --acid over app_name.svg in white — the same two vectors
+           auth.html uses horizontally on Get Started. Not type. -->
+      <div class="splash__lock lockup" role="img" aria-label="SportsHeist">
+        <svg class="lockup__sh" viewBox="0 0 81 90" fill="none" aria-hidden="true">
+          <path fill="#9BE222" fill-rule="evenodd" clip-rule="evenodd" d="M0 90H59.7728C71.4499 90 81 79.3816 81 66.4147V54.4183L56.4543 41.0228L33.2224 53.7034L54.8693 65.5188V84.4459L0 54.5088V90ZM47.7845 36.2966L24.5462 48.97L0.000460651 35.5741V23.5858C4.49425e-07 10.6189 9.55009 0 21.2268 0H81V35.4841L26.1376 5.54645V24.4812L47.7845 36.2966Z"/>
+        </svg>
+        <svg class="lockup__word" viewBox="0 0 215 51" fill="none" aria-hidden="true">
+          <path fill="#FFFFFF" d="M8.65236 50.0975C3.46618 50.0975 0.73291 47.3299 0.73291 42.0715V32.5234H7.46094V41.7256C7.46094 43.0402 7.88144 43.7321 8.65236 43.7321C9.56345 43.7321 9.98395 43.0402 9.98395 41.7256V35.9137C9.98395 27.5418 0.73291 26.2964 0.73291 15.5029V8.30719C0.73291 3.04882 3.53625 0.28125 8.86261 0.28125C14.3291 0.28125 17.0624 3.04882 16.8521 8.30719L16.2915 18.7548H9.56345L10.1241 8.65314C10.1942 7.33855 9.7737 6.64665 8.86261 6.64665C8.02161 6.64665 7.53102 7.33855 7.53102 8.65314V14.9494C7.53102 22.9753 16.8521 24.5667 16.8521 35.3602V42.0715C16.8521 47.3299 13.9787 50.0975 8.65236 50.0975ZM30.4385 0.973141C35.6948 0.973141 38.4981 3.74071 38.4981 8.86071V28.4412C38.4981 33.4921 35.6948 36.2596 30.4385 36.2596H29.177V49.4056H22.3789V0.973141H30.4385ZM31.7 28.0953V9.20665C31.7 7.96125 31.2795 7.33855 30.4385 7.33855H29.177V29.8942H30.4385C31.2795 29.8942 31.7 29.2023 31.7 28.0953ZM51.8743 50.0975C46.618 50.0975 43.8146 47.3299 43.8146 42.1407V8.30719C43.8146 3.04882 46.618 0.28125 51.8743 0.28125C57.1305 0.28125 59.9339 3.04882 59.9339 8.30719V42.1407C59.9339 47.3299 57.1305 50.0975 51.8743 50.0975ZM51.8743 43.7321C52.7153 43.7321 53.2059 43.0402 53.2059 41.7256V8.65314C53.2059 7.33855 52.7153 6.64665 51.8743 6.64665C51.0333 6.64665 50.5427 7.33855 50.5427 8.65314V41.7256C50.5427 43.0402 51.0333 43.7321 51.8743 43.7321ZM65.3873 49.4056V0.973141H73.4469C78.7031 0.973141 81.5065 3.74071 81.5065 8.86071V16.1256C81.5065 21.1764 79.4741 23.8748 75.6195 23.8748H75.1289V24.8434H79.5442L81.927 49.4056H75.199L73.4469 28.6488H72.2555V49.4056H65.3873ZM72.2555 22.8369H73.4469C74.2879 22.8369 74.7084 22.145 74.7084 20.8996V9.20665C74.7084 7.96125 74.2879 7.33855 73.4469 7.33855H72.2555V22.8369ZM100.348 0.973141V7.33855H96.6331V49.4056H89.835V7.33855H86.0504V0.973141H100.348ZM113.025 50.0975C107.839 50.0975 105.106 47.3299 105.106 42.0715V32.5234H111.834V41.7256C111.834 43.0402 112.254 43.7321 113.025 43.7321C113.936 43.7321 114.357 43.0402 114.357 41.7256V35.9137C114.357 27.5418 105.106 26.2964 105.106 15.5029V8.30719C105.106 3.04882 107.909 0.28125 113.235 0.28125C118.702 0.28125 121.435 3.04882 121.225 8.30719L120.664 18.7548H113.936L114.497 8.65314C114.567 7.33855 114.146 6.64665 113.235 6.64665C112.394 6.64665 111.904 7.33855 111.904 8.65314V14.9494C111.904 22.9753 121.225 24.5667 121.225 35.3602V42.0715C121.225 47.3299 118.351 50.0975 113.025 50.0975ZM136.423 0.973141H143.221V49.4056H136.423V26.9883H133.55V49.4056H126.752V0.973141H133.55V20.6229H136.423V0.973141ZM148.94 49.4056V0.973141H162.186V7.33855H155.738V21.6607H161.485V28.0261H155.738V43.0402H162.186V49.4056H148.94ZM167.159 49.4056V0.973141H173.957V49.4056H167.159ZM187.407 50.0975C182.221 50.0975 179.487 47.3299 179.487 42.0715V32.5234H186.215V41.7256C186.215 43.0402 186.636 43.7321 187.407 43.7321C188.318 43.7321 188.738 43.0402 188.738 41.7256V35.9137C188.738 27.5418 179.487 26.2964 179.487 15.5029V8.30719C179.487 3.04882 182.291 0.28125 187.617 0.28125C193.083 0.28125 195.817 3.04882 195.607 8.30719L195.046 18.7548H188.318L188.878 8.65314C188.949 7.33855 188.528 6.64665 187.617 6.64665C186.776 6.64665 186.285 7.33855 186.285 8.65314V14.9494C186.285 22.9753 195.607 24.5667 195.607 35.3602V42.0715C195.607 47.3299 192.733 50.0975 187.407 50.0975ZM214.589 0.973141V7.33855H210.875V49.4056H204.077V7.33855H200.292V0.973141H214.589Z"/>
+        </svg>
+      </div>
+
+      <!-- layer 4: the three-peak marker from states.html. The old
+           screen renders no loading indicator at all. -->
+      <div class="splash__load" role="status">
+        <svg class="peaks anim" viewBox="0 0 62 26" width="116" height="49" aria-hidden="true">
+          <path d="M2 24 L11 6 L20 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin="0s" repeatCount="indefinite"/>
+          </path>
+          <path d="M22 24 L31 3 L40 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".16s" repeatCount="indefinite"/>
+          </path>
+          <path d="M42 24 L51 8 L60 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".32s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+        <p class="splash__cap">Checking your session</p>
+      </div>
+
+      <!-- the commitment that makes the wait bearable. No progress
+           bar: we cannot honestly estimate a token round-trip, and a
+           fake bar stalled at 90% is worse than a mark that moves. -->
+      <p class="splash__foot">If this hasn&rsquo;t finished in 15 seconds we&rsquo;ll stop and tell you
+        what went wrong, rather than leaving you here.</p>
+
+      <!-- SLOW: shown from about 4 s. The wait is now long enough to
+           need naming, but the app has not failed, so this is a
+           condition and never red. -->
+      <div class="slow" role="status">
+        <span class="slow__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.4 2.2"/>
+          </svg>
+        </span>
+        <span class="slow__txt">
+          <b>Still checking your session</b>
+          Your connection looks slow. We&rsquo;ll stop after 15 seconds and tell you what happened.
+        </span>
+      </div>
+    </div>
+  </div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-2">
+        <figcaption class="scr__cap"><span class="scr__n">02</span>Cold-start failure</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+    <svg class="splash__field" viewBox="0 0 393 852" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M-20 852 L96 596 L212 852 Z"  fill="#fff" opacity=".030"/>
+      <path d="M178 852 L300 560 L422 852 Z" fill="#fff" opacity=".024"/>
+      <path d="M232 0 L360 0 L232 214 Z"     fill="#fff" opacity=".026"/>
+      <path d="M0 0 L0 178 L84 0 Z"          fill="#fff" opacity=".022"/>
+    </svg>
+
+    <!-- ---------- offline: the device has no connection ---------- -->
+    <div class="fv fv--offline">
+      <!-- the lockup stays, small and quiet, so the member can see
+           WHICH app has stopped. It is the only thing carried over
+           from the splash frame. -->
+      <div class="lockup fail__lock" role="img" aria-label="SportsHeist">
+        <svg class="lockup__sh" viewBox="0 0 81 90" fill="none" aria-hidden="true">
+          <path fill="#9BE222" fill-rule="evenodd" clip-rule="evenodd" d="M0 90H59.7728C71.4499 90 81 79.3816 81 66.4147V54.4183L56.4543 41.0228L33.2224 53.7034L54.8693 65.5188V84.4459L0 54.5088V90ZM47.7845 36.2966L24.5462 48.97L0.000460651 35.5741V23.5858C4.49425e-07 10.6189 9.55009 0 21.2268 0H81V35.4841L26.1376 5.54645V24.4812L47.7845 36.2966Z"/>
+        </svg>
+        <svg class="lockup__word" viewBox="0 0 215 51" fill="none" aria-hidden="true">
+          <path fill="#FFFFFF" d="M8.65236 50.0975C3.46618 50.0975 0.73291 47.3299 0.73291 42.0715V32.5234H7.46094V41.7256C7.46094 43.0402 7.88144 43.7321 8.65236 43.7321C9.56345 43.7321 9.98395 43.0402 9.98395 41.7256V35.9137C9.98395 27.5418 0.73291 26.2964 0.73291 15.5029V8.30719C0.73291 3.04882 3.53625 0.28125 8.86261 0.28125C14.3291 0.28125 17.0624 3.04882 16.8521 8.30719L16.2915 18.7548H9.56345L10.1241 8.65314C10.1942 7.33855 9.7737 6.64665 8.86261 6.64665C8.02161 6.64665 7.53102 7.33855 7.53102 8.65314V14.9494C7.53102 22.9753 16.8521 24.5667 16.8521 35.3602V42.0715C16.8521 47.3299 13.9787 50.0975 8.65236 50.0975ZM30.4385 0.973141C35.6948 0.973141 38.4981 3.74071 38.4981 8.86071V28.4412C38.4981 33.4921 35.6948 36.2596 30.4385 36.2596H29.177V49.4056H22.3789V0.973141H30.4385ZM31.7 28.0953V9.20665C31.7 7.96125 31.2795 7.33855 30.4385 7.33855H29.177V29.8942H30.4385C31.2795 29.8942 31.7 29.2023 31.7 28.0953ZM51.8743 50.0975C46.618 50.0975 43.8146 47.3299 43.8146 42.1407V8.30719C43.8146 3.04882 46.618 0.28125 51.8743 0.28125C57.1305 0.28125 59.9339 3.04882 59.9339 8.30719V42.1407C59.9339 47.3299 57.1305 50.0975 51.8743 50.0975ZM51.8743 43.7321C52.7153 43.7321 53.2059 43.0402 53.2059 41.7256V8.65314C53.2059 7.33855 52.7153 6.64665 51.8743 6.64665C51.0333 6.64665 50.5427 7.33855 50.5427 8.65314V41.7256C50.5427 43.0402 51.0333 43.7321 51.8743 43.7321ZM65.3873 49.4056V0.973141H73.4469C78.7031 0.973141 81.5065 3.74071 81.5065 8.86071V16.1256C81.5065 21.1764 79.4741 23.8748 75.6195 23.8748H75.1289V24.8434H79.5442L81.927 49.4056H75.199L73.4469 28.6488H72.2555V49.4056H65.3873ZM72.2555 22.8369H73.4469C74.2879 22.8369 74.7084 22.145 74.7084 20.8996V9.20665C74.7084 7.96125 74.2879 7.33855 73.4469 7.33855H72.2555V22.8369ZM100.348 0.973141V7.33855H96.6331V49.4056H89.835V7.33855H86.0504V0.973141H100.348ZM113.025 50.0975C107.839 50.0975 105.106 47.3299 105.106 42.0715V32.5234H111.834V41.7256C111.834 43.0402 112.254 43.7321 113.025 43.7321C113.936 43.7321 114.357 43.0402 114.357 41.7256V35.9137C114.357 27.5418 105.106 26.2964 105.106 15.5029V8.30719C105.106 3.04882 107.909 0.28125 113.235 0.28125C118.702 0.28125 121.435 3.04882 121.225 8.30719L120.664 18.7548H113.936L114.497 8.65314C114.567 7.33855 114.146 6.64665 113.235 6.64665C112.394 6.64665 111.904 7.33855 111.904 8.65314V14.9494C111.904 22.9753 121.225 24.5667 121.225 35.3602V42.0715C121.225 47.3299 118.351 50.0975 113.025 50.0975ZM136.423 0.973141H143.221V49.4056H136.423V26.9883H133.55V49.4056H126.752V0.973141H133.55V20.6229H136.423V0.973141ZM148.94 49.4056V0.973141H162.186V7.33855H155.738V21.6607H161.485V28.0261H155.738V43.0402H162.186V49.4056H148.94ZM167.159 49.4056V0.973141H173.957V49.4056H167.159ZM187.407 50.0975C182.221 50.0975 179.487 47.3299 179.487 42.0715V32.5234H186.215V41.7256C186.215 43.0402 186.636 43.7321 187.407 43.7321C188.318 43.7321 188.738 43.0402 188.738 41.7256V35.9137C188.738 27.5418 179.487 26.2964 179.487 15.5029V8.30719C179.487 3.04882 182.291 0.28125 187.617 0.28125C193.083 0.28125 195.817 3.04882 195.607 8.30719L195.046 18.7548H188.318L188.878 8.65314C188.949 7.33855 188.528 6.64665 187.617 6.64665C186.776 6.64665 186.285 7.33855 186.285 8.65314V14.9494C186.285 22.9753 195.607 24.5667 195.607 35.3602V42.0715C195.607 47.3299 192.733 50.0975 187.407 50.0975ZM214.589 0.973141V7.33855H210.875V49.4056H204.077V7.33855H200.292V0.973141H214.589Z"/>
+        </svg>
+      </div>
+
+      <div class="fail" role="alert">
+        <!-- neutral, not red: being offline is a condition, not a
+             fault, and nobody has done anything wrong. -->
+        <span class="tile tile--neutral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 8.5a13 13 0 0 1 6-3.1M20 8.5a13 13 0 0 0-3.4-2.3"/>
+            <path d="M7.2 12.4a8.6 8.6 0 0 1 3-1.7M16.8 12.4a8.6 8.6 0 0 0-2-1.4"/>
+            <path d="M10.2 16.1a4 4 0 0 1 3.6 0M12 19.6h.01"/>
+            <path d="M3.5 3.5 20.5 20.5"/>
+          </svg>
+        </span>
+        <h2>We can&rsquo;t reach the server</h2>
+        <p>SportsHeist couldn&rsquo;t check your session, so it doesn&rsquo;t know which club to open.
+          <b>You&rsquo;re still signed in</b> &mdash; nothing has been lost.</p>
+
+        <p class="note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+          </svg>
+          <span>Last synced <b>16:42 today</b>. Your saved War Room can still be read &mdash;
+            posting and voting need a connection.</span>
+        </p>
+      </div>
+
+      <div class="act">
+        <button class="btn btn--acid" type="button" data-retry>
+          <span class="btn__fill" aria-hidden="true"></span>
+          <span class="btn__label btn__label--idle">Try Again</span>
+          <span class="btn__label btn__label--busy">
+            <svg class="spin anim" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3.2" opacity=".3"/>
+              <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+              </path>
+            </svg>
+            Trying&hellip;
+          </span>
+          <span class="btn__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></svg>
+          </span>
+        </button>
+      </div>
+      <div class="act">
+        <button class="btn" type="button">
+          <span class="btn__label">Open What&rsquo;s Saved</span>
+        </button>
+      </div>
+
+      <p class="prompt">Not your account?<button class="tlink" type="button">Log in</button></p>
+    </div>
+
+    <!-- ---------- server: the device is online, we are not ---------- -->
+    <div class="fv fv--server">
+      <div class="lockup fail__lock" role="img" aria-label="SportsHeist">
+        <svg class="lockup__sh" viewBox="0 0 81 90" fill="none" aria-hidden="true">
+          <path fill="#9BE222" fill-rule="evenodd" clip-rule="evenodd" d="M0 90H59.7728C71.4499 90 81 79.3816 81 66.4147V54.4183L56.4543 41.0228L33.2224 53.7034L54.8693 65.5188V84.4459L0 54.5088V90ZM47.7845 36.2966L24.5462 48.97L0.000460651 35.5741V23.5858C4.49425e-07 10.6189 9.55009 0 21.2268 0H81V35.4841L26.1376 5.54645V24.4812L47.7845 36.2966Z"/>
+        </svg>
+        <svg class="lockup__word" viewBox="0 0 215 51" fill="none" aria-hidden="true">
+          <path fill="#FFFFFF" d="M8.65236 50.0975C3.46618 50.0975 0.73291 47.3299 0.73291 42.0715V32.5234H7.46094V41.7256C7.46094 43.0402 7.88144 43.7321 8.65236 43.7321C9.56345 43.7321 9.98395 43.0402 9.98395 41.7256V35.9137C9.98395 27.5418 0.73291 26.2964 0.73291 15.5029V8.30719C0.73291 3.04882 3.53625 0.28125 8.86261 0.28125C14.3291 0.28125 17.0624 3.04882 16.8521 8.30719L16.2915 18.7548H9.56345L10.1241 8.65314C10.1942 7.33855 9.7737 6.64665 8.86261 6.64665C8.02161 6.64665 7.53102 7.33855 7.53102 8.65314V14.9494C7.53102 22.9753 16.8521 24.5667 16.8521 35.3602V42.0715C16.8521 47.3299 13.9787 50.0975 8.65236 50.0975ZM30.4385 0.973141C35.6948 0.973141 38.4981 3.74071 38.4981 8.86071V28.4412C38.4981 33.4921 35.6948 36.2596 30.4385 36.2596H29.177V49.4056H22.3789V0.973141H30.4385ZM31.7 28.0953V9.20665C31.7 7.96125 31.2795 7.33855 30.4385 7.33855H29.177V29.8942H30.4385C31.2795 29.8942 31.7 29.2023 31.7 28.0953ZM51.8743 50.0975C46.618 50.0975 43.8146 47.3299 43.8146 42.1407V8.30719C43.8146 3.04882 46.618 0.28125 51.8743 0.28125C57.1305 0.28125 59.9339 3.04882 59.9339 8.30719V42.1407C59.9339 47.3299 57.1305 50.0975 51.8743 50.0975ZM51.8743 43.7321C52.7153 43.7321 53.2059 43.0402 53.2059 41.7256V8.65314C53.2059 7.33855 52.7153 6.64665 51.8743 6.64665C51.0333 6.64665 50.5427 7.33855 50.5427 8.65314V41.7256C50.5427 43.0402 51.0333 43.7321 51.8743 43.7321ZM65.3873 49.4056V0.973141H73.4469C78.7031 0.973141 81.5065 3.74071 81.5065 8.86071V16.1256C81.5065 21.1764 79.4741 23.8748 75.6195 23.8748H75.1289V24.8434H79.5442L81.927 49.4056H75.199L73.4469 28.6488H72.2555V49.4056H65.3873ZM72.2555 22.8369H73.4469C74.2879 22.8369 74.7084 22.145 74.7084 20.8996V9.20665C74.7084 7.96125 74.2879 7.33855 73.4469 7.33855H72.2555V22.8369ZM100.348 0.973141V7.33855H96.6331V49.4056H89.835V7.33855H86.0504V0.973141H100.348ZM113.025 50.0975C107.839 50.0975 105.106 47.3299 105.106 42.0715V32.5234H111.834V41.7256C111.834 43.0402 112.254 43.7321 113.025 43.7321C113.936 43.7321 114.357 43.0402 114.357 41.7256V35.9137C114.357 27.5418 105.106 26.2964 105.106 15.5029V8.30719C105.106 3.04882 107.909 0.28125 113.235 0.28125C118.702 0.28125 121.435 3.04882 121.225 8.30719L120.664 18.7548H113.936L114.497 8.65314C114.567 7.33855 114.146 6.64665 113.235 6.64665C112.394 6.64665 111.904 7.33855 111.904 8.65314V14.9494C111.904 22.9753 121.225 24.5667 121.225 35.3602V42.0715C121.225 47.3299 118.351 50.0975 113.025 50.0975ZM136.423 0.973141H143.221V49.4056H136.423V26.9883H133.55V49.4056H126.752V0.973141H133.55V20.6229H136.423V0.973141ZM148.94 49.4056V0.973141H162.186V7.33855H155.738V21.6607H161.485V28.0261H155.738V43.0402H162.186V49.4056H148.94ZM167.159 49.4056V0.973141H173.957V49.4056H167.159ZM187.407 50.0975C182.221 50.0975 179.487 47.3299 179.487 42.0715V32.5234H186.215V41.7256C186.215 43.0402 186.636 43.7321 187.407 43.7321C188.318 43.7321 188.738 43.0402 188.738 41.7256V35.9137C188.738 27.5418 179.487 26.2964 179.487 15.5029V8.30719C179.487 3.04882 182.291 0.28125 187.617 0.28125C193.083 0.28125 195.817 3.04882 195.607 8.30719L195.046 18.7548H188.318L188.878 8.65314C188.949 7.33855 188.528 6.64665 187.617 6.64665C186.776 6.64665 186.285 7.33855 186.285 8.65314V14.9494C186.285 22.9753 195.607 24.5667 195.607 35.3602V42.0715C195.607 47.3299 192.733 50.0975 187.407 50.0975ZM214.589 0.973141V7.33855H210.875V49.4056H204.077V7.33855H200.292V0.973141H214.589Z"/>
+        </svg>
+      </div>
+
+      <div class="fail" role="alert">
+        <!-- red, with an icon and a reference: this one IS a fault,
+             and it is ours. Red never carries the meaning alone. -->
+        <span class="tile tile--red" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/>
+          </svg>
+        </span>
+        <h2>SportsHeist didn&rsquo;t start</h2>
+        <p>Something failed on our side before we got as far as your club. Your device is online,
+          so this isn&rsquo;t your connection.</p>
+        <span class="fail__ref">Logged as 8F2-4471</span>
+
+        <p class="note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+          </svg>
+          <span>Quote that reference if you get in touch. <b>You&rsquo;re still signed in</b> &mdash;
+            you won&rsquo;t have to log in again once this clears.</span>
+        </p>
+      </div>
+
+      <div class="act">
+        <button class="btn btn--acid" type="button" data-retry>
+          <span class="btn__fill" aria-hidden="true"></span>
+          <span class="btn__label btn__label--idle">Try Again</span>
+          <span class="btn__label btn__label--busy">
+            <svg class="spin anim" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3.2" opacity=".3"/>
+              <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+              </path>
+            </svg>
+            Trying&hellip;
+          </span>
+          <span class="btn__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></svg>
+          </span>
+        </button>
+      </div>
+      <div class="act">
+        <button class="btn" type="button">
+          <span class="btn__label">Contact Us</span>
+        </button>
+      </div>
+
+      <p class="prompt">Not your account?<button class="tlink" type="button">Log in</button></p>
+    </div>
+  </div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-3">
+        <figcaption class="scr__cap"><span class="scr__n">03</span>Entry fork</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+    <div class="topbar">
+      <button class="icon-btn" type="button" aria-label="Back to Get Started">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+    </div>
+
+    <div class="lockup fork__lock" role="img" aria-label="SportsHeist">
+      <svg class="lockup__sh" viewBox="0 0 81 90" fill="none" aria-hidden="true">
+        <path fill="#9BE222" fill-rule="evenodd" clip-rule="evenodd" d="M0 90H59.7728C71.4499 90 81 79.3816 81 66.4147V54.4183L56.4543 41.0228L33.2224 53.7034L54.8693 65.5188V84.4459L0 54.5088V90ZM47.7845 36.2966L24.5462 48.97L0.000460651 35.5741V23.5858C4.49425e-07 10.6189 9.55009 0 21.2268 0H81V35.4841L26.1376 5.54645V24.4812L47.7845 36.2966Z"/>
+      </svg>
+      <svg class="lockup__word" viewBox="0 0 215 51" fill="none" aria-hidden="true">
+        <path fill="#FFFFFF" d="M8.65236 50.0975C3.46618 50.0975 0.73291 47.3299 0.73291 42.0715V32.5234H7.46094V41.7256C7.46094 43.0402 7.88144 43.7321 8.65236 43.7321C9.56345 43.7321 9.98395 43.0402 9.98395 41.7256V35.9137C9.98395 27.5418 0.73291 26.2964 0.73291 15.5029V8.30719C0.73291 3.04882 3.53625 0.28125 8.86261 0.28125C14.3291 0.28125 17.0624 3.04882 16.8521 8.30719L16.2915 18.7548H9.56345L10.1241 8.65314C10.1942 7.33855 9.7737 6.64665 8.86261 6.64665C8.02161 6.64665 7.53102 7.33855 7.53102 8.65314V14.9494C7.53102 22.9753 16.8521 24.5667 16.8521 35.3602V42.0715C16.8521 47.3299 13.9787 50.0975 8.65236 50.0975ZM30.4385 0.973141C35.6948 0.973141 38.4981 3.74071 38.4981 8.86071V28.4412C38.4981 33.4921 35.6948 36.2596 30.4385 36.2596H29.177V49.4056H22.3789V0.973141H30.4385ZM31.7 28.0953V9.20665C31.7 7.96125 31.2795 7.33855 30.4385 7.33855H29.177V29.8942H30.4385C31.2795 29.8942 31.7 29.2023 31.7 28.0953ZM51.8743 50.0975C46.618 50.0975 43.8146 47.3299 43.8146 42.1407V8.30719C43.8146 3.04882 46.618 0.28125 51.8743 0.28125C57.1305 0.28125 59.9339 3.04882 59.9339 8.30719V42.1407C59.9339 47.3299 57.1305 50.0975 51.8743 50.0975ZM51.8743 43.7321C52.7153 43.7321 53.2059 43.0402 53.2059 41.7256V8.65314C53.2059 7.33855 52.7153 6.64665 51.8743 6.64665C51.0333 6.64665 50.5427 7.33855 50.5427 8.65314V41.7256C50.5427 43.0402 51.0333 43.7321 51.8743 43.7321ZM65.3873 49.4056V0.973141H73.4469C78.7031 0.973141 81.5065 3.74071 81.5065 8.86071V16.1256C81.5065 21.1764 79.4741 23.8748 75.6195 23.8748H75.1289V24.8434H79.5442L81.927 49.4056H75.199L73.4469 28.6488H72.2555V49.4056H65.3873ZM72.2555 22.8369H73.4469C74.2879 22.8369 74.7084 22.145 74.7084 20.8996V9.20665C74.7084 7.96125 74.2879 7.33855 73.4469 7.33855H72.2555V22.8369ZM100.348 0.973141V7.33855H96.6331V49.4056H89.835V7.33855H86.0504V0.973141H100.348ZM113.025 50.0975C107.839 50.0975 105.106 47.3299 105.106 42.0715V32.5234H111.834V41.7256C111.834 43.0402 112.254 43.7321 113.025 43.7321C113.936 43.7321 114.357 43.0402 114.357 41.7256V35.9137C114.357 27.5418 105.106 26.2964 105.106 15.5029V8.30719C105.106 3.04882 107.909 0.28125 113.235 0.28125C118.702 0.28125 121.435 3.04882 121.225 8.30719L120.664 18.7548H113.936L114.497 8.65314C114.567 7.33855 114.146 6.64665 113.235 6.64665C112.394 6.64665 111.904 7.33855 111.904 8.65314V14.9494C111.904 22.9753 121.225 24.5667 121.225 35.3602V42.0715C121.225 47.3299 118.351 50.0975 113.025 50.0975ZM136.423 0.973141H143.221V49.4056H136.423V26.9883H133.55V49.4056H126.752V0.973141H133.55V20.6229H136.423V0.973141ZM148.94 49.4056V0.973141H162.186V7.33855H155.738V21.6607H161.485V28.0261H155.738V43.0402H162.186V49.4056H148.94ZM167.159 49.4056V0.973141H173.957V49.4056H167.159ZM187.407 50.0975C182.221 50.0975 179.487 47.3299 179.487 42.0715V32.5234H186.215V41.7256C186.215 43.0402 186.636 43.7321 187.407 43.7321C188.318 43.7321 188.738 43.0402 188.738 41.7256V35.9137C188.738 27.5418 179.487 26.2964 179.487 15.5029V8.30719C179.487 3.04882 182.291 0.28125 187.617 0.28125C193.083 0.28125 195.817 3.04882 195.607 8.30719L195.046 18.7548H188.318L188.878 8.65314C188.949 7.33855 188.528 6.64665 187.617 6.64665C186.776 6.64665 186.285 7.33855 186.285 8.65314V14.9494C186.285 22.9753 195.607 24.5667 195.607 35.3602V42.0715C195.607 47.3299 192.733 50.0975 187.407 50.0975ZM214.589 0.973141V7.33855H210.875V49.4056H204.077V7.33855H200.292V0.973141H214.589Z"/>
+      </svg>
+    </div>
+
+    <!-- ONE STATEMENT. Not a question, and nothing about club
+         membership — that is decided on the next screen. -->
+    <h1 class="gs-heading">Everything runs off one account</h1>
+    <p class="gs-sub">Log in if you&rsquo;ve used SportsHeist before.<br>If you&rsquo;re new, sign up
+      &mdash; it takes about two minutes.</p>
+
+    <!-- TWO DESTINATIONS, each labelled with where it goes. The old
+         screen's YES, CONTINUE / SIGN UP answered neither half of
+         the question it posed. -->
+    <div class="fork fork--push">
+      <div class="fork__item">
+        <button class="btn btn--acid" type="button">
+          <span class="btn__fill" aria-hidden="true"></span>
+          <span class="btn__label">Log In</span>
+          <span class="btn__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></svg>
+          </span>
+        </button>
+        <p class="fork__note">You already have a SportsHeist account.</p>
+      </div>
+
+      <div class="fork__item">
+        <button class="btn" type="button">
+          <span class="btn__disc" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15.4 20v-1.6a3.6 3.6 0 0 0-3.6-3.6H7a3.6 3.6 0 0 0-3.6 3.6V20"/>
+              <circle cx="9.4" cy="7.6" r="3.6"/><path d="M18.6 8.4v5.2M16 11h5.2"/>
+            </svg>
+          </span>
+          <span class="btn__label">Sign Up</span>
+        </button>
+        <p class="fork__note">New here. You&rsquo;ll choose member or guest next.</p>
+      </div>
+    </div>
+
+    <!-- the contradiction, fixed. AU-03's body copy reads "you must
+         be a registered member"; AU-04 then offers a guest path. -->
+    <p class="note note--last">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+      </svg>
+      <span><b>You don&rsquo;t have to be a club member.</b> Signing up lets you look around as a
+        guest, and you can register with a club whenever you&rsquo;re ready.</span>
+    </p>
+  </div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-4">
+        <figcaption class="scr__cap"><span class="scr__n">04</span>Sign-up leaves the app · shipped today</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+    <p class="livetag livetag--float">Shipped today</p>
+
+    <div class="behind" aria-hidden="true">
+      <div class="topbar">
+        <span class="icon-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        </span>
+      </div>
+
+      <div class="lockup fork__lock">
+        <svg class="lockup__sh" viewBox="0 0 81 90" fill="none">
+          <path fill="#9BE222" fill-rule="evenodd" clip-rule="evenodd" d="M0 90H59.7728C71.4499 90 81 79.3816 81 66.4147V54.4183L56.4543 41.0228L33.2224 53.7034L54.8693 65.5188V84.4459L0 54.5088V90ZM47.7845 36.2966L24.5462 48.97L0.000460651 35.5741V23.5858C4.49425e-07 10.6189 9.55009 0 21.2268 0H81V35.4841L26.1376 5.54645V24.4812L47.7845 36.2966Z"/>
+        </svg>
+        <svg class="lockup__word" viewBox="0 0 215 51" fill="none">
+          <path fill="#FFFFFF" d="M8.65236 50.0975C3.46618 50.0975 0.73291 47.3299 0.73291 42.0715V32.5234H7.46094V41.7256C7.46094 43.0402 7.88144 43.7321 8.65236 43.7321C9.56345 43.7321 9.98395 43.0402 9.98395 41.7256V35.9137C9.98395 27.5418 0.73291 26.2964 0.73291 15.5029V8.30719C0.73291 3.04882 3.53625 0.28125 8.86261 0.28125C14.3291 0.28125 17.0624 3.04882 16.8521 8.30719L16.2915 18.7548H9.56345L10.1241 8.65314C10.1942 7.33855 9.7737 6.64665 8.86261 6.64665C8.02161 6.64665 7.53102 7.33855 7.53102 8.65314V14.9494C7.53102 22.9753 16.8521 24.5667 16.8521 35.3602V42.0715C16.8521 47.3299 13.9787 50.0975 8.65236 50.0975ZM30.4385 0.973141C35.6948 0.973141 38.4981 3.74071 38.4981 8.86071V28.4412C38.4981 33.4921 35.6948 36.2596 30.4385 36.2596H29.177V49.4056H22.3789V0.973141H30.4385ZM31.7 28.0953V9.20665C31.7 7.96125 31.2795 7.33855 30.4385 7.33855H29.177V29.8942H30.4385C31.2795 29.8942 31.7 29.2023 31.7 28.0953ZM51.8743 50.0975C46.618 50.0975 43.8146 47.3299 43.8146 42.1407V8.30719C43.8146 3.04882 46.618 0.28125 51.8743 0.28125C57.1305 0.28125 59.9339 3.04882 59.9339 8.30719V42.1407C59.9339 47.3299 57.1305 50.0975 51.8743 50.0975ZM51.8743 43.7321C52.7153 43.7321 53.2059 43.0402 53.2059 41.7256V8.65314C53.2059 7.33855 52.7153 6.64665 51.8743 6.64665C51.0333 6.64665 50.5427 7.33855 50.5427 8.65314V41.7256C50.5427 43.0402 51.0333 43.7321 51.8743 43.7321ZM65.3873 49.4056V0.973141H73.4469C78.7031 0.973141 81.5065 3.74071 81.5065 8.86071V16.1256C81.5065 21.1764 79.4741 23.8748 75.6195 23.8748H75.1289V24.8434H79.5442L81.927 49.4056H75.199L73.4469 28.6488H72.2555V49.4056H65.3873ZM72.2555 22.8369H73.4469C74.2879 22.8369 74.7084 22.145 74.7084 20.8996V9.20665C74.7084 7.96125 74.2879 7.33855 73.4469 7.33855H72.2555V22.8369ZM100.348 0.973141V7.33855H96.6331V49.4056H89.835V7.33855H86.0504V0.973141H100.348ZM113.025 50.0975C107.839 50.0975 105.106 47.3299 105.106 42.0715V32.5234H111.834V41.7256C111.834 43.0402 112.254 43.7321 113.025 43.7321C113.936 43.7321 114.357 43.0402 114.357 41.7256V35.9137C114.357 27.5418 105.106 26.2964 105.106 15.5029V8.30719C105.106 3.04882 107.909 0.28125 113.235 0.28125C118.702 0.28125 121.435 3.04882 121.225 8.30719L120.664 18.7548H113.936L114.497 8.65314C114.567 7.33855 114.146 6.64665 113.235 6.64665C112.394 6.64665 111.904 7.33855 111.904 8.65314V14.9494C111.904 22.9753 121.225 24.5667 121.225 35.3602V42.0715C121.225 47.3299 118.351 50.0975 113.025 50.0975ZM136.423 0.973141H143.221V49.4056H136.423V26.9883H133.55V49.4056H126.752V0.973141H133.55V20.6229H136.423V0.973141ZM148.94 49.4056V0.973141H162.186V7.33855H155.738V21.6607H161.485V28.0261H155.738V43.0402H162.186V49.4056H148.94ZM167.159 49.4056V0.973141H173.957V49.4056H167.159ZM187.407 50.0975C182.221 50.0975 179.487 47.3299 179.487 42.0715V32.5234H186.215V41.7256C186.215 43.0402 186.636 43.7321 187.407 43.7321C188.318 43.7321 188.738 43.0402 188.738 41.7256V35.9137C188.738 27.5418 179.487 26.2964 179.487 15.5029V8.30719C179.487 3.04882 182.291 0.28125 187.617 0.28125C193.083 0.28125 195.817 3.04882 195.607 8.30719L195.046 18.7548H188.318L188.878 8.65314C188.949 7.33855 188.528 6.64665 187.617 6.64665C186.776 6.64665 186.285 7.33855 186.285 8.65314V14.9494C186.285 22.9753 195.607 24.5667 195.607 35.3602V42.0715C195.607 47.3299 192.733 50.0975 187.407 50.0975ZM214.589 0.973141V7.33855H210.875V49.4056H204.077V7.33855H200.292V0.973141H214.589Z"/>
+        </svg>
+      </div>
+
+      <h1 class="gs-heading">Everything runs off one account</h1>
+      <p class="gs-sub">Log in if you&rsquo;ve used SportsHeist before.<br>If you&rsquo;re new, sign up
+        &mdash; it takes about two minutes.</p>
+
+      <div class="fork fork--push">
+        <div class="fork__item">
+          <span class="btn btn--acid">
+            <span class="btn__fill"></span>
+            <span class="btn__label">Log In</span>
+            <span class="btn__arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></svg>
+            </span>
+          </span>
+          <p class="fork__note">You already have a SportsHeist account.</p>
+        </div>
+
+        <!-- the control that raises the dialog -->
+        <div class="fork__item">
+          <span class="btn">
+            <span class="btn__disc">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15.4 20v-1.6a3.6 3.6 0 0 0-3.6-3.6H7a3.6 3.6 0 0 0-3.6 3.6V20"/>
+                <circle cx="9.4" cy="7.6" r="3.6"/><path d="M18.6 8.4v5.2M16 11h5.2"/>
+              </svg>
+            </span>
+            <span class="btn__label">Sign Up</span>
+          </span>
+          <p class="fork__note">New here. You&rsquo;ll choose member or guest next.</p>
+        </div>
+      </div>
+
+      <p class="note note--last">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+        </svg>
+        <span><b>You don&rsquo;t have to be a club member.</b> Signing up lets you look around as a
+          guest, and you can register with a club whenever you&rsquo;re ready.</span>
+      </p>
+    </div>
+
+    <!-- dialogs.html's shell, re-scoped but not redesigned. Both
+         strings below are verbatim from pre_login.dart:32 and :35 —
+         including "proeed", which is the spelling in the source. -->
+    <div class="scrim">
+      <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="pl-t" aria-describedby="pl-b">
+        <button class="dlg__close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+        <span class="tile tile--neutral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/>
+            <path d="M18 14.5v4a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6h4"/>
+          </svg>
+        </span>
+        <h3 class="dlg__title" id="pl-t">LEAVING THE APP</h3>
+        <p class="dlg__body" id="pl-b">To sign up, you will need to go to the club&rsquo;s website. Do
+          you want to proeed?</p>
+        <div class="act">
+          <button class="btn btn--ghost" type="button">NO</button>
+          <button class="btn btn--acid" type="button">YES</button>
+        </div>
+      </div>
+    </div>
+  </div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="scr" id="scr-5">
+        <figcaption class="scr__cap"><span class="scr__n">05</span>Notification priming</figcaption>
+        <div class="device device--multi">
+          <div class="device__island"></div>
+          <div class="device__screen">
+<div class="mk"><div class="mk__scroll">
+
+    <!-- ---------- priming: our screen, before the OS is asked ---------- -->
+    <div class="pv pv--priming">
+      <div class="topbar"></div>
+
+      <h1 class="title">Turn on<br>alerts</h1>
+      <p class="subtitle">Votes close on a deadline. Without alerts you&rsquo;d find out after your
+        club has already acted.</p>
+
+      <ul class="bens">
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>A new idea opens for voting in your club</li>
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>24 hours before a vote you can still cast closes</li>
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>The result, and what the club does next</li>
+        <li><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg></span>Replies to an idea you posted</li>
+        <li class="is-off"><span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 12h10"/></svg></span>No marketing, no match scores, nothing else</li>
+      </ul>
+
+      <!-- the whole reason this screen exists: iOS grants one prompt
+           per install, so the member has to understand the question
+           BEFORE the system asks it. -->
+      <p class="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+        </svg>
+        <span>The next tap opens <b>iOS&rsquo;s own permission alert</b>. iOS only allows one, so if
+          you decline there we can&rsquo;t ask again &mdash; you&rsquo;d have to turn alerts on in
+          Settings. Every alert above can be switched off individually later.</span>
+      </p>
+
+      <div class="act act--push">
+        <button class="btn btn--acid" type="button">
+          <span class="btn__fill" aria-hidden="true"></span>
+          <span class="btn__label">Turn On Alerts</span>
+          <span class="btn__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></svg>
+          </span>
+        </button>
+      </div>
+
+      <div class="act--foot">
+        <button class="tlink" type="button">Not now</button>
+      </div>
+    </div>
+
+    <!-- ---------- declined: the state the live build has no
+         follow-up for at all ---------- -->
+    <div class="pv pv--declined">
+      <div class="topbar"></div>
+
+      <div class="fail" role="status">
+        <span class="tile tile--neutral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 6.4a4.6 4.6 0 0 1 7.6 3.4v3.4l1.6 3H8.4"/>
+            <path d="M6.9 9.4v.4l-1.5 3.4"/><path d="M10.2 19.6a2 2 0 0 0 3.6 0"/>
+            <path d="M3.5 3.5 20.5 20.5"/>
+          </svg>
+        </span>
+        <h2>Alerts are off</h2>
+        <p>Nothing is broken &mdash; you just won&rsquo;t hear about votes until you open the app.
+          <b>iOS only lets us ask once</b>, so we can&rsquo;t show that prompt again.</p>
+
+        <p class="note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 11v5.4M12 7.9h.01"/>
+          </svg>
+          <span>Turn them on any time in <b>Settings &rsaquo; Notifications &rsaquo; SportsHeist</b>,
+            or from Alerts in your account settings.</span>
+        </p>
+      </div>
+
+      <div class="act">
+        <button class="btn btn--acid" type="button">
+          <span class="btn__fill" aria-hidden="true"></span>
+          <span class="btn__label">Open Settings</span>
+          <span class="btn__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M11 5h8v8"/></svg>
+          </span>
+        </button>
+      </div>
+
+      <div class="act--foot">
+        <button class="tlink" type="button">Continue without alerts</button>
+      </div>
+    </div>
+  </div></div>
+          </div>
+        </div>
+      </figure>
+      </div>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The first four seconds of the app</h2>
+
+  <p><b>Read frames 3 and 4 as a pair.</b> Frame 3 is our proposal: <b>Log In</b> or
+  <b>Sign Up</b>, both continuing inside the app. Frame 4 is <b>the current shipped behaviour</b>
+  &mdash; the confirmation the live build raises the moment that sign-up control is pressed, telling
+  you to go to the club's website, and then handing you to the phone's browser. There is no
+  registration screen in the shipped app at all: one exists in the code but the only link to it is
+  commented out. The Onboarding component's four-step sign-up, and the <b>Sign Up</b> button on
+  frame 3, are proposals for a journey that today ends in a browser. Frame 4 is in the library so
+  that cannot be misread.</p>
+
+  <p>Everything here happens before anyone has typed anything. The splash holds the screen while
+  the stored sign-in token is checked; the entry fork sends a member to log in or a newcomer to
+  sign up; the priming screen explains notifications before the phone's own permission alert
+  appears. These frames hand straight over to the <b>Log in</b> component, so they take its
+  geometry unchanged &mdash; the same <code>20px</code> gutter, the same <code>64px</code> button,
+  the same <b>Log in / Sign up</b> wording.</p>
+
+  <p>In the current app three of these four screens either don't exist or don't work. The splash
+  is the most brand-heavy screen in the product &mdash; a full-bleed violet-to-gold gradient with
+  the logo centred &mdash; but it renders <b>no loading indicator at all</b>, so a slow sign-in
+  check is indistinguishable from a frozen app. There is <b>no failure screen</b>: if the check
+  fails the app silently drops the member into the signed-out flow, which looks exactly like being
+  logged out. And the notification request fires on the first screen inside the app, with no
+  explanation, at the same moment as a green success bar and an empty club page.</p>
+
+  <p>The rebuilt splash is made from this brand's own parts rather than a new picture: the
+  near-black canvas, the two soft green glows already measured on Get Started, the faint angular
+  triangles from the hero banners, the shipped logo, and the three acid peaks that the design
+  system already uses as its loading mark. The peaks are deliberately doing two jobs at once
+  &mdash; they are the brand shape <em>and</em> the thing that tells you the app is still working.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Frame 1 &middot; Splash</td><td>Canvas</td><td class="t-note">Full bleed <code>#030401</code> with two <code>#276425</code> glow discs at <code>16%</code>, top-left and bottom-right &mdash; the same two discs measured on the Get Started frame, so the splash and the screen it hands to sit on one ground.</td></tr>
+        <tr><td>Frame 1</td><td>Triangle field</td><td class="t-note">Four triangles at <code>2.2&ndash;3.0%</code> white, the hero-banner pattern scaled from a <code>343&times;132</code> banner to the whole <code>393&times;852</code> frame. Depth without a photograph.</td></tr>
+        <tr><td>Frame 1</td><td>Logo lockup</td><td class="t-note">The shipped <code>app_icon.svg</code> in <code>#9BE222</code> above <code>app_name.svg</code> in white, stacked, <code>56px</code> mark over a <code>196px</code> wordmark with a <code>22px</code> gap. Its optical centre sits at <code>38%</code> of frame height &mdash; the one measurement carried over from the old splash. Both are vectors, not type.</td></tr>
+        <tr><td>Frame 1</td><td>Loading mark</td><td class="t-note">Three acid peaks at <code>116&times;49</code>, each cycling <code>22% &rarr; 100%</code> opacity on a <code>160ms</code> stagger over <code>1.15s</code>. The design system's screen-level loading mark, replacing the Material blue <code>#2196F3</code> ring the app currently uses everywhere.</td></tr>
+        <tr><td>Frame 1</td><td>Status caption</td><td class="t-note"><code>Checking your session</code>, <code>11px/700</code> with <code>.14em</code> tracking, uppercase, in <code>#99A0AE</code>. It does not name the club &mdash; which club to open is exactly the thing not yet known.</td></tr>
+        <tr><td>Frame 1</td><td>Commitment line</td><td class="t-note"><code>11.5px</code> in <code>#5B606B</code> at the bottom: the app promises to stop after 15 seconds and say what went wrong. No progress bar &mdash; a sign-in round trip cannot be honestly estimated, and a fake bar stalled at 90% is worse than a mark that keeps moving.</td></tr>
+        <tr><td>Frame 2 &middot; Failure</td><td>Quiet lockup</td><td class="t-note">The horizontal lockup at <code>143.5px</code>, <code>62%</code> opacity, at the top &mdash; so the member can see <em>which</em> app has stopped. The only thing carried across from frame 1.</td></tr>
+        <tr><td>Frame 2</td><td>Icon tile</td><td class="t-note"><code>52px</code>, <code>R14</code>. Offline uses the neutral tile (white at <code>6%</code>): being offline is a condition, not a fault. A server failure uses the red tile, <code>#E2564A</code> on <code>rgba(226,86,74,.12)</code> with a <code>28%</code> inner ring &mdash; and always with an icon and words, never colour alone.</td></tr>
+        <tr><td>Frame 2</td><td>Headline &amp; body</td><td class="t-note"><code>22px/700</code> headline over <code>13.5px</code> body at a <code>33ch</code> measure. Three things, in order: what happened, why, and the one thing to do next. No apology, no error code in the body, no raw server text.</td></tr>
+        <tr><td>Frame 2</td><td>Reassurance panel</td><td class="t-note"><code>#080A0C</code> panel, <code>1px</code> hairline, <code>R12</code>. Carries the last-synced time and what still works offline. The sentence <b>&ldquo;You're still signed in&rdquo;</b> is the most important line on the frame.</td></tr>
+        <tr><td>Frame 2</td><td>Reference pill</td><td class="t-note">Server-failure state only: <code>Logged as 8F2-4471</code> on <code>#13171E</code>, tracked caps, tabular figures. It turns an unhelpful message into a support ticket.</td></tr>
+        <tr><td>Frame 2</td><td>Actions</td><td class="t-note"><code>Try Again</code> on the acid pill and one alternative below it, both <code>64px</code>. Try Again swaps its label for the accent ring in place, so the second attempt is visible without the screen redrawing and the button cannot be pressed twice.</td></tr>
+        <tr><td>Frame 3 &middot; Entry fork</td><td>Statement</td><td class="t-note"><code>Everything runs off one account</code>, <code>24px/700</code> centred, over two lines of <code>15px</code> support copy. A statement, not a question &mdash; see Decisions.</td></tr>
+        <tr><td>Frame 3</td><td>Two destinations</td><td class="t-note"><code>Log In</code> on the acid pill with a trailing arrow; <code>Sign Up</code> on the <code>#1C2129</code> pill with the <code>46px</code> acid disc inset <code>9px</code>. Both <code>64px</code>, both Title Case. Each carries a <code>12.5px</code> line naming where it goes.</td></tr>
+        <tr><td>Frame 3</td><td>Guest note</td><td class="t-note">The panel that fixes the contradiction: <b>you don't have to be a club member</b>. Member-versus-guest is chosen on the next screen, in Onboarding, not here.</td></tr>
+        <tr><td>Frame 4 &middot; Leave-app confirm</td><td>What this frame is</td><td class="t-note"><b>The current shipped behaviour, rebranded &mdash; not a proposal.</b> Pressing the sign-up control on the entry fork raises this confirmation in the live app today. The screen behind it is frame 3 at <code>90%</code> under the Dialogs kit's <code>rgba(3,4,1,.72)</code> scrim and <code>10px</code> blur: it is context for where the dialog is raised from, not a second screen. A <code>Shipped today</code> pill sits top-left &mdash; review chrome, it would not ship.</td></tr>
+        <tr><td>Frame 4</td><td>Dialog shell</td><td class="t-note">The Dialogs kit's shell, unchanged: <code>R16</code> <code>#1C2129</code> card, <code>340px</code> maximum width inside a <code>20px</code> inset, <code>20px</code> padding, a <code>30px</code> close disc, a <code>44px</code> neutral icon tile, title at <code>18/600</code>, body at <code>13/1.5</code>, and a <code>46px</code> action row split by a <code>10px</code> gap. Nothing about it was drawn for this frame.</td></tr>
+        <tr><td>Frame 4</td><td>Copy</td><td class="t-note">Verbatim from the source, including the misspelling: <code>LEAVING THE APP</code> and <code>To sign up, you will need to go to the club's website. Do you want to proeed?</code> The buttons are <code>NO</code> and <code>YES</code>, which are the dialog presenter's own defaults rather than anything chosen for this screen &mdash; see Decisions.</td></tr>
+        <tr><td>Frame 4</td><td>Icon</td><td class="t-note">The neutral tile, not the red one. Leaving the app for a website is a condition, not a fault, and the same rule the failure frame follows applies here.</td></tr>
+        <tr><td>Frame 5 &middot; Priming</td><td>Title &amp; reason</td><td class="t-note"><code>TURN ON ALERTS</code> at <code>34px/800</code>, <code>-.025em</code>, uppercase &mdash; caps live only on this one display size, never on a button. Underneath, the reason in one sentence: votes close on a deadline.</td></tr>
+        <tr><td>Frame 5</td><td>What we'd send</td><td class="t-note">Four rows with acid ticks and a fifth with a dash: <em>no marketing, no match scores, nothing else</em>. Rows are <code>13.5px</code> with a <code>rgba(255,255,255,.045)</code> hairline between them.</td></tr>
+        <tr><td>Frame 5</td><td>Hand-off warning</td><td class="t-note">The reason this screen exists: iOS allows exactly one permission alert per install, so declining is permanent until the member goes to Settings. Said plainly, before the question is asked.</td></tr>
+        <tr><td>Frame 5</td><td>Actions</td><td class="t-note"><code>Turn On Alerts</code> at <code>64px</code> on the accent &mdash; the tap that opens the system alert &mdash; with <code>Not now</code> as the underlined accent text link beneath it. One height, one casing, one link style.</td></tr>
+        <tr><td>Beneath frame 5</td><td>The iOS alert</td><td class="t-note">Not a component of ours. Drawn at Apple's real geometry &mdash; <code>270pt</code> wide, <code>R14</code>, title <code>17/600</code>, message <code>13/400</code>, <code>44pt</code> buttons split by hairlines &mdash; and rendered greyscale on purpose. iOS paints the two labels in system blue <code>#007AFF</code>, which we cannot change and which exists nowhere else in this brand.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Splash &middot; checking</td><td class="t-note">Default. Lockup, animating peaks, <code>Checking your session</code>, and the 15-second promise at the foot. Recorded as having no indicator at all in the current app.</td></tr>
+        <tr><td>Splash &middot; slow</td><td class="t-note">From about <code>4s</code>. The promise line is replaced by a panel naming the wait: <code>Still checking your session</code> / your connection looks slow. Neutral fill, never red, and <b>no button</b> &mdash; the app is still working, so asking the member to act would be a lie. Undocumented in the current app.</td></tr>
+        <tr><td>Splash &middot; timed out</td><td class="t-note">At <code>15s</code> the splash becomes frame 2. That is the whole point of the promise on frame 1.</td></tr>
+        <tr><td>Failure &middot; offline</td><td class="t-note">The device has no connection. Neutral tile, last-synced time, <code>Try Again</code> plus <code>Open What's Saved</code>. Nothing red and nothing that suggests the member has been signed out.</td></tr>
+        <tr><td>Failure &middot; server</td><td class="t-note">The device is online and we are not. Red tile, a reference number, <code>Try Again</code> plus <code>Contact Us</code>. The only state that admits we don't yet know the cause &mdash; it earns that by handing over a reference.</td></tr>
+        <tr><td>Failure &middot; retrying</td><td class="t-note">Press <code>Try Again</code>. The accent fill drops to <code>55%</code>, the label becomes <code>Trying&hellip;</code> with the accent ring, and the control stops accepting taps. The button keeps its exact width, so nothing on the frame moves.</td></tr>
+        <tr><td>Entry fork</td><td class="t-note">One state. There is nothing to load and nothing to validate on this screen.</td></tr>
+        <tr><td>Leave-app confirm &middot; shipped</td><td class="t-note">One state, and that is the finding. <code>NO</code> closes the dialog; <code>YES</code> opens the phone's browser at <code>&lt;URL&gt;/en/auth/signup</code> and then closes the dialog. There is no loading state, no failure state, and no return path &mdash; if the browser cannot be opened the failure is printed to the debug console and the dialog closes anyway, so the member sees a dismissed dialog and nothing else. Whether the person then completes registration on the website is invisible to the app.</td></tr>
+        <tr><td>Priming &middot; default</td><td class="t-note">Our screen, before the system alert. This is a screen the current app does not have.</td></tr>
+        <tr><td>Priming &middot; declined</td><td class="t-note">What a member sees after saying no to iOS &mdash; also missing from the current app, which records no follow-up either way. Neutral tile, <code>Alerts are off</code>, the honest explanation that we can't ask again, and a deep link to Settings. Not red, and not phrased as a mistake.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">With the phone's <em>Reduce Motion</em> setting on, the peaks and the retry ring stop dead rather than fading &mdash; the mark stays on screen at full contrast, it just doesn't move.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused, not redrawn</h3>
+      <ul>
+        <li><b>The logo</b> &mdash; the shipped <code>app_icon.svg</code> and <code>app_name.svg</code> vector artwork, the same paths the Log in component uses. No monogram was approximated and the wordmark is not set as type.</li>
+        <li><b>Button, gutter and wording</b> &mdash; <code>64px</code> track, <code>R32</code>, <code>46px</code> acid disc inset <code>9px</code>, <code>20px</code> gutter, <code>Log in / Sign up</code>. All measured off the Get Started Figma page by the Log in component; these frames simply obey it.</li>
+        <li><b>The glow discs</b> &mdash; <code>#276425</code> at <code>16%</code>, from the Get Started frame.</li>
+        <li><b>The triangle field</b> &mdash; the hero banner's <code>2.4&ndash;3%</code> white triangles, scaled up.</li>
+        <li><b>The three peaks</b> &mdash; the loading mark from the States kit, unchanged in geometry and timing.</li>
+        <li><b>Error panel and icon tile</b> &mdash; the States kit's <code>52px</code> tile, neutral and red variants, and its three-part copy structure.</li>
+        <li><b>Tick rows</b> &mdash; the benefit row from Onboarding's pathway screen.</li>
+        <li><b>The dialog shell</b> &mdash; the Dialogs kit's shell taken whole for frame 4: card, close disc, icon tile, title, body and the <code>46px</code> two-button action row, at its own values. It is only re-scoped in the stylesheet, because this file already uses <code>.btn</code> for the <code>64px</code> full-width action and the two definitions cannot both be global.</li>
+        <li><b>Frame 4's copy and behaviour</b> &mdash; both strings, both button labels and the destination are read straight off the running code. Nothing on that frame is a design decision except the palette and the shell it is poured into.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>A loading indicator on the splash at all.</b> The current screen has none, so a slow sign-in check shows a dead screen. This is the single most consequential change in the file.</li>
+        <li><b>A cold-start failure screen.</b> Undefined today &mdash; <code>splash.dart</code> routes to the introduction flow after a one-second delay on <em>both</em> a real failure and a genuine sign-out, so a dropped connection is presented as being logged out. Both new states insist the member is still signed in.</li>
+        <li><b>A 15-second commitment, and the slow-connection panel that precedes it.</b> A promise on screen that the wait will end in an answer.</li>
+        <li><b>The entry fork rewritten.</b> The question is gone; one statement and two labelled destinations replace <code>ARE YOU A MEMBER?</code> / <code>YES, CONTINUE</code> / <code>SIGN UP</code>.</li>
+        <li><b>The guest note.</b> The current copy says membership is required and the next screen offers a guest path. This says the true thing once, here.</li>
+        <li><b>The whole notification priming screen,</b> plus the declined follow-up. Today the system alert fires unannounced on the first screen inside the app, alongside a success bar and an empty club page &mdash; three overlays in one frame.</li>
+        <li><b>Nothing on frame 4.</b> It is the one frame in this file that proposes nothing &mdash; it records what ships. It is listed here only so it is clear it belongs in neither column: it is not reused from a Figma frame, and it is not something we are asking to build.</li>
+        <li><b>The greyscale iOS alert specimen,</b> so it is clear exactly how much of that moment we control: the app's display name and the moment it fires. Nothing else.</li>
+        <li><b>Status caption in <code>#99A0AE</code>, not <code>#5B606B</code>.</b> The States kit set the splash caption in the tertiary grey, which measures <code>2.56:1</code> and is reserved for decoration. The one line telling a member what the app is doing is not decoration, so it moves up to the <code>5:1</code> secondary grey.</li>
+        <li><b>Stacked lockup on the splash, horizontal everywhere else.</b> A vertical lockup for the one screen with no other content; the horizontal lockup on the three that have some.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li><h3>Is the entry fork a screen we still want?</h3>
+      <p>Get Started already has one button, and this screen exists only to ask which of two doors
+      to open. Get Started could carry <b>Sign Up</b> as its main button with <span class="flag">Already have an account? Log in</span>
+      underneath, and this screen would disappear &mdash; one less tap for every single person who
+      opens the app. We have built the fork because Get Started is reproduced from the Figma file
+      and we did not want to redraw it without asking, but <b>our recommendation is to delete this
+      screen</b> and fold it into Get Started.</p></li>
+
+    <li><h3>Does signing up happen inside the app, or on the club's website?</h3>
+      <p><b>Frame 4 is the current answer, and frame 3 is the one we are proposing.</b> The shipped
+      app opens an external web page for sign-up &mdash; the <code>LEAVING THE APP</code>
+      confirmation on frame 4, then the phone's browser at <code>/en/auth/signup</code>. The
+      Onboarding component, meanwhile, builds a four-step registration flow inside the app, and a
+      registration screen does exist in the code &mdash; but the only link to it is commented out,
+      so nothing can reach it. These cannot both be true. We have assumed
+      <span class="flag">sign-up is in-app</span>, because that is what Onboarding shows and because
+      handing a brand-new user to a browser is where most of them are lost. If it stays on the web,
+      frame 3's <code>Sign Up</code> button needs an outbound arrow, the copy needs to say where it
+      goes, and Onboarding's four frames come out of the library.</p></li>
+
+    <li><h3>Frame 4's copy has three faults. Do we fix them, or is the whole screen going?</h3>
+      <p>Reproduced exactly as it ships, so they are visible rather than described. The word
+      <code>proeed</code> is misspelled in the source. The buttons say <code>NO</code> and
+      <code>YES</code> &mdash; answers to a question the dialog does not ask, and they come from the
+      dialog presenter's defaults rather than from this screen, so no one chose them. And the dialog
+      never names where <code>YES</code> goes. If sign-up moves in-app this screen disappears and
+      none of it matters; if it stays, the copy needs rewriting and the buttons need to say
+      <span class="flag">Cancel</span> and <span class="flag">Open the website</span>.</p></li>
+
+    <li><h3>Frame 4's dialog is English-only in every language. Intended?</h3>
+      <p>Both strings are hardcoded in the page's own source rather than looked up from the
+      translation file, so they will not translate. The matching translation keys
+      (<code>exit_title</code>, <code>exit_content</code>) exist and are correct &mdash; they are
+      simply never used. It is a small code fix, not a design change, but it is worth catching
+      before the app is offered in a second language.</p></li>
+
+    <li><h3>Is one clear statement the right replacement for the question?</h3>
+      <p><code>ARE YOU A MEMBER?</code> asks about <em>club</em> membership but decides something
+      else entirely &mdash; whether you already have a SportsHeist account &mdash; and its two
+      answers, <code>YES, CONTINUE</code> and <code>SIGN UP</code>, answer neither reading of it.
+      We replaced it with <span class="flag">Everything runs off one account</span> plus
+      <code>Log In</code> and <code>Sign Up</code>, each labelled with where it goes. Confirm the
+      wording; the structure &mdash; statement, two destinations, no question &mdash; we would
+      hold to regardless.</p></li>
+
+    <li><h3>How long before the splash gives up, and is 15 seconds right?</h3>
+      <p>The frames promise an answer within <span class="flag">15 seconds</span>, with the
+      slow-connection panel appearing at <span class="flag">4 seconds</span>. Both numbers are
+      ours, chosen to be long enough to survive a bad train tunnel and short enough that nobody
+      force-quits. They need to match whatever timeout the sign-in request actually uses, or the
+      promise on screen becomes a lie.</p></li>
+
+    <li><h3>Is there anything saved to open when we're offline?</h3>
+      <p>The offline failure screen offers <span class="flag">Open What's Saved</span> and quotes a
+      last-synced time, which assumes the app keeps a readable copy of the member's club. If it
+      doesn't, that button and the last-synced line both come off and the screen has only
+      <code>Try Again</code> &mdash; a materially worse experience, and a good argument for
+      building the cache.</p></li>
+
+    <li><h3>Are these the four notifications we actually send?</h3>
+      <p>The priming screen lists <span class="flag">a vote opening, 24 hours before it closes, the
+      result, and replies to your own idea</span>, and promises nothing else. That promise is only
+      worth making if it is true, so the list needs checking against what the server really sends
+      &mdash; and the &ldquo;nothing else&rdquo; line has to be honoured, not quietly broken by a
+      later marketing push.</p></li>
+
+    <li><h3>What is the product called?</h3>
+      <p>Four spellings are in the shipped app: <code>SPORTSHEIST</code> in the logo,
+      <code>Sports Heist</code> in body copy, and <code>Sports Heist(stg)</code> on the OS
+      notification alert &mdash; a staging build suffix, with no space, shown to real users. We
+      have used <span class="flag">SportsHeist</span> as one word throughout. The alert name comes
+      from <code>CFBundleDisplayName</code> in the iOS build settings and the Android manifest
+      label; it is a build fix rather than a design change, but it must be made before release.</p></li>
+
+    <li><h3>Two library-wide questions these frames inherit rather than settle</h3>
+      <p>Button height is <span class="flag">64px</span> here, matching the Log in screens and the
+      Figma button component. Several other kits standardised on <code>52px</code>. And the verb
+      pair is <span class="flag">Log in / Sign up</span>, where an earlier screen used
+      <em>Sign in / Sign up</em> &mdash; two near-identical words on the same screen. Both need
+      settling once, for the whole library; whatever is chosen, these frames and the Log in frames
+      have to agree.</p></li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  /* prefers-reduced-motion: the CSS block kills transitions; SMIL has
+     to be stopped on the document timeline. states.html's handling. */
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce){
+    Array.prototype.forEach.call(document.querySelectorAll('svg.anim'), function(s){
+      if (s.pauseAnimations) s.pauseAnimations();
+    });
+  }
+
+  /* one state bar per frame */
+  Array.prototype.forEach.call(document.querySelectorAll('.statebar'), function(bar){
+    bar.addEventListener('click', function(e){
+      var b = e.target.closest('[data-go]');
+      if (!b) return;
+      var frame = document.getElementById(b.getAttribute('data-frame'));
+      if (!frame) return;
+      frame.setAttribute('data-state', b.getAttribute('data-go'));
+      Array.prototype.forEach.call(bar.querySelectorAll('[data-go]'), function(x){
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+    });
+  });
+
+  /* Try Again — the in-button ring, so a second attempt is visible
+     without the frame redrawing, and the control cannot be pressed
+     twice. Returns to idle because we have nothing to route to here. */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-retry]'), function(b){
+    b.addEventListener('click', function(){
+      if (b.getAttribute('aria-busy') === 'true') return;
+      b.setAttribute('aria-busy','true');
+      setTimeout(function(){ b.removeAttribute('aria-busy'); }, 1700);
+    });
+  });
+})();
+</script>

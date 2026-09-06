@@ -1,0 +1,300 @@
+<p class="dek">Every input control in the dark rebrand, each in its five states, on one phone-width sheet. This is
+the kit the sign-in, onboarding, club-selection, create-idea and account screens are all built from,
+so a decision made here propagates everywhere.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Ten controls, five states, one set of rules</h2>
+  <p>
+    A form kit is not a screen — nobody ever sees this page. It exists so that the twenty screens that
+    <em>do</em> contain a field all contain the same field, and so that the four inconsistencies the
+    current app carries into every form are fixed once rather than twenty times.
+  </p>
+  <p>
+    Because it is a kit and not a flow, it stays on <b>one</b> device. Everything here is a specimen of a
+    control — including the compound phone field, which appears five times because it has five states, not
+    because there are five screens. A member never navigates between any two things on this page.
+  </p>
+  <p>
+    Two of those fixes were choices rather than corrections, and they are the substance of this page.
+    The app ships <b>four different field-label conventions</b> across eight screens; one had to win.
+    It also renders the primary button at <b>six different heights</b>, from 62 to 96&nbsp;pt; one number
+    had to win there too. The reasoning for both is set out in the decisions below, because they are the
+    kind of choice that is cheap now and expensive after twenty screens are built on it.
+  </p>
+  <p>
+    Ten controls are shown — text, password, textarea, select, date, phone, search, toggle, checkbox,
+    radio — each in default, focus, filled, error and disabled. Then the grouped radio list, the two-up
+    field row, the three validation rows and the form footer. The focus specimens are static so the whole
+    sheet reads without a live caret, but they render exactly what <code>:focus-within</code> produces;
+    the password toggles, the textarea counter and the search clear are all live.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Field</td><td>Label</td>
+          <td class="t-note">Outside the box, above the control, 12.5/600 in <b>white</b>, line-height
+            <code>1.44</code> for an 18&nbsp;px single-line box. Required fields take an accent
+            asterisk. White rather than a muted grey because at 12.5&nbsp;px the label is the control's
+            accessible name and should not sit at the screen's lowest emphasis — size separates it from
+            the 16&nbsp;px value, not colour.</td>
+        </tr>
+        <tr>
+          <td>Field</td><td>Help text</td>
+          <td class="t-note">12/400 in <code>#99A0AE</code>, line-height <code>1.35</code>,
+            <code>8&nbsp;px</code> below the control. Drops to <code>#5B606B</code> along with the label
+            when the field is disabled.</td>
+        </tr>
+        <tr>
+          <td>Control</td><td>Shell</td>
+          <td class="t-note"><code>52&nbsp;px</code> tall, <code>R12</code>, fill
+            <code>#1C2129</code>, 1&nbsp;px <code>rgba(255,255,255,.075)</code> border,
+            <code>14&nbsp;px</code> side padding, <code>10&nbsp;px</code> internal gap. Text, password,
+            select, date, phone and search all share it, so a whole form sits on one baseline
+            grid.</td>
+        </tr>
+        <tr>
+          <td>Control</td><td>Value</td>
+          <td class="t-note"><code>16&nbsp;px</code> — below that iOS zooms the page on focus.
+            Placeholder in <code>#5B606B</code> at full opacity. Password drops to
+            <code>15&nbsp;px</code> with <code>.16em</code> letter-spacing so the dots read as
+            dots.</td>
+        </tr>
+        <tr>
+          <td>Control</td><td>Glyphs</td>
+          <td class="t-note">Leading icon <code>19&nbsp;px</code> in <code>#99A0AE</code>, going white
+            on focus and red in error. Trailing button is a <code>32&nbsp;px</code> transparent circle
+            with a <code>−6&nbsp;px</code> right margin so it optically aligns with the padding, turning
+            accent when pressed.</td>
+        </tr>
+        <tr>
+          <td>Textarea</td><td>The exception</td>
+          <td class="t-note">The only control that is not <code>52&nbsp;px</code>: it stacks, with
+            <code>12/14/10&nbsp;px</code> padding and a <code>72&nbsp;px</code> minimum — three
+            16/1.5 line boxes — resizable vertically. A live counter sits bottom-right at 11.5 in
+            <code>#5B606B</code> with <code>tabular-nums</code>, reading <code>0/250</code>, and turns
+            red in the error state.</td>
+        </tr>
+        <tr>
+          <td>Select</td><td>Native, restyled</td>
+          <td class="t-note"><code>appearance:none</code> with a 19&nbsp;px chevron that is
+            <code>pointer-events:none</code>. This is half of the two-up fix: a native select otherwise
+            sizes itself from its own line box and lands about <code>6&nbsp;px</code> off the field
+            beside it. Options are repainted to the surface fill; an unchosen select shows its
+            placeholder in <code>#5B606B</code>.</td>
+        </tr>
+        <tr>
+          <td>Date</td><td>Format hint</td>
+          <td class="t-note">Placeholder is the literal <code>DD/MM/YYYY</code> with a
+            <code>numeric</code> input mode and a calendar button. The screen it replaces shows
+            <code>02/06/2001</code> with no hint, which is readable as either 2 June or 6
+            February.</td>
+        </tr>
+        <tr>
+          <td>Phone</td><td>Compound field</td>
+          <td class="t-note">One shell, two zones. The country zone carries a
+            <code>23&nbsp;×&nbsp;16&nbsp;px</code> monochrome ISO tile at <code>R4</code> on white 10%
+            with a hairline inset, the dial code at 16/500 <code>tabular-nums</code>, and a
+            16&nbsp;px chevron. A 1&nbsp;px <code>rgba(255,255,255,.075)</code> divider inset
+            <code>9&nbsp;px</code> top and bottom separates it from the number — the same hairline the
+            row pattern already uses, so no new device is introduced. The field it replaces has no
+            divider at all, so nothing tells a member where the tappable zone ends.</td>
+        </tr>
+        <tr>
+          <td>Toggle</td><td>Track carries the state</td>
+          <td class="t-note"><code>46&nbsp;×&nbsp;28&nbsp;px</code> pill, <code>22&nbsp;px</code> knob
+            inset <code>3&nbsp;px</code>, travelling <code>18&nbsp;px</code>. Off: <code>#13171E</code>
+            track with a hairline. On: accent track. The knob stays <b>white in both states</b>. The
+            current app puts the accent on the knob over a pale track, which inverts the platform
+            convention and renders off <em>lighter</em> than on; here off is the darkest thing in the
+            row and on is the brightest.</td>
+        </tr>
+        <tr>
+          <td>Toggle</td><td>Row</td>
+          <td class="t-note"><code>52&nbsp;px</code> minimum, name at 14.5/600, sub-line at 12/400
+            muted, <code>12&nbsp;px</code> gap — the established row pattern.</td>
+        </tr>
+        <tr>
+          <td>Checkbox</td><td>Construction</td>
+          <td class="t-note"><code>20&nbsp;px</code> at <code>R6</code>, surface fill with a hairline
+            inset. Checked: accent fill, hairline removed, tick drawn in <code>#0B0E06</code> —
+            <code>12.31:1</code>, the only ink permitted on an accent fill. Row is
+            <code>44&nbsp;px</code> minimum with a <code>12&nbsp;px</code> gap; the real input is
+            visually hidden rather than replaced, so keyboard and assistive behaviour is native.</td>
+        </tr>
+        <tr>
+          <td>Radio</td><td>Construction</td>
+          <td class="t-note">Same <code>20&nbsp;px</code> box, fully round. Selected takes a
+            <code>1.7&nbsp;px</code> accent ring with an accent dot rather than a filled disc, so a
+            checkbox and a radio never look like the same control. Grouped sets sit in an
+            <code>R12</code> <code>#1C2129</code> panel with <code>50&nbsp;px</code> hairline-divided
+            rows.</td>
+        </tr>
+        <tr>
+          <td>Two-up row</td><td>Alignment</td>
+          <td class="t-note">A three-row grid — label, control, message — with each child spanning all
+            three via <code>grid-template-rows:subgrid</code>, so both labels occupy <em>one</em> grid
+            row and both controls occupy <em>one</em> grid row. A label that wraps grows that row for
+            both columns. Columns are <code>minmax(0,1fr)</code>, not <code>1fr</code>, because a native
+            select reports its widest option as min-content and would otherwise blow the track past the
+            gutter. Where subgrid is unsupported, a <code>36&nbsp;px</code> minimum label box holds the
+            same alignment.</td>
+        </tr>
+        <tr>
+          <td>Validation</td><td>Message row</td>
+          <td class="t-note">Icon plus message at 12.5/400, <code>7&nbsp;px</code> gap,
+            <code>8&nbsp;px</code> below the control. Three distinct 15&nbsp;px silhouettes so the state
+            survives without colour: ring-and-tick for success in accent, triangle for error in
+            <code>#E2564A</code>, clock for pending in <code>#99A0AE</code>. Every error field also
+            carries <code>aria-invalid</code> and an <code>aria-describedby</code> pointing at its
+            message.</td>
+        </tr>
+        <tr>
+          <td>Footer</td><td>Actions</td>
+          <td class="t-note">Bordered <code>#080A0C</code> container at <code>R16</code> with
+            <code>16&nbsp;px</code> padding, stacked full-width buttons at <code>52&nbsp;px</code> with
+            a <code>10&nbsp;px</code> gap — accent primary with <code>#0B0E06</code> ink, then
+            <code>#1C2129</code> secondary. Disabled drops to <code>#13171E</code> with
+            <code>#5B606B</code> ink. Legal line beneath at 11.5 in <code>#5B606B</code>, centred.</td>
+        </tr>
+        <tr>
+          <td>Everywhere</td><td>Radius rule</td>
+          <td class="t-note">Inputs take <code>12&nbsp;px</code>, actions take the pill. No third value,
+            so a control's shape says whether it holds a value or performs an action.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Default</td><td class="t-note">Surface fill, hairline border, muted placeholder and glyph.</td></tr>
+        <tr><td>Hover</td><td class="t-note">Border lifts to <code>rgba(255,255,255,.14)</code>. Nothing else moves.</td></tr>
+        <tr><td>Focus</td><td class="t-note">Accent border plus a <code>3&nbsp;px</code> <code>rgba(155,226,34,.12)</code> ring; leading glyph goes white; a <code>1.5&nbsp;px</code> accent caret is drawn on the static specimens. Toggles, checkboxes and radios take the same ring so focus looks identical on every control.</td></tr>
+        <tr><td>Filled</td><td class="t-note">Value in white at 16&nbsp;px. Search gains a clear button; password gains a revealed variant with a struck-through eye.</td></tr>
+        <tr><td>Error</td><td class="t-note">Red border plus a <code>3&nbsp;px</code> <code>rgba(226,86,74,.12)</code> ring, leading glyph red — <b>always</b> with a triangle glyph and a written message below. Never colour alone. <code>#E2564A</code> on <code>#1C2129</code> is <code>4.36:1</code>, AA large only, which is why the message carries its own icon.</td></tr>
+        <tr><td>Disabled</td><td class="t-note">Fill drops to <code>#13171E</code>, border to <code>rgba(255,255,255,.045)</code>, label, value, help and glyphs all to <code>#5B606B</code>, trailing buttons inert. The disabled toggle's knob greys too, so it cannot be mistaken for an active off.</td></tr>
+        <tr><td>Toggle off / on</td><td class="t-note">Dark track with hairline, versus accent track. Knob white in both.</td></tr>
+        <tr><td>Checked / selected</td><td class="t-note">Checkbox fills accent with a near-black tick; radio takes an accent ring and dot.</td></tr>
+        <tr><td>Wrapping label in a two-up</td><td class="t-note">The shared label row grows for both columns, so the two control tops stay level. Shown as its own specimen.</td></tr>
+        <tr><td>Mixed states in a two-up</td><td class="t-note">Error left with its message, disabled right. The error message occupies the shared third row without shifting the other column's control.</td></tr>
+        <tr><td>Pending validation</td><td class="t-note">Clock glyph and a muted line, for checks that require a round trip.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions suppressed; every state is still legible from fill, border, ring, glyph and text.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <p>
+    This is a system kit and it is <b>almost entirely proposed</b>. No form control is designed in the
+    new brand. What comes from the existing product is the <em>inventory</em> — which controls exist,
+    what they are labelled, what they validate, which screens pair which fields — taken from the
+    sign-in, recovery, profile, create-idea and club-selection screens. The appearance of every one of
+    them is new, and in five places the existing behaviour is deliberately overruled.
+  </p>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Control inventory</b> — text, password, textarea, select, date, compound phone, search, toggle, checkbox and radio, and the label wording on each</li>
+        <li><b>The 52&nbsp;px action</b> — lifted from the <code>Like</code> pill already shipping on the idea card, which is where the one height comes from</li>
+        <li><b>Surfaces, radii and hairlines</b> — <code>#1C2129</code>, <code>R12</code>, <code>R&nbsp;pill</code> and the two line values, all sampled</li>
+        <li><b>Section container</b> — the bordered <code>#080A0C</code> wrapper, reused for the form footer</li>
+        <li><b>Row pattern</b> — the hairline-divided row, reused for switch rows and grouped radios</li>
+        <li><b>Badge tile</b> — the monochrome code chip from the Merits club chip, reused as the ISO country tile</li>
+        <li><b>Accent-wash ring</b> — the same translucent accent already used for active rows, reused as the focus ring</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>One label convention</b> — outside, above, 12.5/600 white, replacing the four the app ships: inside the box above the value, absent entirely, outside in muted lilac, and outside in semibold white</li>
+        <li><b>One control height</b> — <code>52&nbsp;px</code> for every single-line control and every button, replacing six primary-button heights between 62 and 96&nbsp;pt</li>
+        <li><b>One focus treatment</b> — accent border and wash ring, on every control type including the toggle and the checkbox</li>
+        <li><b>One error treatment</b> — red border, red ring, red glyph and a written message, on every control</li>
+        <li><b>Toggle inversion fixed</b> — accent moved from the knob to the track</li>
+        <li><b>Phone divider</b> — the missing boundary between the dial-code zone and the number</li>
+        <li><b>ISO tile instead of emoji flags</b> — the current field renders country flags from the platform emoji font: full colour, different on every OS version, meaningless to a screen reader, and the only thing on the screen outside the palette</li>
+        <li><b>Two-up alignment</b> — subgrid plus a fixed control box, against a pairing that currently drifts about 3&nbsp;pt at the label and 6&nbsp;px in height</li>
+        <li><b>Date format hint</b> — <code>DD/MM/YYYY</code> as the placeholder</li>
+        <li><b>Textarea counter</b> — live, at <code>250</code> characters</li>
+        <li><b>Search clear affordance</b></li>
+        <li><b>Required marker</b> — an accent asterisk; nothing currently marks required fields</li>
+        <li><b>Accessibility wiring</b> — <code>aria-invalid</code>, <code>aria-describedby</code>, <code>aria-pressed</code>, <code>aria-checked</code> and real hidden inputs throughout</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Is outside-above the right label convention?</h3>
+      <p>The app ships four conventions across eight screens, so this kit had to pick one, and it picked
+      <span class="flag">outside the box, above the control, 12.5/600 white</span>. It is the only one of
+      the four that works for <em>every</em> control here: a switch row, a checkbox row and a compound
+      phone field have nowhere to put an inside label, and an absent label leaves a placeholder doing a
+      label's job — which disappears the moment someone types. It also keeps the box a single-purpose
+      value container, which is what lets every control hold one fixed height. Confirm it, because
+      changing it later means touching every form in the product.</p>
+    </li>
+    <li>
+      <h3>Is 52 px the right control height?</h3>
+      <p>Six heights currently ship for the same primary button, from 62 to 96&nbsp;pt.
+      <span class="flag">52&nbsp;px</span> is the one already in use on the idea card's action, it clears
+      the 44&nbsp;px tap minimum comfortably, and eight fields plus a footer still fit an 812&nbsp;pt
+      screen at that size — which the 96&nbsp;pt version does not. The trade is that the primary action
+      is now no taller than the fields above it, so emphasis comes from the accent fill rather than from
+      size.</p>
+    </li>
+    <li>
+      <h3>Which fields are actually required?</h3>
+      <p>Four fields carry the accent asterisk here, on our reading of what registration needs.
+      Nothing in the current app marks required fields at all, so the list is
+      <span class="flag">assumed</span> — and the answer determines when the footer's primary can enable,
+      which is the difference between a form that guides and a form that rejects.</p>
+    </li>
+    <li>
+      <h3>Date order, and whose locale?</h3>
+      <p>The placeholder commits to <span class="flag">DD/MM/YYYY</span>. The value in the export,
+      <code>02/06/2001</code>, is ambiguous, and the app is being built for clubs in at least three
+      countries. Either the format follows the device locale — in which case the placeholder must too —
+      or it is fixed, in which case the hint stays and everyone reads the same thing.</p>
+    </li>
+    <li>
+      <h3>Are two-character country codes acceptable in place of flags?</h3>
+      <p>The ISO tile is deterministic, monochrome, screen-readable and free of raster assets, and it
+      keeps the phone field inside the palette. The cost is that <code>AU</code> is less instantly
+      recognisable than a flag to someone scanning a list of thirty countries. If flags are wanted, they
+      need to be a commissioned monochrome set, not the emoji font.</p>
+    </li>
+    <li>
+      <h3>Is 250 characters right for an idea?</h3>
+      <p>The textarea counter enforces <span class="flag">250</span>, which is about three lines of
+      argument. The comments composer proposes 600 for a reply. If those two numbers should relate to
+      each other — or if either is set by a database column — we would rather match the real limit than
+      pick a plausible one.</p>
+    </li>
+  </ol>
+</section>

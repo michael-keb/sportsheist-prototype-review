@@ -1,0 +1,343 @@
+<p class="dek">How an adult links an account for someone under 18: the list of linked members, the details
+form with its age gate, a consent step, and the hand-off to the third party that checks the identity
+document. Four frames, and the only place in the product where a member acts on a child's behalf.</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The flow that has to be right first time</h2>
+  <p>
+    Nobody under 18 can join SportsHeist on their own. An adult links the account, approves the
+    identity check, and stays responsible for it until the child turns 18. That makes this the highest
+    consequence flow in the product and the one with the least room for a guess: it collects a child's
+    date of birth, sends a photograph of their identity document and a picture of their face to a third
+    party, and asks a parent to consent to all of it.
+  </p>
+  <p>
+    Three things drive the design. First, a row has to be identifiable — the shipped list shows a name
+    and nothing else, so two children with the same surname are indistinguishable, and one of the four
+    rows here is deliberately a second <em>Thanh Nguyen</em> to prove the row now separates them. Second,
+    the date of birth is the field the whole account hangs off, so it is gated live: the form works out
+    the age as you type and says what kind of account that makes, rather than accepting anything and
+    failing later. Third, there is a consent step, because there isn't one today.
+  </p>
+  <p>
+    Everything else follows from those. One field anatomy, one control height —
+    <code>56&nbsp;px</code> — a step rail so a parent knows there are three stages and no more, and a
+    hand-off strip that names the third party, shows its host, and draws it with a dashed edge and no
+    fill so it visibly sits outside the app.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Shared</td><td>Screen head</td>
+          <td class="t-note">A <code>38&nbsp;px</code> circular back button on
+            <code>#1C2129</code> beside a 10.5/700/<code>.14em</code> uppercase context label in
+            <code>#5B606B</code>, then the title at 34/800, uppercase, tracking
+            <code>-.025em</code>, then a lede at 13&nbsp;px in <code>#99A0AE</code> with the
+            load-bearing phrases picked out in white.</td>
+        </tr>
+        <tr>
+          <td>Frames 2–4</td><td>Step rail</td>
+          <td class="t-note">Three equal segments. Each is a <code>4&nbsp;px</code> R-pill bar on
+            <code>#1C2129</code>, filling accent for both done and current, with a label beneath at
+            10.5/700/<code>.1em</code> uppercase — current in accent, done in
+            <code>#99A0AE</code>, upcoming in <code>#5B606B</code>. Details, Consent,
+            ID&nbsp;check.</td>
+        </tr>
+        <tr>
+          <td>Frame 1</td><td>Guardian notice</td>
+          <td class="t-note">The washed variant of the note panel:
+            <code>rgba(155,226,34,.12)</code> fill with a
+            <code>rgba(155,226,34,.22)</code> border, <code>R16</code>,
+            <code>14&nbsp;px</code> padding. A 19&nbsp;px accent shield glyph beside a 15/600
+            heading, then body at 13&nbsp;px/1.5 in <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Frame 1</td><td>Member row</td>
+          <td class="t-note">Top-aligned, padding <code>11/12&nbsp;px</code>, 1&nbsp;px
+            <code>rgba(255,255,255,.045)</code> top border, inside an <code>R12</code>
+            <code>#1C2129</code> list. Rows needing attention carry an
+            <code>inset 3px 0 0</code> edge — accent for outstanding, <code>#E2564A</code> for
+            failed.</td>
+        </tr>
+        <tr>
+          <td>Frame 1</td><td>Row portrait</td>
+          <td class="t-note"><code>46&nbsp;px</code> with a double ring —
+            <code>0 0 0 2px</code> in the list fill, then <code>0 0 0 3.5px</code> in a per-row
+            colour: <code>rgba(255,255,255,.14)</code> pending,
+            <code>rgba(226,86,74,.45)</code> failed, <code>rgba(155,226,34,.55)</code> verified. The
+            state is legible from the portrait before any text is read.</td>
+        </tr>
+        <tr>
+          <td>Frame 1</td><td>Row facts</td>
+          <td class="t-note">The four things the shipped row omits, on one line at 11.5&nbsp;px in
+            <code>#99A0AE</code>, tabular —
+            <code>15 years old · born 2 Sep 2010 · Son</code> — with a member reference right-aligned
+            at 10.5/600/<code>.06em</code> in <code>#5B606B</code>, e.g.
+            <code>SH·5120</code>.</td>
+        </tr>
+        <tr>
+          <td>Frame 1</td><td>State pill</td>
+          <td class="t-note"><code>26&nbsp;px</code>, R pill, 10.5/700/<code>.09em</code> uppercase
+            with a 12&nbsp;px glyph. Neutral is <code>rgba(255,255,255,.06)</code> with a
+            <code>#99A0AE</code> label; verified is the accent wash with an accent tick; failed is
+            <code>rgba(226,86,74,.12)</code> with a red cross.</td>
+        </tr>
+        <tr>
+          <td>Frame 1</td><td>Row notice</td>
+          <td class="t-note">An 11.5&nbsp;px line beneath the pills with a 13&nbsp;px glyph, in accent
+            for something the guardian must do or something upcoming, in <code>#E2564A</code> for a
+            failure. Says the consequence, not the status —
+            <em>can read Backchat but can't post or register with a club until the check is
+            done</em>.</td>
+        </tr>
+        <tr>
+          <td>Frame 1</td><td>List footer</td>
+          <td class="t-note">A final row at 11.5&nbsp;px in <code>#5B606B</code> stating the sort
+            (<em>anything needing you is listed first</em>) and the date the ages were computed
+            against.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Field</td>
+          <td class="t-note">One anatomy throughout. Label above the box at 12.5/500 in
+            <code>#99A0AE</code>; box at <code>56&nbsp;px</code> — the single
+            <code>--control</code> height used by every field, select and button in the file — padding
+            <code>0&nbsp;14&nbsp;px</code>, <code>R12</code>, fill <code>#13171E</code>, 1&nbsp;px
+            <code>rgba(255,255,255,.075)</code>. Input 15/500. Focus takes the border to
+            <code>rgba(155,226,34,.55)</code>; invalid to <code>rgba(226,86,74,.55)</code>. Hint
+            beneath at 11.5&nbsp;px.</td>
+        </tr>
+        <tr>
+          <td>Frame 2</td><td>Date of birth</td>
+          <td class="t-note">Three parts in one box —
+            <code>38&nbsp;px</code>&nbsp;/&nbsp;<code>38&nbsp;px</code>&nbsp;/&nbsp;<code>60&nbsp;px</code>
+            — centred at 17/600 tabular with <code>/</code> separators in
+            <code>#99A0AE</code> and a calendar glyph pushed to the trailing edge. Numeric input only;
+            focus advances on fill; day and month zero-pad on blur.</td>
+        </tr>
+        <tr>
+          <td>Frame 2</td><td>Derived-age gauge</td>
+          <td class="t-note">The centre of the frame. <code>R12</code> panel on
+            <code>#13171E</code>, padding <code>13&nbsp;px</code>, announced with
+            <code>aria-live="polite"</code>. A <code>74&nbsp;px</code> tile on
+            <code>rgba(255,255,255,.04)</code> holds the computed age at 26/800 tracking
+            <code>-.035em</code> tabular over a 9.5/700/<code>.12em</code> unit; beside it a verdict
+            at 13/600 with a 15&nbsp;px glyph and a 12&nbsp;px explanation. Pass turns the figure and
+            the verdict accent; fail turns them <code>#E2564A</code>; idle leaves them grey.</td>
+        </tr>
+        <tr>
+          <td>Frame 2</td><td>Bounds hint</td>
+          <td class="t-note">States the window in words a parent can check —
+            <code>between 31 July 2008 and 30 July 2021</code>, <em>that's ages 5 to 17 today</em> —
+            and warns that the date cannot be changed later without evidence, because it decides what
+            the account is allowed to do.</td>
+        </tr>
+        <tr>
+          <td>Frames 2–4</td><td>Note panel</td>
+          <td class="t-note"><code>R16</code>, <code>#080A0C</code> with a 1&nbsp;px hairline,
+            <code>14&nbsp;px</code> padding. Head is a 19&nbsp;px accent glyph plus a 15/600 heading.
+            Inside, list rows at <code>11&nbsp;px</code> vertical padding with
+            <code>28&nbsp;px</code> circular <code>#13171E</code> tiles carrying 15&nbsp;px accent
+            glyphs, a 13/600 title and a 12.5&nbsp;px/1.45 body in <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Frame 3</td><td>Legal links</td>
+          <td class="t-note">Three full-width rows at 13/600 with a secondary line at 11.5/400 in
+            <code>#5B606B</code> naming what is in each document, and a 15&nbsp;px external-link
+            arrow. Label and arrow both go accent on hover.</td>
+        </tr>
+        <tr>
+          <td>Frame 3</td><td>Consent control</td>
+          <td class="t-note"><code>R16</code> <code>#1C2129</code> card with a 1&nbsp;px hairline and
+            <code>14&nbsp;px</code> padding. The box is <code>22&nbsp;px</code> at
+            <code>R6</code> on <code>#13171E</code> with an inset <code>1.5&nbsp;px</code> edge at
+            white 28%, filling accent with an <code>#0B0E06</code> tick when checked; focus adds a
+            <code>3&nbsp;px</code> <code>rgba(155,226,34,.12)</code> halo. Checked, the card border
+            goes <code>rgba(155,226,34,.28)</code>. Wording is 13&nbsp;px/1.5 and names the child, the
+            relationship claim, and both parties to the check.</td>
+        </tr>
+        <tr>
+          <td>Frame 3</td><td>Consent record</td>
+          <td class="t-note">An 11.5&nbsp;px line beneath stating that the guardian's name, the date
+            and the wording itself are recorded against the account, and that consent can be withdrawn
+            from the member's row — which closes the account.</td>
+        </tr>
+        <tr>
+          <td>Frame 4</td><td>Hand-off strip</td>
+          <td class="t-note">Two cells with a <code>26&nbsp;px</code> accent arrow between them. Ours
+            is a filled <code>#13171E</code> panel at <code>R12</code>; the third party is
+            transparent with a <code>1.5&nbsp;px</code> dashed
+            <code>rgba(255,255,255,.16)</code> edge, so it reads as outside the app before the label is
+            read. Names at 13.5/800/<code>.02em</code> uppercase, hosts beneath at 10.5/500 in
+            <code>#5B606B</code>.</td>
+        </tr>
+        <tr>
+          <td>Frame 4</td><td>Numbered plan</td>
+          <td class="t-note">Three steps with <code>28&nbsp;px</code> counters — solid accent with
+            <code>#0B0E06</code> figures for the two steps that happen at the vendor, and an
+            <em>inverted</em> counter for the third (<code>#13171E</code> with an inset
+            <code>1.5&nbsp;px</code> accent ring and an accent figure) because that step is the return
+            to our app, not another thing to do.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Buttons</td>
+          <td class="t-note">One height — <code>56&nbsp;px</code> — full width inside the gutters, at
+            <code>R12</code> rather than a pill, 15/700. Primary is accent with
+            <code>#0B0E06</code> ink and drops to <code>#1C2129</code>/<code>#5B606B</code> when
+            disabled; secondary is transparent with an inset 1&nbsp;px hairline at weight 600. Beneath
+            them a status line at 11.5&nbsp;px in <code>#99A0AE</code>.</td>
+        </tr>
+        <tr>
+          <td>Behaviour</td><td>Carried values</td>
+          <td class="t-note">The first name, full name and computed age entered in frame&nbsp;2
+            propagate into frames&nbsp;3 and&nbsp;4 through <code>data-bind</code> hooks, so the
+            consent wording and the vendor steps name the actual child rather than a placeholder. The
+            reference date is pinned to <code>30 July 2026</code> so every derived age in the mock
+            stays stable, and the list footer states the same date.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Row — check due</td><td class="t-note">Neutral portrait ring, accent 3&nbsp;px edge, clock pill, and an accent notice saying what the account cannot yet do.</td></tr>
+        <tr><td>Row — check failed</td><td class="t-note">Red portrait ring, red 3&nbsp;px edge, red cross pill, and a red notice naming the reason and the retry.</td></tr>
+        <tr><td>Row — verified, ageing out</td><td class="t-note">Accent portrait ring, tick pill, no edge marker, and an accent notice counting down to the eighteenth birthday and the transfer.</td></tr>
+        <tr><td>Row — verified, settled</td><td class="t-note">Accent ring and tick pill only. No notice line — the row is shorter, and that is the signal.</td></tr>
+        <tr><td>Age gate — idle</td><td class="t-note">Figure shows <code>—</code> in <code>#5B606B</code>, a dotted-info glyph, and a line explaining that the age will be worked out as you type.</td></tr>
+        <tr><td>Age gate — not a real date</td><td class="t-note">Red, warning glyph, <code>That isn't a real date</code>, and a concrete example of what fails.</td></tr>
+        <tr><td>Age gate — in the future</td><td class="t-note">Red, warning glyph, the entered date read back in full, and <code>Enter the date they were born</code>.</td></tr>
+        <tr><td>Age gate — 18 or over</td><td class="t-note">Red, the real computed age shown, and the consequence: an adult holds their own membership and their own vote. This is the case the shipped form accepted.</td></tr>
+        <tr><td>Age gate — too young</td><td class="t-note">Red, the computed age, and <code>Come back to this on their 5th birthday</code>.</td></tr>
+        <tr><td>Age gate — pass</td><td class="t-note">Accent, tick glyph, <code>Under 18 — a linked account is right</code>, the birth date read back, the capability band it falls into, and the exact date the guardian's controls end.</td></tr>
+        <tr><td>Continue — blocked</td><td class="t-note">Disabled, with the note naming the blocker: <code>Enter their date of birth to continue</code>, <code>Correct the date of birth to continue</code>, or <code>Fill in their name to continue</code>.</td></tr>
+        <tr><td>Continue — ready</td><td class="t-note">Enabled, and the note becomes a preview of the next step rather than an instruction.</td></tr>
+        <tr><td>Consent unchecked</td><td class="t-note">Plain card border, <code>Agree and continue</code> disabled on <code>#1C2129</code>.</td></tr>
+        <tr><td>Consent checked</td><td class="t-note">Accent tick, card border goes accent-tinted, primary button enables.</td></tr>
+        <tr><td>Declining</td><td class="t-note">Both frames 3 and 4 carry a real way out — <code>Cancel — don't create this account</code> and <code>Not now — save and go back</code> — and frame 4 states what the account can still do if the check is never run.</td></tr>
+        <tr><td>Reduced motion</td><td class="t-note">All transitions disabled. The age gate still recomputes — it is information, not decoration.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Screen title</b> — 34/800 uppercase at the gutter</li>
+        <li><b>Section container</b> — the bordered <code>#080A0C</code> wrapper with its 1&nbsp;px hairline</li>
+        <li><b>Status pill</b> — the <code>LIVE NOW</code> treatment, reused for <code>4 linked · 2 need you</code></li>
+        <li><b>Icon button</b> — <code>38&nbsp;px</code> circle, white 1.9-stroke glyph</li>
+        <li><b>Row rhythm</b> — hairline-divided rows, unbordered first child</li>
+        <li><b>Avatar</b> — circle, cover fill, <code>center 22%</code> position</li>
+        <li><b>Accent edge marker</b> — the <code>inset 3px 0 0</code> device used for the viewer's own row in the standings, repurposed here for <em>needs you</em></li>
+        <li><b>Semantic red</b> — <code>#E2564A</code>, for failure only</li>
+        <li><b>Photography</b> — four portraits from the exports</li>
+        <li><b>Tokens, radii, type scale</b> — copied from the reference implementation</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>Everything structural</b> — the shipped flow is seventeen light-theme screens with none of the below; this is a rebuild, not a restyle</li>
+        <li><b>An identifiable row</b> — age, date of birth, relationship, verification state and a member reference, so two children with the same name are no longer the same row</li>
+        <li><b>Ring colour as state</b> — the portrait carries the verification state before any text is read</li>
+        <li><b>Three-part date of birth</b> — one box, auto-advance, zero-padding</li>
+        <li><b>Live derived-age gauge</b> — six computed states, each with its own glyph, verdict and explanation, announced politely to a screen reader</li>
+        <li><b>A consent step at all</b> — there is no checkbox, no legal link and no privacy or retention copy anywhere in the shipped flow</li>
+        <li><b>What we collect / who checks it / how long it's kept</b> — three panels written for a parent, not a lawyer</li>
+        <li><b>What we never ask for</b> — an explicit list, because saying what you don't collect is more reassuring than saying what you do</li>
+        <li><b>Named third party before the jump</b> — the hand-off strip, the dashed external cell and the host address stated app-side</li>
+        <li><b>Pre-explained camera prompt</b> — so the vendor's own permission dialog is not the first time the parent sees that host name</li>
+        <li><b>Numbered plan with an inverted return step</b> — the way back is part of the plan</li>
+        <li><b>A decline path</b> — and a statement of what the account can still do without a check</li>
+        <li><b>One control height</b> — <code>56&nbsp;px</code> for every field, select and button, against three field anatomies and seven control heights as built</li>
+        <li><b>Step rail</b> — three stages, so the parent knows where the flow ends</li>
+        <li><b>Carried values</b> — the child's name and age appear in the consent wording and the vendor steps</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>None of the retention periods are confirmed.</h3>
+      <p>This is the most important item on the page. Frame&nbsp;3 tells a parent three specific
+      things: the document photograph and the selfie are held by the vendor for
+      <span class="flag">30 days</span> and then deleted, and SportsHeist never receives the images;
+      the result — pass or fail, the date, and the document type — is kept for
+      <span class="flag">7 years</span>; and the name, date of birth and relationship are deleted
+      <span class="flag">90 days</span> after the account is unlinked or 90 days after the child turns
+      18 and takes it over. Those are defensible shapes drawn from ordinary identity-check practice.
+      They are <em>not</em> checked against the vendor contract or against the SportsHeist privacy
+      policy, and each one is a binding commitment made to a parent about a child's data. Every figure
+      needs verifying against both documents before this ships, and the third panel needs to match
+      whatever the privacy policy already says.</p>
+    </li>
+    <li>
+      <h3>Is the third party nameable, and is that the production host?</h3>
+      <p>We name <span class="flag">GBG</span> as the provider and
+      <span class="flag">identify.idscan.cloud</span> as the page, twice each, before the jump. The
+      shipped flow names no third party at all — the vendor's host first appears in an operating-system
+      camera prompt part-way through, which is the worst possible moment for a parent to meet an
+      unfamiliar domain. Naming it up front is the fix, but it needs three confirmations: that the
+      contract permits us to name the vendor to members, that the host is right for production rather
+      than a test environment, and that the stated document types and the
+      <span class="flag">7.5&nbsp;MB</span> limit are the vendor's real constraints.</p>
+    </li>
+    <li>
+      <h3>Is 5 the floor, and is 13 the posting age?</h3>
+      <p>The gate is built for <span class="flag">ages 5 to 17</span> with a hard reject on either
+      side, and the capability bands say under-13s can read but not post in Backchat and cannot send
+      direct messages, while 13-to-17s can post under a display name with the guardian approving
+      registration, spending and account changes. Both boundaries are the shapes that children's-data
+      regimes tend to push you towards, but neither is a stated product rule, and the age floor in
+      particular is a commercial decision as much as a legal one.</p>
+    </li>
+    <li>
+      <h3>Does the account really transfer at 18?</h3>
+      <p>The flow commits to it in three places: the list row counts down to the birthday, the
+      capability panel says the account transfers <em>with its Merits intact</em> and the guardian's
+      controls end that day, and the retention panel hangs its 90-day clock off the same event. It also
+      promises <span class="flag">an email to both parties a fortnight beforehand</span>. As far as we
+      can tell nothing in the build does any of this, so it is a feature this flow is describing rather
+      than reflecting. If the transfer works differently — or does not exist — three panels and a
+      countdown all change.</p>
+    </li>
+    <li>
+      <h3>How do we actually establish guardianship?</h3>
+      <p>The form asks for a relationship from a six-option list and the hint says
+      <em>we may ask you to evidence this before the membership is issued</em>. There is no mechanism
+      behind that sentence, and the identity check verifies the <em>child's</em> document, not the
+      adult's claim to be their parent. That is the gap in the flow: everything else can be tightened
+      by design, but proving guardianship needs a process decision. Related, and smaller: withdrawing
+      consent is stated to close the account, and a failed check is stated to allow
+      <span class="flag">one</span> retry with a different document. Both are our reading, and both are
+      the sort of limit a parent will hit at the worst moment.</p>
+    </li>
+  </ol>
+</section>

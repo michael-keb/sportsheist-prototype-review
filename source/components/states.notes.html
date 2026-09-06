@@ -1,0 +1,414 @@
+<p class="dek">
+  Every screen in SportsHeist has three moments where there is nothing to show: before the data
+  arrives, when there is genuinely none, and when something has failed. This file specifies all
+  three — ten empty states, four loading states, six errors and two banners — so no screen has to
+  invent its own.
+</p>
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The screens nobody designs, designed</h2>
+  <p>
+    In the current build these moments are unowned. An empty list is a pure <code>#000000</code>
+    panel with one shouted line of Bebas and nothing to do. A failure is a modal titled
+    <code>OOPS!</code> carrying whatever text the server returned. A wait is a Material blue
+    dot-ring. None of them is in the brand, and none of them tells a member what to do next.
+  </p>
+  <p>
+    The most expensive one is the empty ballot. <code>NO PROPOSALS AT THE MOMENT</code> is the
+    first thing a new member sees after they join a club — the moment the product has to explain
+    itself — and it currently explains nothing and offers no action. In this proposal that one
+    state gets a real welcome: what this place is, how the week works, and a button that puts the
+    first idea on the board.
+  </p>
+  <p>
+    Everything here is built from parts that already exist. The empty-state illustrations are the
+    hero banner's angular peaks, redrawn at small size. The loading marks are the same two marks
+    specified in the Dialogs file. The panel is the bordered section container. No new colour, no
+    webfont, no illustration library.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Order matches the reading order on screen. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Shared</td><td>State panel</td>
+          <td class="t-note">One panel serves empty and error. Section fill <code>#080A0C</code>,
+            1&nbsp;px hairline at <code>rgba(255,255,255,.075)</code>, <code>16px</code> radius,
+            <code>24px 20px 22px</code> padding, centred. It sits in the slot the missing content
+            would have filled, so it uses the container fill rather than the card fill.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Heading</td>
+          <td class="t-note"><code>17px</code> / 600 / <code>-.015em</code>, sentence case. The
+            welcome variant only goes to <code>22px</code> / 700.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Body</td>
+          <td class="t-note"><code>12.5px</code> / 1.5 in <code>#99A0AE</code>, capped at
+            <code>31ch</code> so it never runs to a full-width line. Figures inside it are set in
+            white to carry the weight — <code>412 of 1,284</code>, <code>16:42</code>.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>Primary action</td>
+          <td class="t-note">Accent pill, <code>38px</code> (welcome: <code>46px</code>), ink
+            <code>#0B0E06</code>. Exactly one per state. Where the action is navigational rather
+            than creative it drops to the surface pill <code>#1C2129</code>.</td>
+        </tr>
+        <tr>
+          <td>Shared</td><td>No-action line</td>
+          <td class="t-note">Where nothing can be done, a sunken pill <code>#13171E</code> with
+            <code>11px</code> / 700 / <code>.1em</code> uppercase in <code>#5B606B</code> stating
+            what will happen instead. Used twice: Upcoming rooms and Transactions.</td>
+        </tr>
+        <tr>
+          <td>Empty</td><td>Illustration</td>
+          <td class="t-note">Inline SVG on a shared <code>132 × 88</code> frame, rendered at
+            <code>132px</code> wide (<code>168px</code> for the welcome). Three fills and strokes
+            only — see the illustration rules in the States table below.</td>
+        </tr>
+        <tr>
+          <td>Error</td><td>Icon tile</td>
+          <td class="t-note"><code>52px</code>, <code>14px</code> radius, <code>25px</code> icon at
+            <code>1.7</code> stroke. Neutral is white on <code>rgba(255,255,255,.06)</code>; red is
+            <code>#E2564A</code> on <code>rgba(226,86,74,.12)</code> with a
+            <code>rgba(226,86,74,.28)</code> hairline. The same tile as the Dialogs file.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>Skeleton bone</td>
+          <td class="t-note">Base <code>rgba(255,255,255,.055)</code>, sheen
+            <code>rgba(255,255,255,.06)</code> sweeping left to right over <code>1.5s</code>,
+            linear. Radius <code>5px</code>, or a circle for avatars and the gauge ring. White
+            alphas rather than greys, so one bone reads correctly on <code>#080A0C</code>,
+            <code>#1C2129</code> and <code>#13171E</code> alike.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>Skeleton card</td>
+          <td class="t-note">Bone positions are the idea card's own geometry: <code>#1C2129</code>
+            at <code>16px</code> radius and <code>16px</code> padding, three <code>22px</code>
+            stacked avatars at <code>-9px</code> overlap, a <code>17px</code> title over two lines,
+            <code>13px</code> body, the meta row, and the sunken gauge panel with its
+            <code>64px</code> ring.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>Skeleton row</td>
+          <td class="t-note">The merits ranked row: <code>11px 12px</code> padding, rank slot,
+            <code>34px</code> avatar, name over club, score, and the same
+            <code>rgba(255,255,255,.045)</code> hairline between rows.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>Ring</td>
+          <td class="t-note">The spinner. A 90° accent arc on a white-18% track, one turn every
+            <code>0.9s</code>, round cap. Three sizes — <code>28</code> / <code>20</code> /
+            <code>16</code> — with stroke thickening from <code>2.4</code> to <code>3.2</code> as
+            it shrinks so the arc keeps its weight.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>Three peaks</td>
+          <td class="t-note">The brand's peak trio, cycling opacity <code>.22 → 1 → .22</code> over
+            <code>1.15s</code> on a <code>160ms</code> stagger. Used where a whole panel or a whole
+            screen is waiting.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>In-button</td>
+          <td class="t-note">The label is hidden with <code>visibility</code>, so it keeps its box
+            and the control cannot change width. A <code>20px</code> ring overlays it in the
+            label's own ink. <code>aria-busy="true"</code> on the button, pointer events off.</td>
+        </tr>
+        <tr>
+          <td>Loading</td><td>First load</td>
+          <td class="t-note">Canvas <code>#030401</code>, the peaks at <code>120 × 50</code>, the
+            wordmark at <code>34px</code> / 800 / <code>-.025em</code> uppercase, one tracked
+            caption naming the club, and a footer line at <code>11.5px</code> committing to an
+            error state rather than an indefinite wait. Shown framed on the page and live via
+            <b>Show it full screen</b>.</td>
+        </tr>
+        <tr>
+          <td>Banner</td><td>Offline / stale</td>
+          <td class="t-note">In-flow, so <code>12px</code> radius and the sunken fill, never the
+            card radius. Icon <code>18px</code> in <code>#99A0AE</code>, title
+            <code>13px</code>&nbsp;/&nbsp;600 white, body <code>12.5px</code> muted. Offline takes
+            the neutral wash; stale takes the sunken fill and an accent-wash
+            <code>Refresh</code>.</td>
+        </tr>
+        <tr>
+          <td>Chrome</td><td>Dock</td>
+          <td class="t-note">The offline strip is shown live in its real position — above the
+            floating tab bar, <code>10px</code> clear, with a
+            <code>0 14px 34px rgba(0,0,0,.5)</code> lift.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>All eighteen, and what each says</h2>
+  <p>
+    The illustrations are one system, not ten drawings. Every one is set on the same
+    <code>132 × 88</code> frame, seated on one ground line at <code>y = 72</code>, and drawn with
+    three marks only: <b>surface fill <code>#1C2129</code>, no stroke</b> is context — the range
+    behind; <b>accent wash <code>rgba(155,226,34,.18)</code> with a <code>1.8</code>
+    <code>#9BE222</code> stroke</b> is something that exists; <b>a <code>1.8</code> accent stroke
+    dashed <code>5 5</code></b> is something that should exist and does not yet. Nothing curves
+    except the circles the brand already uses for members and the search lens.
+  </p>
+  <div class="tablewrap">
+    <table>
+      <caption>Copy as written. One primary action, or a stated outcome where none is possible.</caption>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>No proposals in voting</td>
+          <td class="t-note"><b>Welcome to the Barcelona war room.</b> Three dashed peaks with the
+            summit marked — a range not yet built. Explains propose → vote Friday → result to the
+            board. Primary <code>Post the first idea</code>, secondary
+            <code>How voting works</code>. The only state with a hero headline and two actions,
+            because it is the only one that has to teach the product.</td>
+        </tr>
+        <tr>
+          <td>No ideas yet</td>
+          <td class="t-note"><b>No ideas yet this week.</b> One dashed peak with an accent plus
+            above the apex. Names the Monday reset and the Wednesday cut-off.
+            Primary <code>New idea</code>.</td>
+        </tr>
+        <tr>
+          <td>No results yet</td>
+          <td class="t-note"><b>Voting is still open.</b> A built peak with a flat top and a dashed
+            line continuing to the true apex — progress without a result. Gives the close time and
+            the turnout so far. Primary <code>Cast your vote</code>.</td>
+        </tr>
+        <tr>
+          <td>No locker rooms in session</td>
+          <td class="t-note"><b>No rooms open right now.</b> A solid peak with dashed chevrons off
+            the apex — the transmitter is there, nothing is broadcasting. Says when rooms usually
+            run. Primary <code>Tell me when one opens</code>.</td>
+        </tr>
+        <tr>
+          <td>No upcoming rooms</td>
+          <td class="t-note"><b>Nothing scheduled yet.</b> A timeline of ticks with a solid accent
+            "now" and one dashed peak ahead of it. Names the next fixture and when to expect a
+            room. <em>No action possible</em> — the slot carries
+            <code>We'll alert you when it's up</code>.</td>
+        </tr>
+        <tr>
+          <td>No alerts</td>
+          <td class="t-note"><b>You're up to date.</b> A completed peak with an accent check above
+            it. Lists the three things that will generate an alert, so the emptiness reads as
+            current rather than broken. Primary
+            <code>Choose what you're alerted about</code>.</td>
+        </tr>
+        <tr>
+          <td>No linked members</td>
+          <td class="t-note"><b>No one linked yet.</b> One built figure and one dashed figure with a
+            broken link between them. Explains what linking is for and that the other person
+            confirms. Primary <code>Link a member</code>.</td>
+        </tr>
+        <tr>
+          <td>No transactions</td>
+          <td class="t-note"><b>No transactions yet.</b> Two dashed ledger rules and a flat accent
+            line — the range is out there, your own line hasn't moved. <em>No action possible</em>
+            in the wallet, so the slot carries
+            <code>Starts with your first vote</code>.</td>
+        </tr>
+        <tr>
+          <td>No search results</td>
+          <td class="t-note"><b>Nothing matches “sevilla away”.</b> The lens knocks a hole in the
+            panel fill with <code>#080A0C</code>, so the range stays visible around it and bare
+            ground shows through the middle. Quotes the term back and states what search does and
+            doesn't cover. Primary <code>Clear search</code>.</td>
+        </tr>
+        <tr>
+          <td>No club selected</td>
+          <td class="t-note"><b>Pick a club to continue.</b> Three crests built from straight edges,
+            the centre one dashed with the peak mark inside. Explains that everything belongs to one
+            club and that switching is allowed. Primary <code>Choose your club</code>.</td>
+        </tr>
+        <tr>
+          <td>Skeleton — card</td>
+          <td class="t-note">The idea card's geometry in bones, so nothing shifts when content
+            arrives. Shimmer is a <code>1.5s</code> linear sweep of white at 6%.</td>
+        </tr>
+        <tr>
+          <td>Skeleton — rows</td>
+          <td class="t-note">Four ranked rows at the merits row geometry. Bone widths vary per row
+            so the block doesn't read as a table of identical bars.</td>
+        </tr>
+        <tr>
+          <td>Skeleton — reduced motion</td>
+          <td class="t-note">The sweep is removed entirely and the bone lifts to
+            <code>rgba(255,255,255,.08)</code> so it still reads as a placeholder while standing
+            perfectly still.</td>
+        </tr>
+        <tr>
+          <td>Loading — panel</td>
+          <td class="t-note">Three peaks, plus a heading and a line of body — <b>Counting the
+            ballot</b> / the turnout and an honest note that the first run is slow. Used where the
+            shape of the answer isn't known, because a skeleton would be a guess.</td>
+        </tr>
+        <tr>
+          <td>Loading — in a control</td>
+          <td class="t-note">Label swaps for the ring, width preserved, pointer events off. Ink
+            follows the label: <code>#0B0E06</code> on the accent fill, white on the ghost.</td>
+        </tr>
+        <tr>
+          <td>Loading — first load</td>
+          <td class="t-note">Peaks, wordmark, and the club being opened. No progress bar: we can't
+            estimate it honestly, and a fake bar that stalls at 90% is worse than a mark that keeps
+            moving.</td>
+        </tr>
+        <tr>
+          <td>No connection</td>
+          <td class="t-note"><b>You're offline.</b> Neutral tile. Names the last successful update
+            time, says what still works and what doesn't. Primary <code>Try again</code> with the
+            in-button ring.</td>
+        </tr>
+        <tr>
+          <td>Request failed</td>
+          <td class="t-note"><b>Your vote didn't send.</b> Red tile. States the cause (timeout),
+            rules out the scary reading (nothing wrong with the ballot), and confirms the vote is
+            held locally. Primary <code>Send it again</code>.</td>
+        </tr>
+        <tr>
+          <td>Not found</td>
+          <td class="t-note"><b>This idea is no longer here.</b> Neutral tile. Gives the two real
+            reasons and reassures that nothing else is affected. Primary
+            <code>Back to the war room</code>.</td>
+        </tr>
+        <tr>
+          <td>No permission</td>
+          <td class="t-note"><b>Voting is for verified members.</b> Neutral tile — nothing failed
+            and nobody did anything wrong, so red would be a lie. Names the missing step and how
+            long it takes. Primary <code>Add your membership number</code>, secondary
+            <code>Why this is needed</code>.</td>
+        </tr>
+        <tr>
+          <td>Session expired</td>
+          <td class="t-note"><b>You've been signed out.</b> Neutral tile. Explains the 30-day rule
+            and the other-device case, and confirms nothing is lost. Primary
+            <code>Sign back in</code>.</td>
+        </tr>
+        <tr>
+          <td>Something went wrong</td>
+          <td class="t-note"><b>This screen didn't load.</b> Red tile. The only state that admits it
+            doesn't know the cause — and it earns that by giving a reference
+            (<code>8F2-4471</code>), which turns a dead end into a support ticket.
+            <code>Reload</code> primary, <code>Contact us</code> secondary. Last resort only.</td>
+        </tr>
+        <tr>
+          <td>Offline banner</td>
+          <td class="t-note">Neutral, never red — being offline is a condition, not a fault. Gives
+            the timestamp of what's on screen and commits to sending the queued vote on
+            reconnection. No button, because tapping one wouldn't restore a connection.</td>
+        </tr>
+        <tr>
+          <td>Stale-data banner</td>
+          <td class="t-note">A figure, not the word "recently" — <code>12 minutes</code> lets the
+            member decide whether it matters. <code>Refresh</code> is the only action and it swaps
+            to the <code>16px</code> ring in place.</td>
+        </tr>
+        <tr>
+          <td>Reduced motion</td>
+          <td class="t-note">Both loading marks are SVG-timed, so they stop dead on
+            <code>pauseAnimations()</code>. The shimmer is the one keyframed thing in the file — a
+            loop can't be a transition — and it is switched off in the same media query that kills
+            transitions.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>Peak geometry</b> — the hero banner's three acid peaks, redrawn small</li>
+        <li><b>Section container</b> — the bordered wrapper <code>#080A0C</code> with a 1&nbsp;px hairline</li>
+        <li><b>Surfaces, radii, type scale</b> — sampled, not approximated</li>
+        <li><b>Accent and semantic red</b> — <code>#9BE222</code> and <code>#E2564A</code>, nothing else</li>
+        <li><b>Icon style</b> — 24-box, <code>1.7</code> stroke, round caps and joins</li>
+        <li><b>Tab bar</b> — the floating pill, active tab with icon and label</li>
+        <li><b>Icon tile, ring and three-peak mark</b> — as specified in the Dialogs file, unchanged</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The illustration system</b> — one frame, one ground line, three drawing rules; ten illustrations that read as one family</li>
+        <li><b>The welcome state</b> — a real first screen for a new member, replacing <code>NO PROPOSALS AT THE MOMENT</code></li>
+        <li><b>The no-action line</b> — a stated outcome where a button would be dishonest</li>
+        <li><b>Skeleton geometry</b> — bones matched to the idea card and the ranked row</li>
+        <li><b>White-alpha bones</b> — <code>rgba(255,255,255,.055)</code> replacing the grey-300-on-grey-100 shimmer, which is a light-theme skeleton</li>
+        <li><b>Error copy</b> — six states written as what happened, why, and the one thing to do next</li>
+        <li><b>Reference number</b> on the last-resort error</li>
+        <li><b>First-load screen</b> — no equivalent exists</li>
+        <li><b>Offline and stale-data banners</b> — no equivalent exists</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:14px">
+    Three things in the live build are replaced outright rather than restyled:
+    <code>EmptyContainer</code> (a <code>#000000</code> panel, a lilac hairline, shouted Bebas, no
+    action), <code>WLoading</code> (whose <code>color ?? Colors.blue</code> default paints a
+    Material <code>#2196F3</code> dot-ring in every waiting state), and the <code>OOPS!</code>
+    modal, which currently shows a member the raw HTTP&nbsp;403 body
+    <code>You do not have permission to access this resource.</code> and is reused for payment
+    failures.
+  </p>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>Five things we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Can a member open a locker room, or only the club?</h3>
+      <p>If members can, the primary action on <b>No rooms open right now</b> should be
+      <code>Start a room</code> — a far better empty state than a reminder. We couldn't confirm it
+      from the exports, so it currently reads <span class="flag">Tell me when one opens</span>,
+      which is safe but weaker.</p>
+    </li>
+    <li>
+      <h3>Does an offline vote really send itself later?</h3>
+      <p>The offline banner promises <span class="flag">Your vote will send itself when you're
+      back</span>, and the failed-request state promises the vote is <span class="flag">saved on
+      this device</span>. Both need an outbox that survives the app closing. If there isn't one,
+      the copy has to change to "you'll need to vote again" — which is worth avoiding, because it
+      is the difference between a trustworthy app and a lossy one.</p>
+    </li>
+    <li>
+      <h3>What does a 403 actually mean to a member?</h3>
+      <p>We've written the permission state as one specific thing: <span class="flag">membership
+      not yet verified</span>, with the action that clears it. If the same 403 also covers being
+      suspended, being in the wrong club, or a closed ballot, each needs its own heading and
+      action. One generic message here is how the app ended up with <code>OOPS!</code>.</p>
+    </li>
+    <li>
+      <h3>Is there a reference number and a place to send it?</h3>
+      <p>The last-resort error shows <span class="flag">8F2-4471</span> and a
+      <code>Contact us</code> button. That assumes the client can read an error id from the logging
+      layer, and that there's an inbox behind the button. If either is missing, the state loses the
+      one thing that makes it useful.</p>
+    </li>
+    <li>
+      <h3>What are linked members allowed to do?</h3>
+      <p>The empty state says linked members' <span class="flag">votes can be cast together</span>.
+      If linking is really about a shared season ticket and not about block voting, that sentence is
+      wrong and the whole state needs rewriting — it's the only explanation of the feature a member
+      will ever read.</p>
+    </li>
+  </ol>
+</section>

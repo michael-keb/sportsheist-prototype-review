@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en" data-component="dialogs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Dialogs, feedback and loading</title>
+<style>
+/* ============================================================
+   SPORTSHEIST — DIALOGS, FEEDBACK, LOADING
+   Token block copied from merits.html. Two additions only, both
+   derived from the contract's one sanctioned semantic colour:
+   --red is the sampled #E2564A, --red-wash is built exactly like
+   --acid-wash. Ink on a saturated fill is always --acid-ink,
+   on acid and on red alike.
+
+   The current app ships three contradictory modal shells in four
+   screens (AU-08 dialog, AU-13 OS alert, UDialog.customSimpleDialog)
+   plus a full-bleed square snackbar and a Material-blue loader.
+   This file defines one shell, one action-row convention, one
+   scrim, one loader.
+
+   EXTENDED after the dialog/sheet coverage audit
+   (Screen-Specs/00-COVERAGE-AUDIT.md, "The dialog / sheet layer").
+   dialogs.dart declares 19 presenters; only four had a capture-backed
+   spec and the two most-referenced — showError (30 refs) and
+   showInternal (27) — were not in this kit at all. Added below, in
+   the same shell, with nothing restyled: a server-error variant, a
+   reconciled error variant that survives a relayed API string, the
+   three reminder states, a form-bearing shell, and the presenter
+   inventory table that scopes the rest of the work.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;
+  --surface:       #1C2129;
+  --sunken:        #13171E;
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+  --acid-line:     rgba(155,226,34,.30);   /* derived, as sheets.html / all-locker-rooms.html */
+
+  /* semantic red — the only other hue in the system */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.12);
+  --red-line:      rgba(226,86,74,.28);
+
+  /* neutral wash — used where a state must NOT read as red or acid */
+  --neutral-wash:  rgba(255,255,255,.06);
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  /* dialog shell */
+  --dlg-inset:     20px;
+  --dlg-max:       340px;
+  --dlg-pad:       20px;
+
+  /* scrim */
+  --scrim:         rgba(3,4,1,.72);
+  --scrim-blur:    10px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ============================================================
+   PAGE FURNITURE
+   ============================================================ */
+.top{margin:6px var(--gutter) 0}
+.eyebrow{
+  margin:0 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.title{
+  margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;
+  line-height:1;text-transform:uppercase;
+}
+.sub{margin:10px 0 0;font-size:13px;color:var(--muted)}
+
+.label{margin:26px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.note{margin:8px var(--gutter) 0;font-size:12px;line-height:1.45;color:var(--muted)}
+.note b{color:var(--text);font-weight:600}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+.dlg:focus{outline:none}
+.dlg:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.note--tight{margin-top:6px}
+
+.section{
+  margin:0 var(--gutter);padding:12px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+}
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 14px;
+  border-radius:var(--r-pill);background:var(--acid-wash);
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;
+}
+.status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* spec list */
+.kv{margin:0;padding:0;list-style:none}
+.kv li{
+  display:flex;align-items:baseline;gap:12px;padding:9px 2px;
+  border-top:1px solid var(--line-soft);font-size:12.5px;
+}
+.kv li:first-child{border-top:0}
+.kv span{flex:0 0 106px;color:var(--muted)}
+.kv b{flex:1;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.kv b em{font-style:normal;color:var(--muted);font-weight:400}
+
+/* specimen wrapper */
+.spec{margin-top:20px}
+.spec__label{
+  display:flex;align-items:center;gap:9px;margin:0 var(--gutter) 9px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.spec__label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.spec__note{margin:9px var(--gutter) 0;font-size:11.5px;line-height:1.45;color:var(--dim)}
+
+/* ============================================================
+   ICON TILE — the one state marker used by dialogs, banners,
+   the empty state. Variant changes wash + icon colour only.
+   ============================================================ */
+.tile{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;border-radius:var(--r-panel);flex:0 0 auto;
+}
+.tile svg{width:22px;height:22px}
+.tile--acid{background:var(--acid-wash);color:var(--acid)}
+.tile--red{background:var(--red-wash);color:var(--red);box-shadow:inset 0 0 0 1px var(--red-line)}
+.tile--warn{background:var(--neutral-wash);color:var(--red)}
+.tile--neutral{background:var(--neutral-wash);color:var(--text)}
+.tile--lg{width:52px;height:52px;border-radius:14px}
+.tile--lg svg{width:25px;height:25px}
+
+/* ============================================================
+   DIALOG SHELL — one shell, five variants.
+   Variants change: icon tile, title, body, action row. Nothing else.
+   ============================================================ */
+.dlg{
+  position:relative;
+  width:calc(100% - var(--dlg-inset) * 2);max-width:var(--dlg-max);
+  margin:0 auto;padding:var(--dlg-pad);
+  border-radius:var(--r-card);background:var(--surface);
+  border:1px solid var(--line);
+  box-shadow:0 24px 60px rgba(0,0,0,.55);
+}
+.dlg__close{
+  position:absolute;top:12px;right:12px;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:50%;
+  background:var(--sunken);border:1px solid var(--line-soft);color:var(--muted);
+  cursor:pointer;transition:color .18s var(--ease),background .18s var(--ease);
+}
+.dlg__close svg{width:15px;height:15px}
+.dlg__close:hover{color:var(--text);background:#1A1F27}
+.dlg__title{
+  margin:14px 0 0;padding-right:26px;
+  font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.2;
+}
+.dlg__body{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+.dlg__body b{color:var(--text);font-weight:600}
+
+/* ---------- action row ---------- */
+.act{display:flex;gap:10px;margin-top:18px}
+.act--single .btn{width:100%}
+.btn{
+  position:relative;flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em;
+  cursor:pointer;transition:background .18s var(--ease),opacity .18s var(--ease);
+  white-space:nowrap;
+}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--danger{background:var(--red);color:var(--acid-ink)}
+.btn--danger:hover{background:#E9675C}
+.btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.btn--ghost:hover{background:#181D25}
+.btn:focus-visible,.dlg__close:focus-visible,.pill-btn:focus-visible,.toast__act:focus-visible{
+  outline:2px solid var(--acid);outline-offset:2px;
+}
+
+/* in-button loading: label keeps its box, spinner overlays it */
+.btn__label{display:inline-block}
+.btn__spin{position:absolute;inset:0;display:none;align-items:center;justify-content:center}
+.btn[aria-busy="true"]{pointer-events:none;opacity:.85}
+.btn[aria-busy="true"] .btn__label{visibility:hidden}
+.btn[aria-busy="true"] .btn__spin{display:flex}
+
+.pill-btn{
+  display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.pill-btn--acid{background:var(--acid);color:var(--acid-ink)}
+.pill-btn--acid:hover{background:#A8EC33}
+.pill-btn svg{width:15px;height:15px}
+
+/* ============================================================
+   STATE ICONS — 24-box, 1.7 stroke, round caps and joins
+   ============================================================ */
+.icons{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.icons figure{
+  margin:0;padding:12px 8px;min-width:0;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  border-radius:var(--r-panel);background:var(--surface);
+}
+.icons figcaption{
+  font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);text-align:center;
+}
+
+/* ============================================================
+   SCRIM + LIVE OVERLAY
+   The class `tabbar` on the overlay and on the dock is a hook for
+   the review shell, which rewrites `.tabbar` to position:absolute
+   so screen-pinned layers stay inside the device frame.
+   ============================================================ */
+.overlay{
+  position:fixed;inset:0;z-index:60;
+  display:none;align-items:center;justify-content:center;
+}
+.overlay.is-open{display:flex}
+.overlay .dlg{
+  z-index:1;
+  opacity:0;transform:translateY(10px) scale(.985);
+  transition:opacity .2s var(--ease),transform .28s var(--ease);
+}
+.overlay.is-in .dlg{opacity:1;transform:none}
+.scrim{
+  position:absolute;inset:0;
+  background:var(--scrim);
+  -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+  backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+  opacity:0;transition:opacity .2s var(--ease);
+}
+.overlay.is-in .scrim{opacity:1}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .scrim{background:rgba(3,4,1,.86)}
+}
+
+/* ============================================================
+   TOAST / SNACKBAR — inset, rounded, semantic leading marker
+   ============================================================ */
+.toast{
+  display:flex;align-items:center;gap:11px;
+  margin:0 var(--gutter);padding:9px 10px 9px 12px;min-height:52px;
+  border-radius:var(--r-card);background:var(--surface);
+  border:1px solid var(--line);box-shadow:0 14px 34px rgba(0,0,0,.5);
+}
+.toast::before{
+  content:"";flex:0 0 auto;width:3px;height:22px;border-radius:2px;
+  background:var(--mark-color,var(--acid));
+}
+.toast__icon{display:inline-flex;flex:0 0 auto;color:var(--mark-color,var(--acid))}
+.toast__icon svg{width:19px;height:19px}
+.toast__msg{flex:1;min-width:0;font-size:13px;font-weight:500;line-height:1.35}
+.toast__act{
+  flex:0 0 auto;height:32px;padding:0 12px;border:0;border-radius:var(--r-pill);
+  background:var(--acid-wash);color:var(--acid);
+  font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.toast__act:hover{background:rgba(155,226,34,.2)}
+.toast--error{--mark-color:var(--red)}
+.toast--error .toast__act{background:var(--red-wash);color:var(--red)}
+.toast--error .toast__act:hover{background:rgba(226,86,74,.2)}
+.toast--info{--mark-color:rgba(255,255,255,.34)}
+.toast--info .toast__icon{color:var(--muted)}
+
+/* live toasts sit in the dock, above the tab bar */
+.toaster{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;pointer-events:auto}
+.toaster .toast{
+  margin:0;opacity:0;transform:translateY(10px);
+  transition:opacity .22s var(--ease),transform .28s var(--ease);
+}
+.toaster .toast.is-in{opacity:1;transform:none}
+
+/* ============================================================
+   LOADING
+   ============================================================ */
+.loadbay{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  height:104px;border-radius:var(--r-panel);background:var(--surface);
+}
+.loader{display:flex;flex-direction:column;align-items:center;gap:11px;color:var(--acid)}
+.loader svg{display:block}
+.loader__cap{
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.spins{display:flex;align-items:center;gap:18px;margin-top:10px;padding:14px 12px;
+  border-radius:var(--r-panel);background:var(--surface)}
+.spins .ring{color:var(--acid)}
+.spins p{margin:0;flex:1;font-size:11.5px;line-height:1.45;color:var(--dim)}
+.btnpair{display:flex;gap:10px;margin-top:10px}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty{
+  margin:0 var(--gutter);padding:26px 20px 22px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.empty h3{margin:14px 0 0;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.empty p{margin:6px 0 16px;font-size:12.5px;line-height:1.5;color:var(--muted);max-width:26ch}
+
+/* ============================================================
+   INLINE BANNER
+   ============================================================ */
+.banner{
+  display:flex;align-items:flex-start;gap:10px;
+  margin:0 var(--gutter);padding:12px;
+  border-radius:var(--r-panel);background:var(--sunken);
+  border:1px solid var(--line);
+}
+.banner__icon{flex:0 0 auto;color:var(--muted);margin-top:1px}
+.banner__icon svg{width:18px;height:18px}
+.banner__txt{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.banner__txt b{display:block;color:var(--text);font-size:13px;font-weight:600;margin-bottom:2px}
+.banner__link{
+  align-self:center;flex:0 0 auto;border:0;background:transparent;padding:0 2px;
+  font:inherit;font-size:12.5px;font-weight:700;color:var(--acid);cursor:pointer;
+}
+.banner--warn{background:var(--red-wash);border-color:var(--red-line)}
+.banner--warn .banner__icon{color:var(--red)}
+.banner--warn .banner__txt{color:#D9BDB9}
+.banner--warn .banner__link{color:var(--red)}
+
+/* ============================================================
+   TRY-IT PANEL
+   ============================================================ */
+.tryit{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tryit .pill-btn{background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line)}
+.tryit .pill-btn:hover{background:#181D25}
+
+/* ============================================================
+   DOCK — toast host + tab bar. Outside <main>.
+   ============================================================ */
+.dock{
+  position:fixed;left:0;right:0;bottom:0;max-width:420px;margin:0 auto;z-index:40;
+  padding:0 var(--gutter) calc(14px + env(safe-area-inset-bottom,0px));
+  pointer-events:none;
+}
+.tabbar__inner{
+  display:flex;align-items:center;justify-content:space-between;
+  height:58px;padding:0 10px;border-radius:var(--r-pill);background:var(--surface);
+  box-shadow:0 10px 30px rgba(0,0,0,.6);pointer-events:auto;
+}
+.tab{
+  display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 12px;
+  border:0;border-radius:var(--r-pill);background:transparent;color:var(--text);
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.tab svg{width:19px;height:19px;flex:0 0 auto}
+.tab__label{display:none}
+.tab[aria-current="page"]{background:var(--acid);color:var(--acid-ink)}
+.tab[aria-current="page"] .tab__label{display:inline}
+.tab:not([aria-current="page"]):hover{color:var(--acid)}
+
+/* ============================================================
+   REFERENCE ROW — server error only.
+   A 5xx a member can quote to support. Sunken so it reads as
+   inset data inside the --surface panel, never as a control.
+   ============================================================ */
+.ref{
+  display:flex;align-items:center;gap:10px;margin-top:14px;
+  padding:9px 9px 9px 12px;
+  border-radius:var(--r-panel);background:var(--sunken);
+  border:1px solid var(--line-soft);
+}
+.ref__body{flex:1;min-width:0}
+.ref__k{
+  display:block;font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.ref__v{
+  display:block;margin-top:3px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:12px;color:var(--text);font-variant-numeric:tabular-nums;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ref__copy{
+  position:relative;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;border-radius:50%;
+  background:transparent;border:0;color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.ref__copy::after{content:"";position:absolute;inset:-6px;border-radius:inherit}
+.ref__copy:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.ref__copy:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.ref__copy svg{width:17px;height:17px}
+
+/* ============================================================
+   FORM CONTROLS INSIDE A DIALOG — forms.html's .ctl shell with
+   exactly one change: the fill drops --surface → --sunken,
+   because the dialog panel is itself --surface and a control
+   cannot be the same value as the plane it sits on. Height,
+   radius, hairline, 16px value, focus ring all unchanged.
+   ============================================================ */
+.field{display:block;margin-top:16px}
+.field__label{
+  display:block;margin-bottom:8px;
+  font-size:12.5px;font-weight:600;letter-spacing:-.005em;color:var(--text);
+}
+.ctl{
+  display:flex;align-items:center;gap:10px;
+  height:52px;padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--sunken);color:var(--text);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.ctl__in{
+  flex:1;min-width:0;height:100%;
+  border:0;background:transparent;color:inherit;
+  font:inherit;font-size:16px;   /* 16px: below it iOS zooms on focus */
+  padding:0;margin:0;outline:none;
+}
+.ctl__in::placeholder{color:var(--dim);opacity:1}
+.ctl:focus-within{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.ctl--area{height:auto;flex-direction:column;align-items:stretch;gap:6px;padding:12px 14px 10px}
+.ctl--area .ctl__in{height:auto;min-height:72px;resize:vertical;line-height:1.5}
+.counter{align-self:flex-end;font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+
+/* ============================================================
+   PRESENTER INVENTORY TABLE
+   Dead rows are struck AND labelled "Delete" — the state never
+   rests on the dimmed colour alone.
+   ============================================================ */
+.inv{
+  margin:0 var(--gutter);
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--section);overflow:hidden;
+}
+.inv table{width:100%;border-collapse:collapse}
+.inv caption{
+  padding:12px 12px 10px;text-align:left;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.inv th{
+  padding:0 8px 7px;text-align:left;
+  font-size:9.5px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim);
+  border-bottom:1px solid var(--line);
+}
+.inv th:nth-child(2){text-align:right}
+.inv td{
+  padding:8px;border-top:1px solid var(--line-soft);
+  font-size:11.5px;line-height:1.3;vertical-align:top;
+}
+.inv tbody tr:first-child td{border-top:0}
+.inv td:first-child{padding-left:12px}
+.inv td:last-child{padding-right:12px}
+.inv__n{display:block;font-size:11.5px;font-weight:600;letter-spacing:-.005em;word-break:break-word}
+.inv__l{display:block;margin-top:2px;font-size:9.5px;font-weight:700;letter-spacing:.1em;color:var(--dim)}
+.inv__c{
+  width:36px;text-align:right;font-weight:700;
+  font-variant-numeric:tabular-nums;color:var(--text);
+}
+.inv__r{width:102px;color:var(--muted);font-size:11px}
+.inv tr.is-dead .inv__n{text-decoration:line-through;color:var(--dim)}
+.inv tr.is-dead .inv__c{color:var(--dim)}
+.inv tr.is-dead .inv__r{color:var(--red);font-weight:700}
+.inv tr.is-new .inv__r{color:var(--acid);font-weight:700}
+.legend{margin:0;padding:11px 12px 12px;border-top:1px solid var(--line);list-style:none}
+.legend li{font-size:11px;line-height:1.5;color:var(--dim)}
+.legend b{color:var(--text);font-weight:700}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+  <header class="top">
+    <p class="eyebrow">Component kit</p>
+    <h1 class="title">Dialogs<br>&amp; feedback</h1>
+    <p class="sub">
+      One dialog shell, eleven specimens. The specimens below are laid out in the page rather than
+      overlaid, so every variant can be read at once; the live example near the foot opens
+      properly, over the real scrim. The inventory table beneath the shell spec lists all 19
+      dialogs the app actually ships and what happens to each.
+    </p>
+  </header>
+
+  <!-- ===================== SHELL SPEC ===================== -->
+  <h2 class="label">The shell</h2>
+  <div class="section">
+    <ul class="kv">
+      <li><span>Width</span><b>100% − 40, max 340 <em>· 335 at 375</em></b></li>
+      <li><span>Inset</span><b>20 a side <em>· 45 at 430</em></b></li>
+      <li><span>Radius</span><b>16 <em>· --r-card</em></b></li>
+      <li><span>Padding</span><b>20 all round</b></li>
+      <li><span>Fill</span><b>#1C2129 <em>· --surface</em></b></li>
+      <li><span>Border</span><b>1px rgba(255,255,255,.075)</b></li>
+      <li><span>Shadow</span><b>0 24 60 rgba(0,0,0,.55)</b></li>
+      <li><span>Position</span><b>vertically centred</b></li>
+      <li><span>Stack</span><b>tile 44 · 18/600 · 13/400</b></li>
+      <li><span>Dismiss</span><b>30px close, top right, always</b></li>
+      <li><span>Scrim</span><b>rgba(3,4,1,.72) + blur 10</b></li>
+    </ul>
+    <p class="note note--tight">
+      The current app has three shells inside four screens: <b>AU-08</b> at ~78% width with no
+      border and no shadow, <b>UDialog.customSimpleDialog</b> at a 16pt inset with a raster
+      behind the title, and the untouched <b>OS alert</b> on AU-13. This is the one shell that
+      replaces all three. Variants change the icon, the title, the body and the action row.
+      Nothing else moves.
+    </p>
+  </div>
+
+  <!-- ===================== PRESENTER INVENTORY ===================== -->
+  <h2 class="label">Presenter inventory</h2>
+  <div class="inv">
+    <table>
+      <caption>UDialog · dialogs.dart · 19 presenters + stopLoading</caption>
+      <thead>
+        <tr>
+          <th scope="col">Presenter</th>
+          <th scope="col">Refs</th>
+          <th scope="col">Ruling</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="inv__n">startLoading</span><span class="inv__l">L19</span></td>
+          <td class="inv__c">12</td>
+          <td class="inv__r">Keep · peaks</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">stopLoading</span><span class="inv__l">L44</span></td>
+          <td class="inv__c">27</td>
+          <td class="inv__r">Keep</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">showCustomDialog<wbr>WithCustomContent</span><span class="inv__l">L50 · 1 caller</span></td>
+          <td class="inv__c">3</td>
+          <td class="inv__r">Fold into shell</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">showNormalDialog</span><span class="inv__l">L76 · 1 file</span></td>
+          <td class="inv__c">4</td>
+          <td class="inv__r">Fold · Confirm</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">startLoadingHori</span><span class="inv__l">L223</span></td>
+          <td class="inv__c">5</td>
+          <td class="inv__r">Delete</td>
+        </tr>
+        <tr class="is-new">
+          <td><span class="inv__n">reminderDialog</span><span class="inv__l">L244</span></td>
+          <td class="inv__c">10</td>
+          <td class="inv__r">Drawn here ×3</td>
+        </tr>
+        <tr class="is-new">
+          <td><span class="inv__n">showError</span><span class="inv__l">L420</span></td>
+          <td class="inv__c">30</td>
+          <td class="inv__r">Reconciled here</td>
+        </tr>
+        <tr class="is-new">
+          <td><span class="inv__n">showInternal</span><span class="inv__l">L430</span></td>
+          <td class="inv__c">27</td>
+          <td class="inv__r">Drawn here</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">showSuccess</span><span class="inv__l">L441 · 1 caller</span></td>
+          <td class="inv__c">2</td>
+          <td class="inv__r">Delete → toast</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">showCustomize<wbr>ConfirmDialog</span><span class="inv__l">L454</span></td>
+          <td class="inv__c">21</td>
+          <td class="inv__r">Keep · Confirm</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">showDialogNoButton</span><span class="inv__l">L797 · 0 callers</span></td>
+          <td class="inv__c">1</td>
+          <td class="inv__r">Delete</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">customSimpleDialog</span><span class="inv__l">L906</span></td>
+          <td class="inv__c">4</td>
+          <td class="inv__r">Keep · shell</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">customActionSheet</span><span class="inv__l">L1054 · 0 callers</span></td>
+          <td class="inv__c">1</td>
+          <td class="inv__r">Delete</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">showDialogConfirm<wbr>NoButton</span><span class="inv__l">L1175</span></td>
+          <td class="inv__c">11</td>
+          <td class="inv__r">Keep · Confirm</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">customGeneralPopup</span><span class="inv__l">L1323</span></td>
+          <td class="inv__c">11</td>
+          <td class="inv__r">Keep · Error</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">customModal<wbr>BottomSheet</span><span class="inv__l">L1408</span></td>
+          <td class="inv__c">31</td>
+          <td class="inv__r">sheets.html</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">common</span><span class="inv__l">L1431 · 0 ext. callers</span></td>
+          <td class="inv__c">3</td>
+          <td class="inv__r">Delete</td>
+        </tr>
+        <tr>
+          <td><span class="inv__n">showConfirm</span><span class="inv__l">L1487</span></td>
+          <td class="inv__c">6</td>
+          <td class="inv__r">Fold · Confirm</td>
+        </tr>
+        <tr class="is-dead">
+          <td><span class="inv__n">showConfirmSP</span><span class="inv__l">L1569 · 0 callers</span></td>
+          <td class="inv__c">1</td>
+          <td class="inv__r">Delete</td>
+        </tr>
+        <tr class="is-new">
+          <td><span class="inv__n">showForm</span><span class="inv__l">L1651</span></td>
+          <td class="inv__c">2</td>
+          <td class="inv__r">Shell drawn here</td>
+        </tr>
+      </tbody>
+    </table>
+    <ul class="legend">
+      <li><b>Refs</b> counts every non-comment reference in <code>lib/</code> including the
+        declaration, so call sites are always one fewer. Five presenters are struck through and
+        marked <b>Delete</b>: they have no caller at all, or their only caller becomes a toast.
+        Deleting them is cheaper than rebranding them, and it takes 5 of 19 presenters off the
+        build.</li>
+    </ul>
+  </div>
+  <p class="note">
+    <b>Four corrections to the audit table.</b> It is headed “19 distinct presenter methods” but
+    lists <b>20</b> rows — the twentieth is <code>stopLoading</code>, which presents nothing and
+    only dismisses, so the count holds if you read it as 19 presenters plus a dismisser. That is
+    how the table above is captioned.
+    <code>startLoadingHori</code> is listed at one
+    call site; it has <b>four</b> — <code>login.dart:40</code>,
+    <code>cubit/profile/profile.dart:277</code> and <code>:376</code>,
+    <code>notification_setting.dart:57</code>. <code>showError</code> is listed at 27 references
+    and has <b>30</b>. And <code>showSuccess</code> is listed as dead but has one live caller,
+    <code>cubit/bloc.dart:204</code>, which is the generic “API returned a message” path — so it
+    is the single most reachable dialog in the app by code path, and it is a modal where a toast
+    belongs. Also: <code>showError</code> and <code>showInternal</code> do not route through
+    <code>customGeneralPopup</code> as the table says — <code>showError</code> calls
+    <code>common</code> (L1431) and <code>showInternal</code> calls
+    <code>customSimpleDialog</code> (L906).
+  </p>
+
+  <!-- ===================== FIVE VARIANTS ===================== -->
+  <h2 class="label">The five core variants</h2>
+
+  <!-- 1 · SUCCESS -->
+  <div class="spec">
+    <p class="spec__label">Success</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--acid">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5"/><path d="m8.3 12.3 2.6 2.6 4.8-5.4"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Reset link sent</h3>
+      <p class="dlg__body">
+        We emailed a password reset link to <b>dylan.n@sportsheist.app</b>. It expires in 60
+        minutes.
+        Nothing in your account has changed yet.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Resend</button>
+        <button class="btn btn--acid" type="button">Open mail</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      Replaces AU-08. The 120pt system 👍 becomes a drawn 22px check in a 44px acid wash tile;
+      the copy names the address and calls the message a reset link, not a “verification email”;
+      the missing dismiss control and the missing resend both appear.
+    </p>
+  </div>
+
+  <!-- 2 · ERROR -->
+  <div class="spec">
+    <p class="spec__label">Error</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Couldn’t send the link</h3>
+      <p class="dlg__body">
+        We couldn’t reach the server. Your connection dropped partway through the request —
+        nothing was sent.
+      </p>
+      <div class="act act--single">
+        <button class="btn btn--acid" type="button">Try again</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      Error is the loudest step on the ladder: red icon on red wash with a 1px red ring. The
+      primary stays acid — the button is the way out, not the danger. Replaces
+      <b>UDialog.showError</b>, whose only control was a 5-second timeout and a button reading
+      <b>Thoát</b>.
+    </p>
+  </div>
+
+  <!-- 3 · WARNING -->
+  <div class="spec">
+    <p class="spec__label">Warning</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--warn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">This idea has no deadline</h3>
+      <p class="dlg__body">
+        Proposals without a deadline never reach a vote, so the club won’t see it in the War
+        Room. Add a date before you publish.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Publish anyway</button>
+        <button class="btn btn--acid" type="button">Add a date</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      Warning sits one step below error, made with the same two hues: red icon on the
+      <b>neutral</b> wash, no ring. The old <code>CColor.warning</code> <b>#E08A09</b> amber is
+      dropped — the contract permits no third hue.
+    </p>
+  </div>
+
+  <!-- 4 · CONFIRM -->
+  <div class="spec">
+    <p class="spec__label">Confirm · two button</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5"/>
+          <path d="M9.7 9.5A2.4 2.4 0 1 1 13 11.8c-.7.4-1 1-1 1.7v.3"/><path d="M12 16.8h.01"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Publish to Barcelona?</h3>
+      <p class="dlg__body">
+        All 1,284 members can read and vote on this idea. You can edit it until the first vote
+        is cast, then it locks.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Cancel</button>
+        <button class="btn btn--acid" type="button">Publish idea</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      Question in the title, consequence in the body, the verb repeated on the button. Secondary
+      left, primary right, equal widths, 10px gap.
+    </p>
+  </div>
+
+  <!-- 5 · DESTRUCTIVE CONFIRM -->
+  <div class="spec">
+    <p class="spec__label">Destructive confirm</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4.6 7h14.8M9.6 7V5.3A1.3 1.3 0 0 1 10.9 4h2.2a1.3 1.3 0 0 1 1.3 1.3V7"/>
+          <path d="M6.5 7l.8 11.4A1.7 1.7 0 0 0 9 20h6a1.7 1.7 0 0 0 1.7-1.6L17.5 7"/>
+          <path d="M10.4 11v5.4M13.6 11v5.4"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Delete this idea?</h3>
+      <p class="dlg__body">
+        <b>Bring back the 1pm kick-off</b> and its 34 comments go for good. This can’t be
+        undone.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Keep it</button>
+        <button class="btn btn--danger" type="button">Delete idea</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      The only place a filled red button is allowed. Ink on red is <b>--acid-ink</b>, the same
+      near-black used on the acid fill, so saturated fills behave identically. The secondary
+      names the safe outcome — “Keep it”, not “Cancel” — because it is the recommended choice.
+    </p>
+  </div>
+
+  <!-- ===================== SERVER ERROR ===================== -->
+  <h2 class="label">Server error</h2>
+
+  <div class="spec">
+    <p class="spec__label">5xx · replaces showInternal</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2.8" y="4.3" width="18.4" height="6.1" rx="2.1"/>
+          <rect x="2.8" y="13.6" width="18.4" height="6.1" rx="2.1"/>
+          <path d="M6 7.35h.01M9 7.35h.01"/>
+          <path d="M12 15.4v2.1M12 18.8h.01"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Something broke on our side</h3>
+      <p class="dlg__body">
+        Barcelona's War Room didn't load. This is a fault on our servers, not your connection —
+        <b>your vote was not cast</b> and nothing was saved. Try again in a moment; if it keeps
+        happening, send support the reference below.
+      </p>
+      <div class="ref">
+        <span class="ref__body">
+          <span class="ref__k">Reference</span>
+          <span class="ref__v">SH-500 · 4F2A9C · 18:24 CET</span>
+        </span>
+        <button class="ref__copy" type="button" aria-label="Copy the reference">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="11" height="11" rx="2.4"/>
+            <path d="M15 5.6A2.4 2.4 0 0 0 12.6 4H6.4A2.4 2.4 0 0 0 4 6.4v6.2A2.4 2.4 0 0 0 5.6 15"/>
+          </svg>
+        </button>
+      </div>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Get help</button>
+        <button class="btn btn--acid" type="button">Try again</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      <b>Replaces <code>UDialog.showInternal</code></b> — <code>dialogs.dart:430</code>,
+      27 references, never drawn. It shows a member the literal string <b>INTERNAL SERVER</b> in
+      34&nbsp;pt Bebas recoloured to <code>#E04A09</code> over a raster, with one OK button. This
+      answers the four questions that dialog doesn't: cause, consequence, one next step, and a
+      reference support can search on. Error tile, not a sixth variant.
+    </p>
+  </div>
+
+  <!-- ===================== ERROR, RECONCILED ===================== -->
+  <h2 class="label">Error, reconciled</h2>
+
+  <div class="spec">
+    <p class="spec__label">Relayed server message · showError</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Couldn't cast your vote</h3>
+      <p class="dlg__body">
+        Voting on <b>Bring back the 1pm kick-off</b> closed at 18:00, four minutes before you
+        tapped. The result is already published.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">See the result</button>
+        <button class="btn btn--acid" type="button">Got it</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      <b>The kit's error specimen did not match this presenter; this one does.</b>
+      <code>showError</code> (<code>dialogs.dart:420</code>, <b>30 references</b> — the app's
+      most-used dialog) has nullable <code>title</code> and <code>text</code>, and six of its
+      callers are <code>utils/src/api.dart</code>, so the body is <b>a relayed server string</b>
+      of unknown length and language, not authored copy. The variant is built to survive one.
+      Null-title fallback is <b>Something went wrong</b>, not the current <b>Cảnh báo</b>
+      (Vietnamese for “Warning”), which mislabels every error.
+    </p>
+    <p class="spec__note">
+      ⚠️ Two flags. The one control reads <b>Thoát</b> — Vietnamese for “Exit” — and is not a
+      button: <code>common</code> (<code>dialogs.dart:1431</code>) draws it as a full-width
+      <code>InkWell</code> of tinted text under a hairline. And <code>secondTimeOut: 5</code>
+      auto-pops it, which is under the reading time of the body above, so an error can vanish
+      mid-sentence. <b>Nothing in this kit auto-dismisses.</b> A message that may go unread is a
+      toast — which times out honestly, because it never blocked anything.
+    </p>
+  </div>
+
+  <!-- ===================== REMINDER ===================== -->
+  <h2 class="label">Reminder</h2>
+
+  <div class="spec">
+    <p class="spec__label">Set · SET LOCKER ROOM REMINDER?</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.6 6.6h4.4M20.8 4.4v4.4"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Set a reminder for this room?</h3>
+      <p class="dlg__body">
+        We'll nudge you ten minutes before <b>Pre-match build-up : Barcelona v Arsenal</b> opens
+        on Sunday 19 April at 6:00&nbsp;PM. You can remove it any time from the bell.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Not now</button>
+        <button class="btn btn--acid" type="button">Set reminder</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Already set · CANCEL REMINDER?</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.9 4.7l4 4M22.9 4.7l-4 4"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Remove this reminder?</h3>
+      <p class="dlg__body">
+        You've a reminder set for <b>Pre-match build-up : Barcelona v Arsenal</b> on Sunday at
+        6:00&nbsp;PM. Remove it and we won't nudge you before it opens.
+      </p>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Keep it</button>
+        <button class="btn btn--acid" type="button">Remove reminder</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      Removing a reminder is <b>not</b> destructive — the bell puts it straight back — so this
+      takes the accent primary, not the filled red. The secondary names the safe outcome,
+      <b>Keep it</b>, exactly as the destructive confirm does, which keeps the shipped
+      <b>KEEP</b> / <b>REMOVE</b> pair intact in sentence case.
+    </p>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Confirmation · REMINDER SET!</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--acid">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2M18.4 6.4l1.7 1.7 3.1-3.4"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Reminder set</h3>
+      <p class="dlg__body">
+        We'll tell you at <b>5:50&nbsp;PM on Sunday</b>, ten minutes before the room opens.
+      </p>
+      <div class="act act--single">
+        <button class="btn btn--acid" type="button">Got it</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      The one dialog on this page that earns the generic <b>Got it</b>: it reports, nothing is
+      being decided, and the verb convention reserves that label for exactly this case.
+      <b>We would rather it were a toast</b> — the shipped flow puts three modals in a row (ask,
+      loading, confirm) to set one reminder. Press <b>Toast · reminder set</b> in the Toast panel
+      below to compare. Drawn here because the code has it, not because we recommend it.
+    </p>
+  </div>
+
+  <div class="section" style="margin-top:20px">
+    <ul class="kv">
+      <li><span>Presenter</span><b>reminderDialog <em>· L244</em></b></li>
+      <li><span>References</span><b>10 <em>· 9 call sites</em></b></li>
+      <li><span>Callers</span><b>all_locker_rooms ×6 <em>· backchat ×3</em></b></li>
+      <li><span>Set tile</span><b>neutral · bell + plus</b></li>
+      <li><span>Remove tile</span><b>neutral · bell + cross</b></li>
+      <li><span>Done tile</span><b>acid · bell + check</b></li>
+    </ul>
+    <p class="note note--tight">
+      <b>The three glyphs are the trigger's glyphs.</b> <code>all-locker-rooms.html</code> draws
+      the per-room trigger as a glyph-only <b>30&nbsp;px</b> disc (<code>.rem</code>, with the
+      <code>create-idea.html</code> <code>::after</code> expansion to 44) that carries its state
+      in the glyph as well as the fill: unset is a <b>bell with a plus</b> in
+      <code>#9BE222</code> on the accent wash inside <code>rgba(155,226,34,.30)</code>, set is a
+      <b>bell with a check</b> in <code>#99A0AE</code> on <code>#13171E</code>. These dialogs
+      reuse those exact paths so the panel is visibly the same control the member tapped.
+      The <em>washes</em> deliberately do not match: on the trigger, accent means “you can set
+      this”; in a dialog, accent means “this succeeded”. So the two asks take the neutral tile
+      like every other ask in the kit, and only the confirmation goes accent. Glyph carries
+      continuity, wash carries the variant.
+    </p>
+    <p class="note note--tight">
+      Replaces a white <code>AlertDialog</code> whose title is a <code>Stack</code> of
+      <code>reminder_background_image.png</code> under 36&nbsp;pt Bebas Neue in
+      <code>CColor.black.shade900</code>, with <b>CANCEL</b> / <b>YES</b> shouted in caps, a
+      close cross drawn <b>top-left</b> and only when <code>showXButton: true</code> (one of the
+      three states passes it), and <code>btnXOnPress;</code> at <code>dialogs.dart:311</code> — a
+      bare statement that evaluates the callback reference and discards it, so the X's caller
+      handler never runs. In this kit the close control is present on all three states, in the
+      same place, and it closes.
+    </p>
+    <p class="note note--tight">
+      ⚠️ <b>Reconciliation with the list.</b> <code>all-locker-rooms.html</code> currently toggles
+      the bell straight from the card with no dialog, and <code>backchat.html</code>'s bell is a
+      section-bar filter (“Rooms I am reminded about”), not a per-room trigger. The code opens a
+      dialog at all nine sites. Either the list keeps the optimistic toggle and these dialogs
+      cover only the <em>remove</em> case, or the bell routes through the ask. We recommend
+      <b>toggle for set, dialog for remove, toast for both outcomes</b> — a one-tap set is worth
+      more than a confirmation nobody reads, and removal is the only one worth interrupting for.
+    </p>
+  </div>
+
+  <!-- ===================== FORM IN A DIALOG ===================== -->
+  <h2 class="label">Dialog with form controls</h2>
+
+  <div class="spec">
+    <p class="spec__label">Shell only · showForm</p>
+    <div class="dlg">
+      <button class="dlg__close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+      <span class="tile tile--neutral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3.2" y="7.2" width="17.6" height="9.6" rx="2.4"/>
+          <path d="M7.4 10.4v3.2"/><path d="M10.6 12h6.2"/>
+        </svg>
+      </span>
+      <h3 class="dlg__title">Add a caption</h3>
+      <p class="dlg__body">
+        Captions show under the photo in the War Room thread. Everyone at Barcelona can read
+        them.
+      </p>
+      <label class="field">
+        <span class="field__label">Caption</span>
+        <span class="ctl ctl--area">
+          <textarea class="ctl__in" rows="3" maxlength="140"
+            placeholder="Say what's happening in the photo">Nou Camp, 18:02 — the away end filling up</textarea>
+          <span class="counter">41 / 140</span>
+        </span>
+      </label>
+      <div class="act">
+        <button class="btn btn--ghost" type="button">Cancel</button>
+        <button class="btn btn--acid" type="button">Save caption</button>
+      </div>
+    </div>
+    <p class="spec__note">
+      <b>This defines the shell, not the screen.</b> The control block sits between the body and
+      the action row and uses <code>forms.html</code>'s <code>.ctl</code> unchanged —
+      <code>52&nbsp;px</code>, <code>R12</code>, 16&nbsp;px value, accent focus ring — with one
+      alteration: the fill drops <code>#1C2129</code> → <code>#13171E</code>, because the panel is
+      itself <code>#1C2129</code>. Two fields at most; past that it is a sheet.
+      <code>media.html</code> is being built separately and should use this shell.
+      <b>The image viewer is not drawn here.</b>
+    </p>
+    <p class="spec__note">
+      ⚠️ <b>Audit correction.</b> The single call site
+      (<code>core/src/image_widget.dart:255</code>) is listed as an “image download / share form”.
+      It is not — it is one field, <code>name: 'description'</code>, hint <b>Chú thích</b>, titled
+      <b>Thêm chú thích cho ảnh</b>: “Add a caption to the photo”. Download is a separate app-bar
+      action at <code>image_widget.dart:365</code> and there is no share surface in
+      <code>lib/</code> at all. Submit defaults to <b>'Xác nhận'</b>, and the
+      <code>required</code> <code>api</code> parameter is satisfied with
+      <code>api: (_, __, ___, ____) {}</code> — a no-op, so the presenter's endpoint path is dead
+      weight where it is used.
+    </p>
+  </div>
+
+  <!-- ===================== STATE ICONS ===================== -->
+  <h2 class="label">State icons</h2>
+  <div class="section">
+    <div class="icons">
+      <figure>
+        <span class="tile tile--acid">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.3 12.3 2.6 2.6 4.8-5.4"/></svg>
+        </span>
+        <figcaption>Success</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/></svg>
+        </span>
+        <figcaption>Error</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--warn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+        </span>
+        <figcaption>Warning</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--neutral">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.5A2.4 2.4 0 1 1 13 11.8c-.7.4-1 1-1 1.7v.3"/><path d="M12 16.8h.01"/></svg>
+        </span>
+        <figcaption>Confirm</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.6 7h14.8M9.6 7V5.3A1.3 1.3 0 0 1 10.9 4h2.2a1.3 1.3 0 0 1 1.3 1.3V7"/><path d="M6.5 7l.8 11.4A1.7 1.7 0 0 0 9 20h6a1.7 1.7 0 0 0 1.7-1.6L17.5 7"/><path d="M10.4 11v5.4M13.6 11v5.4"/></svg>
+        </span>
+        <figcaption>Destructive</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--neutral">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+        </span>
+        <figcaption>Info</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--neutral">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16M10 20.2h4"/></svg>
+        </span>
+        <figcaption>Alerts ask</figcaption>
+      </figure>
+      <figure>
+        <span class="tile tile--neutral">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </span>
+        <figcaption>Dismiss</figcaption>
+      </figure>
+    </div>
+    <p class="note note--tight">
+      All eight are inline SVG on a 24 box at 1.7 stroke, round caps and joins — the same
+      construction as the tab bar and row icons. No emoji anywhere: the AU-08 👍 and the AU-09
+      flag are platform glyphs the brand cannot recolour, and they render differently on every
+      OS version.
+    </p>
+  </div>
+
+  <!-- ===================== ACTION ROW ===================== -->
+  <h2 class="label">Action row</h2>
+  <div class="section">
+    <ul class="kv">
+      <li><span>Order</span><b>secondary left · primary right</b></li>
+      <li><span>Widths</span><b>equal, flex 1 · 10px gap</b></li>
+      <li><span>One action</span><b>full width primary</b></li>
+      <li><span>Height</span><b>46 · radius 999</b></li>
+      <li><span>Label</span><b>14.5/700, sentence case</b></li>
+      <li><span>Primary</span><b>acid fill, --acid-ink label</b></li>
+      <li><span>Secondary</span><b>--sunken fill, 1px --line</b></li>
+      <li><span>Destructive</span><b>red fill, --acid-ink label</b></li>
+    </ul>
+    <p class="note note--tight">
+      <b>Verb convention — the affirmative button repeats the verb from the title.</b>
+      “Publish to Barcelona?” → <b>Publish idea</b>. “Delete this idea?” → <b>Delete idea</b>.
+      Imperative, sentence case, three words at most, never a bare generic. The single
+      permitted generic is <b>Got it</b>, and only where the dialog is an acknowledgement with
+      nothing to decide. The secondary is <b>Cancel</b>, or <b>Not now</b> where the ask can
+      come back later, or the named safe outcome where one side is recommended
+      (<b>Keep it</b>), or a second named action where the dialog only reports
+      (<b>Resend</b>).
+      This retires <b>AGREE</b>, <b>Publish</b>, <b>CONFIRM</b>, <b>Đồng ý</b> and
+      <b>Thoát</b> — five affirmatives across four dialogs, three of them shouted in caps.
+      Tracked uppercase belongs to micro-labels and status pills only, never to a button.
+    </p>
+  </div>
+
+  <!-- ===================== LIVE ===================== -->
+  <h2 class="label">Scrim, live</h2>
+  <div class="section">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="status-pill">Interactive</span>
+    </div>
+    <ul class="kv" style="margin-top:12px">
+      <li><span>Fill</span><b>rgba(3,4,1,.72) <em>· canvas at 72%</em></b></li>
+      <li><span>Blur</span><b>backdrop 10px + saturate .9</b></li>
+      <li><span>Fallback</span><b>rgba(3,4,1,.86), no blur</b></li>
+      <li><span>Covers</span><b>full canvas, incl. tab bar</b></li>
+      <li><span>Dismiss</span><b>close · scrim tap · Esc</b></li>
+    </ul>
+    <div class="tryit">
+      <button class="pill-btn" type="button" data-open="alerts">Open the alerts ask</button>
+      <button class="pill-btn" type="button" data-open="delete">Open destructive confirm</button>
+    </div>
+    <p class="note note--tight">
+      Opening one moves focus to the dialog, holds Tab inside it, and returns focus to the
+      button that opened it. AU-08's scrim is a flat ~45% with no blur, which leaves the form
+      behind it fully legible and competing with the dialog for attention; 72% plus a 10px
+      blur reduces the backdrop to shape and colour only. The blur is also what separates the
+      #1C2129 panel from the canvas without a heavier border.
+    </p>
+  </div>
+
+  <!-- ===================== TOAST ===================== -->
+  <h2 class="label">Toast</h2>
+
+  <div class="spec">
+    <p class="spec__label">Success</p>
+    <div class="toast">
+      <span class="toast__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.6l4.4 4.4L19 7.4"/></svg>
+      </span>
+      <span class="toast__msg">Profile saved</span>
+    </div>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Error, with action</p>
+    <div class="toast toast--error">
+      <span class="toast__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/></svg>
+      </span>
+      <span class="toast__msg">Vote didn’t register</span>
+      <button class="toast__act" type="button">Retry</button>
+    </div>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Info, with action</p>
+    <div class="toast toast--info">
+      <span class="toast__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+      </span>
+      <span class="toast__msg">3 new proposals in the War Room</span>
+      <button class="toast__act" type="button">View</button>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:20px">
+    <ul class="kv">
+      <li><span>Inset</span><b>16 each side <em>· --gutter</em></b></li>
+      <li><span>Radius</span><b>16 <em>· --r-card</em></b></li>
+      <li><span>Height</span><b>52 min, grows with the message</b></li>
+      <li><span>Marker</span><b>3 × 22 rounded bar, semantic</b></li>
+      <li><span>Clearance</span><b>10 above the tab bar</b></li>
+      <li><span>Bottom</span><b>82 from the screen edge</b></li>
+      <li><span>Life</span><b>4s · 6s when it has an action</b></li>
+    </ul>
+    <div class="tryit">
+      <button class="pill-btn" type="button" data-toast="success">Toast · success</button>
+      <button class="pill-btn" type="button" data-toast="error">Toast · error</button>
+      <button class="pill-btn" type="button" data-toast="info">Toast · info</button>
+      <button class="pill-btn" type="button" data-toast="remind">Toast · reminder set</button>
+    </div>
+    <p class="note note--tight">
+      Fires a real toast into the dock at the foot of the screen, above the tab bar. The AU-13
+      snackbar is the only full-bleed square-cornered element in the whole captured set: flat
+      green, ~90pt tall, no icon, no action, sitting directly on top of the floating tab bar it
+      overlaps. This one is inset to the gutter, shares the card radius, carries a semantic
+      marker and an icon, and clears the bar by 10px. Its green is the accent, not a fourth
+      hue.
+    </p>
+  </div>
+
+  <!-- ===================== LOADING ===================== -->
+  <h2 class="label">Loading</h2>
+  <div class="section">
+    <div class="loadbay">
+      <div class="loader">
+        <svg class="anim" viewBox="0 0 62 26" width="62" height="26" aria-hidden="true">
+          <path d="M2 24 L11 6 L20 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin="0s" repeatCount="indefinite"/>
+          </path>
+          <path d="M22 24 L31 3 L40 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".16s" repeatCount="indefinite"/>
+          </path>
+          <path d="M42 24 L51 8 L60 24 Z" fill="currentColor" opacity=".22">
+            <animate attributeName="opacity" values=".22;1;.22" dur="1.15s" begin=".32s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+        <span class="loader__cap">Loading standings</span>
+      </div>
+    </div>
+
+    <div class="spins">
+      <span class="ring">
+        <svg class="anim" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4" opacity=".18"/>
+          <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+      </span>
+      <span class="ring">
+        <svg class="anim" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".18"/>
+          <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+      </span>
+      <p>Ring, 28 and 20. Track is white at 18%, sweep is a 90° arc in the accent. Used inline
+        and in controls; the peaks are used where a whole panel is waiting.</p>
+    </div>
+
+    <div class="btnpair">
+      <button class="btn btn--acid" type="button" data-busy>
+        <span class="btn__label">Publish idea</span>
+        <span class="btn__spin" aria-hidden="true">
+          <svg class="anim" viewBox="0 0 24 24" width="20" height="20">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".3"/>
+            <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+            </path>
+          </svg>
+        </span>
+      </button>
+      <button class="btn btn--ghost" type="button" aria-busy="true">
+        <span class="btn__label">Casting vote</span>
+        <span class="btn__spin" aria-hidden="true">
+          <svg class="anim" viewBox="0 0 24 24" width="20" height="20">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.8" opacity=".22"/>
+            <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".9s" repeatCount="indefinite"/>
+            </path>
+          </svg>
+        </span>
+      </button>
+    </div>
+    <p class="note note--tight">
+      Press <b>Publish idea</b> to see the in-button state: the label is hidden but keeps its
+      box, so the control cannot change width; the spinner takes the label's ink
+      (<b>--acid-ink</b> on the acid fill, white on the ghost); <code>aria-busy="true"</code>
+      goes on the button and pointer events stop, so it can't be double-submitted. The one on
+      the right is parked in that state so both can be compared.
+      This replaces <b>WLoading</b>, whose <code>color ?? Colors.blue</code> default paints a
+      Material <b>#2196F3</b> dot-ring — a hue that appears nowhere else in the brand.
+    </p>
+  </div>
+
+  <div class="section" style="margin-top:20px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="status-pill">One loader</span>
+    </div>
+    <ul class="kv" style="margin-top:12px">
+      <li><span>Blocking</span><b>peaks 62×26 <em>· in a 104 bay</em></b></li>
+      <li><span>Inline</span><b>ring 28 · 20 <em>· in controls</em></b></li>
+      <li><span>Retired</span><b>startLoadingHori <em>· L223</em></b></li>
+      <li><span>Retired</span><b>WLoadingHori <em>· loading.dart:22</em></b></li>
+      <li><span>Lottie files</span><b>2 → 0</b></li>
+    </ul>
+    <p class="note note--tight">
+      <b>Ruling: one loader, in two sizes. The second treatment goes.</b>
+      <code>startLoadingHori</code> (<code>dialogs.dart:223</code>, 5 references) is a
+      character-for-character copy of <code>startLoading</code> — same
+      <code>barrierDismissible:false</code>, same <code>CColor.black.withOpacity(0.2)</code>
+      barrier, same transparent <code>SimpleDialog</code>, same 3-second timeout — differing only
+      in which Lottie file it plays: <code>trail_loading.json</code> at a fixed 150×150 versus
+      <code>loading_hori.json</code> scaled to fit. Both are <code>ColorFiltered</code> with a
+      hardcoded default, and the two defaults <em>disagree</em>: <code>Colors.blue</code> for one,
+      <code>Colors.black</code> for the other — so the app's two loaders are Material blue and
+      pure black, and neither is a brand colour. All four of the horizontal loader's callers
+      (<code>login.dart:40</code>, <code>cubit/profile/profile.dart:277</code> and
+      <code>:376</code>, <code>notification_setting.dart:57</code>) are full-screen blocking
+      waits on an API call — the identical job to <code>startLoading</code>'s eleven. There is no
+      second behaviour to preserve, only a second asset.
+    </p>
+    <p class="note note--tight">
+      The split that <em>is</em> real is <b>blocking versus inline</b>, and this kit already has
+      it: the peaks own a panel that is waiting, the ring owns a line of text or the inside of a
+      control. <code>WLoadingHori</code>'s three <em>non</em>-modal uses —
+      <code>vote_count.dart:319</code>, <code>pick_club.dart:147</code>,
+      <code>like_count.dart:709</code> — become the 20&nbsp;px ring, which is what a horizontal
+      bar inside a row was reaching for. So: delete <code>startLoadingHori</code>, delete both
+      Lottie assets, one mark in two sizes.
+    </p>
+    <p class="note note--tight">
+      ⚠️ <b>Two bugs to fix on the way, not design questions.</b> Both loaders end
+      <code>.timeout(const Duration(seconds: 3), onTimeout: () { stopLoading(); })</code> — the
+      loader dismisses <em>itself</em> after three seconds whether or not the request finished,
+      leaving the member on an unchanged screen with no spinner, no error and no result. Any call
+      slower than 3&nbsp;s silently looks like nothing happened. And <code>_isDialog</code>
+      (<code>dialogs.dart:17</code>) is a single <code>static bool</code> shared by both
+      presenters, so a second loader opened over a first overwrites the flag and
+      <code>stopLoading</code> pops one route for two dialogs. Collapsing to one presenter removes
+      half of that; the flag still needs to become a counter or a route reference.
+    </p>
+  </div>
+
+  <!-- ===================== EMPTY STATE ===================== -->
+  <h2 class="label">Empty state</h2>
+  <div class="empty">
+    <span class="tile tile--neutral tile--lg">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 4h8a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6a2 2 0 0 1 2-2Z"/>
+        <path d="M9.5 9.5h5M9.5 13h5M9.5 16.5h3"/>
+      </svg>
+    </span>
+    <h3>No proposals yet</h3>
+    <p>Nobody at Barcelona has put an idea forward this week. Be the first.</p>
+    <button class="pill-btn pill-btn--acid" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      New idea
+    </button>
+  </div>
+  <p class="note">
+    Replaces <b>C-21</b> / <code>EmptyContainer</code>: a pure <b>#000000</b> panel with a lilac
+    border and one line of shouted Bebas, <b>NO PROPOSALS AT THE MOMENT</b>, with nothing to do
+    next. The panel now uses the section fill and border like every other container, and the
+    dead end gets an exit.
+  </p>
+
+  <!-- ===================== BANNERS ===================== -->
+  <h2 class="label">Inline banner</h2>
+
+  <div class="spec">
+    <p class="spec__label">Info</p>
+    <div class="banner">
+      <span class="banner__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/></svg>
+      </span>
+      <span class="banner__txt">
+        <b>Voting closes Friday, 18:00</b>
+        Ideas published after Wednesday roll into next week's ballot.
+      </span>
+    </div>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Warning</p>
+    <div class="banner banner--warn">
+      <span class="banner__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.6 21 19.4H3L12 4.6Z"/><path d="M12 10.2v3.6M12 16.6h.01"/></svg>
+      </span>
+      <span class="banner__txt">
+        <b>Your email isn't confirmed</b>
+        You can read the War Room, but you can't vote until it is.
+      </span>
+      <button class="banner__link" type="button">Resend</button>
+    </div>
+    <p class="spec__note">
+      Banners are in-flow, so they use <b>--r-panel</b> and the sunken fill, not the card
+      radius. Warning takes the red wash and a red hairline; info stays neutral. Neither
+      ever carries a state colour on its body text at less than 4.5:1.
+    </p>
+  </div>
+
+</main>
+
+<!-- ================= DOCK: live toasts + tab bar =================
+     `tabbar` on the wrapper is the review-shell hook: the review page
+     rewrites `.tabbar` to position:absolute so anything pinned to the
+     screen stays inside the device frame. -->
+<div class="dock tabbar">
+  <div class="toaster" id="toaster" role="status" aria-live="polite"></div>
+  <nav class="tabbar__inner" aria-label="Primary">
+    <button class="tab" type="button" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/>
+        <path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/>
+      </svg><span class="tab__label">War Room</span>
+    </button>
+    <button class="tab" type="button" aria-label="Merits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/>
+      </svg><span class="tab__label">Merits</span>
+    </button>
+    <button class="tab" type="button" aria-label="Backchat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>
+      </svg><span class="tab__label">Backchat</span>
+    </button>
+    <button class="tab" type="button" aria-label="Alerts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16"/>
+      </svg><span class="tab__label">Alerts</span>
+    </button>
+    <button class="tab" type="button" aria-label="Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>
+      </svg><span class="tab__label">Profile</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ================= LIVE OVERLAY ================= -->
+<div class="overlay tabbar" id="overlay">
+  <div class="scrim" id="scrim"></div>
+
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="live-t" aria-describedby="live-b" data-pane="alerts" hidden>
+    <button class="dlg__close" type="button" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+    </button>
+    <span class="tile tile--neutral">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16M10 20.2h4"/>
+      </svg>
+    </span>
+    <h3 class="dlg__title" id="live-t">Turn on match alerts?</h3>
+    <p class="dlg__body" id="live-b">
+      We'll tell you when an idea goes to a vote and when Barcelona decides. Two or three a
+      week, nothing else. iOS will ask next.
+    </p>
+    <div class="act">
+      <button class="btn btn--ghost" type="button" data-close>Not now</button>
+      <button class="btn btn--acid" type="button" data-close data-then="alerts">Turn on alerts</button>
+    </div>
+  </div>
+
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="live-t2" aria-describedby="live-b2" data-pane="delete" hidden>
+    <button class="dlg__close" type="button" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+    </button>
+    <span class="tile tile--red">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4.6 7h14.8M9.6 7V5.3A1.3 1.3 0 0 1 10.9 4h2.2a1.3 1.3 0 0 1 1.3 1.3V7"/>
+        <path d="M6.5 7l.8 11.4A1.7 1.7 0 0 0 9 20h6a1.7 1.7 0 0 0 1.7-1.6L17.5 7"/>
+        <path d="M10.4 11v5.4M13.6 11v5.4"/>
+      </svg>
+    </span>
+    <h3 class="dlg__title" id="live-t2">Delete this idea?</h3>
+    <p class="dlg__body" id="live-b2">
+      <b>Bring back the 1pm kick-off</b> and its 34 comments go for good. This can't be undone.
+    </p>
+    <div class="act">
+      <button class="btn btn--ghost" type="button" data-close>Keep it</button>
+      <button class="btn btn--danger" type="button" data-close data-then="deleted">Delete idea</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce){
+    Array.prototype.forEach.call(document.querySelectorAll('svg.anim'), function(s){
+      if (s.pauseAnimations) s.pauseAnimations();
+    });
+  }
+
+  /* ---------------- toasts ---------------- */
+  var toaster = document.getElementById('toaster');
+
+  var ICON = {
+    success:'<path d="M5 12.6l4.4 4.4L19 7.4"/>',
+    error:  '<circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/>',
+    info:   '<circle cx="12" cy="12" r="8.5"/><path d="M12 11.3v5M12 8.2h.01"/>',
+    /* the bell + check from all-locker-rooms.html's reminder trigger */
+    remind: '<path d="M7.4 15.6V10.4a4.6 4.6 0 0 1 9.2 0v5.2M5.8 15.6h12.4M10.4 18.2h3.2' +
+            'M18.4 6.4l1.7 1.7 3.1-3.4"/>'
+  };
+  var COPY = {
+    success:{ msg:'Profile saved' },
+    error:  { msg:'Vote didn’t register', act:'Retry' },
+    info:   { msg:'3 new proposals in the War Room', act:'View' },
+    remind: { msg:'Reminder set for Sunday, 5:50 PM', act:'Undo' }
+  };
+
+  function toast(kind, override){
+    var conf = COPY[kind] || COPY.info;
+    var msg  = (override && override.msg) || conf.msg;
+    var act  = override && 'act' in override ? override.act : conf.act;
+
+    var el = document.createElement('div');
+    el.className = 'toast' + (kind === 'success' ? '' : ' toast--' + kind);
+    el.innerHTML =
+      '<span class="toast__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="' + (kind === 'success' ? '1.9' : '1.7') + '" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true">' + (ICON[kind] || ICON.info) + '</svg></span>' +
+      '<span class="toast__msg"></span>' +
+      (act ? '<button class="toast__act" type="button"></button>' : '');
+    el.querySelector('.toast__msg').textContent = msg;
+    if (act) el.querySelector('.toast__act').textContent = act;
+
+    while (toaster.children.length > 1) toaster.removeChild(toaster.firstChild);
+    toaster.appendChild(el);
+    requestAnimationFrame(function(){ el.classList.add('is-in'); });
+
+    var life = act ? 6000 : 4000;
+    var t = setTimeout(drop, life);
+    function drop(){
+      clearTimeout(t);
+      el.classList.remove('is-in');
+      setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+    }
+    if (act) el.querySelector('.toast__act').addEventListener('click', drop);
+  }
+
+  document.addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-toast]') : null;
+    if (b) toast(b.getAttribute('data-toast'));
+  });
+
+  /* ---------------- in-button loading ---------------- */
+  document.addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-busy]') : null;
+    if (!b || b.getAttribute('aria-busy') === 'true') return;
+    b.setAttribute('aria-busy','true');
+    setTimeout(function(){
+      b.removeAttribute('aria-busy');
+      toast('success', { msg:'Idea published to Barcelona', act:'View' });
+    }, 1700);
+  });
+
+  /* ---------------- dialog ---------------- */
+  var overlay = document.getElementById('overlay');
+  var scrim   = document.getElementById('scrim');
+  var main    = document.querySelector('main.screen');
+  var dock    = document.querySelector('.dock');
+  var opener  = null;
+  var pane    = null;
+
+  function focusables(root){
+    return Array.prototype.filter.call(
+      root.querySelectorAll('button, [href], input, select, textarea, [tabindex]'),
+      function(el){ return !el.hasAttribute('disabled') && el.getAttribute('tabindex') !== '-1'; }
+    );
+  }
+
+  function open(name, trigger){
+    pane = overlay.querySelector('[data-pane="' + name + '"]');
+    if (!pane) return;
+    opener = trigger || null;
+    pane.hidden = false;
+    overlay.classList.add('is-open');
+    if (main) main.setAttribute('aria-hidden','true');
+    if (dock) dock.setAttribute('aria-hidden','true');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function(){ overlay.classList.add('is-in'); });
+    /* focus the dialog itself, not an action — the destructive variant must
+       never open with "Delete idea" primed under the return key */
+    pane.setAttribute('tabindex','-1');
+    pane.focus();
+    document.addEventListener('keydown', onKey, true);
+  }
+
+  function close(then){
+    if (!pane) return;
+    var closing = pane;
+    overlay.classList.remove('is-in');
+    document.removeEventListener('keydown', onKey, true);
+    if (main) main.removeAttribute('aria-hidden');
+    if (dock) dock.removeAttribute('aria-hidden');
+    document.body.style.overflow = '';
+    setTimeout(function(){
+      overlay.classList.remove('is-open');
+      closing.hidden = true;
+    }, 200);
+    pane = null;
+    if (opener) opener.focus();
+    opener = null;
+    if (then === 'alerts')  toast('success', { msg:'Match alerts are on', act:null });
+    if (then === 'deleted') toast('success', { msg:'Idea deleted', act:'Undo' });
+  }
+
+  function onKey(e){
+    if (!pane) return;
+    if (e.key === 'Escape'){ e.preventDefault(); close(); return; }
+    if (e.key !== 'Tab') return;
+    var f = focusables(pane);
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    else if (!pane.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+  }
+
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+    var o = e.target.closest('[data-open]');
+    if (o){ open(o.getAttribute('data-open'), o); return; }
+    var c = e.target.closest('[data-close]');
+    if (c){ close(c.getAttribute('data-then')); return; }
+    if (e.target === scrim) close();
+  });
+
+  /* ---------------- tab bar ---------------- */
+  var bar = document.querySelector('.tabbar__inner');
+  bar.addEventListener('click', function(e){
+    var b = e.target.closest('.tab'); if (!b) return;
+    Array.prototype.forEach.call(bar.querySelectorAll('.tab'), function(x){
+      if (x === b){ x.setAttribute('aria-current','page'); x.removeAttribute('aria-label'); }
+      else { x.removeAttribute('aria-current'); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

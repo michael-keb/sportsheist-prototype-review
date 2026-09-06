@@ -1,0 +1,818 @@
+[
+  {
+    "name": "War Room — the hub",
+    "journeys": [
+      {
+        "id": "wr-hub-tour",
+        "name": "The whole lifecycle in one scroll",
+        "who": "Member",
+        "why": "Orientation. Four rails, four stages, one machine — this is the screen the client should be able to explain back to you.",
+        "steps": [
+          { "screen": "war-room/0", "note": "The home screen. Ideas, Voting, Results and Actions are stacked in the order a decision travels, so a member can see everything the club is deciding in one scroll." },
+          { "screen": "idea-card/0", "note": "Stage one. An idea collects likes against the bar its category has to clear, with a clock running. This card is the most repeated object in the product." },
+          { "screen": "voting-card/0", "note": "Stage two. An idea that cleared its bar becomes a proposal and the club votes. The likes ring is swapped for a threshold bar, because a vote has a line it must cross and a ring cannot draw a line." },
+          { "screen": "results-actions/0", "note": "Stage three. Every settled proposal with its outcome written in a word, a badge and a set of figures." },
+          { "screen": "action-detail", "note": "Stage four, and the point of the product: what the club actually did about it. Worth noting that today nothing in the app can record whether an action was carried out — there is no owner, no due date and no completion field." }
+        ]
+      },
+      {
+        "id": "wr-hub-loading",
+        "name": "The hub while it loads",
+        "who": "Member",
+        "why": "The first thing every member sees on every launch, and the current version is a light-theme skeleton running on a dark screen.",
+        "steps": [
+          { "screen": "war-room/1", "note": "The skeleton, redrawn dark. It deliberately reproduces one oddity of the shipped app: the placeholder draws three rails and the loaded screen has four, so Actions appears out of nowhere when the data lands." },
+          { "screen": "war-room/0", "note": "Loaded. Nothing reflows on arrival — the placeholder cards are the same width and the same internal shape as the real ones." }
+        ]
+      },
+      {
+        "id": "wr-hub-empty-club",
+        "name": "A club on day one, with nothing running",
+        "who": "New member",
+        "why": "The first impression for any club that has just switched on. Four empty rails is the worst possible welcome unless it tells the member what to do.",
+        "steps": [
+          { "screen": "war-room/2", "note": "Every rail is empty. The four headings are the app's own words, kept verbatim — including 'No voting added yet', which reads oddly because nobody adds a voting. The second line under each heading is new and says what would fill the rail." },
+          { "screen": "idea-gate", "note": "The only control left on an empty rail is the + on Ideas, and it lands here. Notice that the rail's filter and 'View all' controls are dropped when there is nothing to filter or view." },
+          { "screen": "create-idea/0", "note": "The way out of an empty club is a member writing the first idea." }
+        ]
+      },
+      {
+        "id": "wr-hub-load-failed",
+        "name": "The hub fails to load",
+        "who": "Member",
+        "why": "Proposed, not built — and it is the single most consequential gap on this tab.",
+        "steps": [
+          { "screen": "war-room/3", "note": "One panel replaces all four rails: what happened, one sentence of reason, and a Try again button that shows a spinner without changing width so a double press is impossible. Nothing in the app produces this screen today." },
+          { "screen": "war-room/0", "note": "The retry succeeds and the hub loads normally." }
+        ]
+      },
+      {
+        "id": "wr-hub-failure-today",
+        "name": "What a failed load looks like today",
+        "who": "Member",
+        "why": "The most useful contrast in the set: a failure is currently reported to the member as good news about their club.",
+        "steps": [
+          { "screen": "war-room/3", "note": "What we propose: a failure that says it failed, and offers a retry." },
+          { "screen": "war-room/2", "note": "What actually happens today. The failure state exists in the code but nothing ever tests for it, so a dead request falls through to the loaded layout with empty lists — and the member is told their club has no ideas, no votes, no results and no actions." }
+        ]
+      },
+      {
+        "id": "wr-hub-rail-filters",
+        "name": "Filtering a rail without leaving the hub",
+        "who": "Member",
+        "why": "Four filter buttons already sit on this screen and none of them does anything. This is what they should do.",
+        "steps": [
+          { "screen": "war-room/0", "note": "Each rail header carries a filter button. In the shipped app all four are decorative icons on buttons with no behaviour attached; here each opens a sheet and filters only its own rail." },
+          { "screen": "ideas-list/2", "note": "The axes differ per rail because the cards differ — an idea has a kind and a like, a proposal has a kind and a position against its threshold, a result has a verdict." },
+          { "screen": "ideas-list/0", "note": "Back with the filter applied. A count and a dot stay on the glyph, so an active filter is still visible after the sheet closes." }
+        ]
+      },
+      {
+        "id": "wr-hub-desktop",
+        "name": "The same War Room on a desktop",
+        "who": "Member",
+        "why": "Shows the rails and the proposal detail surviving a wide layout, which is where club officers will actually read them.",
+        "steps": [
+          { "screen": "war-room/0", "note": "The phone layout: four rails, each a horizontal carousel." },
+          { "screen": "desktop-shell/0", "note": "The same content on a desktop, with the tab bar becoming a side rail." },
+          { "screen": "desktop-shell/2", "note": "A proposal opens in a panel beside the list rather than replacing the screen, so a member can keep their place while reading." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "War Room — posting an idea",
+    "journeys": [
+      {
+        "id": "wr-post-happy",
+        "name": "A member posts an idea",
+        "who": "Member",
+        "why": "The one flow in the product that costs the member something, and the entry point to everything else.",
+        "steps": [
+          { "screen": "idea-gate", "note": "The gate. It states what an idea is, what happens to it, and — for the first time — what posting costs and when that money comes back. Look at the eligible reading at the left." },
+          { "screen": "create-idea/0", "note": "Compose. Title, body and category; the category decides which threshold the idea has to clear and which rules it is judged against." },
+          { "screen": "create-idea/1", "note": "Compliance and timing. The club's house rules are checked, and the member sets the clocks for the likes stage and the vote." },
+          { "screen": "create-idea/2", "note": "The deposit is confirmed before anything is charged. Both outcomes are stated in full: returned when the idea becomes a proposal, forfeited if it lapses, and nothing charged after that." },
+          { "screen": "create-idea/3", "note": "Posted, with a copyable reference and the live card the member just created. No success screen exists in the current app at all, and this is the screen a member will see most often." },
+          { "screen": "idea-detail/0", "note": "The idea now has its own screen: the clock, the likes it needs, and the one decision other members have to make." }
+        ]
+      },
+      {
+        "id": "wr-post-gate-today",
+        "name": "The gate as shipped, and the gate proposed",
+        "who": "Member",
+        "why": "A screen that has been in the app since the beginning, has never been captured, and currently gates nothing.",
+        "steps": [
+          { "screen": "war-room/0", "note": "Five places in the War Room lead to the gate, all of them unconditional — the app never checks anything before showing it." },
+          { "screen": "idea-gate", "note": "Today this screen is an illustration, a shouted line, one paragraph and a Continue button that always continues. It never mentions that posting locks a deposit. Every branch drawn here — permission, balance, match window, and the suppressed banner — is new." }
+        ]
+      },
+      {
+        "id": "wr-post-category-closed",
+        "name": "The club has closed the category the member wanted",
+        "who": "Member",
+        "why": "A block with an exit. The permission fields are real per-club settings that the app currently reads in only one place.",
+        "steps": [
+          { "screen": "war-room/0", "note": "The member taps + to start an idea." },
+          { "screen": "idea-gate", "note": "Look at the 'category closed' reading. A padlock on a neutral tile, not a red error — a club rule is not a failure, and nothing has cost anything. The title is the way out: post a Position idea instead." },
+          { "screen": "create-idea/0", "note": "The form opens with only the category the club allows. Today a member with no posting permission at all is still offered a category and can still submit." }
+        ]
+      },
+      {
+        "id": "wr-post-short-of-credits",
+        "name": "The member cannot afford the deposit",
+        "who": "Member",
+        "why": "Today the first time a member learns they cannot afford to post is after they have written the whole idea.",
+        "steps": [
+          { "screen": "idea-gate", "note": "Look at the 'short of Credits' reading: the shortfall stated as a figure, and an explanation of why Credits already locked on live ideas cannot cover this one." },
+          { "screen": "wallet/0", "note": "The balance, with the locked deposits shown separately from what is spendable." },
+          { "screen": "wallet/3", "note": "Top up, then come back. The gate's primary action is the wallet's own purchase route rather than a dead end." },
+          { "screen": "create-idea/0", "note": "With the balance clear, the member writes the idea. The deposit figure itself is invented — no pricing of any kind exists in the app — so it needs a decision before build." }
+        ]
+      },
+      {
+        "id": "wr-post-late-in-match",
+        "name": "The member posts too late in the match",
+        "who": "Member",
+        "why": "A caution rather than a block. The app currently tells a member their idea was cancelled for running past the whistle, but never warns them beforehand.",
+        "steps": [
+          { "screen": "idea-gate", "note": "Look at the 'late in the match' reading. It names the minutes left, says the idea would be cancelled and the deposit returned, and offers the category that survives the whistle — but the primary action still says 'Start it anyway'." },
+          { "screen": "create-idea/1", "note": "The timing step, where the member sets a shorter window to fit inside the fixture." },
+          { "screen": "idea-detail/0", "note": "The posted idea, running against both its own clock and the match." }
+        ]
+      },
+      {
+        "id": "wr-post-gate-suppressed",
+        "name": "A regular poster who has turned the gate off",
+        "who": "Frequent poster",
+        "why": "A full-screen interruption that always says the same thing is worth dismissing once you have read it.",
+        "steps": [
+          { "screen": "idea-gate", "note": "The 'don't show this again' box, and the suppressed reading beside it." },
+          { "screen": "create-idea/0", "note": "The gate is replaced by a one-line banner carrying the deposit figure, the balance left after it, and a route back to the full explanation." },
+          { "screen": "create-idea/2", "note": "The deposit confirmation still appears. Suppressing the explanation never suppresses the charge." }
+        ]
+      },
+      {
+        "id": "wr-post-failed",
+        "name": "Posting fails",
+        "who": "Member",
+        "why": "The failure a member is most likely to hit, and the current version is unusable.",
+        "steps": [
+          { "screen": "create-idea/1", "note": "The member finishes the form and commits." },
+          { "screen": "create-idea/2", "note": "They agree to the deposit." },
+          { "screen": "create-idea/4", "note": "It fails. This states the cause in plain language, states that nothing was deposited, offers two routes forward and a copyable reference. The shipped version pipes a raw permission error into a shouted modal with no cause, no next step and no dismiss control." }
+        ]
+      },
+      {
+        "id": "wr-post-assistant",
+        "name": "Drafting an idea with the assistant",
+        "who": "Member",
+        "why": "A well-developed proposal with nothing at all behind it — the client should decide whether to fund it before it is priced into a build.",
+        "steps": [
+          { "screen": "create-idea/0", "note": "The 'draft it with the assistant' panel. There is no AI code anywhere in the app — this whole panel is a proposal. Machine-written and member-written text are never styled alike, and an on-screen key states the rule." },
+          { "screen": "create-idea/1", "note": "The assistant's estimate of the idea's chances is labelled as a model output with its sample size, and it says in its own footnote that it does not affect whether the idea may post." },
+          { "screen": "create-idea/3", "note": "Posted. Open question for the client: whether the assistant's share of the draft should be visible to other members once the idea is in the War Room." }
+        ]
+      },
+      {
+        "id": "wr-post-timing",
+        "name": "Setting the clocks an idea will run on",
+        "who": "Member",
+        "why": "The whole timeline of a decision is chosen here, and the ranges currently drawn are implausibly short.",
+        "steps": [
+          { "screen": "create-idea/1", "note": "The three clocks — likes stage, vote, result — drawn as one track so the sequence is legible. The values shown are six minutes to collect likes and three minutes to vote, which is what the source material said; the cards elsewhere count down in hours." },
+          { "screen": "create-idea/2", "note": "The deposit resolves when the likes stage ends, not when the result lands — so the timing chosen here decides when the member's money comes back." },
+          { "screen": "idea-detail/0", "note": "The clocks running for real on the idea's own screen." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "War Room — the Ideas stage",
+    "journeys": [
+      {
+        "id": "wr-idea-read-and-back",
+        "name": "A member reads an idea and backs it",
+        "who": "Member",
+        "why": "The single most repeated act in the product: read, decide, like.",
+        "steps": [
+          { "screen": "idea-card/0", "note": "Three ideas in the rail at different levels of support. The ring is a percentage of the likes this idea needs, not of the membership." },
+          { "screen": "idea-detail/0", "note": "The idea in full: who proposed it, how long is left, and how far it has got. The whole proposition should be legible in about four seconds." },
+          { "screen": "idea-detail/2", "note": "Before the tap, the cost is stated in three rows — free now, charged only if the idea becomes a proposal, never charged if it fails. The shipped screen puts all of that inside a dialog that opens after the member has already committed." },
+          { "screen": "idea-detail/3", "note": "Liked, written as one sentence with the time it was counted and the member's position in the count. The shipped version assembles the same message from three separate templates and lands on a broken sentence with a shouted verb in the middle." }
+        ]
+      },
+      {
+        "id": "wr-idea-chart",
+        "name": "Reading the progress chart on an idea",
+        "who": "Member",
+        "why": "The chart is the piece most worth a careful look, because what it plots is not obvious and the shipped rendering obscures it.",
+        "steps": [
+          { "screen": "idea-detail/0", "note": "The headline figure: likes so far against likes needed." },
+          { "screen": "idea-detail/1", "note": "The same screen scrolled to the plot. The vertical axis is progress toward the number of likes this club requires, so 100% is the threshold itself and the 'becomes a proposal' marker necessarily sits on the top line. In the shipped chart the visible axis labels are decorative and are not guaranteed to line up with the plotted points at all." }
+        ]
+      },
+      {
+        "id": "wr-idea-final-minutes",
+        "name": "An idea in its final minutes",
+        "who": "Member",
+        "why": "The one moment where a single like changes the outcome, and the state is currently carried by colour alone.",
+        "steps": [
+          { "screen": "idea-detail/0", "note": "The idea, still comfortably inside its window." },
+          { "screen": "idea-detail/4", "note": "Final minutes. The urgency is carried four ways — an alert glyph, the word 'closing', a red clock panel and a stated shortfall — never by the colour on its own. The digits stay full-contrast white." },
+          { "screen": "idea-detail/3", "note": "The member backs it in time and the like is receipted." }
+        ]
+      },
+      {
+        "id": "wr-idea-crosses-threshold",
+        "name": "An idea crosses the bar and becomes a proposal",
+        "who": "Member",
+        "why": "The product's central promise, and the moment the app currently handles worst.",
+        "steps": [
+          { "screen": "idea-detail/3", "note": "The like that takes the idea over its threshold." },
+          { "screen": "idea-detail/1", "note": "The plot crosses the top line. There is no 'it made it' state drawn here, deliberately — see the next step." },
+          { "screen": "proposal-detail/0", "note": "The idea is now a proposal open to a vote. Today the app detects the crossing, waits three seconds and then replaces the screen the member is reading with this one; our recommendation is a confirmation on the idea and a deliberate move, not an automatic redirect." }
+        ]
+      },
+      {
+        "id": "wr-idea-lapses-forfeit",
+        "name": "An idea runs out of time and the deposit is lost",
+        "who": "Idea author",
+        "why": "The only outcome in the whole product where a member loses money, and the app currently walks them out of the flow before they can read it.",
+        "steps": [
+          { "screen": "idea-detail/0", "note": "An open idea with the clock running and support well short of the bar." },
+          { "screen": "idea-detail/4", "note": "Final minutes, with the shortfall stated." },
+          { "screen": "idea-detail/7", "note": "Lapsed. The screen becomes the record: where it finished, when it closed, and the deposit forfeited with a plain sentence saying a lapse is the only outcome that forfeits it. Today the clock hitting zero opens a modal shouting 'oops' and then pops the member out of the screen twice, so they never see the outcome in place." },
+          { "screen": "wallet/1", "note": "The forfeit as it appears in the member's own ledger." }
+        ]
+      },
+      {
+        "id": "wr-idea-own-idea",
+        "name": "The author looks at their own idea",
+        "who": "Idea author",
+        "why": "A rule question wearing a design costume: can a member buy their own deposit back?",
+        "steps": [
+          { "screen": "idea-detail/5", "note": "Two changes on the author's reading: the locked deposit appears, drawn as held rather than spent or returned, and there is no Like button — replaced by a stated fact, because a greyed-out button invites tapping and explains nothing." },
+          { "screen": "idea-detail/2", "note": "What everyone else sees on the same idea. The shipped app has no author guard at all: it draws the same Like button to the author and relies on the server to refuse it." }
+        ]
+      },
+      {
+        "id": "wr-idea-just-posted",
+        "name": "An idea seconds after it is posted",
+        "who": "Member",
+        "why": "An empty state that currently looks like failure.",
+        "steps": [
+          { "screen": "create-idea/3", "note": "Posted." },
+          { "screen": "idea-detail/8", "note": "Nothing plotted yet: one point at the origin and the words to match. The shipped screen fills the same gap with a flat run along zero, which reads as a stalled idea rather than a new one — and where no description was written, it shows the member the literal word 'null'." },
+          { "screen": "idea-detail/0", "note": "The same idea once likes start arriving." }
+        ]
+      },
+      {
+        "id": "wr-idea-load-failed",
+        "name": "An idea will not load",
+        "who": "Member",
+        "why": "Shows the principle that a partly-failed screen should render what it has rather than nothing.",
+        "steps": [
+          { "screen": "idea-detail/9", "note": "This screen makes three requests at once and the shipped code requires all three to succeed before it renders anything, then shows a raw error string in a dialog. Here: what failed, what still works, one retry — and the clock stays, because it comes from the idea and not from the chart." },
+          { "screen": "idea-detail/0", "note": "The retry succeeds and the full screen appears." }
+        ]
+      },
+      {
+        "id": "wr-idea-discussion",
+        "name": "Members argue about an idea",
+        "who": "Member",
+        "why": "Discussion is where a marginal idea is won or lost, and the current thread offers no replies, no sort and no report path.",
+        "steps": [
+          { "screen": "idea-detail/0", "note": "The idea." },
+          { "screen": "idea-detail/6", "note": "The discussion below it. Agreement is set in ink rather than a filled colour, so the only accent fill in the region is the send button and it means 'post', not 'support'." },
+          { "screen": "comments", "note": "The full comment kit this thread is built from: one level of replies, most-agreed sorting and an overflow menu per comment. Open question — whether the War Room thread gets all of that or the reduced version." }
+        ]
+      },
+      {
+        "id": "wr-idea-rail-empty",
+        "name": "The Ideas rail with nothing in it",
+        "who": "Member",
+        "why": "The narrowest empty state in the set, and the one most likely to appear in a quiet week.",
+        "steps": [
+          { "screen": "idea-card/1", "note": "The rail keeps its header and shows a single card saying it is waiting for ideas, rather than collapsing and leaving a gap in the scroll." },
+          { "screen": "idea-gate", "note": "The + is the only live control left, and it leads to the gate." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "War Room — the Ideas list",
+    "journeys": [
+      {
+        "id": "wr-ideas-browse",
+        "name": "Seeing every open idea, not just three",
+        "who": "Member",
+        "why": "The rail is a carousel that peeks three cards; this is the whole stage.",
+        "steps": [
+          { "screen": "war-room/0", "note": "The 'View all' pill at the head of the Ideas rail." },
+          { "screen": "ideas-list/0", "note": "The same cards at full column width, with the controls the carousel had no room for: a Decisions / Positions switch, category chips, sort, filter and search. The card itself is untouched — a list is not a licence to redesign the card." },
+          { "screen": "idea-detail/0", "note": "Tapping any card opens the idea." }
+        ]
+      },
+      {
+        "id": "wr-ideas-sort",
+        "name": "Sorting the Ideas list",
+        "who": "Member",
+        "why": "The order is currently invisible until you open the sheet, so a member cannot tell what they are looking at.",
+        "steps": [
+          { "screen": "ideas-list/0", "note": "The applied sort is printed on the trigger. The shipped trigger is a bare icon." },
+          { "screen": "ideas-list/1", "note": "The sort sheet, carrying the three options the app actually has, in the app's own order. Sort is single-select and applies instantly." },
+          { "screen": "ideas-list/0", "note": "Back with the new order applied and named on the control." }
+        ]
+      },
+      {
+        "id": "wr-ideas-filter",
+        "name": "Filtering the Ideas list",
+        "who": "Member",
+        "why": "The app has no filter at all today — the button that draws a filter icon opens a sheet that only sorts.",
+        "steps": [
+          { "screen": "ideas-list/0", "note": "The filter control beside the sort." },
+          { "screen": "ideas-list/2", "note": "The filter sheet is new, but every option in it is a field the idea record already carries, so it can ship without backend work. Filters are multi-select and need an Apply, which is why they are a separate sheet from sort." },
+          { "screen": "ideas-list/0", "note": "The filtered list, with a tally line saying how many of how many are showing." }
+        ]
+      },
+      {
+        "id": "wr-ideas-loading",
+        "name": "The Ideas list while it loads",
+        "who": "Member",
+        "why": "Shows the rule that changing a chip should not make the whole screen flash.",
+        "steps": [
+          { "screen": "ideas-list/3", "note": "Four skeleton cards in the shape of the real ones." },
+          { "screen": "ideas-list/0", "note": "Loaded. A chip or sort change replaces only the list, so the header, the switch and the chips stay put." }
+        ]
+      },
+      {
+        "id": "wr-ideas-empty",
+        "name": "No ideas are open at all",
+        "who": "Member",
+        "why": "The shipped screen has no empty state of any kind — the list simply renders nothing.",
+        "steps": [
+          { "screen": "ideas-list/4", "note": "An illustrated panel that names how many ideas are open in the other half of the switch, so an empty Decisions list does not read as an empty club, plus one action." },
+          { "screen": "idea-gate", "note": "That action is to start an idea. It is dropped when the member's club does not let them post, but the explanation stays." },
+          { "screen": "create-idea/0", "note": "And the stage refills." }
+        ]
+      },
+      {
+        "id": "wr-ideas-cap",
+        "name": "A busy club hits the fifty-item ceiling",
+        "who": "Member",
+        "why": "A real limit that nothing in the app admits to. Worth a decision before a big club goes live.",
+        "steps": [
+          { "screen": "ideas-list/0", "note": "Both War Room lists fetch one page of fifty and ignore the rest — there is no paging and no infinite scroll, so the fifty-first open idea is unreachable. The end-of-list line here says so out loud rather than letting the list stop silently." },
+          { "screen": "voting-list/0", "note": "The Voting list has exactly the same ceiling. If a club can exceed fifty live items, this needs paging or server-side filtering before launch." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "War Room — voting",
+    "journeys": [
+      {
+        "id": "wr-vote-cast-ballot",
+        "name": "A member casts a vote",
+        "who": "Member",
+        "why": "The decision moment. Everything before it is build-up.",
+        "steps": [
+          { "screen": "war-room/0", "note": "The Voting rail carries the proposals that cleared the ideas stage." },
+          { "screen": "voting-list/0", "note": "Every ballot the club is counting right now. A filled button means this one still needs the member's vote; an outlined one means they have already voted — a difference in shape, not colour." },
+          { "screen": "proposal-detail/0", "note": "Before voting: the proposal in full, the clock, the threshold, and the ballot with every slot empty." },
+          { "screen": "proposal-detail/1", "note": "Casting it. Every row carries a visible numbered slot that fills as the member ranks. The shipped app tells members to click the options to number them and then draws no number, badge or handle at all." },
+          { "screen": "proposal-detail/2", "note": "Voted, with the count still locked behind a quorum so early voters cannot be swayed by a running total. The quorum figure is one we reproduced from a screenshot — it exists nowhere in the code or the club settings." },
+          { "screen": "proposal-detail/3", "note": "Once the count opens: the chart, the member's own ballot restated in order, and the tally. There is no control to change a vote once cast." }
+        ]
+      },
+      {
+        "id": "wr-vote-ballot-incomplete",
+        "name": "A half-finished ballot",
+        "who": "Member",
+        "why": "The rule that a partial ranking is not a vote is currently invisible, and it is a product question rather than a design one.",
+        "steps": [
+          { "screen": "voting-card/1", "note": "The ballot as it opens: nothing ranked, a progress line reading zero of four, and Vote disabled — so a member can see they have not finished before they reach for a dead button." },
+          { "screen": "proposal-detail/1", "note": "Part-ranked at full size. Clearing a rank closes the later ones up. Vote only enables on a complete ballot; if a partial ranking is meant to count, this rule has to change." }
+        ]
+      },
+      {
+        "id": "wr-vote-approved-through",
+        "name": "A proposal is approved and becomes an action",
+        "who": "Member",
+        "why": "The full arc of a successful decision, ending on the screen where the club is meant to be held to it.",
+        "steps": [
+          { "screen": "proposal-detail/3", "note": "The count runs with the member's ballot on the record." },
+          { "screen": "proposal-detail/5", "note": "Settled and approved. The member's preferences are annotated with what happened to each, and the hand-off to the result is an accent button." },
+          { "screen": "results-actions/2", "note": "The result in detail: the round-by-round count, the threshold it had to clear, and the final tally." },
+          { "screen": "action-detail", "note": "The action the club now owes, with a follow-through timeline. Five of its six steps are built from timestamps that already exist; the last one is drawn as an unresolved dashed mark because there is no field anywhere in the app for whether a thing was actually done." }
+        ]
+      },
+      {
+        "id": "wr-vote-rejected",
+        "name": "A proposal is rejected by the members",
+        "who": "Member",
+        "why": "The unhappy path of the core loop, and a test of whether rejection reads as a decision rather than a fault.",
+        "steps": [
+          { "screen": "proposal-detail/0", "note": "The ballot opens with the threshold marked." },
+          { "screen": "proposal-detail/6", "note": "Settled and rejected. The word and a cross badge always arrive together, never the colour alone, and the verdict states the gap in points rather than repeating the percentage. The hand-off button drops to a plain surface — nothing was approved, so nothing is being celebrated." },
+          { "screen": "results-actions/1", "note": "How the same ending reads in the results list, beside the other six." }
+        ]
+      },
+      {
+        "id": "wr-vote-cancelled",
+        "name": "The club cancels a proposal mid-count",
+        "who": "Member",
+        "why": "A settled reading that is neither a win nor a loss, and the deposit rule has to be right on it.",
+        "steps": [
+          { "screen": "proposal-detail/7", "note": "Cancelled: no colour at all, because cancelled is finished rather than held. A reason panel, the refund, and no count — because none was taken." },
+          { "screen": "results-actions/1", "note": "The same ending in the results list, drawn quiet alongside lapsed. Held is loud, finished is quiet — that rule holds across every screen in the set." }
+        ]
+      },
+      {
+        "id": "wr-vote-nothing-cast",
+        "name": "A ballot nobody has voted on yet",
+        "who": "Member",
+        "why": "An empty state that must not look like a measured zero.",
+        "steps": [
+          { "screen": "proposal-detail/8", "note": "Every share renders as a dash rather than 0%, so an unmeasured figure never looks like a measured one, and the discussion is a quiet line rather than a bordered panel." },
+          { "screen": "proposal-detail/0", "note": "The same screen once voting is under way." }
+        ]
+      },
+      {
+        "id": "wr-vote-load-failed",
+        "name": "A proposal will not load",
+        "who": "Member",
+        "why": "The current failure is an internal-error dialog over a blank screen, on the most important screen in the product.",
+        "steps": [
+          { "screen": "proposal-detail/9", "note": "It says what happened, reassures the member that a vote they already cast is unaffected, offers one retry, and shows a reference for support. The shipped screen treats any one of its three requests failing as a whole-page failure and shows a raw error." },
+          { "screen": "proposal-detail/0", "note": "The retry succeeds." }
+        ]
+      },
+      {
+        "id": "wr-vote-chart-defect",
+        "name": "What the vote chart is actually plotting",
+        "who": "Reviewer",
+        "why": "A defect worth naming out loud: as shipped, the chart can show a proposal sitting inside the approval band when almost nobody approved it.",
+        "steps": [
+          { "screen": "proposal-detail/2", "note": "Before the count opens, the gate says how many votes are needed and how many are in." },
+          { "screen": "proposal-detail/3", "note": "The chart. In the shipped app the line plotted is turnout — the share of members who voted — while the band drawn across it is the approval threshold. Two different quantities on one plate. Here the line is support and turnout is moved to its own figure above the chart." },
+          { "screen": "results-actions/2", "note": "The result chart follows the same rule, marks the threshold it had to clear, and states the final share." }
+        ]
+      },
+      {
+        "id": "wr-vote-clock-runs-out",
+        "name": "The clock hits zero while a member is reading",
+        "who": "Member",
+        "why": "Today the screen is replaced under them with no warning, including mid-sentence in the comment box.",
+        "steps": [
+          { "screen": "proposal-detail/0", "note": "A ballot with minutes left." },
+          { "screen": "proposal-detail/3", "note": "The count in its last moments." },
+          { "screen": "proposal-detail/5", "note": "Our recommendation: the screen settles in place with the count frozen and a button through to the result. The shipped app routes the member away automatically the instant the clock reaches zero." }
+        ]
+      },
+      {
+        "id": "wr-vote-ranked-or-binary",
+        "name": "Is the ballot ranked or a simple yes and no?",
+        "who": "Reviewer",
+        "why": "The two sources contradict each other, and the answer changes the vote API. This is the biggest open question in the War Room.",
+        "steps": [
+          { "screen": "voting-card/1", "note": "The ranked ballot as designed: four options, ranked in order, with a 'reject all options' row." },
+          { "screen": "proposal-detail/1", "note": "The same ballot at full size. The code in this checkout implements a single yes-or-no vote and cannot carry a ranking at all — we built ranked choice because it is the newer material and the results chart already assumes it." },
+          { "screen": "results-actions/2", "note": "The round-by-round count only makes sense under ranked choice. If the vote is a simple plurality, this becomes one bar per option and the tally loses its round column." }
+        ]
+      },
+      {
+        "id": "wr-vote-card-family",
+        "name": "One card shell, two kinds of number",
+        "who": "Reviewer",
+        "why": "Shows why the ideas ring and the voting bar are different marks rather than a styling choice.",
+        "steps": [
+          { "screen": "voting-card/0", "note": "Four readings of the voting card side by side: on track, behind, held under a veto, and closed with the result published. The verdict is written in words on every one of them." },
+          { "screen": "voting-list/0", "note": "The same card run at full width in the list, unchanged but for its width." },
+          { "screen": "proposal-detail/0", "note": "And the same threshold bar again on the detail screen, scaled up. There is exactly one way to draw a ballot in this library." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "War Room — the Voting list",
+    "journeys": [
+      {
+        "id": "wr-voting-browse",
+        "name": "Finding a ballot that still needs a vote",
+        "who": "Member",
+        "why": "The everyday use of this screen: what have I not voted on yet.",
+        "steps": [
+          { "screen": "war-room/0", "note": "'View all' at the head of the Voting rail." },
+          { "screen": "voting-list/0", "note": "Every live ballot, with a switch, chips, sort, filter and search. A filled button is a ballot the member has not voted on — the only signal on the card that they have already acted, and it is a shape difference rather than a colour." },
+          { "screen": "proposal-detail/0", "note": "They open one and vote." }
+        ]
+      },
+      {
+        "id": "wr-voting-sort-defect",
+        "name": "The list that lies about its own order",
+        "who": "Reviewer",
+        "why": "A defect worth naming: the shipped list is not in the order it says it is in.",
+        "steps": [
+          { "screen": "voting-list/0", "note": "The applied sort is printed on the control, which the shipped screen never does." },
+          { "screen": "voting-list/1", "note": "The sheet reports 'most recent' as applied. In the shipped app the list is re-sorted after it arrives, ascending by vote count, so the least-supported proposal is first while the label says otherwise. Either the label is wrong or that ordering deserves a name of its own." },
+          { "screen": "voting-list/0", "note": "Sorted, and saying so." }
+        ]
+      },
+      {
+        "id": "wr-voting-filter",
+        "name": "Filtering down to the ballots that matter",
+        "who": "Member",
+        "why": "New, but built entirely from fields the proposal record already carries.",
+        "steps": [
+          { "screen": "voting-list/0", "note": "The chip row here offers five categories under Decisions and two under Positions — which is what the code does, though the same proposal passes through both screens." },
+          { "screen": "voting-list/2", "note": "The filter sheet: status, type, and whether the member has already voted. Multi-select, with an Apply." },
+          { "screen": "voting-list/0", "note": "The narrowed list with its count." }
+        ]
+      },
+      {
+        "id": "wr-voting-loading",
+        "name": "The Voting list while it loads",
+        "who": "Member",
+        "why": "A small shipped bug the client can see for themselves.",
+        "steps": [
+          { "screen": "voting-list/3", "note": "Four skeleton cards in the voting card's shape. In the shipped app, changing a chip here briefly draws idea skeletons instead of voting ones, because the placeholder loses track of which list it is on." },
+          { "screen": "voting-list/0", "note": "Loaded." }
+        ]
+      },
+      {
+        "id": "wr-voting-empty",
+        "name": "Nothing is open to a vote",
+        "who": "Member",
+        "why": "An empty stage should point at the stage before it rather than dead-end.",
+        "steps": [
+          { "screen": "voting-list/4", "note": "The panel names how many ideas are still collecting likes, so an empty voting stage reads as 'not yet' rather than 'nothing happening'." },
+          { "screen": "ideas-list/0", "note": "And sends the member to the stage where they can do something about it." }
+        ]
+      },
+      {
+        "id": "wr-voting-already-voted",
+        "name": "A member checks a ballot they already voted on",
+        "who": "Member",
+        "why": "Half of all visits to this screen, and the shipped card gives no clue either way.",
+        "steps": [
+          { "screen": "voting-list/0", "note": "An outlined button reading 'view votes' rather than a filled one. In the shipped list every state carries the same plain text link, so a ballot that still needs a vote looks exactly like one already cast." },
+          { "screen": "proposal-detail/3", "note": "The count with the member's own ballot restated in full, in order. The shipped version prints one uppercased option name floating above a tally, with every rank stripped out and no link between them." }
+        ]
+      },
+      {
+        "id": "wr-voting-closed-ballot",
+        "name": "A settled proposal turns up in the Voting list",
+        "who": "Member",
+        "why": "Two different requests behind one screen disagree about whether closed ballots belong here — a decision the client has to make.",
+        "steps": [
+          { "screen": "voting-list/0", "note": "The list is supposed to hold only live ballots, but the request behind every chip and sort tap does not apply that rule, so a settled proposal can appear the moment a member touches a chip." },
+          { "screen": "voting-card/0", "note": "The closed reading of the card: the clock replaced by a settled date, the winning option named, and the button changed to 'view result'." },
+          { "screen": "results-actions/0", "note": "The alternative is excluding closed ballots entirely and sending members here instead." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "War Room — veto and appeal",
+    "journeys": [
+      {
+        "id": "wr-veto-placed",
+        "name": "The club vetoes a proposal the members passed",
+        "who": "Member",
+        "why": "The most delicate moment in the product. If a veto reads as a rejection, the member concludes the vote was theatre.",
+        "steps": [
+          { "screen": "proposal-detail/0", "note": "A live ballot, counting normally." },
+          { "screen": "veto", "note": "The veto screens. A hold is given neither the accent nor the red — it is the accent struck through with static bars, because a filled plate means a decision was reached and bars mean it was interrupted. Read the member notice first: nothing has been decided, here is who holds it and why, here is the way out." },
+          { "screen": "proposal-detail/4", "note": "The proposal on hold. Two clocks: the paused one keeps full-contrast white digits because held is loud, and the appeal window runs beside it. The shipped app greys the frozen clock, which reads as broken rather than paused." }
+        ]
+      },
+      {
+        "id": "wr-veto-club-side",
+        "name": "Club management places the veto",
+        "who": "Club management",
+        "why": "The only club-side screen in the War Room set, and the place where accountability is designed in or left out.",
+        "steps": [
+          { "screen": "veto", "note": "The confirmation panel: the club cannot place a veto without reading back the exact wording members will see, and the consequence list ends by telling them it will be published under their name. The action stays disabled until they consent." },
+          { "screen": "results-actions/1", "note": "The result of that act as members see it. Open governance question: today a veto is attributed to 'club management' generally, and an unsigned veto is unanswerable." }
+        ]
+      },
+      {
+        "id": "wr-veto-appeal",
+        "name": "Members appeal a veto",
+        "who": "Member",
+        "why": "The way out of a veto is itself an idea, which is elegant — and completely undesigned today.",
+        "steps": [
+          { "screen": "proposal-detail/4", "note": "The held proposal, with the appeal window running." },
+          { "screen": "veto", "note": "What an appeal is and what it takes: an idea to reject the veto, which has to clear its own support bar. The bar shown is a placeholder — the real figure is club configuration and is not in this build." },
+          { "screen": "idea-detail/0", "note": "The appeal runs as an ordinary idea, with a second chip marking it as a veto hold." },
+          { "screen": "ideas-list/0", "note": "And sits in the Ideas list beside everything else, collecting likes." }
+        ]
+      },
+      {
+        "id": "wr-veto-overruled",
+        "name": "The appeal succeeds and the hold is lifted",
+        "who": "Member",
+        "why": "A state the app's own notification implies exists and that nobody has ever drawn.",
+        "steps": [
+          { "screen": "veto", "note": "The hold released: the struck bars resolve into a solid plate, the veto is marked overruled, and the resume time and remaining clock are stated." },
+          { "screen": "proposal-detail/3", "note": "Counting resumes where it stopped. The frozen part of the chart stays visible, so a member can see the interruption rather than a smooth line." }
+        ]
+      },
+      {
+        "id": "wr-veto-vs-rejected",
+        "name": "Held, rejected, vetoed and cancelled, side by side",
+        "who": "Reviewer",
+        "why": "Four endings that look alike at a glance and mean entirely different things. The whole verdict system rests on telling them apart.",
+        "steps": [
+          { "screen": "results-actions/1", "note": "All seven endings on one screen for comparison. Two colours only: accent for passed, red for blocked. A hold is the accent interrupted, and anything simply finished gets no colour at all." },
+          { "screen": "veto", "note": "Where the hold treatment was settled. The shipped app draws a veto in amber — which is also its celebration colour, so the same hue says 'you won' and 'you have been overruled'." },
+          { "screen": "action-detail", "note": "The same four readings again at detail scale, so a member never has to learn a second vocabulary." }
+        ]
+      },
+      {
+        "id": "wr-veto-in-hub",
+        "name": "Spotting a held proposal from the home screen",
+        "who": "Member",
+        "why": "A hold has a live appeal clock, so it is the one card in the Results rail that is not yet a result.",
+        "steps": [
+          { "screen": "war-room/0", "note": "The Results rail carries a veto hold among the settled cards. Its clock is still running, which is why it stands out." },
+          { "screen": "results-actions/1", "note": "The same card in the list. Open question for the client: whether a held proposal should appear in Results at all, or stay in Voting until the appeal resolves." },
+          { "screen": "proposal-detail/4", "note": "Opening it lands on the held proposal with both clocks." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "War Room — results and actions",
+    "journeys": [
+      {
+        "id": "wr-results-browse",
+        "name": "A member checks what the club decided",
+        "who": "Member",
+        "why": "The record. Every settled proposal, with the evidence attached to the outcome.",
+        "steps": [
+          { "screen": "war-room/0", "note": "The Results rail on the home screen." },
+          { "screen": "results-actions/0", "note": "The full list. Every verdict bar carries the share, the threshold and the vote count — the shipped cards carry the outcome word and no figures at all, and no date." },
+          { "screen": "results-actions/2", "note": "One result in detail: the round-by-round count, the threshold marked on the chart, and the final tally." }
+        ]
+      },
+      {
+        "id": "wr-results-seven-endings",
+        "name": "The seven ways a proposal can end",
+        "who": "Reviewer",
+        "why": "The most load-bearing proposal in the War Room: one small component that has to carry every ending, and none of it is designed today.",
+        "steps": [
+          { "screen": "results-actions/1", "note": "Approved, rejected, vetoed, ruled out, held, lapsed and cancelled — gathered on one screen so they can be compared. Every one has a badge and a word, so none of them depends on colour." },
+          { "screen": "results-actions/0", "note": "In the product each of those belongs to a single card in this list. Open question: whether these are the right seven, and whether they are named right." }
+        ]
+      },
+      {
+        "id": "wr-results-to-action",
+        "name": "From a result to what the club committed to",
+        "who": "Member",
+        "why": "The hand-off between deciding and doing, which is the promise the product is sold on.",
+        "steps": [
+          { "screen": "results-actions/0", "note": "An approved result, with the Actions framing of the same card carrying the next step and its owner." },
+          { "screen": "action-detail", "note": "The detail: the verdict, what was proposed, what the club committed to, the dates, and one plain sentence saying this is happening because a stated number of members voted for it." }
+        ]
+      },
+      {
+        "id": "wr-action-followthrough",
+        "name": "Did the club actually do it?",
+        "who": "Member",
+        "why": "The one question this screen exists to answer, and the app cannot answer it. This is the most important decision in the War Room set.",
+        "steps": [
+          { "screen": "action-detail", "note": "The follow-through timeline. Five steps are built from timestamps that already exist; the sixth is drawn as an unresolved dashed mark reading 'not confirmed', because there is no field for an owner, a due date, a completion flag or evidence, and no way to record one." },
+          { "screen": "results-actions/0", "note": "Everything on the detail screen tagged as proposed maps to one of three missing fields. Add them and the loop closes; leave them out and the dashed mark is the permanent truth of the screen." }
+        ]
+      },
+      {
+        "id": "wr-action-ruled-out",
+        "name": "The vote passed but the club cannot do it",
+        "who": "Member",
+        "why": "The most awkward outcome in the product: members won and nothing happens. The reason has to be visible.",
+        "steps": [
+          { "screen": "results-actions/1", "note": "Ruled out sits in the red family but takes its own badge, so a club block is never mistaken for a member rejection." },
+          { "screen": "action-detail", "note": "The written reason is quoted in full, the follow-through panel is replaced by a plain statement that there is none, and the deposit line says the money already came back. This is the only extra branch the shipped app implements." }
+        ]
+      },
+      {
+        "id": "wr-results-lapsed-deposit",
+        "name": "A lapsed idea in the record",
+        "who": "Member",
+        "why": "The only ending where the member is out of pocket, so the bar has to say so.",
+        "steps": [
+          { "screen": "results-actions/1", "note": "Lapsed stays quiet and colourless — an idea that ran out of time is over, not held — but it names the likes it reached, the bar it never cleared, and the forfeited deposit." },
+          { "screen": "idea-detail/7", "note": "The same ending on the idea's own screen, where the figure that stopped moving is drawn in dashes rather than a solid sweep." },
+          { "screen": "wallet/1", "note": "And in the ledger. The rule the whole library now agrees on: the deposit comes back when an idea becomes a proposal, and it is lost only when an idea lapses." }
+        ]
+      },
+      {
+        "id": "wr-results-empty",
+        "name": "A club with no results yet",
+        "who": "New member",
+        "why": "An empty record is different from a failure, and the two currently look identical.",
+        "steps": [
+          { "screen": "results-actions/3", "note": "One panel in place of the whole feed, with no skeleton rows pretending something is on its way. No empty result state exists in the app today." },
+          { "screen": "war-room/2", "note": "The same club on the home screen, all four rails empty." }
+        ]
+      },
+      {
+        "id": "wr-results-sort-inert",
+        "name": "The sort sheet that cannot sort",
+        "who": "Reviewer",
+        "why": "A defect the client can see in ten seconds, on a control that looks finished.",
+        "steps": [
+          { "screen": "results-actions/0", "note": "The small round control at the head of the category strip on Results and Actions." },
+          { "screen": "filters-pickers/1", "note": "What opens. In the shipped app every row in this sheet has an empty handler — it can be scrolled and admired, and it cannot sort. These two sheets have never been designed, captured or specified." },
+          { "screen": "filters-pickers/0", "note": "The rebuilt version, on the dark kit, with a working selection and the applied option named on the trigger afterwards." }
+        ]
+      },
+      {
+        "id": "wr-results-filter-to-nothing",
+        "name": "Filtering a list until nothing matches",
+        "who": "Member",
+        "why": "Today this produces a blank area under the chips with no explanation and no way back.",
+        "steps": [
+          { "screen": "results-actions/0", "note": "The unfiltered results list." },
+          { "screen": "filters-pickers/2", "note": "The filter sheet, with a live count of what will be left." },
+          { "screen": "filters-pickers/3", "note": "Filters on. Three signals at once — a tick in the chip, a numeral on the trigger, and a summary line with Clear all — because any one of the three could be missed." },
+          { "screen": "filters-pickers/4", "note": "Nothing matches. The two colliding filters are named in the sentence and the summary still reads how many are on, so the member knows the list is not empty — the filter is." }
+        ]
+      },
+      {
+        "id": "wr-results-explainer",
+        "name": "What is the difference between a Decision and a Position?",
+        "who": "Member",
+        "why": "The most load-bearing distinction in the War Room, and the app's own explanation of it is placeholder text.",
+        "steps": [
+          { "screen": "results-actions/0", "note": "The switch at the top of every War Room list splits everything into Decisions and Positions." },
+          { "screen": "filters-pickers/5", "note": "The explainer popover beside it. Only one half has real copy in the codebase — the other is filler, so it is left unbuilt on purpose. The client owes us that sentence before build." }
+        ]
+      },
+      {
+        "id": "wr-action-status-bug",
+        "name": "Why every action currently shows as ruled out",
+        "who": "Reviewer",
+        "why": "A one-character bug that makes the entire verdict system invisible. Worth knowing before anyone prices this work.",
+        "steps": [
+          { "screen": "results-actions/1", "note": "Seven endings, built against the values the app actually emits." },
+          { "screen": "action-detail", "note": "In the shipped build, a stray space in one comparison means every status that is not one of two instruction values falls through and renders as 'ruled out' in the danger colour — so an approved action is currently shown to members as blocked. Two lines of code decide whether any of this component is ever seen." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "War Room — the deposit",
+    "journeys": [
+      {
+        "id": "wr-money-lifecycle",
+        "name": "Where the deposit goes, start to finish",
+        "who": "Member",
+        "why": "Four screens used to say four different things about the same money. This is the settled rule, followed end to end.",
+        "steps": [
+          { "screen": "idea-gate", "note": "Before anything is written: what posting costs, and the balance it will come out of. The shipped gate never mentions money at all." },
+          { "screen": "create-idea/2", "note": "The commitment, with both outcomes stated and a consent box that makes the member agree to them in words." },
+          { "screen": "idea-detail/3", "note": "While the idea runs, the deposit is neither spent nor returned — it is drawn as held." },
+          { "screen": "proposal-detail/5", "note": "The idea became a proposal, so the deposit came back at that moment. Nothing that happens to the proposal afterwards can take it again." },
+          { "screen": "wallet/1", "note": "The ledger, which now tells the same story as every other screen." }
+        ]
+      },
+      {
+        "id": "wr-money-forfeit",
+        "name": "The one way to lose the deposit",
+        "who": "Idea author",
+        "why": "One rule, stated the same way everywhere. Getting this wrong would be the most damaging copy error in the product.",
+        "steps": [
+          { "screen": "idea-detail/7", "note": "The idea lapsed. This is the only outcome that forfeits the deposit, and the screen says so in a sentence rather than leaving the member to work it out." },
+          { "screen": "results-actions/1", "note": "The same rule enforced across the verdict bars: lapsed says forfeited, ruled out and cancelled say the money already came back." },
+          { "screen": "wallet/1", "note": "And in the ledger. Worth flagging that the app's own help text still contradicts this in one place, telling members a ruled-out proposal forfeits the deposit — one of those two sentences has to go." }
+        ]
+      },
+      {
+        "id": "wr-money-topup",
+        "name": "Buying Credits in order to post",
+        "who": "Member",
+        "why": "Connects the War Room to the wallet, and shows the block that should happen before the writing rather than after.",
+        "steps": [
+          { "screen": "idea-gate", "note": "The gate reads the balance and stops the member here, with the shortfall as a figure." },
+          { "screen": "wallet/0", "note": "The balance, with locked deposits shown apart from what is spendable." },
+          { "screen": "wallet/3", "note": "Top up and return. Note that the deposit figure used throughout the library is invented — there is no pricing anywhere in the app — so the number itself is a product decision." }
+        ]
+      },
+      {
+        "id": "wr-money-naming",
+        "name": "One thing, five names",
+        "who": "Reviewer",
+        "why": "A naming decision the client has to make once, because members are currently reading all of them.",
+        "steps": [
+          { "screen": "create-idea/2", "note": "This library uses Credits as the noun and 'deposit' in lower case for what happens to them. The app's own strings use Credits, Participation Credits, Participation Deposit and a legacy term, and one string ships with the placeholder never filled in." },
+          { "screen": "wallet/0", "note": "The wallet is where the noun has to carry a balance, so the wallet's version wins." },
+          { "screen": "results-actions/1", "note": "And the verdict bars use the same word again. Pick one name and it holds across the whole product, including the Merits tab." }
+        ]
+      }
+    ]
+  }
+]

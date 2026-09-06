@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en" data-component="sheets">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsHeist — Bottom sheets, pickers and filters</title>
+
+<style>
+/* ============================================================
+   SPORTSHEIST — BOTTOM SHEETS, PICKERS, FILTERS
+
+   Token block copied from merits.html. Three derived additions,
+   each built the same way as an existing token:
+     --acid-line  accent at 30% — the selected-row rim, built like
+                  --acid-wash and used the way dialogs.html uses
+                  --red-line
+     --red / --red-wash  the contract's one semantic colour, for
+                  the single destructive action row
+     --scrim / --scrim-blur  identical values to dialogs.html, so
+                  every overlay in the system dims the canvas the
+                  same way
+
+   Language is taken from the Backchat sort/filter sheets in the
+   dark-mode export: dark panel, small tracked uppercase title on
+   a hairline, full-width rows with a right-aligned indicator,
+   selected row washed in accent over the sunken fill, and a
+   full-width accent Apply on the multi-select sheets.
+
+   The live build's two faults are corrected here and documented
+   in the notes: the Hall of Fame category sheet ships with no top
+   radius and no grabber, and the Season control beside it opens a
+   raw Material dropdown that sits 6 pt above its own trigger and
+   covers the field below it.
+   ============================================================ */
+:root{
+  /* canvas + surfaces */
+  --bg:            #030401;
+  --section:       #080A0C;
+  --surface:       #1C2129;
+  --sunken:        #13171E;
+  --line:          rgba(255,255,255,.075);
+  --line-soft:     rgba(255,255,255,.045);
+
+  /* accent */
+  --acid:          #9BE222;
+  --acid-ink:      #0B0E06;
+  --acid-wash:     rgba(155,226,34,.12);
+  --acid-line:     rgba(155,226,34,.30);   /* derived: selected-row rim */
+
+  /* semantic red — destructive only */
+  --red:           #E2564A;
+  --red-wash:      rgba(226,86,74,.12);
+
+  /* text */
+  --text:          #FFFFFF;
+  --muted:         #99A0AE;
+  --dim:           #5B606B;
+
+  /* geometry */
+  --r-card:        16px;
+  --r-panel:       12px;
+  --r-pill:        999px;
+  --gutter:        16px;
+
+  /* ---- the sheet shell, defined once ---- */
+  --r-sheet:       18px;                   /* top corners only     */
+  --sheet-max:     560px;                   /* cap on panel height  */
+  --sheet-vh:      88vh;                    /* cap against viewport */
+  --grab-w:        40px;
+  --grab-h:        4px;
+  --h-field:       52px;                    /* control height, forms.html */
+  --h-row:         48px;                    /* option row height    */
+
+  /* scrim — same as dialogs.html */
+  --scrim:         rgba(3,4,1,.72);
+  --scrim-blur:    10px;
+
+  --ease:          cubic-bezier(.16,1,.3,1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+/* every author `display` below would otherwise beat the UA rule for the
+   hidden attribute, and hidden is how the sheets, the filtered-out rows
+   and the counts are taken off screen */
+[hidden]{display:none!important}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+.screen{max-width:420px;margin:0 auto;padding:12px 0 110px}
+
+/* ============================================================
+   PAGE FURNITURE
+   ============================================================ */
+.top{margin:6px var(--gutter) 0}
+.eyebrow{
+  margin:0 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.title{
+  margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;
+  line-height:1;text-transform:uppercase;
+}
+.sub{margin:10px 0 0;font-size:13px;color:var(--muted)}
+
+.label{margin:30px var(--gutter) 10px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.note{margin:9px var(--gutter) 0;font-size:12px;line-height:1.45;color:var(--muted)}
+.note b{color:var(--text);font-weight:600}
+.note--tight{margin-top:6px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text)}
+
+.section{
+  margin:0 var(--gutter);padding:12px;
+  border:1px solid var(--line);border-radius:var(--r-card);background:var(--section);
+}
+.status-pill{
+  display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 14px;
+  border-radius:var(--r-pill);background:var(--acid-wash);
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--acid);white-space:nowrap;
+}
+.status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* spec list */
+.kv{margin:0;padding:0;list-style:none}
+.kv li{
+  display:flex;align-items:baseline;gap:12px;padding:9px 2px;
+  border-top:1px solid var(--line-soft);font-size:12.5px;
+}
+.kv li:first-child{border-top:0}
+.kv span{flex:0 0 104px;color:var(--muted)}
+.kv b{flex:1;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.kv b em{font-style:normal;color:var(--muted);font-weight:400}
+
+/* specimen wrapper */
+.spec{margin-top:22px}
+.spec__label{
+  display:flex;align-items:center;gap:9px;margin:0 var(--gutter) 12px;
+  font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.spec__label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.spec__note{margin:11px var(--gutter) 0;font-size:11.5px;line-height:1.45;color:var(--dim)}
+.spec__note b{color:var(--muted);font-weight:600}
+
+.pill-btn{
+  display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 15px;
+  border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text);
+  font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:background .18s var(--ease);
+}
+.pill-btn:hover{background:#222833}
+.pill-btn svg{width:15px;height:15px}
+.tryit{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+
+/* ============================================================
+   THE SHEET SHELL
+   One construction. Every specimen below is this element; the
+   live one at the foot of the page is the same element inside a
+   fixed layer with a scrim.
+   ============================================================ */
+.sheet{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;
+  width:100%;max-height:min(var(--sheet-vh),var(--sheet-max));
+  border:1px solid var(--line);border-bottom:0;
+  border-radius:var(--r-sheet) var(--r-sheet) 0 0;
+  background:linear-gradient(180deg,var(--surface) 0%,var(--sunken) 100%);
+  box-shadow:0 -20px 50px rgba(0,0,0,.6);
+  overflow:hidden;
+}
+.sheet:focus{outline:none}
+.sheet:focus-visible{outline:2px solid var(--acid);outline-offset:-3px}
+
+/* grabber — 40 × 4 bar in a 26 px hit strip, drag to dismiss */
+.sheet__grab{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  height:26px;width:100%;padding:0;margin:0;border:0;background:transparent;
+  cursor:grab;touch-action:none;
+}
+.sheet__grab::before{
+  content:"";width:var(--grab-w);height:var(--grab-h);border-radius:var(--r-pill);
+  background:rgba(255,255,255,.18);transition:background .16s var(--ease);
+}
+.sheet__grab:hover::before{background:rgba(255,255,255,.30)}
+.sheet__grab:focus-visible{outline:2px solid var(--acid);outline-offset:-4px;border-radius:var(--r-sheet) var(--r-sheet) 0 0}
+.sheet.is-dragging{transition:none}
+.sheet.is-dragging .sheet__grab{cursor:grabbing}
+
+/* head: title left, count / clear / close right, on a hairline */
+.sheet__head{
+  flex:0 0 auto;display:flex;align-items:center;gap:9px;
+  padding:4px var(--gutter) 12px;border-bottom:1px solid var(--line);
+}
+.sheet__title{
+  margin:0;flex:1;min-width:0;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--text);
+}
+.sheet__n{
+  flex:0 0 auto;display:inline-flex;align-items:center;height:22px;padding:0 9px;
+  border-radius:var(--r-pill);background:var(--acid-wash);color:var(--acid);
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;
+}
+.sheet__clear{
+  flex:0 0 auto;border:0;background:transparent;padding:4px 2px;margin:0;
+  color:var(--muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:color .16s var(--ease);
+}
+.sheet__clear:hover{color:var(--text)}
+.sheet__clear[disabled]{color:var(--dim);cursor:default}
+.sheet__x{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-4px;
+  border:0;border-radius:50%;background:rgba(255,255,255,.06);color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.sheet__x:hover{background:rgba(255,255,255,.11);color:var(--text)}
+.sheet__x svg{width:16px;height:16px}
+
+/* internal scrollers: no visible bar, iOS-style */
+.sheet__body::-webkit-scrollbar,.time__col::-webkit-scrollbar,
+.menu::-webkit-scrollbar,.quick::-webkit-scrollbar{width:0;height:0}
+.sheet__body,.time__col,.menu{scrollbar-width:none}
+
+/* body scrolls; head and foot do not */
+.sheet__body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:12px var(--gutter);
+}
+.sheet__lede{margin:0 0 12px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.sheet__grp{
+  margin:16px 0 8px;font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+.sheet__body > .sheet__grp:first-child{margin-top:0}
+
+/* foot: sits on the safe area, never scrolls */
+.sheet__foot{
+  flex:0 0 auto;padding:12px var(--gutter);
+  padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);background:var(--sunken);
+}
+.sheet__foot--pair{display:flex;gap:10px}
+/* a sheet with no foot still clears the home indicator */
+.sheet__body--last{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+
+/* ============================================================
+   OPTION ROW — the export's sort / filter row, rebuilt
+   Label left, indicator right. Selected = accent wash over the
+   sunken fill, accent rim, accent label.
+   ============================================================ */
+.opt{
+  display:flex;align-items:center;gap:12px;width:100%;
+  min-height:var(--h-row);padding:11px 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background-color:var(--sunken);background-image:none;
+  color:var(--text);font:inherit;font-size:13.5px;font-weight:500;
+  text-align:left;cursor:pointer;
+  transition:background-color .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);
+}
+.opt + .opt{margin-top:8px}
+.opt:hover{border-color:rgba(255,255,255,.14)}
+.opt__text{flex:1;min-width:0}
+.opt__text small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--muted)}
+.opt[aria-checked="true"],.opt[aria-selected="true"]{
+  background-image:linear-gradient(0deg,var(--acid-wash),var(--acid-wash));
+  border-color:var(--acid-line);color:var(--acid);font-weight:600;
+}
+.opt[aria-checked="true"] .opt__text small,
+.opt[aria-selected="true"] .opt__text small{color:rgba(155,226,34,.72)}
+.opt:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* indicators — identical construction to forms.html */
+.check,.radio{
+  position:relative;flex:0 0 auto;width:20px;height:20px;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);
+  transition:background .16s var(--ease),box-shadow .16s var(--ease);
+}
+.check{border-radius:6px}
+.radio{border-radius:50%}
+.check svg,.radio svg{
+  position:absolute;inset:0;width:20px;height:20px;opacity:0;
+  transition:opacity .14s var(--ease);
+}
+.check svg{color:var(--acid-ink)}
+.radio svg{color:var(--acid)}
+.opt[aria-checked="true"] .check{background:var(--acid);box-shadow:none}
+.opt[aria-checked="true"] .radio{box-shadow:inset 0 0 0 1.7px var(--acid);background:transparent}
+.opt[aria-checked="true"] .check svg,.opt[aria-checked="true"] .radio svg{opacity:1}
+
+/* ============================================================
+   BUTTONS — the dialogs.html action row, unchanged
+   ============================================================ */
+.btn{
+  flex:1 1 0;min-width:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 14px;border:0;border-radius:var(--r-pill);
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:-.005em;
+  cursor:pointer;white-space:nowrap;
+  transition:background .18s var(--ease),opacity .18s var(--ease);
+}
+.btn--acid{background:var(--acid);color:var(--acid-ink)}
+.btn--acid:hover{background:#A8EC33}
+.btn--danger{background:var(--red);color:var(--acid-ink)}
+.btn--danger:hover{background:#E9675C}
+.btn--ghost{background:var(--sunken);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.btn--ghost:hover{background:#181D25}
+.btn--wide{width:100%}
+.btn__n{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:20px;padding:0 6px;border-radius:var(--r-pill);
+  background:rgba(11,14,6,.16);font-size:12px;font-variant-numeric:tabular-nums;
+}
+.btn:focus-visible,.pill-btn:focus-visible,.sheet__x:focus-visible,
+.sheet__clear:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   SEARCH FIELD — the forms.html control shell
+   ============================================================ */
+.ctl{
+  display:flex;align-items:center;gap:10px;
+  height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.ctl__icon{flex:0 0 auto;width:19px;height:19px;color:var(--muted)}
+.ctl__in{
+  flex:1;min-width:0;height:100%;border:0;background:transparent;color:inherit;
+  font:inherit;font-size:16px;padding:0;margin:0;outline:none;
+}
+.ctl__in::placeholder{color:var(--dim);opacity:1}
+.ctl__in::-webkit-search-cancel-button{display:none}
+.ctl:focus-within,.ctl.is-focus{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+.ctl:focus-within .ctl__icon,.ctl.is-focus .ctl__icon{color:var(--text)}
+.ctl__btn{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-right:-6px;
+  border:0;border-radius:50%;background:transparent;color:var(--muted);
+  cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease);
+}
+.ctl__btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.ctl__btn:focus-visible{outline:2px solid var(--acid);outline-offset:1px}
+.ctl__btn svg{width:18px;height:18px}
+.ctl--stick{
+  position:sticky;top:0;z-index:2;margin:-12px calc(-1 * var(--gutter)) 12px;
+  padding:12px var(--gutter);height:auto;
+  border:0;border-bottom:1px solid var(--line-soft);border-radius:0;
+  background:#181D25;box-shadow:none;
+}
+.ctl--stick:focus-within{box-shadow:none;border-color:transparent;border-bottom-color:var(--acid-line)}
+.ctl--stick .ctl__box{
+  display:flex;align-items:center;gap:10px;width:100%;height:44px;padding:0 12px;
+  border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.ctl--stick:focus-within .ctl__box{border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash)}
+
+/* ============================================================
+   OPTION PICKER — long list, crest + name + code
+   ============================================================ */
+.crest{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:8px;flex:0 0 auto;
+  background:rgba(255,255,255,.09);
+  font-size:9px;font-weight:800;letter-spacing:.02em;color:rgba(255,255,255,.82);
+}
+.opt[aria-checked="true"] .crest{background:rgba(155,226,34,.20);color:var(--acid)}
+.empty{
+  margin:0;padding:26px 8px;text-align:center;font-size:12.5px;color:var(--dim);
+}
+
+/* ============================================================
+   CALENDAR
+   ============================================================ */
+.cal__bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.cal__mon{
+  flex:1;min-width:0;text-align:center;
+  font-size:14.5px;font-weight:700;letter-spacing:-.01em;
+}
+.cal__nav{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;flex:0 0 auto;
+  border:0;border-radius:50%;background:var(--sunken);color:var(--text);
+  cursor:pointer;transition:background .16s var(--ease);
+}
+.cal__nav:hover{background:#181D25}
+.cal__nav:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.cal__nav svg{width:16px;height:16px}
+.cal__dow,.cal__grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal__dow{margin-bottom:4px}
+.cal__dow span{
+  text-align:center;font-size:9.5px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim);
+}
+.cal__grid{row-gap:2px}
+.cal__d{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  height:40px;border:0;background:transparent;color:var(--text);
+  font:inherit;font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums;
+  cursor:pointer;
+}
+.cal__d span{
+  position:relative;z-index:1;display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:50%;
+}
+.cal__d--out{color:var(--dim);cursor:default}
+.cal__d--off{color:var(--dim);cursor:not-allowed;text-decoration:line-through;text-decoration-color:rgba(91,96,107,.6)}
+.cal__d--today span{box-shadow:inset 0 0 0 1px var(--acid-line);color:var(--acid)}
+.cal__d[aria-selected="true"] span,.cal__d--sel span{
+  background:var(--acid);color:var(--acid-ink);font-weight:700;box-shadow:none;
+}
+.cal__d:focus-visible span{outline:2px solid var(--acid);outline-offset:2px}
+/* range fill sits behind the disc, edge to edge */
+.cal__d--in::before,.cal__d--edge::before{
+  content:"";position:absolute;top:3px;bottom:3px;left:0;right:0;
+  background:var(--acid-wash);
+}
+.cal__d--from::before{left:50%;border-radius:var(--r-pill) 0 0 var(--r-pill)}
+.cal__d--to::before{right:50%;border-radius:0 var(--r-pill) var(--r-pill) 0}
+.cal__d--in{color:var(--acid)}
+.cal__sum{
+  display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:11px 14px;
+  border-radius:var(--r-panel);background:var(--sunken);
+  font-size:12.5px;color:var(--muted);
+}
+.cal__sum b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.cal__sum em{margin-left:auto;font-style:normal;color:var(--acid);font-weight:600}
+
+/* ============================================================
+   TIME PICKER — three column lists, no wheel
+   ============================================================ */
+.time{display:grid;grid-template-columns:1fr 1fr 74px;gap:8px}
+.time__col{
+  max-height:180px;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);
+  padding:6px;
+}
+.time__hd{
+  margin:0 0 6px;font-size:9.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);text-align:center;
+}
+.time__v{
+  display:flex;align-items:center;justify-content:center;width:100%;height:38px;
+  border:0;border-radius:9px;background:transparent;color:var(--text);
+  font:inherit;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;
+  cursor:pointer;transition:background .14s var(--ease),color .14s var(--ease);
+}
+.time__v + .time__v{margin-top:2px}
+.time__v:hover{background:rgba(255,255,255,.05)}
+.time__v[aria-checked="true"]{background:var(--acid-wash);color:var(--acid)}
+.time__v:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.time__now{
+  display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:11px 14px;
+  border-radius:var(--r-panel);background:var(--sunken);font-size:12.5px;color:var(--muted);
+}
+.time__now b{
+  margin-left:auto;font-size:19px;font-weight:800;letter-spacing:-.02em;
+  color:var(--text);font-variant-numeric:tabular-nums;
+}
+.quick{display:flex;gap:7px;overflow-x:auto;margin:14px 0 0;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.quick::-webkit-scrollbar{height:0}
+.quick__b{
+  flex:0 0 auto;height:34px;padding:0 13px;
+  border:1px solid var(--line);border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--muted);
+  font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:background .16s var(--ease),color .16s var(--ease),border-color .16s var(--ease);
+}
+.quick__b:hover{color:var(--text);border-color:rgba(255,255,255,.14)}
+.quick__b[aria-pressed="true"]{
+  background:var(--acid-wash);border-color:var(--acid-line);color:var(--acid);
+}
+.quick__b:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+
+/* ============================================================
+   ACTION SHEET
+   ============================================================ */
+.acts{
+  margin:0;padding:0;list-style:none;overflow:hidden;
+  border:1px solid var(--line);border-radius:var(--r-panel);background:var(--sunken);
+}
+.acts li + li{border-top:1px solid var(--line-soft)}
+.act{
+  display:flex;align-items:center;gap:13px;width:100%;min-height:54px;padding:0 14px;
+  border:0;background:transparent;color:var(--text);
+  font:inherit;font-size:14.5px;font-weight:500;text-align:left;cursor:pointer;
+  transition:background .16s var(--ease);
+}
+.act:hover{background:rgba(255,255,255,.045)}
+.act svg{width:20px;height:20px;flex:0 0 auto;color:var(--muted)}
+.act small{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--dim)}
+.act__t{flex:1;min-width:0}
+.act--danger{color:var(--red)}
+.act--danger svg{color:var(--red)}
+.act--danger:hover{background:var(--red-wash)}
+.act:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.acts__ctx{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border-bottom:1px solid var(--line);
+}
+.acts__ctx b{display:block;font-size:14px;font-weight:600;letter-spacing:-.01em}
+.acts__ctx span{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+
+/* confirm sheet body */
+.confirm{text-align:center;padding:4px 4px 2px}
+.confirm__tile{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:46px;height:46px;border-radius:var(--r-panel);
+  background:var(--red-wash);color:var(--red);
+}
+.confirm__tile svg{width:23px;height:23px}
+.confirm h3{
+  margin:14px 0 0;font-size:19px;font-weight:700;letter-spacing:-.02em;line-height:1.2;
+  text-transform:none;
+}
+.confirm p{margin:9px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+
+/* ============================================================
+   SHEET-OR-DROPDOWN — the corrected Hall of Fame pair
+   ============================================================ */
+.hof{display:flex;flex-direction:column;gap:10px}
+.hof__row{display:flex;gap:10px}
+.anchored{position:relative;flex:0 0 auto;width:calc(50% - 5px)}
+.sel{
+  display:flex;align-items:center;gap:10px;width:100%;height:var(--h-field);padding:0 14px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);color:var(--text);
+  font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer;
+  transition:border-color .16s var(--ease);
+}
+.sel:hover{border-color:rgba(255,255,255,.14)}
+.sel[aria-expanded="true"]{border-color:var(--acid)}
+.sel__v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel svg{width:16px;height:16px;flex:0 0 auto;color:var(--muted);transition:transform .18s var(--ease)}
+.sel[aria-expanded="true"] svg{transform:rotate(180deg);color:var(--acid)}
+.sel:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.menu{
+  position:absolute;left:0;top:calc(100% + 6px);z-index:6;
+  min-width:100%;max-height:200px;overflow-y:auto;padding:6px;
+  border:1px solid var(--line);border-radius:var(--r-panel);
+  background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.55);
+}
+.menu__i{
+  display:flex;align-items:center;gap:9px;width:100%;height:42px;padding:0 10px;
+  border:0;border-radius:9px;background:transparent;color:var(--text);
+  font:inherit;font-size:13.5px;font-weight:500;text-align:left;cursor:pointer;
+  font-variant-numeric:tabular-nums;transition:background .14s var(--ease);
+}
+.menu__i:hover{background:rgba(255,255,255,.06)}
+.menu__i[aria-selected="true"]{background:var(--acid-wash);color:var(--acid);font-weight:600}
+.menu__i svg{width:16px;height:16px;margin-left:auto;opacity:0;color:var(--acid)}
+.menu__i[aria-selected="true"] svg{opacity:1}
+.menu__i:focus-visible{outline:2px solid var(--acid);outline-offset:-2px}
+.hof.is-open .hof__inert{opacity:.35;pointer-events:none;transition:opacity .18s var(--ease)}
+
+.rule{margin:0;padding:0;list-style:none}
+.rule li{
+  display:flex;gap:11px;padding:11px 2px;border-top:1px solid var(--line-soft);
+  font-size:12.5px;line-height:1.45;color:var(--muted);
+}
+.rule li:first-child{border-top:0}
+.rule b{
+  flex:0 0 74px;color:var(--text);font-weight:700;font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;padding-top:2px;
+}
+.rule b.is-acid{color:var(--acid)}
+
+/* ============================================================
+   LIVE LAYER
+   The class `tabbar` on the layer is the review shell's hook: it
+   rewrites `.tabbar` to position:absolute so a screen-pinned
+   overlay stays inside the device frame instead of covering the
+   whole review page. The layer lives OUTSIDE <main class="screen">
+   so it does not scroll away.
+   ============================================================ */
+.layer{position:fixed;inset:0;z-index:60;display:none;align-items:flex-end;justify-content:center}
+.layer.is-open{display:flex}
+.scrim{
+  position:absolute;inset:0;
+  background:var(--scrim);
+  -webkit-backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+  backdrop-filter:blur(var(--scrim-blur)) saturate(.9);
+  opacity:0;transition:opacity .22s var(--ease);
+}
+.layer.is-in .scrim{opacity:1}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .scrim{background:rgba(3,4,1,.86)}
+}
+.layer .sheet{
+  max-width:420px;
+  transform:translateY(101%);
+  transition:transform .32s var(--ease);
+  will-change:transform;
+}
+.layer.is-in .sheet{transform:translateY(0)}
+/* the sheet must never reach the status bar */
+.layer .sheet{max-height:min(var(--sheet-vh),var(--sheet-max),calc(100% - 24px - env(safe-area-inset-top,0px)))}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="screen">
+
+  <header class="top">
+    <p class="eyebrow">Component kit</p>
+    <h1 class="title">Bottom sheets<br>&amp; pickers</h1>
+    <p class="sub">
+      Seven sheets on one shell. The specimens are laid out down the page so every variant can be
+      read at once; the two live examples near the foot slide up over the real scrim, trap focus,
+      and close on scrim tap, grabber drag, the close control or Esc.
+    </p>
+  </header>
+
+  <!-- ===================== SHELL SPEC ===================== -->
+  <h2 class="label">The shell, defined once</h2>
+  <div class="section">
+    <ul class="kv">
+      <li><span>Top radius</span><b>18 <em>· bottom 0, full bleed</em></b></li>
+      <li><span>Fill</span><b>#1C2129 → #13171E <em>· 180deg</em></b></li>
+      <li><span>Edge</span><b>1 px white 7.5% <em>· sides + top only</em></b></li>
+      <li><span>Lift</span><b>0 −20 50 rgba(0,0,0,.6)</b></li>
+      <li><span>Grabber</span><b>40 × 4, white 18% <em>· 26 px strip</em></b></li>
+      <li><span>Max height</span><b>min(88vh, 560) <em>· −24 from status bar</em></b></li>
+      <li><span>Title</span><b>11 / 700 / .14em caps</b></li>
+      <li><span>Row</span><b>48 min, R12, 1 px white 7.5%</b></li>
+      <li><span>Row, selected</span><b>#9BE222 at 12% <em>· rim at 30%</em></b></li>
+      <li><span>Scrim</span><b>rgba(3,4,1,.72) + blur 10</b></li>
+      <li><span>Safe area</span><b>foot pads env(safe-area-inset-bottom)</b></li>
+      <li><span>Dismiss</span><b>scrim · drag · ✕ · Esc</b></li>
+    </ul>
+    <p class="note note--tight">
+      Head and foot are fixed; only the body scrolls. A sheet with no foot pads its own body by
+      the bottom inset instead, so no row ever finishes inside the home-indicator gesture zone —
+      which is what <code>HF-03</code> does today, ending 28 pt from the screen edge with no inset
+      at all.
+    </p>
+  </div>
+
+  <!-- ===================== 1 · SORT ===================== -->
+  <h2 class="label">1 · Sort</h2>
+
+  <div class="spec">
+    <p class="spec__label">Single-select · applies on tap</p>
+    <section class="sheet" role="group" aria-label="Sort upcoming locker rooms, specimen">
+      <div class="sheet__grab" aria-hidden="true"></div>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Sort upcoming locker rooms</h3>
+        <button class="sheet__x" type="button" aria-label="Close sort">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body sheet__body--last" role="radiogroup" aria-label="Sort order">
+        <button class="opt" type="button" role="radio" aria-checked="true">
+          <span class="opt__text">Most recent</span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="opt__text">Most immediate</span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="opt__text">Most popular</span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+      </div>
+    </section>
+    <p class="spec__note">
+      <b>Discrepancy, and what we built.</b> The export draws these three rows with a square
+      checkbox tick, but the behaviour is single-select — one sort order at a time. A checkbox
+      promises "tick as many as you like". <b>Built with a radio.</b> Round indicator, one
+      selected, tapping a row applies the sort and closes the sheet, so there is no Apply button
+      here. The three orders are the shipped <code>UpcomingLockerRoomsSort</code> values; the live
+      list only exposes two of them.
+    </p>
+  </div>
+
+  <!-- ===================== 2 · FILTER ===================== -->
+  <h2 class="label">2 · Filter</h2>
+
+  <div class="spec">
+    <p class="spec__label">Multi-select · Clear all · Apply</p>
+    <section class="sheet" role="group" aria-label="Filter locker rooms, specimen">
+      <div class="sheet__grab" aria-hidden="true"></div>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Filter locker rooms</h3>
+        <span class="sheet__n">2 on</span>
+        <button class="sheet__clear" type="button">Clear all</button>
+        <button class="sheet__x" type="button" aria-label="Close filter">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body">
+        <p class="sheet__grp">Access</p>
+        <button class="opt" type="button" role="checkbox" aria-checked="true">
+          <span class="opt__text">Open rooms only</span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Locked rooms only</span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <p class="sheet__grp">Me</p>
+        <button class="opt" type="button" role="checkbox" aria-checked="true">
+          <span class="opt__text">Rooms I’m invited to</span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="checkbox" aria-checked="false">
+          <span class="opt__text">Rooms I’ve set a reminder for</span>
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+        </button>
+      </div>
+      <div class="sheet__foot">
+        <button class="btn btn--acid btn--wide" type="button">Apply <span class="btn__n">2</span></button>
+      </div>
+    </section>
+    <p class="spec__note">
+      Multi-select, so a checkbox is honest here and Apply is required — nothing changes behind
+      the sheet until it is pressed. The count appears twice: once in the head as a pill, once on
+      the button, and <b>Clear all</b> greys out at zero. The shipped filter list leads with
+      <code>All rooms</code>, which cannot coexist with multi-select; "no filter" is now simply
+      nothing ticked.
+    </p>
+  </div>
+
+  <!-- ===================== 3 · OPTION PICKER ===================== -->
+  <h2 class="label">3 · Option picker</h2>
+
+  <div class="spec">
+    <p class="spec__label">Long list · search · grouped</p>
+    <section class="sheet" role="group" aria-label="Pick a club, specimen">
+      <div class="sheet__grab" aria-hidden="true"></div>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Pick your club</h3>
+        <button class="sheet__x" type="button" aria-label="Close picker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body sheet__body--last" style="max-height:262px" role="radiogroup" aria-label="Clubs">
+        <div class="ctl ctl--stick">
+          <span class="ctl__box">
+            <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.6"/><path d="M16 16l4.2 4.2"/></svg>
+            <input class="ctl__in" type="search" placeholder="Search clubs" aria-label="Search clubs" value="">
+          </span>
+        </div>
+        <p class="sheet__grp">Champions League</p>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="crest" aria-hidden="true">AJA</span>
+          <span class="opt__text">Ajax</span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="true">
+          <span class="crest" aria-hidden="true">BAR</span>
+          <span class="opt__text">Barcelona<small>Your default club</small></span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="crest" aria-hidden="true">FCB</span>
+          <span class="opt__text">Bayern Munich</span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="crest" aria-hidden="true">BVB</span>
+          <span class="opt__text">Borussia Dortmund</span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+        <button class="opt" type="button" role="radio" aria-checked="false">
+          <span class="crest" aria-hidden="true">INT</span>
+          <span class="opt__text">Inter Milan</span>
+          <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+        </button>
+      </div>
+    </section>
+    <p class="spec__note">
+      Search sticks to the top of the scroller on a hairline so it never leaves the screen; group
+      headings scroll with the list. The crest is the 3-letter code stand-in already used across
+      the kit — real crests arrive from club data. Single-select, so a radio and no Apply, exactly
+      as the sort sheet: tap a club and the sheet closes. A picker that takes <em>several</em>
+      values switches to checkboxes and gains the filter sheet's Apply. Tap targets are 48 px
+      minimum, so the list scrolls under a thumb rather than needing precision.
+    </p>
+  </div>
+
+  <!-- ===================== 4 · DATE ===================== -->
+  <h2 class="label">4 · Date</h2>
+
+  <div class="spec">
+    <p class="spec__label">Single date · month grid</p>
+    <section class="sheet" role="group" aria-label="Pick a date, specimen">
+      <div class="sheet__grab" aria-hidden="true"></div>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Room date</h3>
+        <button class="sheet__x" type="button" aria-label="Close date picker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body">
+        <p class="cal__sum"><b>Wednesday 12 August 2026</b><em>13 days away</em></p>
+        <div class="cal__bar">
+          <button class="cal__nav" type="button" aria-label="Previous month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+          </button>
+          <p class="cal__mon" aria-live="polite">August 2026</p>
+          <button class="cal__nav" type="button" aria-label="Next month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </button>
+        </div>
+        <div class="cal__dow" aria-hidden="true">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        </div>
+        <div class="cal__grid" role="grid" aria-label="August 2026">
+          <span class="cal__d cal__d--out"><span>27</span></span>
+          <span class="cal__d cal__d--out"><span>28</span></span>
+          <span class="cal__d cal__d--out"><span>29</span></span>
+          <span class="cal__d cal__d--out"><span>30</span></span>
+          <span class="cal__d cal__d--out"><span>31</span></span>
+          <button class="cal__d" type="button"><span>1</span></button>
+          <button class="cal__d" type="button"><span>2</span></button>
+
+          <button class="cal__d" type="button"><span>3</span></button>
+          <button class="cal__d" type="button"><span>4</span></button>
+          <button class="cal__d" type="button"><span>5</span></button>
+          <button class="cal__d" type="button"><span>6</span></button>
+          <button class="cal__d" type="button"><span>7</span></button>
+          <button class="cal__d" type="button"><span>8</span></button>
+          <button class="cal__d" type="button"><span>9</span></button>
+
+          <button class="cal__d" type="button"><span>10</span></button>
+          <button class="cal__d" type="button"><span>11</span></button>
+          <button class="cal__d" type="button" aria-selected="true"><span>12</span></button>
+          <button class="cal__d" type="button"><span>13</span></button>
+          <button class="cal__d" type="button"><span>14</span></button>
+          <button class="cal__d" type="button"><span>15</span></button>
+          <button class="cal__d" type="button"><span>16</span></button>
+
+          <button class="cal__d" type="button"><span>17</span></button>
+          <button class="cal__d" type="button"><span>18</span></button>
+          <button class="cal__d" type="button"><span>19</span></button>
+          <button class="cal__d" type="button"><span>20</span></button>
+          <button class="cal__d" type="button"><span>21</span></button>
+          <button class="cal__d" type="button"><span>22</span></button>
+          <button class="cal__d" type="button"><span>23</span></button>
+
+          <button class="cal__d" type="button"><span>24</span></button>
+          <button class="cal__d" type="button"><span>25</span></button>
+          <button class="cal__d" type="button"><span>26</span></button>
+          <button class="cal__d" type="button"><span>27</span></button>
+          <button class="cal__d" type="button"><span>28</span></button>
+          <button class="cal__d" type="button"><span>29</span></button>
+          <button class="cal__d" type="button"><span>30</span></button>
+
+          <button class="cal__d" type="button"><span>31</span></button>
+          <span class="cal__d cal__d--out"><span>1</span></span>
+          <span class="cal__d cal__d--out"><span>2</span></span>
+          <span class="cal__d cal__d--out"><span>3</span></span>
+          <span class="cal__d cal__d--out"><span>4</span></span>
+          <span class="cal__d cal__d--out"><span>5</span></span>
+          <span class="cal__d cal__d--out"><span>6</span></span>
+        </div>
+      </div>
+      <div class="sheet__foot">
+        <button class="btn btn--acid btn--wide" type="button">Set date</button>
+      </div>
+    </section>
+    <p class="spec__note">
+      Week starts Monday. Selected is a 34 px accent disc with <code>#0B0E06</code> ink; adjacent
+      months are <code>#5B606B</code> and inert. The summary line above the grid is the answer
+      restated in words, because <code>12</code> alone is not a date.
+    </p>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Range · today ringed · crosses the month</p>
+    <section class="sheet" role="group" aria-label="Pick a date range, specimen">
+      <div class="sheet__grab" aria-hidden="true"></div>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Credit history range</h3>
+        <span class="sheet__n">4 days</span>
+        <button class="sheet__clear" type="button">Reset</button>
+        <button class="sheet__x" type="button" aria-label="Close range picker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body">
+        <p class="cal__sum"><b>30 Jul → 2 Aug 2026</b><em>Ends Sunday</em></p>
+        <div class="cal__bar">
+          <button class="cal__nav" type="button" aria-label="Previous month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+          </button>
+          <p class="cal__mon">July 2026</p>
+          <button class="cal__nav" type="button" aria-label="Next month">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </button>
+        </div>
+        <div class="cal__dow" aria-hidden="true">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        </div>
+        <div class="cal__grid" role="grid" aria-label="July 2026">
+          <span class="cal__d cal__d--out"><span>29</span></span>
+          <span class="cal__d cal__d--out"><span>30</span></span>
+          <button class="cal__d" type="button"><span>1</span></button>
+          <button class="cal__d" type="button"><span>2</span></button>
+          <button class="cal__d" type="button"><span>3</span></button>
+          <button class="cal__d" type="button"><span>4</span></button>
+          <button class="cal__d" type="button"><span>5</span></button>
+
+          <button class="cal__d" type="button"><span>6</span></button>
+          <button class="cal__d" type="button"><span>7</span></button>
+          <button class="cal__d" type="button"><span>8</span></button>
+          <button class="cal__d" type="button"><span>9</span></button>
+          <button class="cal__d" type="button"><span>10</span></button>
+          <button class="cal__d" type="button"><span>11</span></button>
+          <button class="cal__d" type="button"><span>12</span></button>
+
+          <button class="cal__d" type="button"><span>13</span></button>
+          <button class="cal__d" type="button"><span>14</span></button>
+          <button class="cal__d" type="button"><span>15</span></button>
+          <button class="cal__d" type="button"><span>16</span></button>
+          <button class="cal__d" type="button"><span>17</span></button>
+          <button class="cal__d" type="button"><span>18</span></button>
+          <button class="cal__d" type="button"><span>19</span></button>
+
+          <button class="cal__d" type="button"><span>20</span></button>
+          <button class="cal__d" type="button"><span>21</span></button>
+          <button class="cal__d" type="button"><span>22</span></button>
+          <button class="cal__d" type="button"><span>23</span></button>
+          <button class="cal__d" type="button"><span>24</span></button>
+          <button class="cal__d" type="button"><span>25</span></button>
+          <button class="cal__d" type="button"><span>26</span></button>
+
+          <button class="cal__d" type="button"><span>27</span></button>
+          <button class="cal__d" type="button"><span>28</span></button>
+          <button class="cal__d" type="button"><span>29</span></button>
+          <button class="cal__d cal__d--today cal__d--edge cal__d--from" type="button" aria-selected="true"><span>30</span></button>
+          <button class="cal__d cal__d--in" type="button"><span>31</span></button>
+          <span class="cal__d cal__d--out cal__d--in"><span>1</span></span>
+          <span class="cal__d cal__d--out cal__d--edge cal__d--to cal__d--sel"><span>2</span></span>
+        </div>
+      </div>
+      <div class="sheet__foot sheet__foot--pair">
+        <button class="btn btn--ghost" type="button">Cancel</button>
+        <button class="btn btn--acid" type="button">Apply range</button>
+      </div>
+    </section>
+    <p class="spec__note">
+      Ends are accent discs, days between carry the 12% wash edge to edge so the range reads as
+      one run, and the fill continues through the trailing adjacent-month cells rather than
+      stopping at the month boundary. <b>Today</b> — 30 July — is a 1 px accent ring, which
+      survives underneath the selected disc because both ends of a range are usually near today.
+    </p>
+  </div>
+
+  <!-- ===================== 5 · TIME ===================== -->
+  <h2 class="label">5 · Time</h2>
+
+  <div class="spec">
+    <p class="spec__label">Scheduling a locker room</p>
+    <section class="sheet" role="group" aria-label="Pick a start time, specimen">
+      <div class="sheet__grab" aria-hidden="true"></div>
+      <div class="sheet__head">
+        <h3 class="sheet__title">Room start time</h3>
+        <button class="sheet__x" type="button" aria-label="Close time picker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body">
+        <p class="time__now">Wednesday 12 August <b>8:30 PM</b></p>
+        <div class="time">
+          <div class="time__col" role="radiogroup" aria-label="Hour">
+            <p class="time__hd">Hour</p>
+            <button class="time__v" type="button" role="radio" aria-checked="false">6</button>
+            <button class="time__v" type="button" role="radio" aria-checked="false">7</button>
+            <button class="time__v" type="button" role="radio" aria-checked="true">8</button>
+            <button class="time__v" type="button" role="radio" aria-checked="false">9</button>
+            <button class="time__v" type="button" role="radio" aria-checked="false">10</button>
+            <button class="time__v" type="button" role="radio" aria-checked="false">11</button>
+            <button class="time__v" type="button" role="radio" aria-checked="false">12</button>
+          </div>
+          <div class="time__col" role="radiogroup" aria-label="Minute">
+            <p class="time__hd">Min</p>
+            <button class="time__v" type="button" role="radio" aria-checked="false">00</button>
+            <button class="time__v" type="button" role="radio" aria-checked="false">15</button>
+            <button class="time__v" type="button" role="radio" aria-checked="true">30</button>
+            <button class="time__v" type="button" role="radio" aria-checked="false">45</button>
+          </div>
+          <div class="time__col" role="radiogroup" aria-label="Morning or afternoon">
+            <p class="time__hd">AM/PM</p>
+            <button class="time__v" type="button" role="radio" aria-checked="false">AM</button>
+            <button class="time__v" type="button" role="radio" aria-checked="true">PM</button>
+          </div>
+        </div>
+        <div class="quick" role="group" aria-label="Quick offsets">
+          <button class="quick__b" type="button" aria-pressed="false">Now</button>
+          <button class="quick__b" type="button" aria-pressed="false">In an hour</button>
+          <button class="quick__b" type="button" aria-pressed="false">In two hours</button>
+          <button class="quick__b" type="button" aria-pressed="false">In three hours</button>
+          <button class="quick__b" type="button" aria-pressed="false">In five hours</button>
+          <button class="quick__b" type="button" aria-pressed="false">In twelve hours</button>
+        </div>
+      </div>
+      <div class="sheet__foot">
+        <button class="btn btn--acid btn--wide" type="button">Set start time</button>
+      </div>
+    </section>
+    <p class="spec__note">
+      Three column lists rather than an iOS wheel: the same row-plus-wash language as every other
+      sheet here, readable at a glance in a screenshot, and reachable by keyboard. Minutes are
+      quarters — a locker room does not start at 8:37. The offsets below are the shipped
+      <code>Now / In an hour / … / In twelve hours</code> presets, which currently live on the
+      create-room screen as a fourth chip style; here they set the columns above them.
+    </p>
+  </div>
+
+  <!-- ===================== 6 · ACTION ===================== -->
+  <h2 class="label">6 · Actions</h2>
+
+  <div class="spec">
+    <p class="spec__label">Short list · one destructive</p>
+    <section class="sheet" role="group" aria-label="Room actions, specimen">
+      <div class="sheet__grab" aria-hidden="true"></div>
+      <div class="sheet__body sheet__body--last">
+        <ul class="acts">
+          <li>
+            <div class="acts__ctx">
+              <span class="crest" aria-hidden="true">BAR</span>
+              <span class="act__t"><b>Post-Match Breakdown</b><span>Hosted by taythaytu · Wednesday, 12 Aug, 8:30 PM</span></span>
+            </div>
+          </li>
+          <li><button class="act" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5V4.5M8.4 8.1 12 4.5l3.6 3.6"/><path d="M5 14v4.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+            <span class="act__t">Share room</span></button></li>
+          <li><button class="act" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1"/><path d="M13.8 10.2a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1"/></svg>
+            <span class="act__t">Copy room link</span></button></li>
+          <li><button class="act" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16M10 20.2h4"/></svg>
+            <span class="act__t">Set a reminder<small>We’ll tell you when it opens</small></span></button></li>
+          <li><button class="act" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13.4 6.6 17.4 10.6"/></svg>
+            <span class="act__t">Edit room details</span></button></li>
+          <li><button class="act act--danger" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+            <span class="act__t">Delete room</span></button></li>
+        </ul>
+        <div style="margin-top:10px">
+          <button class="btn btn--ghost btn--wide" type="button">Cancel</button>
+        </div>
+      </div>
+    </section>
+    <p class="spec__note">
+      No title — the context block at the top of the list names the object instead, which is the
+      thing you need to be certain of before pressing Delete. One destructive item only, in
+      <code>#E2564A</code>, sitting last and separated by nothing more than the hairline; it does
+      not get its own group. Delete opens the confirm sheet below rather than acting immediately.
+    </p>
+  </div>
+
+  <!-- ===================== 7 · CONFIRM ===================== -->
+  <h2 class="label">7 · Confirm</h2>
+
+  <div class="spec">
+    <p class="spec__label">The sheet instead of a dialog</p>
+    <section class="sheet" role="group" aria-label="Confirm delete, specimen">
+      <div class="sheet__grab" aria-hidden="true"></div>
+      <div class="sheet__body">
+        <div class="confirm">
+          <span class="confirm__tile" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3L17.5 7"/></svg>
+          </span>
+          <h3>Delete this room?</h3>
+          <p>All invites sent will be deleted. Post-Match Breakdown has 3 people booked in, and
+             this cannot be undone.</p>
+        </div>
+      </div>
+      <div class="sheet__foot sheet__foot--pair">
+        <button class="btn btn--ghost" type="button">Keep room</button>
+        <button class="btn btn--danger" type="button">Delete room</button>
+      </div>
+    </section>
+    <p class="spec__note">
+      Same shell, centred content, the dialogs kit's 46 px action pair in the foot. Use the sheet
+      form when the confirm follows a sheet — an action sheet should not hand off to a
+      centre-screen dialog — and the dialog form when it follows a screen. The shipped string is
+      <code>Delete this rooms?</code>; corrected here, and the consequence names the room and
+      the number of people affected rather than stopping at
+      <code>All invites sent will be deleted.</code>
+    </p>
+  </div>
+
+  <!-- ===================== SHEET OR DROPDOWN ===================== -->
+  <h2 class="label">Sheet, or dropdown?</h2>
+  <div class="section">
+    <ul class="rule">
+      <li><b class="is-acid">Sheet</b><span>More than about six options, or options that need a
+        second line, a crest, a search field or an Apply. Anything multi-select. Anything on a
+        phone that a thumb has to reach.</span></li>
+      <li><b>Dropdown</b><span>Three to six short, single-line, mutually exclusive values that
+        change one field in place — a season, a currency, a sort direction. Never multi-select,
+        never with search, never with a footer.</span></li>
+      <li><b>Never</b><span>Two visually identical controls opening two different surfaces. That
+        is the fault on <code>HF-02</code>: Season opens a raw Material menu, Category opens a
+        custom sheet, and nothing on screen tells you which is which.</span></li>
+    </ul>
+    <p class="note note--tight">
+      Hall of Fame's Season control is genuinely a dropdown case — three short values, one field.
+      Category is genuinely a sheet case — the award names run to <b>Member of the Season</b> and
+      the surface is where the filter is explained. So the pair stays split, but both are rebuilt
+      to the same language and the dropdown is registered properly.
+    </p>
+  </div>
+
+  <div class="spec">
+    <p class="spec__label">Corrected · dropdown anchored below its trigger</p>
+    <div style="margin:0 var(--gutter)">
+      <div class="hof" id="hof">
+        <p class="sheet__grp" style="margin:0">Categories</p>
+        <div class="hof__row">
+          <div class="anchored">
+            <button class="sel" type="button" id="seasonBtn" aria-expanded="false" aria-haspopup="listbox">
+              <span class="sel__v">2025/26</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+            </button>
+            <div class="menu" id="seasonMenu" role="listbox" aria-label="Season" hidden>
+              <button class="menu__i" type="button" role="option" aria-selected="true">2025/26
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+              <button class="menu__i" type="button" role="option" aria-selected="false">2024/25
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+              <button class="menu__i" type="button" role="option" aria-selected="false">2023/24
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></button>
+            </div>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;padding-left:2px" class="hof__inert">
+            <p style="margin:0;font-size:11.5px;line-height:1.35;color:var(--dim)">Half width, 52 px —
+              matched to the field below it</p>
+          </div>
+        </div>
+        <button class="sel hof__inert" type="button" aria-haspopup="dialog" data-open="category">
+          <span class="sel__v">Member of the Match</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5"/></svg>
+        </button>
+      </div>
+    </div>
+    <p class="spec__note">
+      Tap <b>2025/26</b>. The menu's left edge is flush with its trigger's left edge and its top
+      edge sits 6 px <em>below</em> the trigger's bottom edge, so the trigger stays readable and
+      the menu clearly belongs to it. While it is open the rest of the group dims to 35% and goes
+      inert, so the field underneath is plainly not available rather than half-covered and still
+      tappable. On <code>HF-02</code> the shipped menu sits 6 pt <em>above</em> its trigger's top
+      edge, 4 pt right of its left edge, covers the whole Category field and clips the podium.
+    </p>
+  </div>
+
+  <!-- ===================== LIVE ===================== -->
+  <h2 class="label">Live</h2>
+  <div class="section">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="status-pill">Interactive</span>
+    </div>
+    <ul class="kv" style="margin-top:12px">
+      <li><span>Enter</span><b>translateY 101→0 <em>· 320ms, .16/1/.3/1</em></b></li>
+      <li><span>Scrim</span><b>fade 220ms <em>· covers the whole canvas</em></b></li>
+      <li><span>Focus</span><b>moves to the panel, Tab held inside</b></li>
+      <li><span>Return</span><b>to the control that opened it</b></li>
+      <li><span>Drag</span><b>close past 90 px or a fast flick</b></li>
+      <li><span>Reduced motion</span><b>no slide, no fade</b></li>
+    </ul>
+    <div class="tryit">
+      <button class="pill-btn" type="button" data-open="filter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5h16M7 12h10M10 17.5h4"/></svg>
+        Filter sheet
+      </button>
+      <button class="pill-btn" type="button" data-open="club">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.6"/><path d="M16 16l4.2 4.2"/></svg>
+        Club picker
+      </button>
+      <button class="pill-btn" type="button" data-open="category">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 17l-5.2 2.7 1-5.9L3.5 9.7l5.9-.8z"/></svg>
+        Category sheet
+      </button>
+    </div>
+    <p class="note note--tight">
+      The <b>Category sheet</b> is the Hall of Fame surface as it should be: 18 px top corners and
+      a grabber, both of which the shipped <code>HF-03</code> is missing. Drag its grabber down to
+      dismiss it, or press Esc, or tap the scrim. The <b>Filter sheet</b> keeps live counts and a
+      working Clear all; the <b>Club picker</b> filters 30 real clubs as you type and shows the
+      empty result.
+    </p>
+  </div>
+
+</main>
+
+<!-- ============================================================
+     LIVE LAYER — outside <main class="screen"> so it stays pinned
+     to the bottom of the device frame instead of scrolling away.
+     ============================================================ -->
+<div class="layer tabbar" id="layer">
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ---------- live: filter ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="f-t" data-pane="filter" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="f-t">Filter locker rooms</h3>
+      <span class="sheet__n" data-count hidden>0 on</span>
+      <button class="sheet__clear" type="button" data-clear disabled>Clear all</button>
+      <button class="sheet__x" type="button" data-close aria-label="Close filter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body">
+      <p class="sheet__grp">Access</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb>
+        <span class="opt__text">Open rooms only</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb>
+        <span class="opt__text">Locked rooms only</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <p class="sheet__grp">Me</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb>
+        <span class="opt__text">Rooms I’m invited to</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb>
+        <span class="opt__text">Rooms I’ve set a reminder for</span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <p class="sheet__grp">Sport</p>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb>
+        <span class="opt__text">Football<small>Champions League, La Liga, EPL</small></span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb>
+        <span class="opt__text">Basketball<small>NBA, WNBA, EuroLeague</small></span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="checkbox" aria-checked="false" data-cb>
+        <span class="opt__text">Cricket<small>Sheffield Shield</small></span>
+        <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg></span>
+      </button>
+    </div>
+    <div class="sheet__foot">
+      <button class="btn btn--acid btn--wide" type="button" data-close>
+        <span data-applylabel>Apply</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ---------- live: club picker ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="c-t" data-pane="club" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="c-t">Pick your club</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close picker">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last" id="clubBody">
+      <div class="ctl ctl--stick">
+        <span class="ctl__box">
+          <svg class="ctl__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.6"/><path d="M16 16l4.2 4.2"/></svg>
+          <input class="ctl__in" id="clubQ" type="search" placeholder="Search clubs" aria-label="Search clubs" autocomplete="off" spellcheck="false">
+          <button class="ctl__btn" type="button" id="clubX" aria-label="Clear search" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+          </button>
+        </span>
+      </div>
+      <div id="clubList" role="radiogroup" aria-label="Clubs"></div>
+      <p class="empty" id="clubNone" hidden>No club matches that.</p>
+    </div>
+  </section>
+
+  <!-- ---------- live: Hall of Fame category ---------- -->
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="k-t" data-pane="category" hidden>
+    <button class="sheet__grab" type="button" aria-label="Drag down to close, or press Escape"></button>
+    <div class="sheet__head">
+      <h3 class="sheet__title" id="k-t">Category</h3>
+      <button class="sheet__x" type="button" data-close aria-label="Close category">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body sheet__body--last" role="radiogroup" aria-label="Award category">
+      <p class="sheet__lede">Hall of Fame shows one award at a time. Pick which.</p>
+      <button class="opt" type="button" role="radio" aria-checked="true" data-rd>
+        <span class="opt__text">Member of the Match<small>Awarded every fixture</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="radio" aria-checked="false" data-rd>
+        <span class="opt__text">Member of the Week<small>Awarded every Monday</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+      <button class="opt" type="button" role="radio" aria-checked="false" data-rd>
+        <span class="opt__text">Member of the Season<small>Awarded at the season close</small></span>
+        <span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>
+      </button>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var reduce = window.matchMedia &&
+               window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ============================================================
+     CLUB LIST — real club data, grouped by competition
+     ============================================================ */
+  var CLUBS = [
+    ['Champions League', [
+      ['Ajax','AJA'],['Barcelona','BAR'],['Bayern Munich','FCB'],['Borussia Dortmund','BVB'],
+      ['Inter Milan','INT'],['Liverpool','LIV'],['Manchester United','MUN'],
+      ['Paris Saint-Germain','PSG'],['Real Madrid','RMA']
+    ]],
+    ['English Premier League', [
+      ['Arsenal','ARS'],['Chelsea','CHE'],['Manchester City','MCI'],
+      ['Newcastle United','NEW'],['Tottenham Hotspur','TOT']
+    ]],
+    ['La Liga', [
+      ['Atlético Madrid','ATM'],['Real Betis','BET'],['Sevilla','SEV']
+    ]],
+    ['Bundesliga', [
+      ['Bayer Leverkusen','B04'],['RB Leipzig','RBL']
+    ]],
+    ['National Premier Leagues NSW', [
+      ['APIA Leichhardt','APA'],['Marconi Stallions','MAR'],['Sydney United 58','SU58']
+    ]],
+    ['NBA', [
+      ['Boston Celtics','BOS'],['Chicago Bulls','CHI'],['Golden State Warriors','GSW'],
+      ['Los Angeles Lakers','LAL'],['Miami Heat','MIA']
+    ]],
+    ['EuroLeague', [
+      ['Fenerbahçe','FEN'],['Olympiacos','OLY'],['Panathinaikos','PAO']
+    ]]
+  ];
+
+  var TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+             'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+             '<path d="M6.5 12.4l3.7 3.7L17.6 8.6"/></svg>';
+
+  var list = document.getElementById('clubList');
+  var total = 0;
+  CLUBS.forEach(function(grp){
+    var h = document.createElement('p');
+    h.className = 'sheet__grp';
+    h.textContent = grp[0];
+    h.setAttribute('data-grp','');
+    list.appendChild(h);
+    grp[1].forEach(function(c){
+      total++;
+      var b = document.createElement('button');
+      b.className = 'opt';
+      b.type = 'button';
+      b.setAttribute('role','radio');
+      b.setAttribute('aria-checked', c[0] === 'Barcelona' ? 'true' : 'false');
+      b.setAttribute('data-club', c[0].toLowerCase());
+      b.innerHTML =
+        '<span class="crest" aria-hidden="true">' + c[1] + '</span>' +
+        '<span class="opt__text"></span>' +
+        '<span class="radio" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<circle cx="12" cy="12" r="4.6" fill="currentColor"/></svg></span>';
+      b.querySelector('.opt__text').textContent = c[0];
+      list.appendChild(b);
+    });
+  });
+  var q     = document.getElementById('clubQ');
+  var qx    = document.getElementById('clubX');
+  var none  = document.getElementById('clubNone');
+  q.placeholder = 'Search ' + total + ' clubs';
+
+  function filterClubs(){
+    var v = q.value.trim().toLowerCase();
+    qx.hidden = !v;
+    var shown = 0;
+    Array.prototype.forEach.call(list.children, function(el){
+      if (el.hasAttribute('data-grp')) return;
+      var hit = !v || el.getAttribute('data-club').indexOf(v) > -1;
+      el.hidden = !hit;
+      if (hit) shown++;
+    });
+    /* hide a heading whose whole group is filtered out */
+    var cur = null, any = false;
+    Array.prototype.forEach.call(list.children, function(el){
+      if (el.hasAttribute('data-grp')){
+        if (cur) cur.hidden = !any;
+        cur = el; any = false;
+      } else if (!el.hidden) any = true;
+    });
+    if (cur) cur.hidden = !any;
+    none.hidden = shown > 0;
+  }
+  q.addEventListener('input', filterClubs);
+  qx.addEventListener('click', function(){ q.value = ''; filterClubs(); q.focus(); });
+
+  /* ============================================================
+     SELECTION — radios are exclusive within their group,
+     checkboxes toggle and drive the count
+     ============================================================ */
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+
+    var cb = e.target.closest('[data-cb]');
+    if (cb){
+      cb.setAttribute('aria-checked', cb.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+      syncFilter();
+      return;
+    }
+    var rd = e.target.closest('[data-rd], [data-club]');
+    if (rd){
+      var group = rd.closest('[role="radiogroup"], #clubList');
+      if (group){
+        Array.prototype.forEach.call(group.querySelectorAll('[aria-checked]'), function(x){
+          x.setAttribute('aria-checked', x === rd ? 'true' : 'false');
+        });
+      }
+      /* single-select applies immediately and dismisses */
+      close();
+      return;
+    }
+    var tv = e.target.closest('.time__v');
+    if (tv){
+      var col = tv.closest('[role="radiogroup"]');
+      Array.prototype.forEach.call(col.querySelectorAll('.time__v'), function(x){
+        x.setAttribute('aria-checked', x === tv ? 'true' : 'false');
+      });
+      return;
+    }
+  });
+
+  var pane, opener = null;
+  var filterPane = document.querySelector('[data-pane="filter"]');
+
+  function syncFilter(){
+    var on = filterPane.querySelectorAll('[data-cb][aria-checked="true"]').length;
+    var n  = filterPane.querySelector('[data-count]');
+    var cl = filterPane.querySelector('[data-clear]');
+    var lb = filterPane.querySelector('[data-applylabel]');
+    n.hidden = on === 0;
+    n.textContent = on + ' on';
+    cl.disabled = on === 0;
+    lb.innerHTML = on === 0 ? 'Apply' :
+      'Apply <span class="btn__n">' + on + '</span>';
+  }
+  filterPane.querySelector('[data-clear]').addEventListener('click', function(){
+    Array.prototype.forEach.call(filterPane.querySelectorAll('[data-cb]'), function(x){
+      x.setAttribute('aria-checked','false');
+    });
+    syncFilter();
+  });
+  syncFilter();
+
+  /* ============================================================
+     THE LAYER — open, close, focus trap, scrim, drag
+     ============================================================ */
+  var layer = document.getElementById('layer');
+  var scrim = document.getElementById('scrim');
+  var main  = document.querySelector('main.screen');
+
+  function focusables(root){
+    return Array.prototype.filter.call(
+      root.querySelectorAll('button, [href], input, select, textarea, [tabindex]'),
+      function(el){
+        return !el.hasAttribute('disabled') &&
+               el.getAttribute('tabindex') !== '-1' &&
+               el.offsetParent !== null;
+      }
+    );
+  }
+
+  function open(name, trigger){
+    if (pane) return;
+    pane = layer.querySelector('[data-pane="' + name + '"]');
+    if (!pane) return;
+    opener = trigger || null;
+    pane.hidden = false;
+    pane.style.transform = '';
+    layer.classList.add('is-open');
+    if (main) main.setAttribute('aria-hidden','true');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function(){ layer.classList.add('is-in'); });
+    pane.setAttribute('tabindex','-1');
+    pane.focus();
+    /* bring the selected value into view without moving focus to it */
+    var sel = pane.querySelector('[aria-checked="true"]');
+    if (sel && sel.scrollIntoView) sel.scrollIntoView({block:'nearest'});
+    document.addEventListener('keydown', onKey, true);
+  }
+
+  function close(){
+    if (!pane) return;
+    var closing = pane;
+    pane = null;
+    layer.classList.remove('is-in');
+    document.removeEventListener('keydown', onKey, true);
+    if (main) main.removeAttribute('aria-hidden');
+    document.body.style.overflow = '';
+    setTimeout(function(){
+      layer.classList.remove('is-open');
+      closing.hidden = true;
+      closing.style.transform = '';
+    }, reduce ? 0 : 300);
+    if (opener) opener.focus();
+    opener = null;
+  }
+
+  function onKey(e){
+    if (!pane) return;
+    if (e.key === 'Escape'){ e.preventDefault(); close(); return; }
+    if (e.key !== 'Tab') return;
+    var f = focusables(pane);
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    else if (!pane.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+  }
+
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+    var o = e.target.closest('[data-open]');
+    if (o){ open(o.getAttribute('data-open'), o); return; }
+    if (e.target.closest('[data-close]')){ close(); return; }
+    if (e.target === scrim) close();
+  });
+
+  /* ---------- grabber drag ---------- */
+  var drag = null;
+  layer.addEventListener('pointerdown', function(e){
+    var g = e.target.closest ? e.target.closest('.sheet__grab') : null;
+    if (!g || !pane) return;
+    drag = { y:e.clientY, t:Date.now(), dy:0 };
+    pane.classList.add('is-dragging');
+    g.setPointerCapture && g.setPointerCapture(e.pointerId);
+  });
+  layer.addEventListener('pointermove', function(e){
+    if (!drag || !pane) return;
+    drag.dy = Math.max(0, e.clientY - drag.y);
+    pane.style.transform = 'translateY(' + drag.dy + 'px)';
+    scrim.style.opacity = String(Math.max(0, 1 - drag.dy / 420));
+  });
+  function endDrag(){
+    if (!drag || !pane) { drag = null; return; }
+    var d  = drag.dy;
+    var ms = Math.max(1, Date.now() - drag.t);
+    var fast = d / ms > 0.55;
+    drag = null;
+    pane.classList.remove('is-dragging');
+    scrim.style.opacity = '';
+    if (d > 90 || (fast && d > 24)){ pane.style.transform = 'translateY(101%)'; close(); }
+    else { pane.style.transform = ''; }
+  }
+  layer.addEventListener('pointerup', endDrag);
+  layer.addEventListener('pointercancel', endDrag);
+
+  /* ============================================================
+     THE ANCHORED DROPDOWN — the corrected Season control
+     ============================================================ */
+  var hof  = document.getElementById('hof');
+  var sBtn = document.getElementById('seasonBtn');
+  var sMen = document.getElementById('seasonMenu');
+
+  function menu(state){
+    sBtn.setAttribute('aria-expanded', state ? 'true' : 'false');
+    sMen.hidden = !state;
+    hof.classList.toggle('is-open', !!state);
+    if (state){
+      var on = sMen.querySelector('[aria-selected="true"]') || sMen.firstElementChild;
+      on.focus();
+      document.addEventListener('keydown', menuKey, true);
+    } else {
+      document.removeEventListener('keydown', menuKey, true);
+    }
+  }
+  function menuKey(e){
+    if (e.key === 'Escape'){ e.preventDefault(); menu(false); sBtn.focus(); return; }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    var items = Array.prototype.slice.call(sMen.querySelectorAll('.menu__i'));
+    var i = items.indexOf(document.activeElement);
+    var next = e.key === 'ArrowDown' ? (i + 1) % items.length
+                                     : (i - 1 + items.length) % items.length;
+    items[next].focus();
+  }
+  sBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    menu(sBtn.getAttribute('aria-expanded') !== 'true');
+  });
+  sMen.addEventListener('click', function(e){
+    var it = e.target.closest('.menu__i');
+    if (!it) return;
+    Array.prototype.forEach.call(sMen.querySelectorAll('.menu__i'), function(x){
+      x.setAttribute('aria-selected', x === it ? 'true' : 'false');
+    });
+    sBtn.querySelector('.sel__v').textContent = it.textContent.trim();
+    menu(false);
+    sBtn.focus();
+  });
+  document.addEventListener('click', function(e){
+    if (sMen.hidden) return;
+    if (!sMen.contains(e.target) && e.target !== sBtn && !sBtn.contains(e.target)) menu(false);
+  });
+
+  /* ============================================================
+     SPECIMEN ROWS — the static sheets above are still clickable
+     so a reviewer can feel the states; they never open anything.
+     ============================================================ */
+  document.addEventListener('click', function(e){
+    var r = e.target.closest ? e.target.closest('.spec .opt') : null;
+    if (!r) return;
+    var role = r.getAttribute('role');
+    if (role === 'checkbox'){
+      r.setAttribute('aria-checked', r.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+    } else if (role === 'radio'){
+      var g = r.closest('[role="radiogroup"], .sheet__body');
+      Array.prototype.forEach.call(g.querySelectorAll('.opt[role="radio"]'), function(x){
+        x.setAttribute('aria-checked', x === r ? 'true' : 'false');
+      });
+    }
+  });
+  document.addEventListener('click', function(e){
+    var qb = e.target.closest ? e.target.closest('.quick__b') : null;
+    if (!qb) return;
+    var was = qb.getAttribute('aria-pressed') === 'true';
+    Array.prototype.forEach.call(qb.parentNode.querySelectorAll('.quick__b'), function(x){
+      x.setAttribute('aria-pressed','false');
+    });
+    qb.setAttribute('aria-pressed', was ? 'false' : 'true');
+  });
+})();
+</script>
+</body>
+</html>

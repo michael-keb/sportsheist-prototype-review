@@ -1,0 +1,398 @@
+<p class="dek">The two recognition routes reached from Profile: the <b>Hall of Fame</b> roll of award
+winners, and the tabbed <b>Achievements</b> screen. Nine screens — six rebuilt from the capture set,
+three that have never been drawn at all.</p>
+
+<section class="since-fixed">
+  <p class="rv-eyebrow">Since this was written — 31 July 2026</p>
+  <h2>Three of the defects below have been fixed in the app</h2>
+  <p>These notes argue from the code as it stood when the screens were drawn. Some of that code has
+  since changed, because these findings were acted on. The screens are still the right proposal —
+  but do not read the following as outstanding faults.</p>
+  <ul>
+    <li><b>Achievements is no longer reached through a commented-out push.</b> The row was removed from <code>profileRows</code> in <code>profile_body.dart</code> instead, so the screen is deliberately absent rather than accidentally unreachable. The question of whether it ships is still open.</li>
+    <li><b>The leader-status band boundaries are fixed.</b> The comparisons are now inclusive (<code>&gt;=</code>), so exactly <code>0.95</code>, <code>0.85</code> or <code>0.75</code> resolves to the right tier.</li>
+  </ul>
+  <p>Everything else in this file was re-checked against the code on the same date and still holds.</p>
+</section>
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>Two routes nobody can reach today</h2>
+
+  <p>Both of these screens are in the design record and neither works in the shipped app. Profile →
+  <b>Hall of fame</b> draws a chevron, implying it goes somewhere, and its tap handler is a bare
+  <code>break</code> — <code>profile_body.dart:375–376</code>. Profile → <b>Achievements</b> has its
+  navigation commented out, <code>profile_body.dart:391–393</code>, so the screen that <em>does</em>
+  exist in the code is unreachable. There is no Hall of Fame anywhere in <code>lib/</code>: no page,
+  no route, no widget, no model. This is the first build of it.</p>
+
+  <p>What the code does have is an <code>achievement_screen.dart</code> that looks nothing like the
+  capture. It is a <b>white</b> screen (<code>backgroundColor: CColor.white</code>, line
+  <code>34</code>) with no tabs, no gold frame, no laurels and no empty state, whose list is
+  <code>itemCount: 4</code> repeating one hard-coded row — <code>MOST VALUED FAN OF THE MATCH</code>
+  / <code>Feb 16, 2024</code> — four times, with no cubit and no API call. The captured dark screens
+  and the code are two different products.</p>
+
+  <p>Everything the captures put on screen is <b>gold</b>, and none of the golds is a brand colour.
+  <code>#D4AF37</code> (the plaque frame and roundel ring) and <code>#B28401</code> (the laurels) do
+  not appear anywhere in the codebase — we grepped. <code>#DFAA11</code> (the award pill, the podium
+  ring, the winning score, the crown) is real, and it is <code>CColor.colorVeto</code>: the amber the
+  app paints a <em>blocked</em> proposal with. So today a celebration and a veto are the same colour.
+  The new palette has no gold and no metallics, so rank here is carried by <b>a numeral, ring opacity
+  and scale</b> — the podium construction already shipping on the Merits tab.</p>
+
+  <p>Nothing on this page is a new idiom. The Season dropdown and the Award sheet are the corrected
+  Hall of Fame pair already specified in <code>sheets.html</code>. The announcement is
+  <code>dialogs.html</code>'s dialog shell. The empty panels, the "nothing to do yet" line and the
+  loading bones are <code>states.html</code>'s. The segmented control is
+  <code>filters-pickers.html</code>'s. The opponent crest sits on
+  <code>club-selection.html</code>'s plate.</p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>Every element, top to bottom</h2>
+  <p>Nine screens, one device each. <b>1</b> Hall of Fame · <b>2</b> Season dropdown · <b>3</b> Award
+    sheet · <b>4</b> Award announced · <b>5</b> loading · <b>6</b> Achievements, no titles ·
+    <b>7</b> titles won · <b>8</b> no season · <b>9</b> leader standing. The Region column says which
+    screen a row belongs to. All nine are pushed routes, so they carry a back arrow and no tab bar.</p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Grouped by screen. Order matches the reading order within each screen. Values as
+        built.</caption>
+      <thead><tr><th scope="col">Region</th><th scope="col">Element</th><th scope="col">Notes</th></tr></thead>
+      <tbody>
+        <tr><td>All screens</td><td>Top bar</td><td class="t-note"><code>38px</code>
+          <code>#1C2129</code> back disc with an <code>::after</code> expansion to a
+          <code>44px</code> hit area, then the tracked route label <code>PROFILE</code> at
+          <code>10.5/700/.14em</code> <code>#5B606B</code>. Set at
+          <code>margin:34px 16px 14px</code> so it clears the review device's <code>26px</code>
+          island. Measured: all nine frames start at exactly <code>34px</code>.</td></tr>
+        <tr><td>All screens</td><td>Screen title</td><td class="t-note"><code>34/800/-.025em</code>
+          uppercase, at the gutter. The live header is a <code>113pt</code> flat
+          <code>#20083D</code> band with a <code>~30pt</code> centred Bebas title that does not
+          collapse, shrink or shadow on scroll, and reads <code>ACHIEVEMENTS</code> in
+          <em>both</em> Achievements tabs.</td></tr>
+        <tr><td>1 · Hall of Fame</td><td>Filter pair</td><td class="t-note">Two
+          <code>52px</code> controls at <code>12px</code> radius on <code>#1C2129</code>, each with
+          its own tracked label. <b>Season</b> is half width and opens a dropdown; <b>Award</b> is
+          full width and opens a sheet. The shipped pair is <code>47pt</code> and <code>51pt</code>
+          — two sibling controls at different heights — headed by the single word
+          <code>CATEGORIES</code> above a Season control, opening a sheet titled
+          <code>CATEGORY</code>.</td></tr>
+        <tr><td>1 · Hall of Fame</td><td>Podium</td><td class="t-note"><code>merits.html</code>'s
+          plinth grid, <code>1fr 1.14fr 1fr</code>, <code>12px</code> radius on
+          <code>#1C2129</code>. Rank 1 <code>64px</code> avatar with a <code>#9BE222</code> ring and
+          an accent numeral plate; rank 2 <code>52px</code> with a
+          <code>rgba(255,255,255,.45)</code> ring. <b>No metal, no plinth steps, no wreath</b> —
+          diameter, ring opacity and the numeral carry rank.</td></tr>
+        <tr><td>1 · Hall of Fame</td><td>Vacant slot</td><td class="t-note">A <code>52px</code>
+          circle drawn as a <code>1.8</code> accent hairline on a <code>5 5</code> dash, labelled
+          <b>Vacant</b> with an em dash for the score. That dash pattern is
+          <code>states.html</code>'s existing rule for <em>something that should exist and does not
+          yet</em>. The shipped slot is an empty <code>1pt #554B78</code> outline labelled
+          <code>0 points</code>, which reads as a member who scored zero.</td></tr>
+        <tr><td>1 · Hall of Fame</td><td>Latest-award strip</td><td class="t-note"><code>#13171E</code>
+          panel: the opponent crest on a <code>28px</code> plate
+          (<code>rgba(255,255,255,.94)</code> ground, <code>rgba(0,0,0,.13)</code> inner hairline,
+          <code>28%</code> radius, <code>1/8</code> padding), the fixture at
+          <code>12.5/600</code>, and the award plus a dated line beneath.</td></tr>
+        <tr><td>1 · Hall of Fame</td><td>Roll of honour</td><td class="t-note">A headed section —
+          <code>ROLL OF HONOUR</code> with a <code>NEWEST FIRST</code> tag — over the
+          <code>merits.html</code> row: <code>34px</code> avatar, name at <code>13.5/600</code>,
+          opponent and date at <code>11.5</code> <code>#99A0AE</code>, value
+          <code>13.5/700</code> accent tabular. The current member is the accent-wash row with a
+          <code>3px</code> accent left edge. The live row appends the literal string
+          <code>(ME)</code> to the member's own name.</td></tr>
+        <tr><td>2 · Dropdown</td><td>Season menu</td><td class="t-note">Anchored
+          <code>absolute</code>, left edge flush with its trigger, top edge <code>6px</code>
+          <em>below</em> the trigger's bottom edge. <code>#1C2129</code>, <code>12px</code> radius,
+          <code>0 14 34 rgba(0,0,0,.55)</code>. Selected row is the accent wash with a tick. Live —
+          tap it, arrow through it, Esc out of it.</td></tr>
+        <tr><td>2 · Dropdown</td><td>Inert group</td><td class="t-note">While the menu is open the
+          Award field drops to <code>35%</code> opacity and
+          <code>pointer-events:none</code>.</td></tr>
+        <tr><td>3 · Award sheet</td><td>Sheet shell</td><td class="t-note"><code>sheets.html</code>
+          unchanged: <code>18px</code> top corners, a <code>40 × 4</code> grabber in a
+          <code>26px</code> strip, <code>#1C2129 → #13171E</code> at <code>180deg</code>, a
+          <code>11/700/.14em</code> caps title, and a body that pads its own
+          <code>env(safe-area-inset-bottom)</code>.</td></tr>
+        <tr><td>3 · Award sheet</td><td>Option rows</td><td class="t-note"><code>48px</code>
+          minimum on <code>#13171E</code> at <code>12px</code> radius; selected is the accent wash
+          with a <code>rgba(155,226,34,.30)</code> rim, an accent label and a filled radio. Each row
+          carries what the award is and what it is worth. The shipped rows are
+          <code>#000000</code> — <em>darker than the sheet they sit on</em> — and identical between
+          selected and unselected apart from label colour, weight and a stretched tick.</td></tr>
+        <tr><td>4 · Announced</td><td>Backdrop</td><td class="t-note">The Hall of Fame behind
+          <code>blur(9px)</code> plus a <code>rgba(3,4,1,.72)</code> scrim — the
+          <code>dialogs.html</code> scrim value. The live modal's blur is the one thing about it
+          worth keeping.</td></tr>
+        <tr><td>4 · Announced</td><td>Dialog</td><td class="t-note"><code>dialogs.html</code>'s
+          shell: <code>#1C2129</code>, 1 px <code>rgba(255,255,255,.075)</code>,
+          <code>16px</code> radius, <code>20px</code> padding, <code>344px</code> cap, a
+          <code>44px</code> accent-wash icon tile, an <code>18/600</code> title, then two
+          <code>46px</code> actions and a <code>30px</code> ✕. The live card is
+          <code>#21093E</code> with no border and no shadow, and separates from its backdrop only by
+          blur.</td></tr>
+        <tr><td>4 · Announced</td><td>Copy and value</td><td class="t-note">One title, one paragraph
+          of why, then <code>+250 MERITS</code> as a status pill beside a
+          <code>PRIZE TO COME</code> tag. The live modal sets
+          <code>CONGRATULATIONS!</code> and <code>MEMBER OF THE MATCH</code> at the same
+          <code>~34pt</code>, same weight and same colour, then repeats both in the first 28
+          characters of body copy.</td></tr>
+        <tr><td>5 · Loading</td><td>Bones</td><td class="t-note"><code>states.html</code>'s
+          <code>rgba(255,255,255,.055)</code> bones with one <code>1.5s</code>
+          <code>rgba(255,255,255,.06)</code> sweep, at the exact geometry of the loaded frame so
+          nothing reflows. No spinner — the app default is a <code>#2196F3</code> Material
+          spinner.</td></tr>
+        <tr><td>6–9 · Achievements</td><td>Segmented control</td><td class="t-note">
+          <code>filters-pickers.html</code>'s <code>.tax</code>: <code>46px</code> pill track on
+          <code>#13171E</code> with <code>4px</code> padding, the selected half a
+          <code>38px</code> <code>#9BE222</code> plate carrying <code>#0B0E06</code> at
+          <code>13.5/700</code>. The shipped control is a <code>37pt</code> <code>#2F0C5A</code>
+          track with a <code>#6B4EFF</code> rectangle that has two rounded and two square corners;
+          <code>#6B4EFF</code> is not a token in <code>lib/</code>.</td></tr>
+        <tr><td>6, 8 · Empty</td><td>Empty panel</td><td class="t-note"><code>states.html</code>
+          unchanged: <code>#080A0C</code> fill, 1 px <code>rgba(255,255,255,.075)</code>,
+          <code>16px</code> radius, a <code>132 × 88</code> peak illustration, a
+          <code>17/600</code> headline and a <code>12.5</code> <code>#99A0AE</code> paragraph on a
+          <code>31ch</code> measure. Frame 6 closes on the <code>.wait</code> line — the pill that
+          replaces an action where there genuinely is none. Frame 8 has a real action.</td></tr>
+        <tr><td>6, 8 · Empty</td><td>Illustration rule</td><td class="t-note">Three marks only:
+          <code>#1C2129</code> fill for context, accent wash plus a <code>1.8</code> accent stroke
+          for something that exists, and a <code>1.8</code> accent stroke on a <code>5 5</code>
+          dash for something that should exist and does not. One ground line at
+          <code>y72</code>.</td></tr>
+        <tr><td>7 · Titles won</td><td>Title rows</td><td class="t-note">A
+          <code>34px</code> accent-wash icon tile at <code>12px</code> radius, the competition at
+          <code>13.5/600</code>, the date it was decided at <code>11.5</code>, and the season in the
+          value column with a tracked <code>SEASON</code> caption.</td></tr>
+        <tr><td>9 · Leader standing</td><td>Standing card</td><td class="t-note"><code>#1C2129</code>
+          card, <code>16px</code> radius and padding. Tier name at <code>22/800</code> uppercase,
+          the two figures behind it in plain words, and the share itself in a
+          <code>#13171E</code> panel at <code>22/700</code> accent tabular.</td></tr>
+        <tr><td>9 · Leader standing</td><td>Tier ladder</td><td class="t-note">Four rows, each a
+          <code>9px</code> dot, the tier name at <code>12/700/.09em</code> caps and the band on the
+          right. The current tier is the accent-wash row with a <code>3px</code> accent left edge
+          and a filled dot. A <code>13px</code> panel above it carries an <code>8px</code> accent
+          bar to the next tier.</td></tr>
+        <tr><td>All screens</td><td>Colour audit</td><td class="t-note">Every value is a contract
+          token, a shade already used on the Merits tab (<code>#20262F</code>,
+          <code>#222833</code>, <code>#2A303A</code>, <code>#C9CFD8</code>), a
+          <code>sheets.html</code> derivation (<code>rgba(155,226,34,.30)</code>), or the crest
+          plate's two fixed values. <b>No gold, no metal, no third hue, and the semantic red never
+          appears</b> — nothing on these screens goes down.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>What varies</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Podium — filled</td><td class="t-note">Avatar at <code>64px</code> (rank 1) or
+          <code>52px</code>, ringed at <code>#9BE222</code> or
+          <code>rgba(255,255,255,.45)</code>, with a numeral plate. Score is an award
+          <em>count</em>, not a points figure.</td></tr>
+        <tr><td>Podium — vacant</td><td class="t-note"><code>1.8</code> accent hairline on a
+          <code>5 5</code> dash, the numeral kept, labelled <b>Vacant</b>, score an em dash. Shown
+          in frames 1–4 because only two members hold the award this season.</td></tr>
+        <tr><td>Roll — the member</td><td class="t-note">Accent wash with an inset
+          <code>3px</code> accent left edge, and the name reads <code>You · dylan_n</code>. Never
+          the string <code>(ME)</code>.</td></tr>
+        <tr><td>Season dropdown</td><td class="t-note">Closed in frames 1 and 3–5, open in frame 2.
+          Live in both 1 and 2: click the trigger, arrow between rows, Esc or a click outside to
+          close, and selection writes back to the field.</td></tr>
+        <tr><td>Award sheet</td><td class="t-note">Single-select. Selection applies on tap and
+          closes, which is what <code>filter.dart:76</code> already does. Note that re-tapping the
+          <em>active</em> row in that implementation clears the filter and closes anyway.</td></tr>
+        <tr><td>Loading</td><td class="t-note">Frame 5. Bones at the loaded geometry.
+          <code>prefers-reduced-motion</code> stops the sweep and lifts every bone to
+          <code>rgba(255,255,255,.08)</code> so the skeleton is still legible when it is
+          still.</td></tr>
+        <tr><td>Achievements — tab</td><td class="t-note">Frames 6–7 are the Playoff titles tab,
+          8–9 the Leader status tab. The highlight always follows the content; on
+          <code>AC-02</code> it does not.</td></tr>
+        <tr><td>Titles — none / some</td><td class="t-note">Frame 6 is the captured empty. Frame 7
+          is <b>new</b> — no capture in the set shows this tab with data.</td></tr>
+        <tr><td>Standing — none / some</td><td class="t-note">Frame 8 is the captured empty. Frame 9
+          is <b>new</b>. No leader-status row, tier chip or rank artwork appears anywhere in the
+          capture set.</td></tr>
+        <tr><td>Standing — going down</td><td class="t-note">Status is a share, not a total, so it
+          can fall while the merit count rises. Called out in the note on frame 9 rather than
+          drawn, because the semantic red is for figures that move down and no figure on these
+          screens does.</td></tr>
+        <tr><td>Not built</td><td class="t-note">Hall of Fame with an empty roll; a podium with all
+          three slots filled; the Member of the Week and Member of the Season rolls; error states
+          for all nine screens; and the Achievements loading skeleton (the Hall of Fame one stands
+          in for it — same bones, same rules).</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file and the library</h3>
+      <ul>
+        <li><b>Token block</b> — <code>merits.html</code> verbatim. Not one value invented.</li>
+        <li><b>Podium and plinth</b> — the Merits-tab construction, re-pointed at award counts:
+          grid, ring shadows, numeral plate, name and score.</li>
+        <li><b>Row, board, section container, status pill, tag, icon button, pill button,
+          note card</b> — all from <code>merits.html</code> / <code>merit-detail.html</code>.</li>
+        <li><b>Season dropdown and Award sheet</b> — the corrected Hall of Fame pair, already
+          specified and built as a specimen in <code>sheets.html</code>, including its three award
+          names and their sub-copy.</li>
+        <li><b>Sheet shell and option row</b> — <code>sheets.html</code>.</li>
+        <li><b>Dialog shell, icon tile, action row, scrim</b> — <code>dialogs.html</code>.</li>
+        <li><b>Empty panel, "nothing to do yet" pill, peak illustration, skeleton bones</b> —
+          <code>states.html</code>.</li>
+        <li><b>Segmented control</b> — <code>filters-pickers.html</code>'s two-half
+          <code>.tax</code>.</li>
+        <li><b>Club crest plate</b> — <code>club-selection.html</code>, at the <code>28px</code>
+          dense size with the short-code fallback.</li>
+        <li><b>Award names</b> — <code>Member of the Match / Week / Season</code>, the only place
+          the award family is named in code (<code>enum.dart:191–192</code>).</li>
+        <li><b>The four leader tiers and their thresholds</b> — read straight out of
+          <code>getLeaderShipStatus()</code>, <code>profile_body.dart:402–420</code>, with the
+          strings from <code>en.json:83–89</code>.</li>
+        <li><b>Blurred backdrop</b> — the one thing worth keeping from <code>HF-01</code> and
+          <code>HF-03</code>.</li>
+        <li><b>Portraits</b> — <code>_assets/avatars.css</code>.</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The Hall of Fame screen itself</b> — nothing in <code>lib/</code> renders one.</li>
+        <li><b>Rank without metal</b> — a numeral plate plus ring opacity replaces the single gold
+          ring, and there is no silver or bronze anywhere. The captures have no rank numerals at
+          all.</li>
+        <li><b>The vacant slot</b> — a dashed accent hairline labelled <b>Vacant</b>, instead of an
+          empty grey circle labelled <code>0 points</code>.</li>
+        <li><b>A heading between the podium and the list</b> — <code>ROLL OF HONOUR</code>. The
+          captures put <code>~57pt</code> of bare canvas there with no heading, divider or label,
+          and nothing on screen explains why the podium reads <code>908 points</code> while the
+          first list row reads <code>910</code>.</li>
+        <li><b>Per-field labels</b> — <code>SEASON</code> and <code>AWARD</code>, replacing one
+          plural heading over a pair of unlabelled controls.</li>
+        <li><b>Dates that resolve</b> — every date carries a weekday, and the season sits in the
+          field directly above. No date anywhere in the capture set carries a year, on a surface
+          whose primary filter <em>is</em> the season.</li>
+        <li><b>A dismiss control on the announcement</b> — a ✕ and a <b>Not now</b>. The live modal
+          draws no ✕, no "Later", no drag handle and no stated tap-out.</li>
+        <li><b>Loading</b> — frame 5. No loading state is captured for any of these screens, and
+          the shimmer the code already defines is never called.</li>
+        <li><b>Achievements populated — both tabs</b> — frames 7 and 9. Nothing in the capture set
+          shows either tab with data.</li>
+        <li><b>The tier ladder</b> — the four influence tiers drawn as a ladder with the band each
+          one sits in and the distance to the next. The names and thresholds are the code's; the
+          ladder, the bar and the explanation are ours.</li>
+        <li><b>Empty-state copy that is not a lookup error</b> — replacing
+          <code>No current season found for the default club.</code></li>
+        <li><b>One currency word</b> — <b>merits</b>, matching <code>merit-detail.html</code>. The
+          live product calls the same figure <code>points</code>,
+          <code>Reputation Points</code> and <code>credit transactions</code>, and the API calls the
+          award <code>member_honored</code> while the UI calls it Member of the Match.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+
+  <ol class="qs">
+    <li><h3>Does the Hall of Fame survive as its own destination?</h3>
+      <p><code>merit-detail.html</code> assumed one badge collection replaces the Achievements tabs
+      and that Hall of Fame survives only as the <em>Who holds it</em> section on a badge. This
+      component is built on the opposite assumption —
+      <span class="flag">Hall of Fame stays a separate route from Profile, and Achievements keeps its
+      two tabs</span> — because both are documented screens. The two builds cannot both ship as they
+      stand. Rule on one of three: keep all three surfaces, fold Achievements into the badge
+      collection and keep Hall of Fame, or fold everything into badges. This is the decision that
+      changes the most.</p></li>
+
+    <li><h3>What is a playoff title, and is it even yours?</h3>
+      <p>Nothing defines this. The word <code>playoff</code> appears in the codebase only as an
+      email-notification toggle — <code>'Game/Playoff Emails'</code>,
+      <code>enum.dart:193–194</code> — and there is no playoff model, list or endpoint. We built the
+      most defensible reading: <span class="flag">a title is the club's, shared with every member who
+      was voting when it was decided, worth no merits and never lost</span>. If a playoff title is
+      instead something the <em>member</em> wins, frame 7 is wrong and the tab needs
+      specifying from scratch.</p></li>
+
+    <li><h3>Is "Leader status" the influence ladder, or something else?</h3>
+      <p>The tab is captured as <code>Leader status</code> and the code's concept is spelled
+      <code>leader ship</code> — <code>getLeaderShipStatus()</code> at
+      <code>profile_body.dart:402–420</code>, returning <code>MEMBER</code>,
+      <code>EARLY INFLUENCER</code>, <code>EMERGING INFLUENCER</code>,
+      <code>LEADING INFLUENCER</code> from the ratio <code>reputationPoint / totalPoint</code>. We
+      have assumed <span class="flag">they are the same thing and built the tab as that ladder</span>,
+      which is the only way to fill it with real content. Two things follow. First, the label:
+      "Leader status" does not say it is about influence, and the tier names are the more
+      interesting words — we would rename the tab <b>Influence</b>. Second, a defect worth fixing
+      before it ships: that function compares with <code>&lt;</code> on <em>both</em> sides of every
+      band, so a member sitting exactly on <code>0.95</code>, <code>0.85</code> or
+      <code>0.75</code> falls all the way through to <code>MEMBER</code>.</p></li>
+
+    <li><h3>What does the podium actually rank?</h3>
+      <p>The captured podium shows one holder at <code>908 points</code> with two slots labelled
+      <code>0 points</code>, above a list whose first row reads <code>910 points</code>, and nothing
+      on screen relates the two. We have assumed <span class="flag">the podium is the top three
+      members by awards won in the selected season, and the roll beneath it is every individual
+      award, newest first</span>. That is what makes the vacant slot meaningful and the two figures
+      agree. If the podium is instead the single current holder, it should not be a three-slot
+      podium at all.</p></li>
+
+    <li><h3>What is an award worth, and is a season a split year?</h3>
+      <p>Placeholders: <span class="flag">Member of the Match 250 merits, Week 400, Season
+      1,000</span>. The live modal says <code>35 Reputation Points</code> for Member of the Match,
+      against podium scores in the <code>908</code>–<code>910</code> range, so the two numbers on the
+      live screens are not on the same scale. Separately, we have rendered seasons as
+      <span class="flag"><code>2025/26</code></span>, matching <code>sheets.html</code>. The
+      captured dropdown reads <code>Season 2025</code> and no date on any of these screens carries a
+      year, so we cannot tell whether a season is a calendar year or a split year. Confirm the
+      values, the word for the currency, and the season identifier.</p></li>
+
+    <li><h3>Should this announcement and the badge award be one moment?</h3>
+      <p><code>merit-detail.html</code> frame 4 already announces <b>Member of the Match</b> as a
+      badge earned. Frame 4 here announces the same event as an award with points, a prize and a
+      Hall of Fame place. In the live app they are the same thing happening once. We have assumed
+      <span class="flag">one announcement, and this dialog is it</span> — a dialog rather than a
+      celebration screen, because it is presented over the list it leads to. If you want the fuller
+      celebration, the badge moment in <code>merit-detail.html</code> is the one to keep and this
+      frame comes out.</p></li>
+
+    <li><h3>Two bugs to confirm, not design questions.</h3>
+      <p>First, <code>enum.dart:111</code> and <code>enum.dart:117</code> are byte-identical, so
+      <code>ProfileSettingEnums.club</code> resolves to the <em>Hall of Fame</em> label — both the
+      Club row and the Hall of Fame row would read <code>HALL OF FAME</code>. (The enum is currently
+      dead code, so nothing renders it, but the Profile menu is built from the same strings.)
+      Second, both routes are unreachable:
+      <code>profile_body.dart:375–376</code> is a bare <code>break</code> and
+      <code>:391–393</code> is a commented-out <code>pushNamed</code>. Neither is a rebrand
+      decision, but nothing on these nine screens can be tested until they are fixed.</p></li>
+
+    <li><h3>The default avatar is still a blocker.</h3>
+      <p>Repeating it because this feature is where it does the most damage. The current default
+      avatar is watermarked marketing key-art: the circular crop cuts the burned-in wordmark to
+      <code>SPORTSHEI</code>, and a red <code>…WED BY 1.00 PIXELS</code> watermark plus a
+      yellow-and-black hazard bar are plainly legible at the <code>90pt</code> podium size. The
+      same image renders <b>five times on one Hall of Fame screen</b>. Every portrait here comes
+      from <code>_assets/avatars.css</code> instead, but a licensed default-avatar asset is needed
+      before any of this ships.</p></li>
+  </ol>
+</section>

@@ -1,0 +1,782 @@
+[
+  {
+    "name": "Child accounts — what the app does today",
+    "journeys": [
+      {
+        "id": "acc-child-shipped-today",
+        "name": "The whole child-account feature, as shipped",
+        "who": "Parent",
+        "why": "Two screens are the entire feature in code. Everything else in this section is a proposal, and this is the journey that proves it.",
+        "steps": [
+          { "screen": "profile/1", "note": "The parent opens the account menu and taps Child accounts. This row is real and goes somewhere." },
+          { "screen": "child-account/17", "note": "This is the shipped screen: a list of names, the word EDIT under each, and a line telling the parent to finish on the desktop site. That line is plain text, so tapping it does nothing." },
+          { "screen": "child-account/18", "note": "Tapping a row opens 'Are you sure? All changes will be lost' — a confirmation for an action that does not exist. Neither button is wired to anything; both just close the dialog. That is the end of the feature." }
+        ]
+      },
+      {
+        "id": "acc-child-shipped-vs-proposed",
+        "name": "Where a parent starts, today and as proposed",
+        "who": "Parent",
+        "why": "The single most useful contrast in the section: the same screen twice, once as it ships and once as it is being proposed.",
+        "steps": [
+          { "screen": "child-account/17", "note": "Today. Two rows both read THANH NGUYEN, because the row carries nothing but an uppercased name — no age, no birthday, no relationship, no state. Two different children render identically." },
+          { "screen": "child-account/0", "note": "Proposed. The same two children, now told apart by age, date of birth, relationship and a reference. Anything needing the parent sorts to the top, and Add is a real button instead of a message about the desktop site. None of this exists in code yet." },
+          { "screen": "child-account/18", "note": "And the dialog it replaces. Worth ending here so nobody leaves thinking the proposal is a restyle of something working." }
+        ]
+      },
+      {
+        "id": "acc-child-dead-edit",
+        "name": "The Edit button that edits nothing",
+        "who": "Parent",
+        "why": "A defect worth fixing whatever is decided about the wider flow, and the prototype shows the corrected answer beside it.",
+        "steps": [
+          { "screen": "child-account/17", "note": "Every row is labelled EDIT, in the app's own accent colour, which reads as an invitation." },
+          { "screen": "child-account/18", "note": "Tapping it warns that changes will be lost. There is nothing on the screen to change, and no handler behind either button." },
+          { "screen": "child-account/14", "note": "What tapping a child should open: the record itself — identity state, club, consent date, renewal — with a specific action per row rather than one dead Edit. Proposed, not built." }
+        ]
+      },
+      {
+        "id": "acc-child-hub-fail",
+        "name": "What a parent sees when the list fails to load",
+        "who": "Parent",
+        "why": "A live defect: any API failure on this screen shimmers forever, and there is no drawing of the fix yet.",
+        "steps": [
+          { "screen": "child-account/17", "note": "The shipped screen has exactly one reading — the successful list. Loading, empty and failed all fall through to a grey skeleton, so a failed request shimmers indefinitely with nothing for the parent to do." },
+          { "screen": "profile/3", "note": "The fix already exists one screen away. Profile now has a real load-failed state with a message and a Try again button. Porting it to child accounts is a few lines of work — but note that no failed or empty frame is drawn for child accounts in this prototype." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Child accounts — adding one",
+    "journeys": [
+      {
+        "id": "acc-child-add",
+        "name": "A parent adds a child account, start to finish",
+        "who": "Parent",
+        "why": "The flagship journey of the section: seven steps, none of which exist in the app today. Worth walking end to end before judging any single screen.",
+        "steps": [
+          { "screen": "child-account/0", "note": "The hub. Existing children, each with the one thing they need from the parent. The parent taps Add." },
+          { "screen": "child-account/1", "note": "Guest or member. Two cards state plainly what each gets. The premium card now carries the $20 it shipped without, and the guest card says what it excludes." },
+          { "screen": "child-account/2", "note": "The child's details. The date of birth drives a live age readout that says what kind of account that makes — the screen is checking as the parent types rather than accepting anything and failing later." },
+          { "screen": "child-account/3", "note": "Where the verification code goes. One email tile showing the actual destination address, and an SMS tile disabled with the reason on it." },
+          { "screen": "child-account/4", "note": "Six code cells, matching what the code actually sends. Expiry, attempts remaining, a resend cooldown and a way to get help — none of which the captured screen had." },
+          { "screen": "child-account/5", "note": "How the child signs in. Sending them a set-your-own link is the default; the parent setting a password is the fallback for younger children." },
+          { "screen": "child-account/6", "note": "Choosing the club, as four dependent selects. The three-clubs-per-league limit is stated as a counted readout above the control it constrains." },
+          { "screen": "child-account/7", "note": "The club membership ID, if the family already has one." },
+          { "screen": "child-account/8", "note": "The fee — $20 a year — the card on file, and the renewal switches. There is no payment code anywhere in the app, so this screen is a proposal with a commercial decision behind it." },
+          { "screen": "child-account/9", "note": "Consent to the identity check, then the hand-off. The flow ends with the record waiting on the child's email." }
+        ]
+      },
+      {
+        "id": "acc-child-age-gate-rejects",
+        "name": "The age gate rejects an over-18",
+        "who": "Parent",
+        "why": "A minors-only flow that accepts an adult's date of birth is the section's sharpest finding. This is the screen that fixes it.",
+        "steps": [
+          { "screen": "child-account/1", "note": "The parent has chosen a membership and is setting the child up." },
+          { "screen": "child-account/2", "note": "This is the only screen in the whole flow that collects a date of birth. It opens pre-filled with 02/06/2002 — an adult — and rejects it, with the age worked out on screen and the consequence stated: an adult holds their own membership and their own vote." },
+          { "screen": "child-account/0", "note": "Correct the date and the flow continues. Worth saying out loud: the shipped form accepted that same adult date of birth with no message at all. There is no age logic anywhere in the app to build this from — the 5-to-17 range drawn here is a defensible default, not a decision that has been made." }
+        ]
+      },
+      {
+        "id": "acc-child-guest-path",
+        "name": "A parent sets up a guest account instead of a membership",
+        "who": "Parent",
+        "why": "The cheaper fork. It matters because what a guest actually loses has never been written down.",
+        "steps": [
+          { "screen": "child-account/1", "note": "The parent picks the guest card rather than the $20 membership." },
+          { "screen": "child-account/2", "note": "The same details and the same age gate — the fork changes what the account can do, not who it is for." },
+          { "screen": "child-account/13", "note": "The record, verified and with no club. The upgrade path sits where the club section would be. The guest exclusions written here — no club registration, no vote, no participation credits, following still allowed — are the prototype's proposal; the app enforces none of them today." }
+        ]
+      },
+      {
+        "id": "acc-child-verification-channel",
+        "name": "Choosing where the verification code goes",
+        "who": "Parent",
+        "why": "Someone has to open the child's inbox, and the shipped design never says who.",
+        "steps": [
+          { "screen": "child-account/2", "note": "The parent has entered the child's details, including an email address." },
+          { "screen": "child-account/3", "note": "The channel choice, showing the destination address in full so the parent can check it before the code is sent. SMS is offered but disabled, with the reason on the tile. The parent's own address is offered as an alternative — an open question for the client, not a settled answer." },
+          { "screen": "child-account/4", "note": "Six code cells. The captured screen showed five; the code actually sends six." }
+        ]
+      },
+      {
+        "id": "acc-child-otp-waiting",
+        "name": "The code is sent and nobody has opened the inbox",
+        "who": "Parent",
+        "why": "The most likely stall in the whole flow, and the one the shipped screens gave the parent nothing to act on.",
+        "steps": [
+          { "screen": "child-account/3", "note": "The code is sent to the child's email address." },
+          { "screen": "child-account/4", "note": "The code screen carries expiry, attempts remaining and a resend cooldown, so a parent waiting on a child knows how long they have." },
+          { "screen": "child-account/12", "note": "The record before verification. The alert panel names the address, when it was sent, how long ago and when it expires — four facts the shipped panel had none of. The club section is blocked until the email is verified, and says so." }
+        ]
+      },
+      {
+        "id": "acc-child-password-choice",
+        "name": "Who sets the child's password",
+        "who": "Parent",
+        "why": "The shipped record screens displayed a masked password with no change control, which reads as a stored secret somebody could retrieve.",
+        "steps": [
+          { "screen": "child-account/4", "note": "The child's email is verified." },
+          { "screen": "child-account/5", "note": "Two choices. Sending the child a link to set their own is the default; setting one now is the secondary path for younger children, with a forced change at first sign-in. The screen states plainly that nobody can read the password back." },
+          { "screen": "child-account/14", "note": "And the consequence on the record: no password field anywhere. The row reads 'Last changed' with a Reset action instead of nine mask glyphs." }
+        ]
+      },
+      {
+        "id": "acc-child-club-cascade",
+        "name": "Choosing the child's club and entering a membership ID",
+        "who": "Parent",
+        "why": "The club cascade carries the three-per-league limit, which the shipped app states only as low-contrast prose, in two different wordings, and never as a number.",
+        "steps": [
+          { "screen": "child-account/6", "note": "Four dependent selects — competition, league, club, season — with a locked season row. The limit sits above the list as a counted readout, and the clubs already used against it are named." },
+          { "screen": "child-account/7", "note": "The membership ID dialog, over a dimmed host. The format is stated, and there is a reserved slot for an error message — the shipped dialog had none, so an error had nowhere to appear." },
+          { "screen": "child-account/8", "note": "Straight into the fee. Note this is where the shipped order puts the money: before the parent has been told what an identity check involves." }
+        ]
+      },
+      {
+        "id": "acc-child-fee-payment",
+        "name": "The fee, and the consent that should have come first",
+        "who": "Parent",
+        "why": "It asks a parent to agree $20 a year before telling them their child will be photographed. The ordering is a live question for the client.",
+        "steps": [
+          { "screen": "child-account/8", "note": "$20 a year, the card on file, and two clearly named switches. The shipped screen wrote the same two terms four different ways and stacked two near-identical renewal labels on top of each other. There is no payment code anywhere in the app, so the money here is a proposal." },
+          { "screen": "child-account/9", "note": "Only now is the identity check explained: what is collected, who checks it, how long it is kept, three policy links, a required checkbox and a real decline button. The shipped equivalent asked one question and offered one affirmative button — there was no way to say no." },
+          { "screen": "child-account/0", "note": "Back at the hub, with the new account showing what it is still waiting on. The honest sequence is consent before fee; the prototype kept the shipped order and made the fee screen say nothing is charged until the check passes." }
+        ]
+      },
+      {
+        "id": "acc-child-consent",
+        "name": "The consent step that does not exist today",
+        "who": "Parent",
+        "why": "Across all seventeen captured screens there is no consent checkbox, no legal link, no privacy statement and no retention period. This is the biggest single finding in the section.",
+        "steps": [
+          { "screen": "child-account/8", "note": "The parent has agreed the fee. In the shipped flow this is the last screen before a third party photographs their child." },
+          { "screen": "child-account/9", "note": "The proposed consent screen: what is collected, who checks it, how long each thing is kept, three policy links, one required checkbox, a consent log line, and a way to decline. Every retention figure on it is the design team's estimate — no retention rule exists anywhere in the code, and those numbers need to come from the client's data officer." }
+        ]
+      },
+      {
+        "id": "acc-child-identity-handoff",
+        "name": "The hand-off to the identity checker",
+        "who": "Parent",
+        "why": "The app sends a photo of a child's passport to a company the parent has never been told about. This journey makes the hand-off visible.",
+        "steps": [
+          { "screen": "child-account/9", "note": "The parent consents, having been told the vendor's name up front." },
+          { "screen": "child-account/10", "note": "The camera prompt explained before the operating system raises it, in the words iOS is about to use, naming the vendor's host. In the shipped flow that unfamiliar domain first reaches the parent inside the OS prompt itself — the worst possible moment to meet it." },
+          { "screen": "child-account/11", "note": "The vendor's own page, drawn behind a dashed edge with a host strip and an EXTERNAL tag, because it is a surface we do not control and should not pretend to. There is no identity-verification integration in the app at all, so this is a proposal built on what the captures show." },
+          { "screen": "child-account/12", "note": "Back in our app, with the record showing what is outstanding." }
+        ]
+      },
+      {
+        "id": "acc-child-camera-refused",
+        "name": "The parent refuses the camera",
+        "who": "Parent",
+        "why": "An unhappy path with no app-side answer today — worth deciding whether the check pauses or fails.",
+        "steps": [
+          { "screen": "child-account/10", "note": "The prompt screen states what happens if the camera is refused, before it is raised." },
+          { "screen": "child-account/0", "note": "Refusing pauses rather than fails: the row keeps its 'check due' state with a 'turn the camera on' action, and no fee is taken. This behaviour is specified in the notes, not drawn — and no permission-denied handling exists in the app to build on." }
+        ]
+      },
+      {
+        "id": "acc-child-check-failed",
+        "name": "The identity check comes back failed",
+        "who": "Parent",
+        "why": "The failure reading on the hub is live in the prototype and shows what a parent is told to do next.",
+        "steps": [
+          { "screen": "child-account/11", "note": "The document is submitted to the vendor." },
+          { "screen": "child-account/0", "note": "One of the four rows is a failed check: red edge, red state pill with a word and an icon, and a sentence naming the reason and the one retry. State never rests on colour alone. The vendor's own failure screens are not drawn — no capture, copy or consent text for them exists." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Child accounts — the record, and closing it",
+    "journeys": [
+      {
+        "id": "acc-child-record-three-readings",
+        "name": "The same record, three times over",
+        "who": "Parent",
+        "why": "One child, at three points in their life on the platform. Shows what the screen has to hold as the account matures.",
+        "steps": [
+          { "screen": "child-account/12", "note": "Waiting on the child's email. The club section is blocked with the reason stated, rather than rendering nothing under help copy that points at it." },
+          { "screen": "child-account/13", "note": "Verified, no club yet. Removing the alert panel from the shipped screen left 235pt of empty canvas above a pinned button, and the word 'verified' appeared nowhere. Here that freed space carries the upgrade path." },
+          { "screen": "child-account/14", "note": "A registered member. Two club cards, identity state, consent date, renewal date and amount, and the notice that the account transfers when the child turns 18. Nothing in the app does any of that transfer today — it is a feature this flow describes rather than reflects." }
+        ]
+      },
+      {
+        "id": "acc-child-turning-18",
+        "name": "The child is about to turn 18",
+        "who": "Parent",
+        "why": "The flow commits in three places to an account that transfers at 18 with its merits intact. Nothing in the build does this.",
+        "steps": [
+          { "screen": "child-account/0", "note": "The row counts down to the eighteenth birthday and says what happens on it." },
+          { "screen": "child-account/14", "note": "The record repeats it: the account transfers with its merits, the parent's controls end that day, and the retention clock hangs off the same event. Confirm the transfer exists before any of this copy ships." }
+        ]
+      },
+      {
+        "id": "acc-child-close",
+        "name": "A parent closes a child's account",
+        "who": "Parent",
+        "why": "Deleting a minor's account is the most consequential thing on these screens and the shipped copy never uses the words permanent, cannot be undone, or forever.",
+        "steps": [
+          { "screen": "child-account/14", "note": "The parent opens the child's record and chooses to close it." },
+          { "screen": "child-account/15", "note": "Four consequences with actual figures, a data statement, one required checkbox, and two softer alternatives — suspend, or just stop the renewal — before the destructive action is even enabled." },
+          { "screen": "child-account/16", "note": "Closed. An outcome panel and a timeline — what happens today, at 90 days, and by 2033 — plus a way to request erasure. It replaces a single OKAY button, the set's only non-verb control label. Every retention period on this screen is an estimate awaiting confirmation." }
+        ]
+      },
+      {
+        "id": "acc-child-two-same-name",
+        "name": "Two children with the same name",
+        "who": "Parent",
+        "why": "A small defect with a big consequence: a parent picking the wrong child on a screen that closes accounts.",
+        "steps": [
+          { "screen": "child-account/17", "note": "The shipped list draws two rows reading THANH NGUYEN. They are two different records and they render identically — nothing on the row distinguishes them." },
+          { "screen": "child-account/0", "note": "The proposed row carries age, date of birth, relationship, state and a reference, so the same two records read as two people." },
+          { "screen": "child-account/15", "note": "Why it matters. This is the screen at the end of a wrong tap." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Clubs — joining one",
+    "journeys": [
+      {
+        "id": "acc-clubs-join",
+        "name": "A member joins a club and pays the fee",
+        "who": "Member",
+        "why": "The full in-app registration journey the specs describe — and the one the app cannot do at all today. Follow it with the contrast journey below.",
+        "steps": [
+          { "screen": "clubs/0", "note": "The member's clubs, with the allowance counted at the top. They tap Add a club." },
+          { "screen": "clubs/3", "note": "A four-step cascade on one rail: competition, league, club, season. Clubs already registered are shown, locked and labelled rather than silently missing." },
+          { "screen": "clubs/5", "note": "Guest or member. Six capability rows against two columns, replacing two paragraphs of prose. Note the app enforces none of these differences — the only role check anywhere reads the tier to print a label." },
+          { "screen": "clubs/6", "note": "The fee: $30 a year, with what it returns in credits stated in the same card, and the amount repeated on the button so the commitment is named at the point of commitment." },
+          { "screen": "clubs/7", "note": "The membership ID dialog, if the member already has a number from the club." },
+          { "screen": "clubs/8", "note": "Registered. A receipt restating the amount, the card and the credits — the shipped success modal restates none of them. All of this is a proposal: the one endpoint that would add a club has zero callers, and there is no payment library, charge call or card capture anywhere in the app." }
+        ]
+      },
+      {
+        "id": "acc-clubs-shipped-deadend",
+        "name": "What joining a club actually does today",
+        "who": "Member",
+        "why": "The contrast with the journey above, and the biggest budget question in the section.",
+        "steps": [
+          { "screen": "profile/0", "note": "The member is on Profile and taps through to change their club." },
+          { "screen": "clubs/3", "note": "In the proposal, this is where a member picks a club and continues." },
+          { "screen": "clubs/11", "note": "In the app, picking a crest opens this: the club's badge, one line reading 'To add this club, kindly log in to sports heist on desktop', and an OKAY button whose entire job is to close the sheet. No request is made and no club is added. If registration is staying on desktop, this is the screen to invest in — and the better version hands off deliberately, with the club already chosen." }
+        ]
+      },
+      {
+        "id": "acc-clubs-declined",
+        "name": "The card is declined",
+        "who": "Member",
+        "why": "There is no failure counterpart to the success modal anywhere in the captured set, so this is a state that had to be invented.",
+        "steps": [
+          { "screen": "clubs/6", "note": "The member confirms the $30 fee." },
+          { "screen": "clubs/9", "note": "Declined. The copy states three negatives explicitly — not charged, not added, allowance untouched — and offers two ways to recover. Worth knowing that the app's one payment-shaped error code actually means an in-app credit shortfall, not a card problem, so this screen has nothing behind it." }
+        ]
+      },
+      {
+        "id": "acc-clubs-catalogue-fails",
+        "name": "The club catalogue will not load",
+        "who": "Member",
+        "why": "Shows the house rule for failures inside a multi-step form: fail the step, not the screen.",
+        "steps": [
+          { "screen": "clubs/3", "note": "The member is two steps into the cascade." },
+          { "screen": "clubs/4", "note": "The league list fails. The error renders inside the step that failed, with two recovery actions, and the steps after it stay visibly locked — no full-screen takeover, and nothing the member already chose is lost." }
+        ]
+      },
+      {
+        "id": "acc-clubs-guest-fork",
+        "name": "A member decides to stay a guest",
+        "who": "Guest",
+        "why": "The upsell promises four things a membership unlocks. The code enforces none of them.",
+        "steps": [
+          { "screen": "clubs/5", "note": "The comparison table: posting, voting, hosting rooms and credits against a guest's read-only reading. Yes is a tick, no is a dash — a different mark, not just a different colour." },
+          { "screen": "profile/4", "note": "Choosing to stay a guest lands here: a quiet Guest standing, an explained empty club section, zeroed figures, and the two club-scoped menu rows marked unavailable with the reason. Confirm what a guest may actually do — today a guest with credits can do everything a member can." }
+        ]
+      },
+      {
+        "id": "acc-clubs-limit",
+        "name": "A member hits the three-clubs-per-league limit",
+        "who": "Member",
+        "why": "The rule is stated in the shipped app as low-contrast prose, in two different wordings, and never as a number. Nothing in the code counts or enforces it.",
+        "steps": [
+          { "screen": "clubs/0", "note": "The list opens with a counted readout — '2 of 3 used' with ticks — above the Add control it constrains, and the clubs already using the allowance are named rather than only counted." },
+          { "screen": "clubs/3", "note": "In the picker, a club the member is already registered with renders locked and labelled 'Already registered' rather than quietly disappearing. Whether the limit is per league or per account is still an open question for the client." }
+        ]
+      },
+      {
+        "id": "acc-clubs-membership-id",
+        "name": "Entering a club membership number",
+        "who": "Member",
+        "why": "A small dialog with a real defect behind it: the shipped version reserved no room for an error.",
+        "steps": [
+          { "screen": "clubs/6", "note": "The member has a number from the club and chooses to enter it." },
+          { "screen": "clubs/7", "note": "The dialog over a dimmed host: the club lockup, one field with the format stated, and help text explaining where the number comes from. The shipped dialog left no space between the field and the buttons for an error message." },
+          { "screen": "clubs/8", "note": "Verified, and registered." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Clubs — managing the ones you have",
+    "journeys": [
+      {
+        "id": "acc-clubs-empty",
+        "name": "A member with no clubs at all",
+        "who": "Guest",
+        "why": "The shipped list has no empty state — and the profile screen it is reached from used to crash for a zero-club account, which is why one was never captured.",
+        "steps": [
+          { "screen": "profile/4", "note": "An account with no club. The club section keeps its shell, states that registration happens on the website, and does not pretend there is a button." },
+          { "screen": "clubs/1", "note": "The clubs list, empty: one panel, the price, the three-per-league rule, and a single call to action. New — nothing like it exists today." },
+          { "screen": "clubs/3", "note": "And into the picker. Note the empty state assumes the zero-club crash is fixed; it has since been." }
+        ]
+      },
+      {
+        "id": "acc-clubs-loading",
+        "name": "The clubs list while it loads",
+        "who": "Member",
+        "why": "Shows the rule that a skeleton must not reflow into the loaded screen.",
+        "steps": [
+          { "screen": "clubs/2", "note": "Three skeleton cards at exactly the loaded geometry. The crest slots hold the club's short code rather than a grey box, so real artwork replaces the placeholder without a flash or a jump." },
+          { "screen": "clubs/0", "note": "Loaded. Nothing has moved. The shipped skeleton is a light-theme grey shimmer on a dark screen." }
+        ]
+      },
+      {
+        "id": "acc-clubs-current-marker",
+        "name": "Which club am I actually playing for?",
+        "who": "Member",
+        "why": "On the shipped list the only sign that a club is the current one is that its Remove link is missing — a side effect standing in for a signal.",
+        "steps": [
+          { "screen": "clubs/0", "note": "The current club carries a Current pill, an accent edge, and a Remove control that is explicitly disabled with the reason written under it. Every other card offers Make current." },
+          { "screen": "clubs/10", "note": "The switcher sheet, where the change is actually made. The selected row carries four separate markers. Today the sheet closes before the request resolves, so a failed switch has nowhere to surface — the sheet needs to stay open until the change lands." }
+        ]
+      },
+      {
+        "id": "acc-clubs-renewal",
+        "name": "Turning auto-renewal off",
+        "who": "Member",
+        "why": "The switch is drawn as a live per-club setting, and there is no write path behind it in this codebase.",
+        "steps": [
+          { "screen": "clubs/0", "note": "Each card carries a renewal switch with the consequence spelled out under it — the date and amount when on, the date the registration ends when off. The shipped card says only 'Auto renewal', with the switch floating near the middle of a single rail so nothing labels it." },
+          { "screen": "clubs/6", "note": "The same control the member first met before paying, so the setting they manage later is the one they agreed to. The subscription data exists in the app but is read by nothing, and no endpoint writes to it — confirm the write path exists server-side." }
+        ]
+      },
+      {
+        "id": "acc-clubs-switch",
+        "name": "A member switches their current club",
+        "who": "Member",
+        "why": "The most-used control in this area, reached from two places.",
+        "steps": [
+          { "screen": "profile/0", "note": "The club lockup on Profile opens the switcher." },
+          { "screen": "clubs/10", "note": "A bottom sheet listing every registered club, with an Add pill in the header and a route back to the full list in the footer. The shipped sheet's add control has no label and no accessible name, and ends in about 200pt of empty panel." },
+          { "screen": "clubs/0", "note": "Manage my clubs takes the member to the full list." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Wallet and credits",
+    "journeys": [
+      {
+        "id": "acc-wallet-balance",
+        "name": "A member checks what they can actually spend",
+        "who": "Member",
+        "why": "It answers the most common question on the screen — why can't I post, I have 1,240?",
+        "steps": [
+          { "screen": "profile/0", "note": "The credits card on Profile: available dominant, locked recessed, and a button to buy more." },
+          { "screen": "wallet/0", "note": "The wallet itself. The total is the headline, then it splits immediately into Available — free to spend — and On deposit, which is held against live ideas and comes back. A single total hides exactly the thing a member needs to know." },
+          { "screen": "wallet/1", "note": "And the ledger behind it. Every row carries the balance after it, and the eight rows on screen genuinely reconcile down the column." }
+        ]
+      },
+      {
+        "id": "acc-wallet-rules",
+        "name": "What a deposit is, and when you lose it",
+        "who": "Member",
+        "why": "The deposit mechanic is explained nowhere in the product today, and one of the four rules is the only way a member ever loses money.",
+        "steps": [
+          { "screen": "wallet/0", "note": "Four rule rows say what a deposit is, when it comes back, the one case where it does not, and what a vote costs. The fourth — the idea lapsing without enough likes — is stated in the same place and the same voice as the three that say the member keeps it." },
+          { "screen": "wallet/1", "note": "The ledger, where those rules become movements. Note the gap: there is no forfeiture type. A forfeited deposit leaves On deposit and never returns to Available, so the running column silently loses 25 with no row to explain it. That needs a sixth movement type." }
+        ]
+      },
+      {
+        "id": "acc-wallet-history-filter",
+        "name": "Finding one transaction in the history",
+        "who": "Member",
+        "why": "The live filter sheet commits on every tap and filters by type only. This one has ranges, a reset, and a single commit.",
+        "steps": [
+          { "screen": "wallet/1", "note": "Credit history, grouped by day, with the applied filter reported as a pill so it stays visible after the sheet closes. The live list is a flat scroller with a date stamp per row." },
+          { "screen": "wallet/2", "note": "The filter sheet: five movement types as multi-select with counts, five date ranges as single-select, a Reset, and an Apply that commits once." },
+          { "screen": "wallet/1", "note": "Back to the filtered list, with both pills reporting what is on. One open question: whether Apply should be blocked when every type is switched off." }
+        ]
+      },
+      {
+        "id": "acc-wallet-buy",
+        "name": "A member buys credits",
+        "who": "Member",
+        "why": "The largest commercial question on the screen: a saved card and a native app-store purchase are completely different frames.",
+        "steps": [
+          { "screen": "wallet/0", "note": "The buy control sits inside the balance card, next to the number it changes." },
+          { "screen": "wallet/3", "note": "Four bundles with unit rates and an idea-count equivalent, so a member can compare by what they buy rather than only by price, then a card on file and a summary. Every figure is invented — no pricing of any kind exists in the code — and the live Purchase credits button has no handler and no destination at all." }
+        ]
+      },
+      {
+        "id": "acc-wallet-cant-post",
+        "name": "A member has credits but cannot post",
+        "who": "Member",
+        "why": "The most likely support ticket on this screen, and the state nobody has drawn.",
+        "steps": [
+          { "screen": "wallet/0", "note": "A member whose whole balance is on deposit reads a healthy total and still cannot post an idea. The split explains it, but the screen does not yet route them anywhere." },
+          { "screen": "wallet/3", "note": "Where they need to end up. The zero-available reading and the empty, loading and payment-failure states are all undrawn — there is no equivalent anywhere in the live build to reuse." }
+        ]
+      },
+      {
+        "id": "acc-wallet-credits-not-merits",
+        "name": "Credits are not Merits",
+        "who": "Member",
+        "why": "If a member thinks standing can be bought, they have misunderstood the product. This is the most important statement on the screen.",
+        "steps": [
+          { "screen": "wallet/0", "note": "A two-cell panel states it flatly: credits are a balance you buy, deposit, spend and get back; merits are a score you earn, never spend and never buy. The footer commits to the link being one-way." },
+          { "screen": "merit-detail", "note": "The other half of the pair — where merits come from and what they are worth. The live app calls this same figure points, Reputation Points and credit transactions in different places; one word needs to win." }
+        ]
+      },
+      {
+        "id": "acc-wallet-naming",
+        "name": "Four names for one thing",
+        "who": "Member",
+        "why": "This screen cannot be built until the client says what the spendable thing is called.",
+        "steps": [
+          { "screen": "wallet/0", "note": "The live build uses Credits, Participation Credits, Participation Deposit and a legacy BOND for one concept — and still ships an unsubstituted placeholder string that will reach a member's screen exactly as written. The prototype settles on Credits, with deposit in lower case for the held portion." },
+          { "screen": "wallet/1", "note": "It matters in the ledger, where the API's word for 'deposit' means credits added and the product's word means credits held. Same word, opposite directions. Either the fields get renamed or the product word does." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Profile — the hub and its states",
+    "journeys": [
+      {
+        "id": "acc-profile-landing",
+        "name": "A member opens their profile",
+        "who": "Member",
+        "why": "The account hub. Everything else in this section is reached from it.",
+        "steps": [
+          { "screen": "profile/0", "note": "Identity, club and credits as three cards, replacing a black slab with a centred name and a club crest sitting loose on the canvas. Crests are third-party artwork, so every one sits on the app's own light plate and the contrast is measured on the plate — the same number for every club." },
+          { "screen": "profile/1", "note": "The same route, scrolled to the menu. Seven ungrouped rows become four labelled groups at one row height, with log out alone in its own group and a confirmation step that does not exist today." }
+        ]
+      },
+      {
+        "id": "acc-profile-load-states",
+        "name": "Profile loads, fails, and retries",
+        "who": "Member",
+        "why": "The one genuine rebrand in this whole section. The app really does have this failure state now, with a retry that works.",
+        "steps": [
+          { "screen": "profile/2", "note": "Loading. A dark skeleton covering the whole body, because the code swaps the whole body rather than just the list. The shipped skeleton is a light-theme grey shimmer on a dark screen." },
+          { "screen": "profile/3", "note": "Failed. Both sentences on this panel are the app's own strings and the Try again button is real. What is new is the treatment: the panel, the icon tile, the accent retry, and a spinner inside the button so a second press cannot fire." },
+          { "screen": "profile/0", "note": "Retry succeeds. Note the failure copy names the connection, which is the wrong sentence when the server is at fault — and the app has no connectivity handling anywhere to tell the two apart." }
+        ]
+      },
+      {
+        "id": "acc-profile-guest",
+        "name": "A guest with no club opens their profile",
+        "who": "Guest",
+        "why": "A whole screen the shipped code could not produce, because having no club used to throw before the screen could render.",
+        "steps": [
+          { "screen": "profile/4", "note": "Quiet Guest standing, a person glyph instead of a photo, an explained empty club section, every figure at zero or a dash, and the two club-scoped rows marked unavailable with the reason on the right." },
+          { "screen": "profile/1", "note": "Against a full account, where the same rows are live. The rule throughout: a chevron means the row goes somewhere, a padlock means it cannot change — today all eight account fields look identical although only three accept input." }
+        ]
+      },
+      {
+        "id": "acc-profile-menu-map",
+        "name": "Everything the account menu reaches",
+        "who": "Member",
+        "why": "A quick map of the section. Four of these destinations are real, three are not.",
+        "steps": [
+          { "screen": "profile/1", "note": "Four groups: your details, account, recognition, session." },
+          { "screen": "account-settings/0", "note": "Account settings — real, but ships today as a light-theme screen inside a dark app." },
+          { "screen": "wallet/0", "note": "Wallet — real code behind the balance and history; the purchase screen is not." },
+          { "screen": "child-account/17", "note": "Child accounts — real, and it is this one screen plus a dead dialog." },
+          { "screen": "hall-of-fame/0", "note": "Hall of Fame — drawn here as an ordinary destination, and in the code it has no page, no route and an empty handler. If it is not shipping, it needs the unavailable treatment shown on the guest screen." }
+        ]
+      },
+      {
+        "id": "acc-profile-photo",
+        "name": "A member changes their profile photo",
+        "who": "Member",
+        "why": "Small, but it replaces a text link whose handler is empty.",
+        "steps": [
+          { "screen": "profile/0", "note": "One edit button on the avatar, punched out of the card, replacing a separate UPDATE text link that currently does nothing. Pick a portrait and the avatar changes; remove it and it falls back to a placeholder." },
+          { "screen": "profile/4", "note": "The no-photo fallback: a person glyph in the same circle, with the edit control becoming a plus. Today the avatar falls back to a default asset and shimmers while the URL is checked, so the shape changes mid-load — and that default asset is watermarked marketing artwork that needs replacing before anything ships." }
+        ]
+      },
+      {
+        "id": "acc-profile-logout",
+        "name": "A member logs out",
+        "who": "Member",
+        "why": "Today the app signs the member out the instant they tap, with no confirmation and no spinner.",
+        "steps": [
+          { "screen": "profile/1", "note": "Log out sits alone in a Session group with a red edge and no chevron, because it navigates nowhere. Tapping it raises a confirmation dialog with Stay signed in as the safe default." },
+          { "screen": "profile/0", "note": "Cancelling returns here. The confirmation step is new — the current build fires the log-out call on tap." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Account settings",
+    "journeys": [
+      {
+        "id": "acc-set-light-seam",
+        "name": "The account area is light today",
+        "who": "Member",
+        "why": "These four screens are not a restyle. They ship as light-theme screens inside a dark app, so a member tapping into them falls through a seam.",
+        "steps": [
+          { "screen": "profile/1", "note": "Account settings sits one tap from a dark profile." },
+          { "screen": "account-settings/0", "note": "Account details, re-authored in the brand. Nothing here is a dark screen being redesigned — no dark version exists." },
+          { "screen": "account-settings/3", "note": "Notifications, the furthest of the four. Taking the account area dark is a bigger commitment than a restyle: every field, switch and native control in the tree comes with it. If the area is meant to stay light, the seam needs designing instead." }
+        ]
+      },
+      {
+        "id": "acc-set-details",
+        "name": "A member checks what they can and cannot change",
+        "who": "Member",
+        "why": "Affordance is the whole point of the screen: today eight identical-looking fields hide the fact that only three accept input.",
+        "steps": [
+          { "screen": "account-settings/0", "note": "One field anatomy throughout, read from the trailing edge: a padlock cannot be changed, a pencil can, a chevron opens a list. Locked fields also sit recessed with a greyed value, so a member can scan the right-hand edge instead of tapping to find out." },
+          { "screen": "account-settings/1", "note": "The password row is the one in-field action, and it opens its own screen. Which five fields are locked is a decision for the client — the screen tells the member to ask support, which is only honest if that route exists." }
+        ]
+      },
+      {
+        "id": "acc-set-password",
+        "name": "A member changes their password",
+        "who": "Member",
+        "why": "Shows the commit grammar: a bar that counts changes, stays disabled, and says exactly what is blocking it.",
+        "steps": [
+          { "screen": "account-settings/0", "note": "The member taps Change on the password row." },
+          { "screen": "account-settings/1", "note": "A four-segment strength meter with five readings, where length is a gate rather than a point, and requirement lines that tick off as they are met. The commit bar stays disabled and names the blocker — fix the confirmation, choose a stronger password, fill in all three fields." },
+          { "screen": "account-settings/2", "note": "The form promises that every other device is signed out. That is the right behaviour and what a member expects, but it is a claim about session handling that has not been verified — this is where the member would go to check." }
+        ]
+      },
+      {
+        "id": "acc-set-devices",
+        "name": "A member reviews where they are signed in",
+        "who": "Member",
+        "why": "The security screen is the one that commits immediately, and it says so rather than pretending there is something to save.",
+        "steps": [
+          { "screen": "account-settings/2", "note": "Every session as a row: the current device carries a pill instead of a button, and signing another one out replaces its button in place rather than removing the row, so the list does not jump under the finger that tapped it." },
+          { "screen": "account-settings/0", "note": "Back to the account. Note the one behavioural difference on the security screen — everything applies immediately, so it carries no commit bar at all." }
+        ]
+      },
+      {
+        "id": "acc-set-suspicious-signin",
+        "name": "A member spots a sign-in they do not recognise",
+        "who": "Member",
+        "why": "The one red row in the list, and the journey it should start.",
+        "steps": [
+          { "screen": "account-settings/2", "note": "An unrecognised sign-in gets a red device tile, the unknown-device glyph and a 'Not you?' line — the only red in the recent sign-ins list. Only the last 30 days are kept, which is an assumption needing confirmation." },
+          { "screen": "account-settings/1", "note": "The member changes their password, which the screen says signs every other device out." },
+          { "screen": "account-settings/2", "note": "And signs out everywhere else, from the destructive control at the foot of the security screen." }
+        ]
+      },
+      {
+        "id": "acc-set-2fa",
+        "name": "A member turns on two-factor",
+        "who": "Member",
+        "why": "There is no enrolment screen, which is a decision as much as an omission.",
+        "steps": [
+          { "screen": "account-settings/2", "note": "The two-factor card explains itself and applies the moment it is switched on — the check starts straight away, using the mobile number already on the account. Engaged, the whole card washes accent rather than just the switch." },
+          { "screen": "account-settings/0", "note": "The mobile number it uses is one of the locked fields here. If an authenticator app or a passkey is in scope, that card needs a method row rather than a bare switch." }
+        ]
+      },
+      {
+        "id": "acc-set-notifications",
+        "name": "A member tunes their notifications",
+        "who": "Member",
+        "why": "Six topics against three channels, with an explicit promise about what is never a preference.",
+        "steps": [
+          { "screen": "account-settings/3", "note": "Nine switches with a live count, accent on the track and never on the knob so the on-state reads as a filled channel down a long list. Support and account email is always sent and is stated not to be a preference." },
+          { "screen": "account-settings/0", "note": "The commit bar is shared with account details: disabled until something changes, then counting the edits. The topic list is drawn from what the product does today and will drift as features land." }
+        ]
+      },
+      {
+        "id": "acc-set-pause-all",
+        "name": "A member pauses everything without losing their settings",
+        "who": "Member",
+        "why": "A master switch that unsets nine preferences is the classic version of this screen. This one does not.",
+        "steps": [
+          { "screen": "account-settings/3", "note": "Turning the master on dims the nine dependent switches, disables them, and rewrites the count to '7 of 9 on — held while paused'. Nothing is unset, so turning the pause off restores exactly what was there." },
+          { "screen": "account-settings/2", "note": "The same immediate-commit behaviour as the security screen — there is nothing to save on a pause." }
+        ]
+      },
+      {
+        "id": "acc-set-delete-account",
+        "name": "A member deletes their own account",
+        "who": "Member",
+        "why": "The copy is the strongest version of the promise, and it may be the wrong one.",
+        "steps": [
+          { "screen": "account-settings/0", "note": "The one place red becomes a surface: a destructive card with a consequence line rather than a bare label — permanent, and the member's ideas, votes and merits go with it." },
+          { "screen": "child-account/15", "note": "Compare with closing a child's account, which offers softer alternatives and a data timeline. Removing a member's votes retrospectively changes counts on settled proposals; the likely real answer is closure with anonymised contributions, which would make the current sentence wrong." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Recognition — Hall of Fame and Achievements",
+    "journeys": [
+      {
+        "id": "acc-hof-nothing-behind",
+        "name": "Two recognition routes nobody can reach",
+        "who": "Member",
+        "why": "Both screens are in the design record and neither works in the app. Worth establishing before looking at any of the artwork.",
+        "steps": [
+          { "screen": "profile/1", "note": "Both rows draw a chevron, which implies they go somewhere." },
+          { "screen": "hall-of-fame/0", "note": "Hall of Fame does not exist in the code at all — no page, no route, no widget, no model. This is the first build of it." },
+          { "screen": "hall-of-fame/5", "note": "Achievements does exist, as a white screen that repeats one hard-coded award four times with no data call behind it. Its menu row was removed rather than commented out, so it is deliberately absent. Whether either ships is still an open decision." }
+        ]
+      },
+      {
+        "id": "acc-hof-browse",
+        "name": "A member browses the Hall of Fame",
+        "who": "Member",
+        "why": "The main recognition surface, and the place the gold problem shows up hardest.",
+        "steps": [
+          { "screen": "hall-of-fame/0", "note": "A podium over a roll of honour. Rank is carried by a numeral, ring opacity and size — no gold and no metals, because the four golds in the captures are not brand colours and one of them is literally the amber the app paints a blocked proposal with." },
+          { "screen": "hall-of-fame/1", "note": "The season dropdown, anchored to its own control and live in the prototype — click it, arrow through it, escape out." },
+          { "screen": "hall-of-fame/2", "note": "The award category sheet. Each row says what the award is and what it is worth; the shipped rows were darker than the sheet they sat on and looked nearly identical selected or not." }
+        ]
+      },
+      {
+        "id": "acc-hof-vacant",
+        "name": "A podium with slots nobody has won",
+        "who": "Member",
+        "why": "A small detail that changes the meaning of the screen: an empty slot currently reads as a member who scored zero.",
+        "steps": [
+          { "screen": "hall-of-fame/0", "note": "Only two members hold this award, so the third slot is drawn as a dashed accent hairline labelled Vacant with a dash for the score. The shipped slot is a grey outline reading '0 points', which reads as a person who did badly." },
+          { "screen": "hall-of-fame/2", "note": "Changing the award category is how a member finds a roll that is filled. What the podium actually ranks is an open question — the captures show a podium holder on 908 points above a list whose first row reads 910, with nothing relating the two." }
+        ]
+      },
+      {
+        "id": "acc-hof-loading",
+        "name": "The Hall of Fame while it loads",
+        "who": "Member",
+        "why": "No loading state is captured for any of these nine screens, and the shimmer the code defines is never called.",
+        "steps": [
+          { "screen": "hall-of-fame/4", "note": "Skeleton bones at exactly the loaded geometry, so nothing reflows when the data arrives. No spinner — the app default is a stock blue Material spinner that belongs to no part of the brand." },
+          { "screen": "hall-of-fame/0", "note": "Loaded. Error states for all nine of these screens are still undrawn." }
+        ]
+      },
+      {
+        "id": "acc-hof-award-announced",
+        "name": "A member is told they have won an award",
+        "who": "Member",
+        "why": "The one moment on these screens that interrupts a member, and the one place the live version is worst.",
+        "steps": [
+          { "screen": "hall-of-fame/0", "note": "The member is on the Hall of Fame when the award lands." },
+          { "screen": "hall-of-fame/3", "note": "One title, one paragraph of why, the value as a pill, and two real actions plus a dismiss. The live modal sets 'Congratulations!' and the award name at the same size, weight and colour, then repeats both in the first line of body copy, and offers no way out other than the button." },
+          { "screen": "merit-detail", "note": "Worth seeing beside the badge-earned moment, because in the app these are the same event happening once. If the fuller celebration is wanted, that is the one to keep and this dialog comes out." }
+        ]
+      },
+      {
+        "id": "acc-ach-empty",
+        "name": "Achievements, with nothing in it",
+        "who": "Member",
+        "why": "Both tabs were captured empty, and the empty copy currently reads like a lookup error.",
+        "steps": [
+          { "screen": "hall-of-fame/5", "note": "Playoff titles, empty. It closes on a 'nothing to do yet' pill rather than a button, because there genuinely is no action a member can take here." },
+          { "screen": "hall-of-fame/7", "note": "Leader status, empty — but this one has a real action. The shipped copy for it reads 'No current season found for the default club', which is a database message, not a sentence for a member." }
+        ]
+      },
+      {
+        "id": "acc-ach-populated",
+        "name": "Achievements, with something in it",
+        "who": "Member",
+        "why": "Nothing in the entire capture set shows either tab with data, so both of these are new drawings.",
+        "steps": [
+          { "screen": "hall-of-fame/5", "note": "The empty reading, for comparison." },
+          { "screen": "hall-of-fame/6", "note": "Titles won: the competition, the date it was decided and the season. What a playoff title actually is remains undefined — the word appears in the codebase only as an email toggle, and the reading drawn here is that it belongs to the club and is shared with the members who were voting." },
+          { "screen": "hall-of-fame/8", "note": "Leader standing: the member's tier, the two figures behind it, and the four-tier ladder with the distance to the next one. The tier names and thresholds come from the code; the ladder and the explanation are new." }
+        ]
+      },
+      {
+        "id": "acc-ach-leader-ladder",
+        "name": "A member works out what their standing means",
+        "who": "Member",
+        "why": "Standing is a share, not a total, so it can fall while a member's merit count rises. Nothing in the app explains that.",
+        "steps": [
+          { "screen": "hall-of-fame/7", "note": "The empty reading, where a member with no season has nothing to interpret." },
+          { "screen": "hall-of-fame/8", "note": "The populated ladder. The four tiers are the code's own, but the tab is labelled 'Leader status', which never says it is about influence — renaming it is a live recommendation." },
+          { "screen": "profile/0", "note": "And the number it summarises, back on Profile. Whether the tier ladder is a product feature or just a label decides whether that pill becomes a progress component." }
+        ]
+      },
+      {
+        "id": "acc-merits-where-from",
+        "name": "Where a member's merits came from",
+        "who": "Member",
+        "why": "There is no code of any kind behind merits — zero matches in the whole app — so this surface is entirely a proposal.",
+        "steps": [
+          { "screen": "profile/0", "note": "The merits total and season rank sit on Profile as a summary that links onward." },
+          { "screen": "merit-detail", "note": "The ledger, the badge collection, one badge in detail and the award moment. Badges are drawn from the brand's own geometry rather than medals, with rarity carried by shape and ring weight instead of gold — the palette has no metallics. Twelve badges are proposed; only one award name in the whole codebase is real." }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Linked members — the earlier probe",
+    "journeys": [
+      {
+        "id": "acc-linked-walkthrough",
+        "name": "The linked-member flow on its own terms",
+        "who": "Parent",
+        "why": "A four-screen probe of the hardest parts of the child-account problem. It did its job, and there is now a decision to make about whether it stays.",
+        "steps": [
+          { "screen": "linked-member/0", "note": "The list, with the row anatomy that solved the duplicate-name problem: age, birthday, relationship, state and a reference, and a portrait ring that carries the verification state before any text is read." },
+          { "screen": "linked-member/1", "note": "The details form and the live age gate, with six computed readings announced as the parent types." },
+          { "screen": "linked-member/2", "note": "The consent step — what is collected, who checks it, how long it is kept, three legal links, one checkbox, and a record of the consent itself." },
+          { "screen": "linked-member/3", "note": "The hand-off: the third party named and its host shown app-side, drawn with a dashed edge so it reads as outside the app, and a numbered plan whose last step is the return." }
+        ]
+      },
+      {
+        "id": "acc-linked-superseded",
+        "name": "Linked members against child accounts",
+        "who": "Parent",
+        "why": "The decision journey: these two components cover the same ground under two different names, and one of them has to go.",
+        "steps": [
+          { "screen": "linked-member/0", "note": "This component calls the object a linked member." },
+          { "screen": "child-account/0", "note": "This one calls it a child account — which is what the specs, the code and the app's own strings call it. Same row construction, same duplicate-name demonstration, plus a guest state, a registered state and a real add control." },
+          { "screen": "child-account/17", "note": "And this is the screen actually wired into the profile menu today, which now lives in the child-account component too. The recommendation is to retire linked members into child accounts and settle on one name; two names for one thing is the exact defect this rebrand keeps correcting." }
+        ]
+      },
+      {
+        "id": "acc-linked-agegate-lineage",
+        "name": "Where the age gate came from",
+        "who": "Parent",
+        "why": "Shows that the most safety-critical control in the product was worked out once and carried forward unchanged.",
+        "steps": [
+          { "screen": "linked-member/1", "note": "The original: a three-part date field, a live derived-age readout, and six outcomes — idle, not a real date, in the future, 18 or over, too young, and a pass — each with its own verdict and explanation." },
+          { "screen": "child-account/2", "note": "The same gate, unchanged, extended to the eight fields the shipped form actually collects and stating which two were dropped and why. Neither exists in the app: the shipped form has no age logic at all." }
+        ]
+      },
+      {
+        "id": "acc-linked-consent-lineage",
+        "name": "Where the consent step came from, and where it moved to",
+        "who": "Parent",
+        "why": "Same structure, different place in the flow — and the move changes what the parent has already committed to.",
+        "steps": [
+          { "screen": "linked-member/2", "note": "Consent as step two of three, before anything is paid." },
+          { "screen": "child-account/9", "note": "The same collection, provider, retention, links and checkbox — but placed where the shipped flow puts it, after the fee. The wording changes to reflect that the parent has already agreed $20. Whether the two should be swapped is an open question for the client." },
+          { "screen": "child-account/8", "note": "The fee screen it now sits behind, which states that nothing is charged until the check passes." }
+        ]
+      },
+      {
+        "id": "acc-linked-handoff-lineage",
+        "name": "One hand-off screen becomes two",
+        "who": "Parent",
+        "why": "The vendor step is really two states of the same surface, and separating them puts the camera prompt where a parent can be warned about it.",
+        "steps": [
+          { "screen": "linked-member/3", "note": "The original single hand-off: the named third party, its host, the dashed external cell, and a three-step plan." },
+          { "screen": "child-account/10", "note": "Split in two. First the operating system's camera prompt, explained in advance and naming the host the prompt is about to show." },
+          { "screen": "child-account/11", "note": "Then the vendor's page itself, drawn as a vendor page. Its copy addresses the reader as the document holder throughout, on a page photographing a fifteen-year-old, and clips our own wordmark — all of which needs raising with the vendor before it ships." }
+        ]
+      }
+    ]
+  }
+]

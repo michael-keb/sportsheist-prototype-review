@@ -1,0 +1,2257 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsHeist — Foundations · component review</title>
+<style>
+
+/* ============================================================
+   REVIEW SHEET — presentation shell
+   Deliberately a light "paper" ground so the dark component
+   reads as the artefact, not as the page.
+   ============================================================ */
+:root{
+  --paper:      #EDEFE9;
+  --panel:      #E4E7DE;
+  --rule:       #CFD4C7;
+  --rule-soft:  #DCE0D5;
+  --ink:        #14170F;
+  --ink-2:      #545B4B;
+  --ink-3:      #7C8471;
+  --stage:      #0B0D08;
+  --acid:       #9BE222;
+  --acid-ink:   #0B0E06;
+  --flag:       #B4552B;
+
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable",
+          "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo,
+            Consolas, monospace;
+
+  --wrap: 1440px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+    --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+    --flag:#E08A5C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101208; --panel:#171A10; --rule:#2A2E20; --rule-soft:#212518;
+  --ink:#EFF1E8; --ink-2:#A6AD98; --ink-3:#7C8471; --stage:#000;
+  --flag:#E08A5C;
+}
+:root[data-theme="light"]{
+  --paper:#EDEFE9; --panel:#E4E7DE; --rule:#CFD4C7; --rule-soft:#DCE0D5;
+  --ink:#14170F; --ink-2:#545B4B; --ink-3:#7C8471; --stage:#0B0D08;
+  --flag:#B4552B;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-ui);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+:focus-visible{outline:2px solid var(--acid);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);padding:30px 0 22px}
+.masthead__top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.chip{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:999px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--panel);
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acid)}
+.masthead h1{
+  margin:16px 0 0;font-size:clamp(34px,5.2vw,52px);line-height:1.02;
+  letter-spacing:-.035em;font-weight:800;text-wrap:balance;
+}
+.masthead h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  margin:14px 0 0;max-width:62ch;font-size:17px;color:var(--ink-2);
+}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:0 28px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- two-column body ---------- */
+.layout{
+  display:grid;grid-template-columns:196px minmax(0,392px) minmax(0,1fr);
+  gap:44px;align-items:start;padding:36px 0 80px;
+}
+@media (max-width:1240px){
+  .layout{grid-template-columns:minmax(0,392px) minmax(0,1fr);gap:44px}
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:40px}
+  .stagecol{position:static!important}
+}
+
+/* ---------- left menu ---------- */
+.side{
+  position:sticky;top:28px;
+  display:flex;flex-direction:column;gap:26px;
+  /* 39 components make this rail ~2200px — taller than any viewport. Left unbounded it
+     overflows its grid row and paints over whatever follows it in the same column, and
+     sticky cannot help because the element is taller than the scrollport. Cap it and let
+     it scroll on its own. */
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+  padding-right:6px;
+}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-track{background:transparent}
+.side::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+@media (max-width:1240px){
+  .side{
+    position:static;grid-column:1/-1;order:-1;
+    flex-direction:row;gap:32px;flex-wrap:wrap;
+    padding-bottom:22px;border-bottom:1px solid var(--rule);
+    /* laid out as a wrapping row here, so the sticky rail's height cap must come off */
+    max-height:none;overflow-y:visible;padding-right:0;
+  }
+  .side__group{min-width:200px}
+}
+.side__title{
+  margin:0 0 9px;font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.side li{display:block}
+
+.side__item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:6px 9px;margin-left:-9px;border-radius:6px;
+  font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-left:2px solid transparent;
+}
+.side__item:hover{background:var(--panel);color:var(--ink)}
+.side__item[aria-current]{
+  color:var(--ink);font-weight:600;background:var(--panel);
+  border-left-color:var(--acid);
+}
+.side__item--muted{color:var(--ink-3);cursor:default}
+.side__item--muted:hover{background:transparent;color:var(--ink-3)}
+.side__tag{
+  margin-left:auto;flex:0 0 auto;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.side__tag--new{color:var(--acid-ink);background:var(--acid);padding:2px 5px;border-radius:3px}
+.side__note{
+  margin:10px 0 0;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+}
+
+/* ---------- device stage ---------- */
+.stagecol{position:sticky;top:28px}
+.stage{
+  background:var(--stage);border-radius:20px;padding:26px 0;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  border:1px solid var(--rule);
+}
+.device{
+  position:relative;flex:0 0 auto;
+  width:375px;height:760px;max-width:100%;
+  border-radius:42px;padding:9px;
+  background:#20241A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10), 0 26px 60px rgba(0,0,0,.55);
+}
+.device__screen{
+  position:relative;width:100%;height:100%;
+  border-radius:34px;overflow:hidden;background:#030401;
+}
+.device__island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:96px;height:26px;border-radius:999px;background:#000;z-index:60;
+}
+.stage__controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.seg button{
+  border:0;background:transparent;color:rgba(255,255,255,.62);
+  font:inherit;font-family:var(--f-mono);font-size:11.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--acid);color:var(--acid-ink);font-weight:600}
+.stage__hint{
+  margin:0;font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.42);
+  text-align:center;max-width:40ch;
+}
+
+/* ---------- prose column ---------- */
+.col{display:flex;flex-direction:column;gap:44px;min-width:0}
+.col section{scroll-margin-top:24px}
+.rv-eyebrow{
+  margin:0 0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--rule);
+}
+.col h2{margin:0 0 12px;font-size:23px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+.col h3{margin:26px 0 8px;font-size:15px;font-weight:700;letter-spacing:-.005em}
+.col p{margin:0 0 12px;max-width:66ch}
+.col p:last-child{margin-bottom:0}
+.masthead strong,.col strong{font-weight:650}
+.masthead code,.col code{
+  font-family:var(--f-mono);font-size:.86em;
+  background:var(--panel);border:1px solid var(--rule-soft);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+
+/* ---------- anatomy table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+.col table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.col caption{caption-side:bottom;padding:10px 14px;text-align:left;font-size:12.5px;color:var(--ink-3)}
+.col th,.col td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.col thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:transparent;
+}
+.col tbody tr:last-child td{border-bottom:0}
+.col td:first-child{
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.t-note{color:var(--ink-2)}
+
+/* ---------- token swatches ---------- */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px}
+.token{
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel);
+  display:flex;flex-direction:column;
+}
+.token__chip{height:56px;border-bottom:1px solid var(--rule)}
+.token__body{padding:10px 12px 12px}
+.token__hex{
+  display:block;font-family:var(--f-mono);font-size:12.5px;font-weight:600;
+  letter-spacing:.02em;
+}
+.token__role{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-2)}
+.token__src{display:block;margin-top:5px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- provenance ---------- */
+.prov{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:620px){.prov{grid-template-columns:1fr}}
+.prov__card{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+.prov__card h3{margin:0 0 10px;font-size:13px;letter-spacing:.02em}
+.prov__card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.prov__card li{font-size:14px;color:var(--ink-2)}
+.prov__card li b{color:var(--ink);font-weight:600}
+.prov--new{border-color:var(--acid);box-shadow:inset 0 0 0 1px rgba(155,226,34,.28)}
+
+/* ---------- questions ---------- */
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--panel)}
+.qs li{padding:16px 18px;border-bottom:1px solid var(--rule-soft)}
+.qs li:last-child{border-bottom:0}
+.qs h3{margin:0 0 5px;font-size:14.5px}
+.qs p{margin:0;font-size:14px;color:var(--ink-2)}
+.flag{color:var(--flag);font-weight:600}
+
+/* ---------- footer ---------- */
+.col footer{border-top:1px solid var(--rule);padding:26px 0 60px;color:var(--ink-3);font-size:13.5px}
+.col footer p{max-width:70ch}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- wide (non-phone) components ---------- */
+/* Two columns but THREE children — sidebar, stage (.screens or .stagecol) and notes (.col).
+   Without an explicit placement the notes wrap onto row 2 of column 1, land in the 196px
+   sidebar track and collide with the sticky .side above them. Pin the stage and the notes
+   to column 2 so they stack under each other; the sidebar keeps column 1 to itself. */
+.layout--wide{grid-template-columns:196px minmax(0,1fr)}
+.layout--wide>.side{grid-column:1}
+.layout--wide>.screens,
+.layout--wide>.stagecol,
+.layout--wide>.widecol,
+.layout--wide>.col{grid-column:2}
+@media (max-width:1240px){
+  .layout--wide{grid-template-columns:minmax(0,1fr)}
+  .layout--wide>.side,
+  .layout--wide>.screens,
+  .layout--wide>.stagecol,
+  .layout--wide>.widecol,
+  .layout--wide>.col{grid-column:1}
+}
+.widecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.widestage{
+  background:var(--stage);border:1px solid var(--rule);border-radius:16px;
+  padding:14px;overflow:hidden;
+}
+.stage__hint--wide{color:var(--ink-3);text-align:left}
+
+/* ---------- multi-screen components: one device per screen ---------- */
+.screens{display:flex;flex-direction:column;gap:16px;min-width:0}
+.screens__lede{
+  margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-3);
+}
+.screens__grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));
+  gap:22px;align-items:start;
+}
+.scr{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.scr__cap{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.scr__n{
+  font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.08em;
+  color:var(--ink-3);
+}
+.device--multi{
+  width:100%;max-width:342px;height:700px;
+  border-radius:38px;padding:8px;
+}
+.device--multi .device__screen{border-radius:31px}
+.device--multi .device__island{width:88px;height:24px;top:7px}
+
+/* the index shares the review layout, so its grid is the content column */
+.layout--wide > .ix{padding:0 0 80px;grid-column:auto}
+
+/* ---------- "since this was written" correction block ---------- */
+.col .since-fixed{
+  border:1px solid var(--rule);border-left:3px solid var(--acid);border-radius:10px;
+  padding:16px 18px;background:var(--panel);
+}
+.col .since-fixed h2{font-size:16px;margin:0 0 8px}
+.col .since-fixed ul{margin:0 0 12px;padding-left:18px}
+.col .since-fixed li{margin:0 0 7px;font-size:13.5px}
+.col .since-fixed p:last-child{margin-bottom:0;color:var(--ink-3);font-size:12.5px}
+
+/* ============================================================
+   COMPONENT — every selector scoped under .mk
+   ============================================================ */
+.mk{/* canvas + surfaces */ --bg: #030401; --section: #080A0C; /* bordered section container */ --surface: #1C2129; /* cards, controls, tab bar */ --sunken: #13171E; /* inner panels, dark pills */ --line: rgba(255,255,255,.075); --line-soft: rgba(255,255,255,.045); /* accent */ --acid: #9BE222; --acid-ink: #0B0E06; --acid-wash: rgba(155,226,34,.12); /* hero */ --hero-a: #0D3617; --hero-b: #17481C; /* text */ --text: #FFFFFF; --muted: #99A0AE; --dim: #5B606B; /* geometry */ --r-card: 16px; --r-panel: 12px; --r-pill: 999px; --gutter: 16px; --ease: cubic-bezier(.16,1,.3,1); --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* interaction states sampled from the reference implementations */ --acid-hover: #A8EC33; /* idea-card .sh-like:hover */ --surface-hover: #222833; /* merits .pill-btn:hover / .icon-btn:hover */ --sunken-hover: #1A1F27; /* idea-card .sh-textbtn:hover */ --press-veil: rgba(0,0,0,.18); /* PROPOSED — see §6 */ --disabled: .38; /* PROPOSED — see §6 */ /* documentation chrome only — NOT a product token. A system monospace stack so hex values line up in tables. */ --fd-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;}
+.mk *,.mk *::before,.mk *::after{box-sizing:border-box}
+.mk{margin:0;background:var(--bg);color:var(--text); font-family:var(--font);font-size:14px;line-height:1.4; -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.mk .fd-page{max-width:1180px;margin:0 auto;padding:40px 24px 120px}
+.mk .fd-mast{margin:0 0 34px}
+.mk .fd-mast h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em; line-height:1;text-transform:uppercase;}
+.mk .fd-mast p{margin:12px 0 0;max-width:66ch;font-size:13px;line-height:1.5;color:var(--muted)}
+.mk .fd-mast p b{color:var(--text);font-weight:600}
+.mk .fd-nav{display:flex;flex-wrap:wrap;gap:7px;margin:20px 0 0}
+.mk .fd-nav a{display:inline-flex;align-items:center;height:32px;padding:0 13px; border-radius:var(--r-pill);background:var(--surface);color:var(--text); font-size:12.5px;font-weight:500;text-decoration:none; transition:background .18s var(--ease);}
+.mk .fd-nav a:hover{background:var(--surface-hover)}
+.mk .fd-sec{margin:52px 0 0;scroll-margin-top:20px}
+.mk .fd-sec__head{display:flex;align-items:baseline;flex-wrap:wrap;gap:10px; padding-bottom:11px;margin-bottom:20px;border-bottom:1px solid var(--line);}
+.mk .fd-sec__n{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);font-variant-numeric:tabular-nums;}
+.mk .fd-sec__head h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+.mk .fd-sec__head p{margin:0;flex:1 1 320px;font-size:12.5px;color:var(--muted)}
+.mk .fd-note{margin:0 0 18px;max-width:80ch;font-size:13px;line-height:1.5;color:var(--muted);}
+.mk .fd-note b{color:var(--text);font-weight:600}
+.mk .fd-note--loud{padding:14px 16px;border-radius:var(--r-panel); background:var(--section);border:1px solid var(--line);color:var(--text);}
+.mk .fd-eyebrow{margin:26px 0 12px;font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--dim);}
+.mk .fd-eyebrow:first-child{margin-top:0}
+.mk code,.mk .fd-code{font-family:var(--fd-mono);font-size:11.5px;letter-spacing:0}
+.mk .fd-code--hex{text-transform:uppercase}
+.mk .fd-badge{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto; height:22px;padding:0 9px;border-radius:var(--r-pill); font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; white-space:nowrap;}
+.mk .fd-badge::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.mk .fd-badge--sampled{background:var(--acid-wash);color:var(--acid)}
+.mk .fd-badge--proposed{background:transparent;color:var(--muted); border:1px dashed rgba(255,255,255,.24);}
+.mk .fd-badge--proposed::before{background:transparent;box-shadow:inset 0 0 0 1px currentColor}
+.mk .fd-panel{padding:16px;border-radius:var(--r-card); background:var(--section);border:1px solid var(--line);}
+.mk .fd-grid{display:grid;gap:12px}
+.mk .fd-grid--2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.mk .fd-grid--3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.mk .fd-grid--icons{grid-template-columns:repeat(auto-fill,minmax(132px,1fr))}
+.mk .fd-tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.mk table.fd-tbl{width:100%;min-width:520px;border-collapse:collapse; font-size:12.5px;font-variant-numeric:tabular-nums;}
+.mk .fd-tbl th{text-align:left;padding:0 12px 9px 0; font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase; color:var(--dim);white-space:nowrap;}
+.mk .fd-tbl td{padding:9px 12px 9px 0;border-top:1px solid var(--line-soft);vertical-align:middle}
+.mk .fd-tbl tr:first-child td{border-top:0}
+.mk .fd-tbl td:last-child,.mk .fd-tbl th:last-child{padding-right:0}
+.mk .fd-num{font-variant-numeric:tabular-nums}
+.mk .fd-pass{color:var(--acid);font-weight:600}
+.mk .fd-fail{color:#E2564A;font-weight:600}
+.mk .fd-warn{color:var(--muted);font-weight:600}
+.mk .fd-dot{display:inline-block;width:12px;height:12px;border-radius:3px;flex:0 0 auto; box-shadow:inset 0 0 0 1px var(--line);vertical-align:-1px;margin-right:7px;}
+.mk .fd-ladder{padding:16px;border-radius:var(--r-card);background:var(--bg);border:1px solid var(--line)}
+.mk .fd-ladder__in{margin-top:12px;padding:16px;border-radius:var(--r-card)}
+.mk .fd-ladder__in--section{background:var(--section);border:1px solid var(--line)}
+.mk .fd-ladder__in--surface{background:var(--surface)}
+.mk .fd-ladder__in--sunken{background:var(--sunken);border-radius:var(--r-panel)}
+.mk .fd-ladder__lab{display:flex;align-items:baseline;flex-wrap:wrap;gap:10px}
+.mk .fd-ladder__lab b{font-size:13px;font-weight:600;font-family:var(--fd-mono);text-transform:uppercase;}
+.mk .fd-ladder__lab span{font-size:11.5px;color:var(--muted)}
+.mk .fd-ladder__lab em{font-style:normal;font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.mk .fd-chips{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 18px}
+.mk .fd-swatch{flex:1 1 172px;min-width:150px;padding:14px; border-radius:var(--r-panel);border:1px solid var(--line);}
+.mk .fd-swatch__h{height:52px;border-radius:8px;margin:0 0 12px;box-shadow:inset 0 0 0 1px var(--line-soft)}
+.mk .fd-swatch b{display:block;font-family:var(--fd-mono);font-size:12.5px;text-transform:uppercase}
+.mk .fd-swatch span{display:block;margin-top:4px;font-size:11.5px;color:var(--muted)}
+.mk .fd-swatch em{display:block;margin-top:6px;font-style:normal;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.mk .fd-pair{display:flex;align-items:center;gap:12px; min-height:64px;padding:12px 14px;border-radius:var(--r-panel); box-shadow:inset 0 0 0 1px var(--line-soft);}
+.mk .fd-pair__t{flex:1;min-width:0}
+.mk .fd-pair__t b{display:block;font-size:15px;font-weight:600;letter-spacing:-.005em}
+.mk .fd-pair__t span{display:block;margin-top:3px;font-size:11px;font-family:var(--fd-mono);opacity:.72}
+.mk .fd-pair__r{flex:0 0 auto;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums; text-align:right;}
+.mk .fd-pair__r small{display:block;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+.mk .fd-hero{height:138px;border-radius:var(--r-card);position:relative;overflow:hidden; background:linear-gradient(112deg,var(--hero-a) 0%,var(--hero-b) 58%,#0C3416 100%); display:flex;align-items:center;padding:0 18px;}
+.mk .fd-hero h3{margin:0;position:relative;z-index:2; font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1;text-transform:uppercase;}
+.mk .fd-hero__field{position:absolute;inset:0;pointer-events:none}
+.mk .fd-hero__range{position:absolute;right:0;bottom:0;width:54%;height:38%;pointer-events:none;z-index:1}
+.mk .fd-stops{display:flex;gap:0;margin-top:12px;border-radius:var(--r-panel);overflow:hidden}
+.mk .fd-stops div{flex:1;padding:12px 14px;font-family:var(--fd-mono);font-size:11.5px;text-transform:uppercase}
+.mk .fd-type{display:flex;flex-direction:column;gap:0}
+.mk .fd-type__row{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px 20px; padding:16px 0;border-top:1px solid var(--line-soft);}
+.mk .fd-type__row:first-child{border-top:0}
+.mk .fd-type__spec{flex:0 0 236px;font-family:var(--fd-mono);font-size:11px;line-height:1.55; color:var(--muted);font-variant-numeric:tabular-nums;}
+.mk .fd-type__spec b{display:block; font-family:var(--font);font-size:10.5px;font-weight:700;letter-spacing:.14em; text-transform:uppercase;color:var(--text);margin-bottom:4px;}
+.mk .fd-type__spec i{display:block;font-style:normal;color:var(--dim)}
+.mk .fd-type__demo{flex:1 1 300px;min-width:0}
+.mk .t-title{font-size:34px; font-weight:800;letter-spacing:-.025em;line-height:1;text-transform:uppercase}
+.mk .t-fig-xl{font-size:32px; font-weight:800;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+.mk .t-fig-l{font-size:22px; font-weight:700;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.mk .t-label{font-size:18px; font-weight:600;letter-spacing:-.015em}
+.mk .t-card{font-size:17px; font-weight:600;letter-spacing:-.015em;line-height:1.2}
+.mk .t-btn{font-size:15px; font-weight:600;letter-spacing:-.005em}
+.mk .t-row{font-size:13.5px;font-weight:600}
+.mk .t-body{font-size:13px; font-weight:400;line-height:1.35;color:var(--muted)}
+.mk .t-meta{font-size:12.5px;font-weight:500;color:var(--muted)}
+.mk .t-meta-s{font-size:11.5px;font-weight:400;color:var(--muted)}
+.mk .t-micro-11{font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--acid)}
+.mk .t-micro-tag{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--acid)}
+.mk .t-micro-105{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.mk .t-micro-95{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.mk .fd-rule{display:flex;flex-direction:column;gap:10px}
+.mk .fd-rule__row{display:flex;align-items:center;gap:14px}
+.mk .fd-rule__bar{height:6px;border-radius:var(--r-pill);background:var(--acid);flex:0 0 auto}
+.mk .fd-rule__n{flex:0 0 46px;font-family:var(--fd-mono);font-size:11.5px; font-variant-numeric:tabular-nums;color:var(--text);text-align:right;}
+.mk .fd-rule__u{font-size:11.5px;color:var(--muted);min-width:0}
+.mk .fd-gutdemo{padding:0;border-radius:var(--r-card);background:var(--section);border:1px solid var(--line);overflow:hidden}
+.mk .fd-gutdemo__inner{padding:12px var(--gutter);background:var(--acid-wash)}
+.mk .fd-gutdemo__body{padding:14px 16px;border-radius:var(--r-panel);background:var(--surface);font-size:12.5px}
+.mk .fd-padbox{padding:16px;border-radius:var(--r-card);background:var(--surface); box-shadow:inset 0 0 0 16px var(--acid-wash);}
+.mk .fd-padbox__in{padding:12px 14px;border-radius:var(--r-panel);background:var(--sunken);font-size:12.5px}
+.mk .fd-radii{display:flex;flex-wrap:wrap;gap:14px}
+.mk .fd-radii__b{width:108px;height:72px;background:var(--surface); box-shadow:inset 0 0 0 1px var(--line); display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px; font-family:var(--fd-mono);font-size:11px;color:var(--muted);}
+.mk .fd-radii__cap{margin-top:7px;font-size:11px;color:var(--dim);text-align:center;width:108px}
+.mk .fd-radii__cell{flex:0 0 auto}
+.mk .fd-ctl{padding:16px;border-radius:var(--r-card); background:var(--section);border:1px solid var(--line);}
+.mk .fd-ctl__head{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-bottom:4px}
+.mk .fd-ctl__head h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.005em}
+.mk .fd-ctl__spec{margin:0 0 14px;font-family:var(--fd-mono);font-size:11px;line-height:1.55;color:var(--muted);}
+.mk .fd-ctl__spec i{font-style:normal;color:var(--dim)}
+.mk .fd-states{display:flex;flex-wrap:wrap;gap:10px}
+.mk .fd-state{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.mk .fd-state__n{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);}
+.mk .fd-state__box{display:flex;align-items:center;justify-content:center; min-height:56px;padding:9px 12px;border-radius:var(--r-panel);background:var(--surface);}
+.mk .fd-state__box--flat{background:transparent;padding:9px 0;min-height:0}
+.mk .fd-state--na .fd-state__n{color:var(--dim);opacity:.7}
+.mk .c-fill{display:inline-flex;align-items:center;justify-content:center;gap:9px; height:52px;padding:0 22px;border:0;border-radius:var(--r-pill); background:var(--acid);color:var(--acid-ink); font:inherit;font-size:15px;font-weight:600;letter-spacing:-.005em;cursor:pointer; transition:background .18s var(--ease),transform .12s var(--ease);}
+.mk .c-fill svg{width:19px;height:19px;flex:0 0 auto}
+.mk .c-fill:hover,.mk .c-fill.is-hover{background:var(--acid-hover)}
+.mk .c-fill:active,.mk .c-fill.is-pressed{background:var(--acid);transform:translateY(1px); box-shadow:inset 0 0 0 999px var(--press-veil);}
+.mk .c-fill:focus-visible,.mk .c-fill.is-focus{outline:2px solid var(--acid);outline-offset:3px}
+.mk .c-fill:disabled,.mk .c-fill.is-disabled{opacity:var(--disabled);cursor:not-allowed;background:var(--acid);transform:none;box-shadow:none;}
+.mk .c-out{display:inline-flex;align-items:center;justify-content:center;gap:8px; height:44px;padding:0 20px;border-radius:var(--r-pill); border:1px solid var(--acid);background:transparent;color:var(--acid); font:inherit;font-size:14px;font-weight:600;letter-spacing:-.005em;cursor:pointer; transition:background .18s var(--ease),transform .12s var(--ease);}
+.mk .c-out svg{width:17px;height:17px;flex:0 0 auto}
+.mk .c-out:hover,.mk .c-out.is-hover{background:var(--acid-wash)}
+.mk .c-out:active,.mk .c-out.is-pressed{background:var(--acid-wash);transform:translateY(1px)}
+.mk .c-out:focus-visible,.mk .c-out.is-focus{outline:2px solid var(--acid);outline-offset:3px}
+.mk .c-out:disabled,.mk .c-out.is-disabled{opacity:var(--disabled);cursor:not-allowed;background:transparent;transform:none}
+.mk .c-dark{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px; border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--text); font:inherit;font-size:12.5px;font-weight:500;cursor:pointer; transition:background .18s var(--ease),transform .12s var(--ease);}
+.mk .c-dark svg{width:13px;height:13px;flex:0 0 auto}
+.mk .c-dark:hover,.mk .c-dark.is-hover{background:var(--surface-hover)}
+.mk .c-dark:active,.mk .c-dark.is-pressed{background:var(--surface);transform:translateY(1px);box-shadow:inset 0 0 0 999px var(--press-veil)}
+.mk .c-dark:focus-visible,.mk .c-dark.is-focus{outline:2px solid var(--acid);outline-offset:3px}
+.mk .c-dark:disabled,.mk .c-dark.is-disabled{opacity:var(--disabled);cursor:not-allowed;background:var(--surface);transform:none;box-shadow:none}
+.mk .c-dark--sunken{background:var(--sunken)}
+.mk .c-dark--sunken:hover,.mk .c-dark--sunken.is-hover{background:var(--sunken-hover)}
+.mk .c-dark--sunken:active,.mk .c-dark--sunken.is-pressed{background:var(--sunken)}
+.mk .c-icon{display:inline-flex;align-items:center;justify-content:center; width:38px;height:38px;flex:0 0 auto; border:0;border-radius:50%;background:var(--surface);color:var(--text); cursor:pointer;transition:background .18s var(--ease),transform .12s var(--ease);}
+.mk .c-icon svg{width:17px;height:17px}
+.mk .c-icon:hover,.mk .c-icon.is-hover{background:var(--surface-hover)}
+.mk .c-icon:active,.mk .c-icon.is-pressed{background:var(--surface);transform:translateY(1px);box-shadow:inset 0 0 0 999px var(--press-veil)}
+.mk .c-icon:focus-visible,.mk .c-icon.is-focus{outline:2px solid var(--acid);outline-offset:3px}
+.mk .c-icon:disabled,.mk .c-icon.is-disabled{opacity:var(--disabled);cursor:not-allowed;background:var(--surface);transform:none;box-shadow:none}
+.mk .c-icon--34{width:34px;height:34px;background:var(--sunken);color:var(--muted);border-radius:var(--r-pill)}
+.mk .c-icon--34:hover,.mk .c-icon--34.is-hover{background:var(--sunken-hover)}
+.mk .c-icon--acid{width:34px;height:34px;background:var(--acid);color:var(--acid-ink);border-radius:var(--r-pill)}
+.mk .c-icon--acid:hover,.mk .c-icon--acid.is-hover{background:var(--acid-hover)}
+.mk .c-icon--acid:active,.mk .c-icon--acid.is-pressed{background:var(--acid)}
+.mk .c-status{display:inline-flex;align-items:center;gap:7px; height:32px;padding:0 14px;border-radius:var(--r-pill); background:var(--acid-wash); font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase; color:var(--acid);white-space:nowrap;}
+.mk .c-status::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mk .c-tag{display:inline-flex;align-items:center;gap:6px; font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase; color:var(--acid);white-space:nowrap;}
+.mk .c-tag::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;flex:0 0 auto}
+.mk .c-segment{display:inline-flex;align-items:center;gap:2px; padding:4px;border-radius:var(--r-pill);background:var(--sunken);}
+.mk .c-segment button{height:34px;padding:0 15px;border:0;border-radius:var(--r-pill); background:transparent;color:var(--muted); font:inherit;font-size:13px;font-weight:600;cursor:pointer; transition:background .18s var(--ease),color .18s var(--ease);}
+.mk .c-segment button:hover,.mk .c-segment button.is-hover{color:var(--text)}
+.mk .c-segment button[aria-selected="true"]{background:var(--acid);color:var(--acid-ink)}
+.mk .c-segment button[aria-selected="true"]:hover{background:var(--acid-hover);color:var(--acid-ink)}
+.mk .c-segment button:active,.mk .c-segment button.is-pressed{transform:translateY(1px)}
+.mk .c-segment button:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.mk .c-segment button:disabled,.mk .c-segment button.is-disabled{opacity:var(--disabled);cursor:not-allowed;transform:none}
+.mk .c-segment.is-disabled{opacity:var(--disabled)}
+.mk .c-field{width:100%;height:44px;padding:0 14px; border:1px solid var(--line);border-radius:var(--r-panel); background:var(--sunken);color:var(--text); font:inherit;font-size:13px; transition:border-color .18s var(--ease),box-shadow .18s var(--ease),background .18s var(--ease);}
+.mk .c-field::placeholder{color:var(--dim)}
+.mk .c-field:hover,.mk .c-field.is-hover{background:var(--sunken-hover)}
+.mk .c-field:focus,.mk .c-field.is-focus{outline:0;border-color:var(--acid);box-shadow:0 0 0 3px var(--acid-wash);background:var(--sunken);}
+.mk .c-field:disabled,.mk .c-field.is-disabled{opacity:var(--disabled);cursor:not-allowed}
+.mk .c-field.is-invalid{border-color:#E2564A}
+.mk .fd-fieldwrap{position:relative;width:100%;max-width:280px}
+.mk .fd-fieldwrap svg{position:absolute;top:50%;transform:translateY(-50%); width:17px;height:17px;color:var(--dim);pointer-events:none;}
+.mk .fd-fieldwrap--lead svg{left:13px}
+.mk .fd-fieldwrap--lead .c-field{padding-left:40px}
+.mk .fd-fieldwrap--trail svg{right:13px}
+.mk .fd-fieldwrap--trail .c-field{padding-right:40px}
+.mk select.c-field{appearance:none;-webkit-appearance:none;cursor:pointer}
+.mk .c-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%); width:28px;height:28px;border:0;border-radius:50%; background:transparent;color:var(--muted);cursor:pointer; display:inline-flex;align-items:center;justify-content:center;}
+.mk .c-clear svg{position:static;transform:none;width:15px;height:15px;color:currentColor}
+.mk .c-clear:hover{background:var(--surface);color:var(--text)}
+.mk .c-toggle{display:inline-flex;align-items:center;gap:10px;cursor:pointer;font-size:13px}
+.mk .c-toggle input{position:absolute;opacity:0;width:0;height:0}
+.mk .c-toggle__track{position:relative;width:46px;height:28px;flex:0 0 auto; border-radius:var(--r-pill);background:var(--sunken); box-shadow:inset 0 0 0 1px var(--line); transition:background .18s var(--ease),box-shadow .18s var(--ease);}
+.mk .c-toggle__track::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%; background:var(--muted);transition:transform .18s var(--ease),background .18s var(--ease);}
+.mk .c-toggle input:checked + .c-toggle__track{background:var(--acid);box-shadow:none}
+.mk .c-toggle input:checked + .c-toggle__track::after{transform:translateX(18px);background:var(--acid-ink)}
+.mk .c-toggle:hover .c-toggle__track,.mk .c-toggle.is-hover .c-toggle__track{background:var(--sunken-hover)}
+.mk .c-toggle:hover input:checked + .c-toggle__track,.mk .c-toggle.is-hover input:checked + .c-toggle__track{background:var(--acid-hover)}
+.mk .c-toggle.is-pressed .c-toggle__track::after{width:26px}
+.mk .c-toggle input:focus-visible + .c-toggle__track{outline:2px solid var(--acid);outline-offset:3px}
+.mk .c-toggle input:disabled + .c-toggle__track{opacity:var(--disabled)}
+.mk .c-toggle:has(input:disabled){opacity:var(--disabled);cursor:not-allowed}
+.mk .c-check{display:inline-flex;align-items:center;gap:10px;cursor:pointer;font-size:13px}
+.mk .c-check input{appearance:none;-webkit-appearance:none;margin:0;flex:0 0 auto; width:20px;height:20px;border-radius:6px; background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line); cursor:pointer;position:relative; transition:background .18s var(--ease),box-shadow .18s var(--ease);}
+.mk .c-check input[type="radio"]{border-radius:50%}
+.mk .c-check input:checked{background:var(--acid);box-shadow:none}
+.mk .c-check input[type="checkbox"]:checked::after{content:"";position:absolute;left:5px;top:6px;width:9px;height:5px; border-left:2.2px solid var(--acid-ink);border-bottom:2.2px solid var(--acid-ink); transform:rotate(-45deg);border-radius:1px;}
+.mk .c-check input[type="radio"]:checked{background:var(--sunken);box-shadow:inset 0 0 0 1.5px var(--acid)}
+.mk .c-check input[type="radio"]:checked::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--acid);}
+.mk .c-check:hover input,.mk .c-check.is-hover input{background:var(--sunken-hover)}
+.mk .c-check:hover input:checked,.mk .c-check.is-hover input:checked{background:var(--acid-hover)}
+.mk .c-check:hover input[type="radio"]:checked,.mk .c-check.is-hover input[type="radio"]:checked{background:var(--sunken-hover)}
+.mk .c-check.is-pressed input{box-shadow:inset 0 0 0 1px var(--acid)}
+.mk .c-check input:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+.mk .c-check:has(input:disabled){opacity:var(--disabled);cursor:not-allowed}
+.mk .c-check input:disabled{cursor:not-allowed}
+.mk .fd-ico{display:flex;flex-direction:column;align-items:center;gap:9px; padding:14px 8px;border-radius:var(--r-panel);background:var(--surface);}
+.mk .fd-ico__sizes{display:flex;align-items:flex-end;gap:14px;min-height:26px}
+.mk .fd-ico__sizes svg{display:block;color:var(--text)}
+.mk .fd-ico__24 svg{width:24px;height:24px}
+.mk .fd-ico__18 svg{width:18px;height:18px}
+.mk .fd-ico__n{font-size:11.5px;font-weight:600;text-align:center;line-height:1.25}
+.mk .fd-ico__s{font-family:var(--fd-mono);font-size:10px;color:var(--dim);font-variant-numeric:tabular-nums}
+.mk .fd-ico__b{display:flex;justify-content:center}
+.mk .fd-sprite{position:absolute;width:0;height:0;overflow:hidden}
+@media (max-width:640px){
+  .mk .fd-page{padding:28px 16px 90px}
+  .mk .fd-type__spec{flex:0 0 100%}
+}
+@media (prefers-reduced-motion:reduce){
+  .mk *{transition:none!important}
+}
+
+.mk{position:absolute;inset:0;overflow:hidden}
+.mk--wide{position:static;overflow:visible;border-radius:12px}
+.mk--wide .mk__scroll{position:static;overflow:visible}
+.mk--wide .tabbar{display:none}
+.mk__scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.mk__scroll::-webkit-scrollbar{width:0}
+/* pinned chrome lives outside the scroller */
+.mk .tabbar{position:absolute;z-index:50}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead__top">
+      <span class="mark">SportsHeist</span>
+      <span class="chip">For client review</span>
+    </div>
+    <h1>Foundations</h1>
+    <p class="dek">Not a phone screen. This is the reference sheet for the whole rebrand — every surface,
+every hex, the type scale at true size, the measured spacing, all fourteen controls with all their
+states, and the icon set. Two badges run through it: <strong>Sampled</strong> means the value already
+exists in the export, <strong>Proposed</strong> means we made it and it needs your sign-off.</p>
+    <div class="meta">
+      <span><b>Component</b> foundations</span>
+      <span><b>Figma</b> Sampled</span>
+      <span><b>Source</b> SportHeist (Copy) · dark mode</span>
+      <span><b>Platform</b> Desktop · responsive</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout layout--wide">
+<nav class="side" aria-label="Component library">
+  <div class="side__group">
+    <p class="side__title">Library</p>
+    <ul>
+      <li><a class="side__item" href="index.html">Overview<span class="side__tag">42 built</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">App tabs</p>
+    <ul>
+      <li><a class="side__item" href="war-room-review.html">War Room<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="merits-review.html">Merits<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="backchat-review.html">Backchat<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="alerts-review.html">Alerts<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="profile-review.html">Profile<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">War Room</p>
+    <ul>
+      <li><a class="side__item" href="idea-card-review.html">Idea card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="voting-card-review.html">Voting card<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="results-actions-review.html">Results &amp; actions<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="idea-gate-review.html">Idea gate<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="create-idea-review.html">Create idea<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="veto-review.html">Veto<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="action-detail-review.html">Action detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="ideas-list-review.html">Ideas list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="voting-list-review.html">Voting list<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="idea-detail-review.html">Idea detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="proposal-detail-review.html">Proposal detail<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Backchat</p>
+    <ul>
+      <li><a class="side__item" href="locker-room-review.html">Locker room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="all-locker-rooms-review.html">All locker rooms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="locker-room-editor-review.html">Schedule a room<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="chat-review.html">Text chat<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Membership</p>
+    <ul>
+      <li><a class="side__item" href="auth-review.html">Log in<span class="side__tag">Part in Figma</span></a></li>
+      <li><a class="side__item" href="onboarding-review.html">Onboarding<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="club-selection-review.html">Club selection<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="linked-member-review.html">Linked member<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="launch-review.html">Splash &amp; entry<span class="side__tag">Part in Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Account</p>
+    <ul>
+      <li><a class="side__item" href="account-settings-review.html">Account settings<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="wallet-review.html">Wallet<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="merit-detail-review.html">Merit detail<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="hall-of-fame-review.html">Hall of Fame<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="clubs-review.html">Clubs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="child-account-review.html">Child accounts<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">Elsewhere</p>
+    <ul>
+      <li><a class="side__item" href="matches-review.html">Matches<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="desktop-shell-review.html">Desktop shell<span class="side__tag">In Figma</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">System</p>
+    <ul>
+      <li><span class="side__item" aria-current="page">Foundations<span class="side__tag side__tag--new">This page</span></span></li>
+      <li><a class="side__item" href="forms-review.html">Forms<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="dialogs-review.html">Dialogs<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="sheets-review.html">Sheets<span class="side__tag">In Figma</span></a></li>
+      <li><a class="side__item" href="states-review.html">States<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="comments-review.html">Comments<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="media-review.html">Image viewer<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="upload-review.html">Upload &amp; pickers<span class="side__tag">New</span></a></li>
+      <li><a class="side__item" href="filters-pickers-review.html">Filters &amp; pickers<span class="side__tag">New</span></a></li>
+    </ul>
+  </div>
+  <div class="side__group">
+    <p class="side__title">On this page</p>
+    <ul id="toc">
+    <li><a class="side__item" href="#overview">The single source of truth, and its edges</a></li>
+    <li><a class="side__item" href="#anatomy">What each section of the sheet holds</a></li>
+    <li><a class="side__item" href="#states">The state vocabulary it fixes</a></li>
+    <li><a class="side__item" href="#provenance">What is reused and what is new</a></li>
+    <li><a class="side__item" href="#decisions">What we need from you</a></li>
+    </ul>
+  </div>
+</nav>
+
+    <div class="widecol">
+      <div class="widestage">
+        <div class="mk mk--wide">
+<div class="mk__scroll"><!-- 18-px duplicates of the icon grid reference these symbols; the canonical
+     copy-pasteable 24-box SVG is written out in full in §7 for every glyph. -->
+<svg class="fd-sprite" aria-hidden="true" focusable="false">
+  <symbol id="s-swords" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></symbol>
+  <symbol id="s-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></symbol>
+  <symbol id="s-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></symbol>
+  <symbol id="s-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16"/></symbol>
+  <symbol id="s-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></symbol>
+  <symbol id="s-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></symbol>
+  <symbol id="s-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M6.5 12h11M10 17h4"/></symbol>
+  <symbol id="s-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="s-upright" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></symbol>
+  <symbol id="s-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></symbol>
+  <symbol id="s-thumb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/><path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/></symbol>
+  <symbol id="s-arrowup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+  <symbol id="s-arrowdown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></symbol>
+  <symbol id="s-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5.5 7 6.5-7 6.5"/></symbol>
+  <symbol id="s-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 2.5V6M12 18v3.5M2.5 12H6M18 12h3.5"/></symbol>
+  <symbol id="s-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+  <symbol id="s-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 9.5 17 19 7.5"/></symbol>
+  <symbol id="s-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></symbol>
+</svg>
+
+<div class="fd-page">
+
+  <!-- ================= MASTHEAD ================= -->
+  <header class="fd-mast">
+    <h1>Foundations</h1>
+    <p>The complete surface of the SportsHeist dark-mode rebrand: four surfaces, one accent,
+       one semantic red, twelve type steps, three radii, fourteen controls, sixteen glyphs.
+       Every value here is the value in <b>merits.html</b> and <b>idea-card.html</b>, which were
+       sampled from <b>War&nbsp;Room-Dark&nbsp;Mode.svg</b> and <b>Backchat-Dark&nbsp;Mode.svg</b>.
+       Contrast ratios are computed from the hex values using the WCAG&nbsp;2.1 relative-luminance
+       formula, not estimated.</p>
+    <p>Two badges run through the whole page and they are the point of it:
+       <span class="fd-badge fd-badge--sampled">Sampled</span> means the value or component exists
+       in the Figma export and has already shipped in a component file.
+       <span class="fd-badge fd-badge--proposed">Proposed</span> means it does <b>not</b> exist yet —
+       it was built here from the established language and needs a design decision before anyone
+       relies on it.</p>
+    <nav class="fd-nav" aria-label="Sections">
+      <a href="#surfaces">1 · Surfaces</a>
+      <a href="#accent">2 · Accent</a>
+      <a href="#semantic">3 · Semantic</a>
+      <a href="#type">4 · Type scale</a>
+      <a href="#space">5 · Spacing &amp; radii</a>
+      <a href="#controls">6 · Controls</a>
+      <a href="#icons">7 · Icons</a>
+    </nav>
+  </header>
+
+  <!-- ============================================================
+       1 · SURFACES
+       ============================================================ -->
+  <section class="fd-sec" id="surfaces">
+    <div class="fd-sec__head">
+      <span class="fd-sec__n">01</span>
+      <h2>Surfaces</h2>
+      <span class="fd-badge fd-badge--sampled">Sampled</span>
+      <p>Four steps, all near-black. The ladder is built from luminance, never from a new hue.</p>
+    </div>
+
+    <div class="fd-chips">
+      <div class="fd-swatch">
+        <div class="fd-swatch__h" style="background:#030401"></div>
+        <b>#030401</b><span>--bg · screen canvas</span><em>Y 0.108%</em>
+      </div>
+      <div class="fd-swatch">
+        <div class="fd-swatch__h" style="background:#080A0C"></div>
+        <b>#080A0C</b><span>--section · bordered container</span><em>Y 0.295%</em>
+      </div>
+      <div class="fd-swatch">
+        <div class="fd-swatch__h" style="background:#1C2129"></div>
+        <b>#1C2129</b><span>--surface · cards, controls, tab bar</span><em>Y 1.495%</em>
+      </div>
+      <div class="fd-swatch">
+        <div class="fd-swatch__h" style="background:#13171E"></div>
+        <b>#13171E</b><span>--sunken · inner panels, dark pills</span><em>Y 0.845%</em>
+      </div>
+    </div>
+
+    <p class="fd-eyebrow">The ladder, nested as it actually stacks</p>
+    <div class="fd-ladder">
+      <div class="fd-ladder__lab">
+        <b>#030401</b><span>--bg · screen canvas</span><em>Y 0.108%</em>
+      </div>
+      <div class="fd-ladder__in fd-ladder__in--section">
+        <div class="fd-ladder__lab">
+          <b>#080A0C</b><span>--section · 1 px --line, R16, 12 px padding</span><em>Y 0.295% · +0.187 pp on --bg</em>
+        </div>
+        <div class="fd-ladder__in fd-ladder__in--surface">
+          <div class="fd-ladder__lab">
+            <b>#1C2129</b><span>--surface · card, R16, 16 px padding</span><em>Y 1.495% · +1.199 pp on --section</em>
+          </div>
+          <div class="fd-ladder__in fd-ladder__in--sunken">
+            <div class="fd-ladder__lab">
+              <b>#13171E</b><span>--sunken · inner panel, R12</span><em>Y 0.845% · −0.650 pp on --surface</em>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="fd-note" style="margin-top:18px">
+      <b>--sunken is a recess, not a rise.</b> It is darker than --surface, so the nesting order
+      (bg → section → surface → sunken) is not the luminance order (bg → section → sunken → surface).
+      A sunken panel only ever appears <i>inside</i> a --surface card, where the −0.650 pp drop reads
+      as a well. On --section or --bg it would read as a raised block and must not be used there.
+    </p>
+
+    <p class="fd-eyebrow">Measured separation between adjacent steps</p>
+    <div class="fd-panel">
+      <div class="fd-tblwrap">
+        <table class="fd-tbl">
+          <thead><tr>
+            <th>Step</th><th>From → to</th><th>ΔY (pp)</th><th>Y multiplier</th><th>Contrast</th><th>Reads as</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="fd-dot" style="background:#080A0C"></span>bg → section</td>
+              <td class="fd-code fd-code--hex">#030401 → #080A0C</td>
+              <td>+0.187</td><td>2.72×</td><td>1.04:1</td>
+              <td class="fd-warn">Edge only — needs the 1 px --line to be visible</td>
+            </tr>
+            <tr>
+              <td><span class="fd-dot" style="background:#13171E"></span>section → sunken</td>
+              <td class="fd-code fd-code--hex">#080A0C → #13171E</td>
+              <td>+0.550</td><td>2.86×</td><td>1.10:1</td>
+              <td>Visible without a border</td>
+            </tr>
+            <tr>
+              <td><span class="fd-dot" style="background:#1C2129"></span>sunken → surface</td>
+              <td class="fd-code fd-code--hex">#13171E → #1C2129</td>
+              <td>+0.650</td><td>1.77×</td><td>1.11:1</td>
+              <td>Visible without a border</td>
+            </tr>
+            <tr>
+              <td><span class="fd-dot" style="background:#1C2129"></span>section → surface</td>
+              <td class="fd-code fd-code--hex">#080A0C → #1C2129</td>
+              <td>+1.199</td><td>5.07×</td><td>1.23:1</td>
+              <td>The strongest step in the system</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="fd-eyebrow">Hairlines</p>
+    <div class="fd-panel">
+      <div class="fd-tblwrap">
+        <table class="fd-tbl">
+          <thead><tr><th>Token</th><th>Value</th><th>Over --surface renders</th><th>Over --section renders</th><th>Use</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>--line</td><td class="fd-code">rgba(255,255,255,.075)</td>
+              <td class="fd-code fd-code--hex">#2D3239</td><td class="fd-code fd-code--hex">#1B1C1E</td>
+              <td>Section container border, control border</td>
+            </tr>
+            <tr>
+              <td>--line-soft</td><td class="fd-code">rgba(255,255,255,.045)</td>
+              <td class="fd-code fd-code--hex">#262B33</td><td class="fd-code fd-code--hex">#131517</td>
+              <td>Row divider (top border, first child none)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       2 · ACCENT
+       ============================================================ -->
+  <section class="fd-sec" id="accent">
+    <div class="fd-sec__head">
+      <span class="fd-sec__n">02</span>
+      <h2>Accent</h2>
+      <span class="fd-badge fd-badge--sampled">Sampled</span>
+      <p>One accent, one ink for sitting on it, one wash for translucent fills, one field gradient.</p>
+    </div>
+
+    <div class="fd-chips">
+      <div class="fd-swatch">
+        <div class="fd-swatch__h" style="background:#9BE222"></div>
+        <b>#9BE222</b><span>--acid · accent</span><em>Y 61.48%</em>
+      </div>
+      <div class="fd-swatch">
+        <div class="fd-swatch__h" style="background:#0B0E06"></div>
+        <b>#0B0E06</b><span>--acid-ink · text/icon on accent</span><em>Y 0.40%</em>
+      </div>
+      <div class="fd-swatch">
+        <div class="fd-swatch__h" style="background:#1C2129">
+          <div style="height:100%;background:rgba(155,226,34,.12);border-radius:8px"></div>
+        </div>
+        <b>rgba(155,226,34,.12)</b><span>--acid-wash · pill fill, active row</span><em>→ #2B3828 over --surface</em>
+      </div>
+      <div class="fd-swatch">
+        <div class="fd-swatch__h" style="background:#A8EC33"></div>
+        <b>#A8EC33</b><span>hover on accent fills</span><em>Y 68.55%</em>
+      </div>
+    </div>
+
+    <p class="fd-eyebrow">Accent on each surface</p>
+    <div class="fd-grid fd-grid--2">
+      <div class="fd-pair" style="background:#030401">
+        <span class="fd-pair__t" style="color:#9BE222"><b>Up 3 this week</b><span>#9BE222 on --bg #030401</span></span>
+        <span class="fd-pair__r fd-pass">13.01:1<small>AAA</small></span>
+      </div>
+      <div class="fd-pair" style="background:#080A0C">
+        <span class="fd-pair__t" style="color:#9BE222"><b>Up 3 this week</b><span>#9BE222 on --section #080A0C</span></span>
+        <span class="fd-pair__r fd-pass">12.55:1<small>AAA</small></span>
+      </div>
+      <div class="fd-pair" style="background:#1C2129">
+        <span class="fd-pair__t" style="color:#9BE222"><b>Up 3 this week</b><span>#9BE222 on --surface #1C2129</span></span>
+        <span class="fd-pair__r fd-pass">10.24:1<small>AAA</small></span>
+      </div>
+      <div class="fd-pair" style="background:#13171E">
+        <span class="fd-pair__t" style="color:#9BE222"><b>Up 3 this week</b><span>#9BE222 on --sunken #13171E</span></span>
+        <span class="fd-pair__r fd-pass">11.37:1<small>AAA</small></span>
+      </div>
+      <div class="fd-pair" style="background:#2B3828">
+        <span class="fd-pair__t" style="color:#9BE222"><b>Season</b><span>#9BE222 on --acid-wash over --surface → #2B3828</span></span>
+        <span class="fd-pair__r fd-pass">7.83:1<small>AAA</small></span>
+      </div>
+      <div class="fd-pair" style="background:#151F05">
+        <span class="fd-pair__t" style="color:#9BE222"><b>Season</b><span>#9BE222 on --acid-wash over --bg → #151F05</span></span>
+        <span class="fd-pair__r fd-pass">10.81:1<small>AAA</small></span>
+      </div>
+    </div>
+
+    <p class="fd-eyebrow">Surface on accent</p>
+    <div class="fd-grid fd-grid--2">
+      <div class="fd-pair" style="background:#9BE222">
+        <span class="fd-pair__t" style="color:#0B0E06"><b>Like</b><span>--acid-ink #0B0E06 on #9BE222</span></span>
+        <span class="fd-pair__r" style="color:#0B0E06">12.31:1<small>AAA</small></span>
+      </div>
+      <div class="fd-pair" style="background:#9BE222">
+        <span class="fd-pair__t" style="color:#030401"><b>Merits</b><span>--bg #030401 on #9BE222</span></span>
+        <span class="fd-pair__r" style="color:#030401">13.01:1<small>AAA</small></span>
+      </div>
+      <div class="fd-pair" style="background:#9BE222">
+        <span class="fd-pair__t" style="color:#1C2129"><b>Merits</b><span>--surface #1C2129 on #9BE222</span></span>
+        <span class="fd-pair__r" style="color:#1C2129">10.24:1<small>AAA</small></span>
+      </div>
+      <div class="fd-pair" style="background:#9BE222">
+        <span class="fd-pair__t" style="color:#FFFFFF"><b>Never do this</b><span>--text #FFFFFF on #9BE222</span></span>
+        <span class="fd-pair__r" style="color:#0B0E06">1.58:1<small>Fails</small></span>
+      </div>
+    </div>
+    <p class="fd-note" style="margin-top:14px">
+      <b>White never sits on the accent.</b> 1.58:1 fails every threshold including the 3:1 floor for
+      non-text UI. Accent fills always take <code>--acid-ink #0B0E06</code>; that pairing is what the
+      export uses on the active tab pill and the Like button, and it clears AAA at 12.31:1.
+    </p>
+
+    <p class="fd-eyebrow">Hero field gradient</p>
+    <div class="fd-hero">
+      <svg class="fd-hero__field" viewBox="0 0 343 132" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 132 L52 46 L104 132 Z"   fill="#fff" opacity=".030"/>
+        <path d="M92 132 L146 30 L200 132 Z" fill="#fff" opacity=".024"/>
+        <path d="M196 0 L252 0 L196 84 Z"    fill="#fff" opacity=".026"/>
+      </svg>
+      <svg class="fd-hero__range" viewBox="0 0 226 69" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 69 L40 28 L80 69 Z"     fill="#9BE222"/>
+        <path d="M88 69 L140 6 L192 69 Z"   fill="#9BE222"/>
+        <path d="M184 69 L226 32 L226 69 Z" fill="#9BE222"/>
+      </svg>
+      <h3>Merits</h3>
+    </div>
+    <div class="fd-stops">
+      <div style="background:#0D3617">#0D3617 · --hero-a · 0%</div>
+      <div style="background:#17481C">#17481C · --hero-b · 58%</div>
+      <div style="background:#0C3416">#0C3416 · tail · 100%</div>
+    </div>
+    <div class="fd-panel" style="margin-top:12px">
+      <div class="fd-tblwrap">
+        <table class="fd-tbl">
+          <thead><tr><th>Pair</th><th>Values</th><th>Ratio</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr><td>--hero-a → --hero-b</td><td class="fd-code fd-code--hex">#0D3617 → #17481C</td><td>1.27:1</td><td class="fd-warn">Gradient only — never a fill boundary</td></tr>
+            <tr><td>--text on --hero-a</td><td class="fd-code fd-code--hex">#FFFFFF on #0D3617</td><td>13.49:1</td><td class="fd-pass">AAA</td></tr>
+            <tr><td>--text on --hero-b</td><td class="fd-code fd-code--hex">#FFFFFF on #17481C</td><td>10.61:1</td><td class="fd-pass">AAA</td></tr>
+            <tr><td>--acid on --hero-a</td><td class="fd-code fd-code--hex">#9BE222 on #0D3617</td><td>8.54:1</td><td class="fd-pass">AAA</td></tr>
+            <tr><td>--acid on --hero-b</td><td class="fd-code fd-code--hex">#9BE222 on #17481C</td><td>6.71:1</td><td class="fd-warn">AA only — the lowest accent pairing in the system</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="fd-note" style="margin:14px 0 0">
+        The gradient runs at <code>112deg</code> with the tail stop at <code>#0C3416</code>. The three
+        acid peaks occupy the bottom-right <code>54% × 38%</code>; the knockout prop sits in front of
+        them. The white field triangles are held at <code>2.4–3.0%</code> opacity — the only place in
+        the system where white is used as a shape fill.
+      </p>
+    </div>
+
+    <p class="fd-eyebrow">Text tokens, for reference</p>
+    <div class="fd-panel">
+      <div class="fd-tblwrap">
+        <table class="fd-tbl">
+          <thead><tr><th>Token</th><th>Hex</th><th>on --bg</th><th>on --section</th><th>on --sunken</th><th>on --surface</th></tr></thead>
+          <tbody>
+            <tr><td>--text</td><td class="fd-code fd-code--hex">#FFFFFF</td><td class="fd-pass">20.55</td><td class="fd-pass">19.83</td><td class="fd-pass">17.96</td><td class="fd-pass">16.17</td></tr>
+            <tr><td>--muted</td><td class="fd-code fd-code--hex">#99A0AE</td><td class="fd-pass">7.82</td><td class="fd-pass">7.55</td><td class="fd-pass">6.84</td><td class="fd-pass">6.15</td></tr>
+            <tr><td>--dim</td><td class="fd-code fd-code--hex">#5B606B</td><td class="fd-warn">3.26</td><td class="fd-warn">3.14</td><td class="fd-fail">2.85</td><td class="fd-fail">2.56</td></tr>
+            <tr><td>--acid</td><td class="fd-code fd-code--hex">#9BE222</td><td class="fd-pass">13.01</td><td class="fd-pass">12.55</td><td class="fd-pass">11.37</td><td class="fd-pass">10.24</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="fd-note" style="margin:14px 0 0">
+        <b>--dim fails AA for body text on every surface</b> (2.56–3.26:1). In the export it only ever
+        carries the tracked micro-label — 10.5/700/.14em uppercase, decorative eyebrow copy that is
+        never the only route to information. Keep it there. Anything a member has to read is --muted
+        or brighter.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       3 · SEMANTIC
+       ============================================================ -->
+  <section class="fd-sec" id="semantic">
+    <div class="fd-sec__head">
+      <span class="fd-sec__n">03</span>
+      <h2>Semantic</h2>
+      <span class="fd-badge fd-badge--sampled">Sampled</span>
+      <p>One hue, for downward movement and destruction. That is the entire semantic layer.</p>
+    </div>
+
+    <div class="fd-note fd-note--loud">
+      <b>There is no other colour in this system.</b> No silver, no bronze, no blue, no purple, no
+      amber warning state, no separate info blue. Upward and positive is <code>--acid #9BE222</code>.
+      Downward and destructive is <code>#E2564A</code>. Everything else is a surface, a hairline or a
+      grade of white. If a design needs a distinction, it comes from scale, weight, ring opacity or
+      the accent wash — never from a new hue.
+    </div>
+
+    <div class="fd-grid fd-grid--2" style="margin-top:18px">
+      <div class="fd-panel">
+        <div class="fd-swatch" style="border:0;padding:0">
+          <div class="fd-swatch__h" style="background:#E2564A"></div>
+          <b>#E2564A</b><span>Downward movement · destructive</span><em>Y 23.32%</em>
+        </div>
+        <p class="fd-note" style="margin:16px 0 0">
+          Sampled from the leaderboard delta in <code>merits.html</code>
+          (<code>.row__delta--down</code>). It appears as <b>text and icon only</b> — there is no red
+          fill anywhere in the export.
+        </p>
+      </div>
+
+      <div class="fd-panel">
+        <p class="fd-eyebrow" style="margin-top:0">In use</p>
+        <div style="display:flex;flex-direction:column;gap:0;border-radius:var(--r-panel);background:var(--surface);overflow:hidden">
+          <div style="display:flex;align-items:center;gap:11px;padding:10px 12px">
+            <span style="flex:0 0 22px;text-align:center;font-size:13px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums">4</span>
+            <span style="flex:1;font-size:13.5px;font-weight:600">fan_pulse</span>
+            <span style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">2,744</span>
+            <span style="display:inline-flex;align-items:center;gap:2px;flex:0 0 32px;justify-content:flex-end;font-size:11px;font-weight:600;color:var(--acid);font-variant-numeric:tabular-nums">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="10" height="10"><path d="M12 19V5M5 12l7-7 7 7"/></svg>2
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-top:1px solid var(--line-soft)">
+            <span style="flex:0 0 22px;text-align:center;font-size:13px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums">5</span>
+            <span style="flex:1;font-size:13.5px;font-weight:600">dons_mode</span>
+            <span style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">2,690</span>
+            <span style="display:inline-flex;align-items:center;gap:2px;flex:0 0 32px;justify-content:flex-end;font-size:11px;font-weight:600;color:#E2564A;font-variant-numeric:tabular-nums">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="10" height="10"><path d="M12 5v14M5 12l7 7 7-7"/></svg>1
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fd-panel" style="margin-top:12px">
+      <div class="fd-tblwrap">
+        <table class="fd-tbl">
+          <thead><tr><th>Pair</th><th>Values</th><th>Ratio</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr><td>#E2564A on --bg</td><td class="fd-code fd-code--hex">#E2564A on #030401</td><td>5.54:1</td><td class="fd-pass">AA · AAA large</td></tr>
+            <tr><td>#E2564A on --section</td><td class="fd-code fd-code--hex">#E2564A on #080A0C</td><td>5.35:1</td><td class="fd-pass">AA · AAA large</td></tr>
+            <tr><td>#E2564A on --sunken</td><td class="fd-code fd-code--hex">#E2564A on #13171E</td><td>4.84:1</td><td class="fd-pass">AA</td></tr>
+            <tr><td>#E2564A on --surface</td><td class="fd-code fd-code--hex">#E2564A on #1C2129</td><td>4.36:1</td><td class="fd-fail">Misses AA (4.5) by 0.14 — see note</td></tr>
+            <tr><td>--acid-ink on #E2564A</td><td class="fd-code fd-code--hex">#0B0E06 on #E2564A</td><td>5.25:1</td><td class="fd-pass">AA — the ink to use if red ever becomes a fill</td></tr>
+            <tr><td>--text on #E2564A</td><td class="fd-code fd-code--hex">#FFFFFF on #E2564A</td><td>3.71:1</td><td class="fd-fail">Fails AA for normal text</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="fd-note" style="margin:14px 0 0">
+        The one place red actually lands on --surface today — the leaderboard delta — is 11/600 with a
+        3.2-stroke arrow beside it, and the number is duplicated by the rank column. It reads, but the
+        <b>4.36:1</b> figure is the weakest legibility pair in the whole system and it should not be
+        pushed onto smaller or lighter-weight text.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       4 · TYPE SCALE
+       ============================================================ -->
+  <section class="fd-sec" id="type">
+    <div class="fd-sec__head">
+      <span class="fd-sec__n">04</span>
+      <h2>Type scale</h2>
+      <span class="fd-badge fd-badge--sampled">Sampled</span>
+      <p>Rendered at true size. System stack only — no webfonts, no <code>&lt;link&gt;</code>.</p>
+    </div>
+
+    <p class="fd-note">
+      <code>--font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
+      Helvetica, Arial, sans-serif;</code><br>
+      Inter is named first so it is picked up where it is installed locally, but nothing is fetched.
+      <b>Every figure that sits in a column takes <code>font-variant-numeric: tabular-nums</code>.</b>
+    </p>
+
+    <div class="fd-panel fd-type">
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Screen title</b>34 px · 800 · −.025em<i>line-height 1 · uppercase</i><i>.hero__title</i></span>
+        <span class="fd-type__demo t-title">Merits</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Figure XL</b>32 px · 800 · −.035em<i>tabular-nums · line-height 1</i><i>.standing__rank b</i></span>
+        <span class="fd-type__demo"><span class="t-fig-xl">12</span> <span class="t-meta">of 1,284</span></span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Figure L</b>22 px · 700 · −.025em<i>tabular-nums</i><i>.standing__score b</i></span>
+        <span class="fd-type__demo t-fig-l">2,480</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Section label</b>18 px · 600 · −.015em<i>no adornment, sits at the gutter</i><i>.label · .head h2</i></span>
+        <span class="fd-type__demo t-label">Your standing</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Card title · large</b>17 px · 600 · −.015em<i>line-height 1.2</i><i>.sh-idea-card__title</i></span>
+        <span class="fd-type__demo t-card">First-Team Manager</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Card title · small</b>15 px · 600 · −.005em<i>button and control labels</i><i>.sh-like</i></span>
+        <span class="fd-type__demo t-btn">Like</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Row name</b>13.5 px · 600<i>list rows, panel labels</i><i>.row__name · .sh-gauge__label</i></span>
+        <span class="fd-type__demo t-row">You · dylan_n</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Body</b>13 px · 400<i>line-height 1.35 · --muted</i><i>.sh-idea-card__body</i></span>
+        <span class="fd-type__demo t-body">Members pick the next first-team manager from the club’s official shortlist.</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Meta · upper</b>12.5 px · 500<i>--muted or --text · pill labels</i><i>.pill-btn · .standing__rank span</i></span>
+        <span class="fd-type__demo t-meta">View all · of 1,284 · by taythaytu</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Meta · lower</b>11.5 px · 400<i>--muted · secondary row copy</i><i>.row__club</i></span>
+        <span class="fd-type__demo t-meta-s">Barcelona</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Micro-label · status</b>11 px · 700 · .11em<i>uppercase · --acid</i><i>.status-pill</i></span>
+        <span class="fd-type__demo t-micro-11">Season</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Micro-label · tag</b>11 px · 700 · .09em<i>uppercase · --acid</i><i>.sh-tag</i></span>
+        <span class="fd-type__demo t-micro-tag">Decision</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Micro-label · eyebrow</b>10.5 px · 700 · .14em<i>uppercase · --dim</i><i>.eyebrow</i></span>
+        <span class="fd-type__demo t-micro-105">Season · Barcelona</span>
+      </div>
+      <div class="fd-type__row">
+        <span class="fd-type__spec"><b>Micro-label · floor</b>9.5 px · 700 · .14em<i>uppercase · --dim · smallest type in the system</i><i>.standing__score span</i></span>
+        <span class="fd-type__demo t-micro-95">Merits</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       5 · SPACING & RADII
+       ============================================================ -->
+  <section class="fd-sec" id="space">
+    <div class="fd-sec__head">
+      <span class="fd-sec__n">05</span>
+      <h2>Spacing &amp; radii</h2>
+      <span class="fd-badge fd-badge--sampled">Sampled</span>
+      <p>Bars are drawn at true size. There is no strict 4-pt grid in the export — these are the
+         measured values.</p>
+    </div>
+
+    <div class="fd-grid fd-grid--2">
+      <div class="fd-panel">
+        <p class="fd-eyebrow" style="margin-top:0">Measured spacing, true size</p>
+        <div class="fd-rule">
+          <div class="fd-rule__row"><span class="fd-rule__n">2</span><span class="fd-rule__bar" style="width:2px"></span><span class="fd-rule__u">Score label gap, delta arrow gap</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">5</span><span class="fd-rule__bar" style="width:5px"></span><span class="fd-rule__u">Pill icon gap, crest radius</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">6</span><span class="fd-rule__bar" style="width:6px"></span><span class="fd-rule__u">Row sub-line gap, status-pill dot</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">7</span><span class="fd-rule__bar" style="width:7px"></span><span class="fd-rule__u">Status-pill dot-to-label, plinth gap</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">8</span><span class="fd-rule__bar" style="width:8px"></span><span class="fd-rule__u">Header control gap, podium column gap</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">10</span><span class="fd-rule__bar" style="width:10px"></span><span class="fd-rule__u">Row vertical padding, tab-bar inner padding</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">11</span><span class="fd-rule__bar" style="width:11px"></span><span class="fd-rule__u">Row content gap</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">12</span><span class="fd-rule__bar" style="width:12px"></span><span class="fd-rule__u">Section padding, panel padding, card rail gap, row h-padding</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">13</span><span class="fd-rule__bar" style="width:13px"></span><span class="fd-rule__u">Pill button horizontal padding</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">14</span><span class="fd-rule__bar" style="width:14px"></span><span class="fd-rule__u">Status-pill horizontal padding, panel h-padding</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">16</span><span class="fd-rule__bar" style="width:16px"></span><span class="fd-rule__u"><b>--gutter</b> · card padding · screen margin</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">18</span><span class="fd-rule__bar" style="width:18px"></span><span class="fd-rule__u">Hero horizontal padding, podium top padding</span></div>
+          <div class="fd-rule__row"><span class="fd-rule__n">22</span><span class="fd-rule__bar" style="width:22px"></span><span class="fd-rule__u">Section label top margin</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="fd-panel">
+          <p class="fd-eyebrow" style="margin-top:0">The 16 px gutter</p>
+          <div class="fd-gutdemo">
+            <div class="fd-gutdemo__inner">
+              <div class="fd-gutdemo__body">Every screen-level element starts 16 px in. The wash band
+                is the gutter itself.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fd-panel" style="margin-top:12px">
+          <p class="fd-eyebrow" style="margin-top:0">Card 16 → panel 12/14</p>
+          <div class="fd-padbox">
+            <div class="fd-padbox__in">--surface card takes 16 px on all sides (wash ring). The
+              --sunken panel inside takes 12 px vertical, 14 px horizontal.</div>
+          </div>
+        </div>
+
+        <div class="fd-panel" style="margin-top:12px">
+          <p class="fd-eyebrow" style="margin-top:0">Row: 10–11 vertical, 12 horizontal</p>
+          <div style="border-radius:var(--r-panel);background:var(--surface);overflow:hidden">
+            <div style="padding:10px 12px;font-size:12.5px">First row — no top border</div>
+            <div style="padding:10px 12px;font-size:12.5px;border-top:1px solid var(--line-soft)">Second row — 1 px --line-soft on top</div>
+            <div style="padding:10px 12px;font-size:12.5px;border-top:1px solid var(--line-soft)">Third row</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="fd-eyebrow">Radii, measured</p>
+    <div class="fd-panel">
+      <div class="fd-radii">
+        <div class="fd-radii__cell">
+          <div class="fd-radii__b" style="border-radius:12px">12 px</div>
+          <div class="fd-radii__cap">--r-panel<br>inner panels, fields</div>
+        </div>
+        <div class="fd-radii__cell">
+          <div class="fd-radii__b" style="border-radius:16px">16 px</div>
+          <div class="fd-radii__cap">--r-card<br>cards, section containers, hero</div>
+        </div>
+        <div class="fd-radii__cell">
+          <div class="fd-radii__b" style="border-radius:999px">999 px</div>
+          <div class="fd-radii__cap">--r-pill<br>buttons, pills, tab bar, segments</div>
+        </div>
+        <div class="fd-radii__cell">
+          <div class="fd-radii__b" style="border-radius:50%;width:72px">50%</div>
+          <div class="fd-radii__cap" style="width:72px">Icon button, avatar</div>
+        </div>
+        <div class="fd-radii__cell">
+          <div class="fd-radii__b" style="border-radius:5px;width:56px;height:56px;font-size:10px">5 px</div>
+          <div class="fd-radii__cap" style="width:56px">.crest<br>17 px club square</div>
+        </div>
+      </div>
+      <p class="fd-note" style="margin:18px 0 0">
+        Three radii carry the system. 12 and 16 never mix on the same edge: a 12 px panel always sits
+        inside a 16 px card with at least 12 px of padding between them, so the curves never fight.
+        <code>999px</code> is used rather than <code>50%</code> on anything that can hold a label, so
+        the shape survives a longer string. The only other measured radius in the export is the 5 px
+        on the 17 px <code>.crest</code> square.
+      </p>
+    </div>
+
+    <p class="fd-eyebrow">Control heights, measured</p>
+    <div class="fd-panel">
+      <div class="fd-tblwrap">
+        <table class="fd-tbl">
+          <thead><tr><th>Height</th><th>Control</th><th>Source</th><th>Provenance</th></tr></thead>
+          <tbody>
+            <tr><td>32 px</td><td>Status pill</td><td class="fd-code">.status-pill</td><td><span class="fd-badge fd-badge--sampled">Sampled</span></td></tr>
+            <tr><td>34 px</td><td>Dark pill button · View all ↗ · small icon button</td><td class="fd-code">.pill-btn · .sh-iconbtn</td><td><span class="fd-badge fd-badge--sampled">Sampled</span></td></tr>
+            <tr><td>38 px</td><td>Circular icon button · tab</td><td class="fd-code">.icon-btn · .tab</td><td><span class="fd-badge fd-badge--sampled">Sampled</span></td></tr>
+            <tr><td>44 px</td><td>Text field · select · search · outlined pill</td><td class="fd-code">—</td><td><span class="fd-badge fd-badge--proposed">Proposed</span></td></tr>
+            <tr><td>52 px</td><td>Primary accent button</td><td class="fd-code">.sh-like</td><td><span class="fd-badge fd-badge--sampled">Sampled</span></td></tr>
+            <tr><td>58 px</td><td>Tab bar</td><td class="fd-code">.tabbar__inner</td><td><span class="fd-badge fd-badge--sampled">Sampled</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="fd-note" style="margin:14px 0 0">
+        <b>Open question.</b> 34 and 38 px are both under the 44 px minimum touch target. In the export
+        they are surrounded by enough padding that the tappable area clears it, but nothing enforces
+        that. The 44 px proposed field height was chosen to be the first control in the system that
+        satisfies the target on its own.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       6 · CONTROLS
+       ============================================================ -->
+  <section class="fd-sec" id="controls">
+    <div class="fd-sec__head">
+      <span class="fd-sec__n">06</span>
+      <h2>Controls</h2>
+      <p>Fourteen controls, every state each one has. Six are sampled from the export; eight are
+         proposed and need sign-off.</p>
+    </div>
+
+    <div class="fd-note fd-note--loud">
+      <b>State vocabulary.</b> Only three hover colours exist and all three are sampled:
+      <code>--acid → #A8EC33</code>, <code>--surface → #222833</code>, <code>--sunken → #1A1F27</code>.
+      <b>Pressed</b> is <code>translateY(1px)</code> — sampled from <code>.sh-like:active</code> — plus,
+      on this page, a <span class="fd-badge fd-badge--proposed">Proposed</span>
+      <code>rgba(0,0,0,.18)</code> veil over the base token so the press is visible without a
+      screenshot; no new hex enters the system.
+      <b>Disabled</b> is a <span class="fd-badge fd-badge--proposed">Proposed</span>
+      <code>opacity:.38</code> on the base token plus <code>cursor:not-allowed</code> — it lands at
+      about 2.6:1 against its own surface, deliberately below the 3:1 interactive floor so it cannot
+      be mistaken for live.
+      <b>Focus</b> is <code>outline:2px solid var(--acid); outline-offset:3px</code> — sampled from
+      <code>.sh-like:focus-visible</code>.
+      Nothing in the Figma export shows a disabled or focused control; every disabled and focus
+      specimen below is proposed even where the control itself is sampled.
+    </div>
+
+    <div class="fd-grid fd-grid--2" style="margin-top:18px">
+
+      <!-- 1 · filled accent pill -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Filled accent pill button</h3>
+          <span class="fd-badge fd-badge--sampled">Sampled</span>
+        </div>
+        <p class="fd-ctl__spec">52 px · R999 · --acid / --acid-ink · 15 px 600 −.005em · 19 px glyph · 9 px gap<br>
+          <i>idea-card.html .sh-like — disabled state is proposed</i></p>
+        <div class="fd-states">
+          <div class="fd-state"><span class="fd-state__n">Default</span><span class="fd-state__box"><button class="c-fill" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/><path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/></svg>Like</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Hover #A8EC33</span><span class="fd-state__box"><button class="c-fill is-hover" type="button">Like</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Pressed</span><span class="fd-state__box"><button class="c-fill is-pressed" type="button">Like</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Focus</span><span class="fd-state__box"><button class="c-fill is-focus" type="button">Like</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled</span><span class="fd-state__box"><button class="c-fill" type="button" disabled>Like</button></span></div>
+        </div>
+        <p class="fd-ctl__spec" style="margin:14px 0 0">
+          Selected variant, also sampled: <code>aria-pressed="true"</code> swaps to --sunken fill with
+          --acid text and the solid thumb glyph.
+        </p>
+        <div class="fd-states" style="margin-top:10px">
+          <div class="fd-state"><span class="fd-state__n">Pressed-on (selected)</span><span class="fd-state__box"><button class="c-fill" type="button" style="background:var(--sunken);color:var(--acid)"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.5 11.5a1 1 0 0 1 1-1H7v9H4.5a1 1 0 0 1-1-1v-7Z"/><path d="M8.2 10.2 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H8.2v-9Z"/></svg>Liked</button></span></div>
+        </div>
+      </div>
+
+      <!-- 2 · outlined accent pill -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Outlined accent pill button</h3>
+          <span class="fd-badge fd-badge--proposed">Proposed</span>
+        </div>
+        <p class="fd-ctl__spec">44 px · R999 · 1 px --acid border · transparent fill · --acid text · 14 px 600<br>
+          <i>No outlined button exists in the export. Built as the secondary to the filled pill:
+          hover fills with --acid-wash, so the two buttons never both read as primary.</i></p>
+        <div class="fd-states">
+          <div class="fd-state"><span class="fd-state__n">Default</span><span class="fd-state__box"><button class="c-out" type="button">Back this</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Hover</span><span class="fd-state__box"><button class="c-out is-hover" type="button">Back this</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Pressed</span><span class="fd-state__box"><button class="c-out is-pressed" type="button">Back this</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Focus</span><span class="fd-state__box"><button class="c-out is-focus" type="button">Back this</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled</span><span class="fd-state__box"><button class="c-out" type="button" disabled>Back this</button></span></div>
+        </div>
+        <p class="fd-ctl__spec" style="margin:14px 0 0">
+          Border on --section measures 1 px of full #9BE222 at 12.55:1 against the fill, well clear of
+          the 3:1 non-text floor.
+        </p>
+      </div>
+
+      <!-- 3 · dark pill button -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Dark pill button</h3>
+          <span class="fd-badge fd-badge--sampled">Sampled</span>
+        </div>
+        <p class="fd-ctl__spec">34 px · R999 · --surface (or --sunken) · --text · 12.5 px 500 · 13 px h-padding<br>
+          <i>merits.html .pill-btn (--surface, hover #222833) · idea-card.html .sh-textbtn (--sunken, hover #1A1F27)</i></p>
+        <div class="fd-states">
+          <div class="fd-state"><span class="fd-state__n">Default</span><span class="fd-state__box"><button class="c-dark" type="button">Season</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Hover #222833</span><span class="fd-state__box"><button class="c-dark is-hover" type="button">Season</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Pressed</span><span class="fd-state__box"><button class="c-dark is-pressed" type="button">Season</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Focus</span><span class="fd-state__box"><button class="c-dark is-focus" type="button">Season</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled</span><span class="fd-state__box"><button class="c-dark" type="button" disabled>Season</button></span></div>
+        </div>
+        <p class="fd-ctl__spec" style="margin:14px 0 0">On --sunken, for use inside a --surface card:</p>
+        <div class="fd-states" style="margin-top:10px">
+          <div class="fd-state"><span class="fd-state__n">Default</span><span class="fd-state__box"><button class="c-dark c-dark--sunken" type="button">All time</button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Hover #1A1F27</span><span class="fd-state__box"><button class="c-dark c-dark--sunken is-hover" type="button">All time</button></span></div>
+        </div>
+      </div>
+
+      <!-- 4 · View all pill -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>View all ↗ pill</h3>
+          <span class="fd-badge fd-badge--sampled">Sampled</span>
+        </div>
+        <p class="fd-ctl__spec">34 px · R999 · --surface · 12.5 px 500 · 5 px gap · 13 px arrow, 2.0 stroke<br>
+          <i>merits.html .pill-btn + arrow-up-right · always sits at the right of a section header</i></p>
+        <div class="fd-states">
+          <div class="fd-state"><span class="fd-state__n">Default</span><span class="fd-state__box"><button class="c-dark" type="button">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Hover</span><span class="fd-state__box"><button class="c-dark is-hover" type="button">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Pressed</span><span class="fd-state__box"><button class="c-dark is-pressed" type="button">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Focus</span><span class="fd-state__box"><button class="c-dark is-focus" type="button">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></button></span></div>
+          <div class="fd-state fd-state--na"><span class="fd-state__n">Disabled — none</span><span class="fd-state__box" style="font-size:11.5px;color:var(--dim);min-width:132px">A section with nothing to show hides the pill rather than disabling it.</span></div>
+        </div>
+      </div>
+
+      <!-- 5 · icon buttons -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Circular icon button</h3>
+          <span class="fd-badge fd-badge--sampled">Sampled</span>
+        </div>
+        <p class="fd-ctl__spec">38 px circle · --surface · 17 px glyph, 1.9 stroke, --text<br>
+          <i>merits.html .icon-btn — the canonical size. 34 px --sunken and 34 px --acid variants are
+          also sampled from idea-card.html .sh-iconbtn.</i></p>
+        <div class="fd-states">
+          <div class="fd-state"><span class="fd-state__n">38 default</span><span class="fd-state__box"><button class="c-icon" type="button" aria-label="Search members"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg></button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Hover</span><span class="fd-state__box"><button class="c-icon is-hover" type="button" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg></button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Pressed</span><span class="fd-state__box"><button class="c-icon is-pressed" type="button" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg></button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Focus</span><span class="fd-state__box"><button class="c-icon is-focus" type="button" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg></button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled</span><span class="fd-state__box"><button class="c-icon" type="button" aria-label="Search" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg></button></span></div>
+        </div>
+        <p class="fd-ctl__spec" style="margin:14px 0 0">34 px variants:</p>
+        <div class="fd-states" style="margin-top:10px">
+          <div class="fd-state"><span class="fd-state__n">34 --sunken</span><span class="fd-state__box"><button class="c-icon c-icon--34" type="button" aria-label="Filter ideas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg></button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Hover</span><span class="fd-state__box"><button class="c-icon c-icon--34 is-hover" type="button" aria-label="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg></button></span></div>
+          <div class="fd-state"><span class="fd-state__n">34 --acid</span><span class="fd-state__box"><button class="c-icon c-icon--acid" type="button" aria-label="New idea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Hover</span><span class="fd-state__box"><button class="c-icon c-icon--acid is-hover" type="button" aria-label="New idea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled</span><span class="fd-state__box"><button class="c-icon c-icon--acid" type="button" aria-label="New idea" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></span></div>
+        </div>
+      </div>
+
+      <!-- 6 · status pill -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Status pill</h3>
+          <span class="fd-badge fd-badge--sampled">Sampled</span>
+        </div>
+        <p class="fd-ctl__spec">32 px · R999 · --acid-wash fill · --acid text 11 px 700 .11em uppercase · 6 px leading dot · 14 px h-padding<br>
+          <i>merits.html .status-pill — not interactive, so it has no hover, pressed or disabled state.</i></p>
+        <div class="fd-states">
+          <div class="fd-state"><span class="fd-state__n">On --section</span><span class="fd-state__box" style="background:var(--section)"><span class="c-status">Season</span></span></div>
+          <div class="fd-state"><span class="fd-state__n">On --surface</span><span class="fd-state__box"><span class="c-status">Live now</span></span></div>
+          <div class="fd-state"><span class="fd-state__n">On --bg</span><span class="fd-state__box" style="background:var(--bg)"><span class="c-status">Closed</span></span></div>
+          <div class="fd-state fd-state--na"><span class="fd-state__n">Interactive states — none</span><span class="fd-state__box" style="font-size:11.5px;color:var(--dim);min-width:150px">Static indicator. If a status needs to be tappable it becomes a dark pill button.</span></div>
+        </div>
+      </div>
+
+      <!-- 7 · type tag -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Type tag</h3>
+          <span class="fd-badge fd-badge--sampled">Sampled</span>
+        </div>
+        <p class="fd-ctl__spec">No fill, no height · --acid text 11 px 700 .09em uppercase · 5 px leading dot · 6 px gap<br>
+          <i>idea-card.html .sh-tag — the unfilled sibling of the status pill. Tracking is .09em here
+          against .11em on the pill; both are sampled, the difference is real.</i></p>
+        <div class="fd-states">
+          <div class="fd-state"><span class="fd-state__n">Decision</span><span class="fd-state__box"><span class="c-tag">Decision</span></span></div>
+          <div class="fd-state"><span class="fd-state__n">Position</span><span class="fd-state__box"><span class="c-tag">Position</span></span></div>
+          <div class="fd-state fd-state--na"><span class="fd-state__n">Interactive states — none</span><span class="fd-state__box" style="font-size:11.5px;color:var(--dim);min-width:150px">Label only. Two values exist in the export: Decision and Position.</span></div>
+        </div>
+      </div>
+
+      <!-- 8 · segmented control -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Segmented control</h3>
+          <span class="fd-badge fd-badge--proposed">Proposed</span>
+        </div>
+        <p class="fd-ctl__spec">--sunken track · R999 · 4 px padding · 34 px items · active --acid / --acid-ink 13 px 600 · inactive --muted<br>
+          <i>Not in the export. Lifted wholesale from the sampled tab-bar rule — active is an accent
+          pill, inactive is the quiet state — so the two read as the same idea at two scales.</i></p>
+        <div class="fd-states">
+          <div class="fd-state"><span class="fd-state__n">Live · click to change</span><span class="fd-state__box">
+            <span class="c-segment" role="tablist" aria-label="Range">
+              <button type="button" role="tab" aria-selected="true">Season</button>
+              <button type="button" role="tab" aria-selected="false">Month</button>
+              <button type="button" role="tab" aria-selected="false">All time</button>
+            </span>
+          </span></div>
+          <div class="fd-state"><span class="fd-state__n">Hover on inactive</span><span class="fd-state__box">
+            <span class="c-segment">
+              <button type="button" aria-selected="true">Season</button>
+              <button type="button" class="is-hover">Month</button>
+            </span>
+          </span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled</span><span class="fd-state__box">
+            <span class="c-segment is-disabled">
+              <button type="button" aria-selected="true" disabled>Season</button>
+              <button type="button" disabled>Month</button>
+            </span>
+          </span></div>
+        </div>
+      </div>
+
+      <!-- 9 · text field -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Text field</h3>
+          <span class="fd-badge fd-badge--proposed">Proposed</span>
+        </div>
+        <p class="fd-ctl__spec">44 px · R12 --r-panel · --sunken fill · 1 px --line border · 13 px --text · placeholder --dim · 14 px h-padding<br>
+          <i>No input exists in the export. Shell is the sampled --sunken panel: same fill, same
+          radius, same hairline as .sh-gauge. Focus is the sampled acid outline, softened to a 3 px
+          --acid-wash ring so it can sit inside a 12 px padded card without clipping.</i></p>
+        <div class="fd-states" style="flex-direction:column;align-items:stretch">
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Default · placeholder</span><span class="fd-state__box fd-state__box--flat"><span class="fd-fieldwrap"><input class="c-field" type="text" placeholder="Name your idea" aria-label="Idea title"></span></span></div>
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Filled</span><span class="fd-state__box fd-state__box--flat"><span class="fd-fieldwrap"><input class="c-field" type="text" value="Safe standing pilot" aria-label="Idea title filled"></span></span></div>
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Hover</span><span class="fd-state__box fd-state__box--flat"><span class="fd-fieldwrap"><input class="c-field is-hover" type="text" value="Safe standing pilot" aria-label="Idea title hover"></span></span></div>
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Focus</span><span class="fd-state__box fd-state__box--flat"><span class="fd-fieldwrap"><input class="c-field is-focus" type="text" value="Safe standing pilot" aria-label="Idea title focus"></span></span></div>
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Invalid · #E2564A border</span><span class="fd-state__box fd-state__box--flat"><span class="fd-fieldwrap"><input class="c-field is-invalid" type="text" value="" placeholder="A title is required" aria-label="Idea title invalid"></span></span></div>
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Disabled</span><span class="fd-state__box fd-state__box--flat"><span class="fd-fieldwrap"><input class="c-field" type="text" value="Safe standing pilot" aria-label="Idea title disabled" disabled></span></span></div>
+        </div>
+      </div>
+
+      <!-- 10 · select -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Select</h3>
+          <span class="fd-badge fd-badge--proposed">Proposed</span>
+        </div>
+        <p class="fd-ctl__spec">Text-field shell · trailing 17 px chevron, 1.9 stroke, --dim · 40 px right padding<br>
+          <i>The chevron glyph itself is also proposed — see §7.</i></p>
+        <div class="fd-states" style="flex-direction:column;align-items:stretch">
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Default</span><span class="fd-state__box fd-state__box--flat">
+            <span class="fd-fieldwrap fd-fieldwrap--trail">
+              <select class="c-field" aria-label="Club"><option>Barcelona</option><option>Girona</option></select>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:translateY(-50%) rotate(90deg)"><path d="m9.5 5.5 7 6.5-7 6.5"/></svg>
+            </span></span></div>
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Hover</span><span class="fd-state__box fd-state__box--flat">
+            <span class="fd-fieldwrap fd-fieldwrap--trail">
+              <select class="c-field is-hover" aria-label="Club hover"><option>Barcelona</option></select>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:translateY(-50%) rotate(90deg)"><path d="m9.5 5.5 7 6.5-7 6.5"/></svg>
+            </span></span></div>
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Focus / open</span><span class="fd-state__box fd-state__box--flat">
+            <span class="fd-fieldwrap fd-fieldwrap--trail">
+              <select class="c-field is-focus" aria-label="Club focus"><option>Barcelona</option></select>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:translateY(-50%) rotate(-90deg)"><path d="m9.5 5.5 7 6.5-7 6.5"/></svg>
+            </span></span></div>
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Disabled</span><span class="fd-state__box fd-state__box--flat">
+            <span class="fd-fieldwrap fd-fieldwrap--trail">
+              <select class="c-field" aria-label="Club disabled" disabled><option>Barcelona</option></select>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:translateY(-50%) rotate(90deg)"><path d="m9.5 5.5 7 6.5-7 6.5"/></svg>
+            </span></span></div>
+        </div>
+      </div>
+
+      <!-- 11 · search field -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Search field</h3>
+          <span class="fd-badge fd-badge--proposed">Proposed</span>
+        </div>
+        <p class="fd-ctl__spec">Text-field shell · leading 17 px search glyph, 1.9 stroke, --dim · 40 px left padding · clear button appears when filled<br>
+          <i>The 38 px circular search icon button is the sampled pattern; this is the expanded form
+          for a full-screen search. The glyph is the same sampled 1.9-stroke magnifier.</i></p>
+        <div class="fd-states" style="flex-direction:column;align-items:stretch">
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Empty</span><span class="fd-state__box fd-state__box--flat">
+            <span class="fd-fieldwrap fd-fieldwrap--lead">
+              <input class="c-field" type="search" placeholder="Search members" aria-label="Search members">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+            </span></span></div>
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Focus + filled, with clear</span><span class="fd-state__box fd-state__box--flat">
+            <span class="fd-fieldwrap fd-fieldwrap--lead">
+              <input class="c-field is-focus" type="search" value="scout_mode" aria-label="Search members filled" data-clearable>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+              <button class="c-clear" type="button" aria-label="Clear search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
+            </span></span></div>
+          <div class="fd-state" style="align-items:stretch"><span class="fd-state__n">Disabled</span><span class="fd-state__box fd-state__box--flat">
+            <span class="fd-fieldwrap fd-fieldwrap--lead">
+              <input class="c-field" type="search" placeholder="Search members" aria-label="Search disabled" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+            </span></span></div>
+        </div>
+      </div>
+
+      <!-- 12 · toggle -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Toggle</h3>
+          <span class="fd-badge fd-badge--proposed">Proposed</span>
+        </div>
+        <p class="fd-ctl__spec">46 × 28 track R999 · off --sunken + 1 px --line, knob --muted · on --acid, knob --acid-ink · 22 px knob, 3 px inset<br>
+          <i>Not in the export. Off knob is --muted rather than white so the off state reads quiet;
+          on knob is --acid-ink at 12.31:1 against the accent, the same pairing as every accent fill.</i></p>
+        <div class="fd-states">
+          <div class="fd-state"><span class="fd-state__n">Off · live</span><span class="fd-state__box"><label class="c-toggle"><input type="checkbox"><span class="c-toggle__track"></span><span>Match alerts</span></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">On · live</span><span class="fd-state__box"><label class="c-toggle"><input type="checkbox" checked><span class="c-toggle__track"></span><span>Match alerts</span></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Off hover</span><span class="fd-state__box"><label class="c-toggle is-hover"><input type="checkbox"><span class="c-toggle__track"></span></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">On hover</span><span class="fd-state__box"><label class="c-toggle is-hover"><input type="checkbox" checked><span class="c-toggle__track"></span></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Pressed</span><span class="fd-state__box"><label class="c-toggle is-pressed"><input type="checkbox"><span class="c-toggle__track"></span></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled off</span><span class="fd-state__box"><label class="c-toggle"><input type="checkbox" disabled><span class="c-toggle__track"></span></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled on</span><span class="fd-state__box"><label class="c-toggle"><input type="checkbox" checked disabled><span class="c-toggle__track"></span></label></span></div>
+        </div>
+      </div>
+
+      <!-- 13 · checkbox -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Checkbox</h3>
+          <span class="fd-badge fd-badge--proposed">Proposed</span>
+        </div>
+        <p class="fd-ctl__spec">20 px · 6 px radius · --sunken + 1 px --line · checked --acid fill with --acid-ink tick, 2.2 stroke · 10 px label gap<br>
+          <i>Not in the export. <b>The 6 px radius is the one extrapolated number on this page</b> — the
+          only sampled small-square radius is 5 px on the 17 px .crest, and 6 px keeps the same
+          corner-to-size proportion at 20 px. Flag it if you disagree.</i></p>
+        <div class="fd-states">
+          <div class="fd-state"><span class="fd-state__n">Unchecked · live</span><span class="fd-state__box"><label class="c-check"><input type="checkbox"><span>Notify me</span></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Checked · live</span><span class="fd-state__box"><label class="c-check"><input type="checkbox" checked><span>Notify me</span></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Hover</span><span class="fd-state__box"><label class="c-check is-hover"><input type="checkbox"></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Pressed</span><span class="fd-state__box"><label class="c-check is-pressed"><input type="checkbox"></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled</span><span class="fd-state__box"><label class="c-check"><input type="checkbox" disabled></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled checked</span><span class="fd-state__box"><label class="c-check"><input type="checkbox" checked disabled></label></span></div>
+        </div>
+      </div>
+
+      <!-- 14 · radio -->
+      <div class="fd-ctl">
+        <div class="fd-ctl__head">
+          <h3>Radio</h3>
+          <span class="fd-badge fd-badge--proposed">Proposed</span>
+        </div>
+        <p class="fd-ctl__spec">20 px circle · --sunken + 1 px --line · checked 1.5 px --acid ring with a 10 px --acid dot<br>
+          <i>Not in the export. Ringed rather than filled, so it cannot be confused with the checkbox
+          at a glance — the same ring-vs-fill distinction the podium uses on .plinth__avatar.</i></p>
+        <div class="fd-states">
+          <div class="fd-state"><span class="fd-state__n">Group · live</span><span class="fd-state__box" style="min-width:170px">
+            <span style="display:flex;flex-direction:column;gap:9px">
+              <label class="c-check"><input type="radio" name="fd-scope" checked><span>Season</span></label>
+              <label class="c-check"><input type="radio" name="fd-scope"><span>All time</span></label>
+            </span></span></div>
+          <div class="fd-state"><span class="fd-state__n">Hover</span><span class="fd-state__box"><label class="c-check is-hover"><input type="radio" name="fd-h"></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Pressed</span><span class="fd-state__box"><label class="c-check is-pressed"><input type="radio" name="fd-p"></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled</span><span class="fd-state__box"><label class="c-check"><input type="radio" name="fd-d" disabled></label></span></div>
+          <div class="fd-state"><span class="fd-state__n">Disabled checked</span><span class="fd-state__box"><label class="c-check"><input type="radio" name="fd-dc" checked disabled></label></span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================
+       7 · ICONS
+       ============================================================ -->
+  <section class="fd-sec" id="icons">
+    <div class="fd-sec__head">
+      <span class="fd-sec__n">07</span>
+      <h2>Icons</h2>
+      <p>Inline SVG only. 24-box viewBox, round caps and joins, no fills except the one solid thumb.
+         Each glyph is shown at 24 px and 18 px.</p>
+    </div>
+
+    <p class="fd-note">
+      Every glyph below is written out in full as a 24-box inline SVG at its 24 px size — copy that
+      node. The 18 px duplicate references the same symbol, which is the point: one geometry, two
+      sizes, no separate small set. <b>Stroke weight is not uniform</b> — see the note under the
+      utility grid.
+    </p>
+
+    <p class="fd-eyebrow">Tab glyphs — five, one per tab <span class="fd-badge fd-badge--sampled" style="margin-left:8px">Sampled</span></p>
+    <div class="fd-grid fd-grid--icons">
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 3.5H21V6L9.8 17.2 7.3 14.7 18.5 3.5Z"/><path d="M3 21l3.4-3.4"/><path d="M5.5 3.5H3V6l11.2 11.2 2.5-2.5L5.5 3.5Z"/><path d="M21 21l-3.4-3.4"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-swords"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Crossed swords</span><span class="fd-ico__s">1.7 · War Room</span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 11M17 6h2.5A2.5 2.5 0 0 1 17 11"/><path d="M12 15v3M9 21h6"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-trophy"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Trophy</span><span class="fd-ico__s">1.7 · Merits</span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-mic"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Microphone</span><span class="fd-ico__s">1.7 · Backchat</span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 1 1 12 0v6M4 17h16"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-bell"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Bell</span><span class="fd-ico__s">1.7 · Alerts</span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-person"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Person</span><span class="fd-ico__s">1.7 · Profile</span>
+      </div>
+    </div>
+
+    <p class="fd-eyebrow">Utility set</p>
+    <div class="fd-grid fd-grid--icons">
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-search"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Search</span><span class="fd-ico__s">1.9</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--sampled">Sampled</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6.5 12h11M10 17h4"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-filter"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Filter</span><span class="fd-ico__s">1.9 · 2.0 at 34 px</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--sampled">Sampled</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-plus"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Plus</span><span class="fd-ico__s">2.4</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--sampled">Sampled</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-upright"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Arrow up-right</span><span class="fd-ico__s">2.0 · View all</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--sampled">Sampled</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5M9.5 2.5h5M12 2.5V6"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-timer"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Timer</span><span class="fd-ico__s">1.9</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--sampled">Sampled</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10.5v9H4.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1H7Z"/><path d="M7 10.5 11.4 3.2a1 1 0 0 1 1.8.3l.3 1.2a4 4 0 0 1-.2 2.5l-.9 2.1h5.3a2 2 0 0 1 1.9 2.6l-1.8 6a2 2 0 0 1-1.9 1.4H7"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-thumb"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Thumb up</span><span class="fd-ico__s">1.8 · solid twin exists</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--sampled">Sampled</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-arrowup"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Arrow up</span><span class="fd-ico__s">2.8 · 3.2 at 10 px</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--sampled">Sampled</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-arrowdown"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Arrow down</span><span class="fd-ico__s">2.8 · takes #E2564A</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--sampled">Sampled</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 5.5 7 6.5-7 6.5"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-chevron"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Chevron</span><span class="fd-ico__s">1.9 · rotate for up/down</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--proposed">Proposed</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 2.5V6M12 18v3.5M2.5 12H6M18 12h3.5"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-target"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Target</span><span class="fd-ico__s">1.8 · r 3.4 reused from Person</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--proposed">Proposed</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-close"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Close</span><span class="fd-ico__s">1.9</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--proposed">Proposed</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-check"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Check</span><span class="fd-ico__s">1.9 · 2.2 in the checkbox</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--proposed">Proposed</span></span>
+      </div>
+      <div class="fd-ico">
+        <span class="fd-ico__sizes">
+          <span class="fd-ico__24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg></span>
+          <span class="fd-ico__18"><svg aria-hidden="true"><use href="#s-info"/></svg></span>
+        </span>
+        <span class="fd-ico__n">Info</span><span class="fd-ico__s">1.8 · dot is a zero-length cap</span>
+        <span class="fd-ico__b"><span class="fd-badge fd-badge--proposed">Proposed</span></span>
+      </div>
+    </div>
+
+    <div class="fd-note fd-note--loud" style="margin-top:18px">
+      <b>Stroke weight is not uniform in the export, and the contract's 1.7–1.9 range is not the whole
+      truth.</b> The tab glyphs are 1.7. Search, filter and timer are 1.9. But plus is 2.4, the delta
+      arrows are 2.8 in the standing card and 3.2 in the leaderboard row, and the empty-state swords
+      are 1.5. The pattern underneath is <b>optical, not fixed</b>: the smaller the render, the heavier
+      the stroke, so the glyph keeps its weight at 10 px. The five proposed glyphs follow the same
+      rule — 1.8–1.9 at the 17–24 px sizes they are drawn for, and the checkbox tick is thickened to
+      2.2 because it renders at 9 px. Worth deciding whether the contract should say
+      <code>1.5–3.2, scaled optically</code> instead.
+    </div>
+  </section>
+
+  <footer style="margin-top:56px;padding-top:18px;border-top:1px solid var(--line)">
+    <p class="fd-note" style="margin:0">
+      <b>Sampled</b> — surfaces, hairlines, accent, acid-ink, acid-wash, hero gradient, semantic red,
+      the twelve type steps, all spacing and radii, and six controls: filled accent pill, dark pill,
+      View&nbsp;all&nbsp;↗ pill, circular icon button (38 and 34 px, dark and accent), status pill,
+      type tag. Eleven glyphs.<br>
+      <b>Proposed</b> — outlined accent pill, segmented control, text field, select, search field,
+      toggle, checkbox, radio; every disabled and focus state; the press veil; the 44 px control
+      height; the 6 px checkbox radius; five glyphs (chevron, target, close, check, info).
+    </p>
+  </footer>
+
+</div></div>
+</div>
+      </div>
+      <p class="stage__hint stage__hint--wide">Live and interactive. This is a full-width reference sheet, not a phone screen.</p>
+    </div>
+
+
+    <div class="col">
+
+
+<section id="overview">
+  <p class="rv-eyebrow">What you're looking at</p>
+  <h2>The single source of truth, and its edges</h2>
+  <p>
+    Everything else in this library is a screen. This is the sheet those screens are built from. It is
+    exempt from the <code>375&nbsp;px</code> target — it runs to <code>1180&nbsp;px</code> wide with
+    <code>24&nbsp;px</code> side padding, because side-by-side comparison is the point of it — but it
+    obeys every other rule: sampled tokens only, the system font stack, inline SVG icons, no external
+    requests.
+  </p>
+  <p>
+    Two things make it more than a swatch page. First, the contrast figures are <em>computed</em> from
+    the hex values with the WCAG 2.1 relative-luminance formula rather than eyeballed, and they are
+    stated to two decimal places — so where a pairing fails, the sheet says so plainly, including in
+    places the export already ships. Second, the badges. Six of the fourteen controls come from the
+    export; the other eight were built here from the established language and do not exist yet. The
+    sheet does not blur that line, and neither should the review.
+  </p>
+  <p>
+    The short version of what it establishes: four near-black surfaces, one accent, one semantic red,
+    and nothing else. Every distinction in the product comes from scale, weight, ring opacity or the
+    accent wash — never from a new hue.
+  </p>
+</section>
+
+<section id="anatomy">
+  <p class="rv-eyebrow">Anatomy</p>
+  <h2>What each section of the sheet holds</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>The seven numbered sections, in page order, and what is inside each. Values as built.</caption>
+      <thead>
+        <tr><th scope="col">Section</th><th scope="col">Contents</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Masthead</td><td>Title, scope statement, badge key, jump nav</td>
+          <td class="t-note"><code>Foundations</code> at 34/800 uppercase, a <code>66ch</code> summary,
+            then the two badges explained in words before either is used. Seven pill links at
+            <code>32&nbsp;px</code> on <code>#1C2129</code>.</td>
+        </tr>
+        <tr>
+          <td>01 Surfaces</td><td>Four swatches with measured luminance</td>
+          <td class="t-note">Sampled. <code>#030401</code> at <code>Y 0.108%</code>,
+            <code>#080A0C</code> at <code>0.295%</code>, <code>#1C2129</code> at
+            <code>1.495%</code>, <code>#13171E</code> at <code>0.845%</code>. Four steps, all
+            near-black, the ladder built from luminance rather than hue.</td>
+        </tr>
+        <tr>
+          <td>01 Surfaces</td><td>Nested ladder</td>
+          <td class="t-note">The four surfaces drawn inside one another in the order they actually
+            stack — <code>bg → section → surface → sunken</code> — each labelled with its luminance
+            delta against its parent.</td>
+        </tr>
+        <tr>
+          <td>01 Surfaces</td><td>The recess rule</td>
+          <td class="t-note">A written note that <code>--sunken</code> is <em>darker</em> than
+            <code>--surface</code>, so the nesting order is not the luminance order. A sunken panel only
+            reads as a well inside a <code>--surface</code> card, where it drops
+            <code>0.650&nbsp;pp</code>; on <code>--section</code> or <code>--bg</code> it would read as a
+            raised block and must not be used.</td>
+        </tr>
+        <tr>
+          <td>01 Surfaces</td><td>Separation table</td>
+          <td class="t-note">Every adjacent step with its luminance delta, multiplier, contrast ratio and
+            a verdict: <code>bg → section</code> is <code>+0.187&nbsp;pp</code> at
+            <code>1.04:1</code> and marked <em>edge only — needs the 1&nbsp;px hairline to be
+            visible</em>; <code>section → sunken</code> <code>1.10:1</code>;
+            <code>sunken → surface</code> <code>1.11:1</code>;
+            <code>section → surface</code> <code>1.23:1</code>, the strongest step in the
+            system.</td>
+        </tr>
+        <tr>
+          <td>01 Surfaces</td><td>Hairlines table</td>
+          <td class="t-note"><code>--line</code> and <code>--line-soft</code> with their values, how each
+            renders over <code>--surface</code> and over <code>--section</code>, and where each
+            belongs.</td>
+        </tr>
+        <tr>
+          <td>02 Accent</td><td>Four swatches</td>
+          <td class="t-note">Sampled. <code>#9BE222</code> at <code>Y 61.48%</code>,
+            <code>#0B0E06</code> ink at <code>0.40%</code>, the wash
+            <code>rgba(155,226,34,.12)</code> which composites to <code>#2B3828</code> over
+            <code>--surface</code>, and the hover value <code>#A8EC33</code>.</td>
+        </tr>
+        <tr>
+          <td>02 Accent</td><td>Accent on every surface</td>
+          <td class="t-note">Six live pairings with their computed ratios — <code>13.01:1</code> on
+            <code>--bg</code>, <code>12.55</code> on <code>--section</code>, <code>11.37</code> on
+            <code>--sunken</code>, <code>10.24</code> on <code>--surface</code>, and
+            <code>7.83</code> / <code>10.81</code> on the wash over <code>--surface</code> and
+            <code>--bg</code>. All AAA.</td>
+        </tr>
+        <tr>
+          <td>02 Accent</td><td>Surface on accent</td>
+          <td class="t-note">Four pairings including one deliberate failure:
+            <code>#FFFFFF</code> on <code>#9BE222</code> at <code>1.58:1</code>, labelled
+            <code>Never do this</code>. Accent fills always take <code>#0B0E06</code>, which clears AAA
+            at <code>12.31:1</code>.</td>
+        </tr>
+        <tr>
+          <td>02 Accent</td><td>Hero field</td>
+          <td class="t-note">The gradient rendered at size with its three stops broken out —
+            <code>#0D3617</code> at 0%, <code>#17481C</code> at 58%, <code>#0C3416</code> at 100%,
+            running at <code>112deg</code> — plus the peaks at <code>54% × 38%</code> and the white field
+            triangles held at <code>2.4–3.0%</code>. A table gives white and accent against both hero
+            stops; <code>#9BE222</code> on <code>#17481C</code> at <code>6.71:1</code> is flagged as the
+            lowest accent pairing in the system.</td>
+        </tr>
+        <tr>
+          <td>02 Accent</td><td>Text tokens table</td>
+          <td class="t-note">Each text token against all four surfaces. <code>--text</code>
+            <code>16.17–20.55</code>, <code>--muted</code> <code>6.15–7.82</code>,
+            <code>--acid</code> <code>10.24–13.01</code>, and <code>--dim</code> at
+            <code>2.56–3.26</code> — failing AA for body copy on every surface, with a written rule
+            confining it to the tracked micro-label.</td>
+        </tr>
+        <tr>
+          <td>03 Semantic</td><td>The no-other-colour statement</td>
+          <td class="t-note">A boxed rule: no silver, no bronze, no blue, no purple, no amber warning
+            state, no separate info blue. Up is <code>#9BE222</code>, down is <code>#E2564A</code>,
+            everything else is a surface, a hairline or a grade of white.</td>
+        </tr>
+        <tr>
+          <td>03 Semantic</td><td>Red swatch, in use, and measured</td>
+          <td class="t-note"><code>#E2564A</code> at <code>Y 23.32%</code>, sampled from the leaderboard
+            delta, shown as text and icon only — there is no red fill anywhere in the export. Two live
+            leaderboard rows demonstrate it. The table gives <code>5.54</code> on <code>--bg</code>,
+            <code>4.84</code> on <code>--sunken</code>, and <code>4.36</code> on
+            <code>--surface</code> — missing AA by <code>0.14</code>, the weakest legibility pair in the
+            system, with a note that it must not be pushed onto smaller or lighter text.</td>
+        </tr>
+        <tr>
+          <td>04 Type scale</td><td>Fourteen specimens at true size</td>
+          <td class="t-note">Sampled. Each row states size, weight, tracking, any line-height or case
+            rule, and the class it comes from — from the <code>34/800/-.025em</code> screen title down to
+            the <code>9.5/700/.14em</code> floor. Thirteen distinct sizes;
+            <code>11&nbsp;px</code> appears twice, at <code>.11em</code> for the status pill and
+            <code>.09em</code> for the type tag, and the sheet notes the difference is real.</td>
+        </tr>
+        <tr>
+          <td>04 Type scale</td><td>Font rule</td>
+          <td class="t-note">The full stack written out, with Inter named first so it is picked up where
+            locally installed and nothing is fetched, and the standing rule that every figure sitting in
+            a column takes <code>tabular-nums</code>.</td>
+        </tr>
+        <tr>
+          <td>05 Spacing &amp; radii</td><td>Measured spacing, bars at true size</td>
+          <td class="t-note">Thirteen values — <code>2, 5, 6, 7, 8, 10, 11, 12, 13, 14, 16, 18,
+            22&nbsp;px</code> — each drawn at its real width beside what it is used for, with
+            <code>16&nbsp;px</code> marked as the gutter. Stated plainly: there is no strict 4-point grid
+            in the export.</td>
+        </tr>
+        <tr>
+          <td>05 Spacing &amp; radii</td><td>Three padding demonstrations</td>
+          <td class="t-note">The <code>16&nbsp;px</code> gutter as a wash band; the card
+            <code>16&nbsp;px</code> → panel <code>12/14&nbsp;px</code> nesting; and a three-row list at
+            <code>10px 12px</code> with <code>--line-soft</code> borders and none on the first.</td>
+        </tr>
+        <tr>
+          <td>05 Spacing &amp; radii</td><td>Radii</td>
+          <td class="t-note">Five cells: <code>12&nbsp;px</code> panels, <code>16&nbsp;px</code> cards,
+            <code>999&nbsp;px</code> pills, <code>50%</code> circles, and the one other measured radius in
+            the export — <code>5&nbsp;px</code> on the <code>17&nbsp;px</code> club square. The rule: 12
+            and 16 never meet on the same edge, and <code>999px</code> is used rather than
+            <code>50%</code> on anything that can hold a label so the shape survives a longer
+            string.</td>
+        </tr>
+        <tr>
+          <td>05 Spacing &amp; radii</td><td>Control heights</td>
+          <td class="t-note">Six heights with provenance:
+            <code>32</code> status pill, <code>34</code> dark pill and small icon button,
+            <code>38</code> circular icon button and tab, <code>52</code> primary accent button,
+            <code>58</code> tab bar — all sampled — and <code>44&nbsp;px</code> for fields, which is
+            <strong>proposed</strong>. It is followed by the sheet's own open question about touch
+            targets.</td>
+        </tr>
+        <tr>
+          <td>06 Controls</td><td>State vocabulary</td>
+          <td class="t-note">A boxed rule listing the only three hover colours, all sampled —
+            <code>--acid → #A8EC33</code>, <code>--surface → #222833</code>,
+            <code>--sunken → #1A1F27</code> — plus pressed, disabled and focus. It states outright that
+            nothing in the export shows a disabled or focused control, so every disabled and focus
+            specimen on the page is proposed even where the control itself is sampled.</td>
+        </tr>
+        <tr>
+          <td>06 Controls</td><td>Fourteen controls</td>
+          <td class="t-note">Each with a spec line, a source reference and every state rendered live.
+            Six sampled: filled accent pill, dark pill button, <code>View&nbsp;all ↗</code> pill,
+            circular icon button, status pill, type tag. Eight proposed: outlined accent pill, segmented
+            control, text field, select, search field, toggle, checkbox, radio.</td>
+        </tr>
+        <tr>
+          <td>07 Icons</td><td>Tab glyphs</td>
+          <td class="t-note">Sampled. Five, one per tab — crossed swords, trophy, microphone, bell,
+            person — all at 1.7 stroke.</td>
+        </tr>
+        <tr>
+          <td>07 Icons</td><td>Utility set</td>
+          <td class="t-note">Thirteen glyphs, each shown at 24&nbsp;px written out in full as a 24-box
+            inline SVG and again at 18&nbsp;px referencing the same symbol — one geometry, two sizes, no
+            separate small set. Eight are sampled (search, filter, plus, arrow up-right, timer, thumb up,
+            arrow up, arrow down); five are proposed (chevron, target, close, check, info).</td>
+        </tr>
+        <tr>
+          <td>07 Icons</td><td>Stroke-weight note</td>
+          <td class="t-note">A boxed correction: the contract's <code>1.7–1.9</code> range is not the
+            whole truth. Tab glyphs are 1.7, search and filter and timer are 1.9, plus is 2.4, the delta
+            arrows are 2.8 and 3.2, and the empty-state swords are 1.5. The real rule is optical — the
+            smaller the render, the heavier the stroke.</td>
+        </tr>
+        <tr>
+          <td>Footer</td><td>The two lists</td>
+          <td class="t-note">Everything sampled and everything proposed, restated as prose so the split
+            can be read without scrolling the page.</td>
+        </tr>
+        <tr>
+          <td>Page</td><td>Convenience</td>
+          <td class="t-note">Clicking any hex label copies it. A documentation-only monospace stack
+            (<code>--fd-mono</code>) aligns hex values in tables and is explicitly marked as not a
+            product token.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="states">
+  <p class="rv-eyebrow">States</p>
+  <h2>The state vocabulary it fixes</h2>
+  <div class="tablewrap">
+    <table>
+      <caption>Every control on the sheet renders these, and only these.</caption>
+      <thead><tr><th scope="col">State</th><th scope="col">Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Default</td><td class="t-note">The base token for that control. Sampled.</td></tr>
+        <tr><td>Hover</td><td class="t-note">One of three values, all sampled: accent fills go to <code>#A8EC33</code>, <code>--surface</code> goes to <code>#222833</code>, <code>--sunken</code> goes to <code>#1A1F27</code>. No fourth hover colour exists.</td></tr>
+        <tr><td>Pressed</td><td class="t-note"><code>translateY(1px)</code>, sampled from the Like button, plus a <strong>proposed</strong> <code>rgba(0,0,0,.18)</code> veil over the base token so the press is visible in a still image. No new hex enters the system.</td></tr>
+        <tr><td>Focus</td><td class="t-note"><code>outline:2px solid var(--acid)</code> at <code>outline-offset:3px</code>. The rule is sampled from the Like button, but no focused control appears anywhere in the export, so every focus specimen on the page is proposed.</td></tr>
+        <tr><td>Disabled</td><td class="t-note"><strong>Proposed.</strong> <code>opacity:.38</code> on the base token plus <code>cursor:not-allowed</code>, landing at about <code>2.6:1</code> against its own surface — deliberately below the <code>3:1</code> interactive floor so it cannot be mistaken for live.</td></tr>
+        <tr><td>Selected / on</td><td class="t-note">Sampled where it exists: an accent pill carrying icon <em>and</em> label on the tab bar and the segmented control, or a <code>--sunken</code> fill with accent text and a solid glyph on the Like button.</td></tr>
+        <tr><td>Quiet variant</td><td class="t-note">The status pill's only permitted variation — the wash swapped for <code>--sunken</code> and the accent for <code>--muted</code>. Geometry, type and dot unchanged.</td></tr>
+        <tr><td>Failing pairings, shown as failing</td><td class="t-note">The sheet renders the failures rather than hiding them — white on accent at <code>1.58:1</code>, <code>--dim</code> on <code>--surface</code> at <code>2.56:1</code>, red on <code>--surface</code> at <code>4.36:1</code> — each labelled with what it must not be used for.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="provenance">
+  <p class="rv-eyebrow">Provenance</p>
+  <h2>What is reused and what is new</h2>
+  <div class="prov">
+    <div class="prov__card">
+      <h3>Reused from the Figma file</h3>
+      <ul>
+        <li><b>All four surfaces and both hairlines</b> — sampled from the War Room and Backchat dark-mode exports</li>
+        <li><b>The accent, its ink, its wash and its hover</b> — <code>#9BE222</code>, <code>#0B0E06</code>, <code>rgba(155,226,34,.12)</code>, <code>#A8EC33</code></li>
+        <li><b>Hero gradient</b> — angle, all three stops, peak proportions, triangle opacities</li>
+        <li><b>The semantic red</b> — <code>#E2564A</code>, from the leaderboard delta, text and icon only</li>
+        <li><b>The whole type scale</b> — fourteen specimens, each traced to the class it comes from</li>
+        <li><b>All spacing and all radii</b> — measured, including the absence of a 4-point grid</li>
+        <li><b>Five control heights</b> — 32, 34, 38, 52, 58&nbsp;px</li>
+        <li><b>Six controls</b> — filled accent pill, dark pill, <code>View&nbsp;all ↗</code> pill, circular icon button (38 and 34&nbsp;px, dark and accent), status pill, type tag</li>
+        <li><b>Thirteen glyphs</b> — the five tab glyphs plus search, filter, plus, arrow up-right, timer, thumb up, arrow up, arrow down</li>
+        <li><b>Three hover colours and the focus rule</b> — sampled from the reference implementations</li>
+      </ul>
+    </div>
+    <div class="prov__card prov--new">
+      <h3>New in this proposal</h3>
+      <ul>
+        <li><b>The sheet itself</b> — no design documentation exists; this is the first place the system is written down in one place</li>
+        <li><b>Eight controls</b> — outlined accent pill, segmented control, text field, select, search field, toggle, checkbox, radio. None exists in the export</li>
+        <li><b>Every disabled and focus specimen</b> — including on the six sampled controls, because the export contains neither state</li>
+        <li><b>The press veil</b> — <code>rgba(0,0,0,.18)</code> over the base token</li>
+        <li><b>The disabled rule</b> — <code>opacity:.38</code>, chosen to land below the <code>3:1</code> interactive floor</li>
+        <li><b>The 44&nbsp;px control height</b> — the first height in the system that satisfies the touch-target minimum on its own</li>
+        <li><b>The 6&nbsp;px checkbox radius</b> — derived from the only sampled small-square radius, the 5&nbsp;px club plate</li>
+        <li><b>Five glyphs</b> — chevron, target, close, check, info</li>
+        <li><b>All contrast figures</b> — computed from the hex values rather than sampled, to two decimal places, including for pairings the export already ships</li>
+        <li><b>The recess rule</b> — that <code>--sunken</code> may only appear inside <code>--surface</code></li>
+        <li><b>The optical stroke-weight rule</b> — that icon weight scales inversely with render size, which the export does but the contract does not say</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decisions">
+  <p class="rv-eyebrow">Decisions</p>
+  <h2>What we need from you</h2>
+  <ol class="qs">
+    <li>
+      <h3>Eight of the fourteen controls do not exist yet — sign them off?</h3>
+      <p>Sampled and shippable today: filled accent pill, dark pill, <code>View&nbsp;all ↗</code> pill,
+      circular icon button, status pill, type tag. Proposed and needing a decision:
+      <span class="flag">outlined accent pill, segmented control, text field, select, search field,
+      toggle, checkbox, radio</span>. Every form, sheet and settings screen in the library depends on
+      that second list, so it is the gating item. Each one was derived from a sampled pattern rather
+      than invented — the field shell is the sunken panel, the segmented control is the tab-bar rule —
+      but derived is not approved.</p>
+    </li>
+    <li>
+      <h3>Are the touch targets acceptable?</h3>
+      <p><code>34&nbsp;px</code> and <code>38&nbsp;px</code> are both under the <code>44&nbsp;px</code>
+      minimum. In the export they sit in enough padding that the tappable area clears it, but nothing
+      enforces that, and a control moved into a tighter layout will quietly fail. We chose
+      <span class="flag">44&nbsp;px</span> for the proposed field height so at least one control in the
+      system satisfies the target on its own. The decision is whether to raise the existing two, or to
+      add a written padding rule that keeps them legal.</p>
+    </li>
+    <li>
+      <h3>Red on a card misses AA by 0.14 — do we change it or ring-fence it?</h3>
+      <p><code>#E2564A</code> on <code>#1C2129</code> computes to <code>4.36:1</code> against a
+      <code>4.5</code> requirement. The one place it actually lands there today — the leaderboard delta
+      — is 11/600 with a heavy arrow beside it and the number duplicated by the rank column, so it
+      reads. But it is the weakest pair in the system. Options: lighten the red slightly for use on
+      <code>--surface</code>, keep it and forbid it below a stated size and weight, or move it to
+      <code>--sunken</code> where it clears at <code>4.84</code>. This build has taken the second
+      option; it needs to be a rule, not a habit.</p>
+    </li>
+    <li>
+      <h3>Should the icon-weight range in the contract be rewritten?</h3>
+      <p>The contract says <code>1.7–1.9</code>. The export actually runs <code>1.5</code> to
+      <code>3.2</code>, and the pattern underneath is optical rather than fixed — the smaller the
+      render, the heavier the stroke, so a glyph holds its weight at 10&nbsp;px. The five proposed
+      glyphs follow that same rule. We suggest the contract should read
+      <span class="flag">1.5–3.2, scaled optically</span> instead.</p>
+    </li>
+    <li>
+      <h3>Is <code>--dim</code> allowed to stay where it is?</h3>
+      <p>It fails AA for body text on every surface — <code>2.56:1</code> on
+      <code>--surface</code>, <code>3.26:1</code> at best on <code>--bg</code>. In the export it only
+      ever carries the tracked micro-label, which is decorative and never the sole route to
+      information, and this build keeps it strictly there. Confirm that constraint, because the
+      temptation to use it for secondary body copy will come up on every dense screen.</p>
+    </li>
+    <li>
+      <h3>Three summary counts on the sheet do not match what it renders</h3>
+      <p>The masthead claims twelve type steps and sixteen glyphs; the footer claims eleven sampled
+      glyphs. What is actually on the page is <span class="flag">fourteen type specimens across
+      thirteen distinct sizes</span> and <span class="flag">eighteen glyphs, thirteen sampled and five
+      proposed</span>. The specimens and the badges are correct — only the prose totals are stale. Tell
+      us which numbers you want quoted externally and we will make the counts and the copy agree.</p>
+    </li>
+    <li>
+      <h3>Does this sheet become the contract?</h3>
+      <p>It currently documents the system; the build contract is a separate markdown file, and the two
+      already disagree on icon weight. One of them has to be authoritative. Our recommendation is that
+      this page becomes the reference and the contract shrinks to the rules that cannot be shown —
+      structure, asset handling, naming — with everything measurable living here.</p>
+    </li>
+  </ol>
+</section>
+
+      <footer>
+        <p>Built from the <code>SportHeist (Copy)</code> dark-mode exports. Colours and geometry are
+        sampled from those frames, photography is lifted from them and embedded here, so this page
+        works offline with no external requests. Comment against the anatomy row names.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var device = document.getElementById('device');
+  var seg = document.querySelector('.seg');
+  if (seg) seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    device.style.width = b.dataset.w + 'px';
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if ('IntersectionObserver' in window && targets.length){
+    var seen = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best=null,bv=0;
+      Object.keys(seen).forEach(function(k){ if(seen[k]>bv){bv=seen[k];best=k;} });
+      links.forEach(function(a){ a.removeAttribute('aria-current'); });
+      if (best && byId[best]) byId[best].setAttribute('aria-current','true');
+    }, { rootMargin:'-15% 0px -55% 0px', threshold:[0,.25,.5,1] });
+    targets.forEach(function(t){ io.observe(t); });
+  }
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  /* segmented control — single-select, mirrors the sampled tab-bar behaviour */
+  Array.prototype.forEach.call(document.querySelectorAll('.c-segment[role="tablist"]'), function(grp){
+    grp.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b || b.disabled) return;
+      Array.prototype.forEach.call(grp.querySelectorAll('button'), function(x){
+        x.setAttribute('aria-selected', x === b ? 'true' : 'false');
+      });
+    });
+  });
+
+  /* search field clear button */
+  Array.prototype.forEach.call(document.querySelectorAll('.c-clear'), function(btn){
+    btn.addEventListener('click', function(){
+      var f = btn.parentNode.querySelector('.c-field');
+      if(f){ f.value = ''; f.focus(); }
+    });
+  });
+
+  /* click a hex label to copy it — reference-page convenience only */
+  Array.prototype.forEach.call(document.querySelectorAll('.fd-swatch b, .fd-ladder__lab b'), function(el){
+    el.style.cursor = 'copy';
+    el.title = 'Click to copy';
+    el.addEventListener('click', function(){
+      var v = el.textContent.trim(), old = el.textContent;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(v);
+          el.textContent = 'Copied';
+          setTimeout(function(){ el.textContent = old; }, 900);
+        }
+      } catch (err) { /* file:// without clipboard permission — leave the label alone */ }
+    });
+  });
+})();
+</script>
